@@ -17,10 +17,11 @@ export async function POST(request:Request){const auth=memberClient(request);con
  if(['signup','recover','resend'].includes(action)&&env.AUTH_EMAIL_READY!=='true')return fail('Verification email delivery is still being connected. No account or email was created by this request.',503);
  if(action==='signup'){
   if(env.AUTH_REGISTRATION_OPEN!=='true')return fail('New family registration is not open yet.',503);
+  if(typeof data.name!=='string'||!data.name.trim()||data.name.trim().length>60||typeof data.displayName!=='string'||!data.displayName.trim()||data.displayName.trim().length>40)return fail('Enter your first name and family team name.');
   if(data.adult!==true)return fail('An adult needs to manage the family account.');
   const settings=await fetch(env.SUPABASE_URL+'/auth/v1/settings',{headers:{apikey:env.SUPABASE_PUBLISHABLE_KEY!}});const config=await settings.json() as {mailer_autoconfirm?:boolean};
   if(!settings.ok||config.mailer_autoconfirm!==false)return fail('Email confirmation must be configured before registration can open.',503);
-  const {error}=await auth.client.auth.signUp({email,password,options:{emailRedirectTo:origin+'/auth/confirm?next=/family',data:{family_name:typeof data.name==='string'?data.name.trim().slice(0,60):''}}});
+  const {error}=await auth.client.auth.signUp({email,password,options:{emailRedirectTo:origin+'/auth/confirm?next=/family',data:{display_name:data.displayName.trim(),family_name:typeof data.name==='string'?data.name.trim().slice(0,60):''}}});
   if(error)return fail(error.code==='over_email_send_rate_limit'?'Please wait before requesting another email.':'We could not complete registration. Email delivery may not be ready; please try again later.',error.status===429?429:400);
   return memberReply({redirect:'/verify-email',message:'If this address is eligible for a new account, a verification email will be sent. Check your inbox before signing in.'},200,auth.headers);
  }
