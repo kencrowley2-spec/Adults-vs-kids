@@ -1,0 +1,2 @@
+import {requestOrigin} from '../../lib/request-origin';
+import {memberClient,memberRedirect,memberReply} from '../../lib/auth/session';export const dynamic='force-dynamic';export async function POST(request:Request){const auth=memberClient(request);if(request.headers.get('Origin')!==requestOrigin(request))return memberReply({error:'Invalid origin'},403,auth.headers);await auth.client?.auth.signOut({scope:'local'});return memberRedirect('/login',auth.headers)}

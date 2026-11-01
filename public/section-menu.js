@@ -1,0 +1,11 @@
+(()=>{
+ const toggle=document.querySelector('#sectionMenuToggle'),drawer=document.querySelector('#sectionMenu'),close=document.querySelector('#sectionMenuClose');
+ if(!toggle||!drawer)return;
+ const reduced=matchMedia('(prefers-reduced-motion: reduce)');let closing=false,previousOverflow='';
+ function openMenu(){if(drawer.open||closing)return;previousOverflow=document.body.style.overflow;document.body.style.overflow='hidden';toggle.setAttribute('aria-expanded','true');drawer.showModal();requestAnimationFrame(()=>requestAnimationFrame(()=>{if(drawer.open&&!closing)drawer.classList.add('is-open')}))}
+ function closeMenu(target,launchQuiz=false){if(!drawer.open||closing)return;closing=true;drawer.classList.remove('is-open');toggle.setAttribute('aria-expanded','false');setTimeout(()=>{drawer.close();document.body.style.overflow=previousOverflow;closing=false;if(target){history.pushState(null,'','#'+target.id);target.scrollIntoView({behavior:reduced.matches?'instant':'smooth',block:'start'});if(!target.hasAttribute('tabindex'))target.setAttribute('tabindex','-1');target.focus({preventScroll:true});if(launchQuiz)document.querySelector('#openRealityQuiz').click()}else toggle.focus({preventScroll:true})},reduced.matches?0:280)}
+ drawer.addEventListener('close',()=>{drawer.classList.remove('is-open');toggle.setAttribute('aria-expanded','false');document.body.style.overflow=previousOverflow;closing=false});
+ toggle.addEventListener('click',openMenu);close.addEventListener('click',()=>closeMenu());drawer.addEventListener('cancel',event=>{event.preventDefault();closeMenu()});
+ drawer.addEventListener('click',event=>{if(event.target===drawer){const bounds=drawer.getBoundingClientRect();if(event.clientX<bounds.left||event.clientX>bounds.right||event.clientY<bounds.top||event.clientY>bounds.bottom)closeMenu()}});
+ drawer.querySelectorAll('.section-menu-links a').forEach(link=>link.addEventListener('click',event=>{const target=document.getElementById(link.hash.slice(1));if(!target)return;event.preventDefault();drawer.querySelectorAll('a[aria-current]').forEach(a=>a.removeAttribute('aria-current'));link.setAttribute('aria-current','location');closeMenu(target,target.id==='reality-check')}));
+})();

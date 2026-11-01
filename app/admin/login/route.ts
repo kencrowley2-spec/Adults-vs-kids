@@ -1,0 +1,2 @@
+const env = process.env;import {loginPage} from '../../../lib/member-pages';import {verifiedMember,memberReply,memberRedirect} from '../../../lib/auth/session';
+export const dynamic='force-dynamic';export async function GET(request:Request){const auth=await verifiedMember(request);if(auth.isAdmin)return memberRedirect('/admin',auth.headers);return memberReply(loginPage('admin','',env.AUTH_EMAIL_READY==='true'),200,auth.headers)}

@@ -1,0 +1,24 @@
+<!doctype html><html><head><title>Adults vs. Kids · Local API verification</title></head><body><h1>Local API verification</h1><p>Runs only on terminal.local. Creates and removes QA records in the local preview database.</p><button id="run">Run account and privacy checks</button><pre id="result"></pre><script>
+document.getElementById('run').onclick=async()=>{const out=document.getElementById('result');if(location.hostname!=='terminal.local'){out.textContent='Local preview only';return}const lines=[],base=location.origin;const assert=(ok,label)=>{if(!ok)throw Error(label);lines.push('PASS '+label);out.textContent=lines.join('\n')};async function req(path,data,user='avk-qa-a',method){const headers={'Content-Type':'application/json'};if(user){headers['oai-authenticated-user-id']=user;headers['oai-authenticated-user-email']=user+'@sites.test'}const r=await fetch('/api/'+path,{method:method||(data?'POST':'GET'),headers,...(data?{body:JSON.stringify(data)}:{})});return{status:r.status,value:await r.json()}}
+try{
+assert((await req('me',null,null)).value.user===null,'anonymous visitors have no account identity');
+assert((await req('profile',{name:'QA Family A',marketing:false})).status===200,'profile saved without marketing opt-in');
+assert((await req('profile',{name:'QA Family B'},'avk-qa-b')).status===200,'second family created');
+const first=(await req('clock',{})).value.clock_started_at;assert(first>0&&(await req('clock',{})).value.clock_started_at===first,'personal clock activation is permanent and idempotent');
+assert((await req('quiz',{answers:[3,3,3,3,3,3],age:'4-7'})).value.grade==='A','A grade is attainable');
+assert((await req('quiz',{answers:[0,0,0,0,0,0],age:'4-7'})).value.grade==='F','low scores are graded transparently');
+assert((await req('quiz',{answers:[99,99,99,99,99,99],age:'4-7'})).status===400,'invalid quiz scores are rejected');
+const session={id:'avk-qa-session-0001',seconds:90,rounds:2};await req('session',session);await req('session',session);const me=(await req('me')).value;
+assert(me.play.sessions===1&&me.play.seconds===90,'duplicate game session cannot double count playtime');
+assert((await req('me',null,'avk-qa-b')).value.quizzes.length===0,'family accounts cannot see another family’s report cards');
+assert((await req('progress',{rounds:['0:1','0:2']})).status===200,'challenge progress is saved');
+assert((await req('progress',{rounds:['0:99']})).status===400,'invalid round numbers are rejected');
+assert((await req('message',{kind:'challenge',body:'A QA idea for a paper game.',permission:false})).status===400,'creator permission is required');
+assert((await req('message',{kind:'feedback',body:'QA feedback, local test only.'})).status===200,'private founder message saved');
+assert((await req('founder-inbox')).status===403,'founder inbox is protected');
+assert((await req('legacy-interest',{})).status===200,'interest registration saves without issuing membership');
+assert((await req('profile',{},'avk-qa-a','DELETE')).status===200,'family record deletion works');
+assert((await req('profile',{},'avk-qa-b','DELETE')).status===200,'second QA family removed');
+lines.push('ALL CHECKS PASSED');out.textContent=lines.join('\n');
+}catch(e){out.textContent+='\nFAIL '+e.message;}
+};</script></body></html>

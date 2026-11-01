@@ -1,0 +1,1 @@
+export function isAdministrator(user:{email?:string;email_confirmed_at?:string}|null,designatedEmail?:string){return !!user?.email_confirmed_at&&!!user.email&&!!designatedEmail&&user.email.toLowerCase()===designatedEmail.trim().toLowerCase()}

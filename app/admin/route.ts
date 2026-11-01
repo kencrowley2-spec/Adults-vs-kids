@@ -1,0 +1,2 @@
+import {adminPage,accessDeniedPage} from '../../lib/member-pages';import {verifiedMember,memberReply,memberRedirect} from '../../lib/auth/session';
+export const dynamic='force-dynamic';export async function GET(request:Request){const auth=await verifiedMember(request);if(!auth.user)return memberRedirect('/admin/login',auth.headers);if(!auth.isAdmin)return memberReply(accessDeniedPage(),403,auth.headers);return memberReply(adminPage(),200,auth.headers)}

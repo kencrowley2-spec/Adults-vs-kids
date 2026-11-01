@@ -1,0 +1,23 @@
+{
+  "book": 4,
+  "title": "The Ultimate Young Adult Challenge",
+  "pages": 90,
+  "status": "official-final",
+  "source_library_file_id": "libfile_b446e20585648191a67286029290565f",
+  "source_sha256": "e9bf87ab01837fe8aacd256fb8c2436207cb4b1e32188e8dd3e781a38df3d445",
+  "public_demo_original_pages": [
+    2,
+    3,
+    4,
+    5,
+    6,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16
+  ],
+  "full_pdf_public": false,
+  "fulfillment": "Pending private paid-delivery integration; original retained in the owner upload."
+}
