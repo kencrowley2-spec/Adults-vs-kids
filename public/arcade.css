@@ -93,3 +93,10 @@ main{padding-top:28px}
 .memory-card{transition:background-color .12s,transform .12s;touch-action:manipulation}.memory-card.face-up{transform:translateY(-2px)}.memory-card.matched{background:#ffd522;box-shadow:0 0 10px #ffd52280}
 #game-stage .auto-note{font-size:12px;color:#666}
 @media(prefers-reduced-motion:reduce){.arcade-feedback .arcade-bulbs i{animation:none!important;box-shadow:none!important}.memory-card.face-up{transform:none}}
+
+/* Large, heavy direction arrows for Maze Dash on phones and desktops. */
+.maze-controls .answer{display:flex;align-items:center;justify-content:center;gap:12px;min-height:86px;padding:12px 10px;border:3px solid #111;background:#ffd522;color:#111;box-shadow:0 4px 0 #111;font-weight:900}
+.maze-controls .maze-direction-arrow{font-family:Arial,Helvetica,sans-serif;font-size:48px;line-height:1;font-weight:900;-webkit-text-stroke:1.4px currentColor}
+.maze-controls .maze-direction-label{font-size:17px;font-weight:900}
+.maze-controls .answer:hover:not(:disabled){background:#ffe66c}
+.maze-controls .answer:active:not(:disabled){transform:translateY(3px);box-shadow:0 1px 0 #111}

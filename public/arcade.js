@@ -363,7 +363,7 @@ function mazeDash(){
       const b=button(label,()=>{
         if(settled||cells[position][d])return;
         position+=delta[d];steps++;if(position===cells.length-1)return finish(true);draw();
-      },$('maze-controls'),'answer');b.disabled=cells[position][d];
+      },$('maze-controls'),'answer');b.innerHTML=`<span class="maze-direction-arrow" aria-hidden="true">${label[0]}</span> <span class="maze-direction-label">${label.slice(2)}</span>`;b.setAttribute('aria-label',label.slice(2));b.disabled=cells[position][d];
     });
   }
   draw();startClock(45,()=>finish(false));status('Find the flag. You can only move through open paths.');
