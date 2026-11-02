@@ -332,16 +332,28 @@ function challenge(){
 }
 
 function rockPaperScissors(){
-  const choices=[null,null],moves=['Rock ✊','Paper ✋','Scissors ✌️'];
+  const choices=[null,null],labels=['Rock','Paper','Scissors'],hands=['✊','✋','✌️'],moves=labels.map((label,i)=>`${label} ${hands[i]}`);
   const first=starter;
+  function reveal(){
+    const winner=rpsWinner(choices);
+    const rule=winner===null?'Same move — it’s a tie!':choices[winner]===0?'Rock beats scissors!':choices[winner]===1?'Paper covers rock!':'Scissors cut paper!';
+    screen(`<div class="rps-battle"><p class="eyebrow">BOTH MOVES ARE LOCKED IN</p><h3>SHOW YOUR HANDS!</h3><div class="rps-battle-board"><div class="rps-battle-team"><b>★ ADULTS</b><span class="rps-battle-hand" role="img" aria-label="${labels[choices[0]]}">${hands[choices[0]]}</span><strong>${labels[choices[0]]}</strong></div><span class="rps-battle-vs">VS.</span><div class="rps-battle-team kids"><b>✦ KIDS</b><span class="rps-battle-hand" role="img" aria-label="${labels[choices[1]]}">${hands[choices[1]]}</span><strong>${labels[choices[1]]}</strong></div></div><p id="rps-battle-call" role="status">Rock… Paper… Scissors… SHOWDOWN!</p></div>`);
+    react('tap','SHOWDOWN!');status('Both teams: watch the showdown!');
+    later(()=>{$('rps-battle-call').textContent=rule;react(winner===null?'turn':'match',winner===null?'TIE!':`${teamName(winner)} take the round!`);},1100);
+    later(()=>finishRound(winner,`Adults: ${moves[choices[0]]} · Kids: ${moves[choices[1]]}. ${rule}`),2600);
+  }
   function choose(){
     screen(`<p class="eyebrow">${teamName(turn).toUpperCase()} · SECRET MOVE</p><h3>What’s your move?</h3><p>Other team: look away. Your choice stays hidden until both teams have picked.</p><div id="rps-options" class="rps-options"></div>`);
-    moves.forEach((move,i)=>button(move,()=>{
-      if(choices[turn]!==null)return;choices[turn]=i;
-      if(choices[1-turn]===null){
-        handoff(1-first,'The first move is hidden. Choose yours without looking back.',choose);
-      }else finishRound(rpsWinner(choices),`Adults: ${moves[choices[0]]} · Kids: ${moves[choices[1]]}`);
-    },$('rps-options'),'answer'));
+    moves.forEach((move,i)=>{
+      const pick=button(move,()=>{
+        if(choices[turn]!==null)return;choices[turn]=i;
+        if(choices[1-turn]===null){
+          handoff(1-first,'The first move is hidden. Choose yours without looking back.',choose);
+        }else reveal();
+      },$('rps-options'),'answer rps-choice');
+      pick.innerHTML=`<span class="rps-choice-label">${labels[i]}</span> <span class="rps-choice-hand" aria-hidden="true">${hands[i]}</span>`;
+      pick.setAttribute('aria-label',labels[i]);
+    });
     status(`${teamName(turn)}: pick a secret move.`);focusFirst();
   }
   choose();
