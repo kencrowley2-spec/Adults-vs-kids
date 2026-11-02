@@ -20,7 +20,8 @@ export async function POST(request:Request){
   if(error)throw error;if((count??0)>=20)return reply({error:'Please wait before starting another checkout.'},429);
   const attempt=crypto.randomUUID();const saved=await db.from('pdf_checkout_attempts').insert({id:attempt,user_id:auth.user.id});if(saved.error)throw saved.error;
   const origin=paymentOrigin();
-  const session=await stripe.checkout.sessions.create({mode:'payment',client_reference_id:auth.user.id,customer_email:auth.user.email,line_items:items,metadata:{avk_type:'pdf-v1',avk_products:JSON.stringify(products.map(p=>p.id))},payment_intent_data:{metadata:{avk_type:'pdf-v1',avk_user_id:auth.user.id}},success_url:origin+'/family/downloads?session_id={CHECKOUT_SESSION_ID}',cancel_url:origin+'/downloads?cancelled=1',expires_at:Math.floor(Date.now()/1000)+1800},{idempotencyKey:'avk-pdf-'+attempt});
+  // Keep the standard payment choices while hiding Link express checkout and enrollment.
+  const session=await stripe.checkout.sessions.create({mode:'payment',wallet_options:{link:{display:'never'}},client_reference_id:auth.user.id,customer_email:auth.user.email,line_items:items,metadata:{avk_type:'pdf-v1',avk_products:JSON.stringify(products.map(p=>p.id))},payment_intent_data:{metadata:{avk_type:'pdf-v1',avk_user_id:auth.user.id}},success_url:origin+'/family/downloads?session_id={CHECKOUT_SESSION_ID}',cancel_url:origin+'/downloads?cancelled=1',expires_at:Math.floor(Date.now()/1000)+1800},{idempotencyKey:'avk-pdf-'+attempt});
   if(!session.url)throw new Error('Missing checkout');return reply({url:session.url});
  }catch{return reply({error:'Checkout is temporarily unavailable. Please try again.'},503)}
 }

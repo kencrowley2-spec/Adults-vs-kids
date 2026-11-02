@@ -56,3 +56,31 @@ const confirmation=moduleAt('app/api/pdf/confirm/route.ts',{
 const confirmRequest=new Request('https://adultsvskids.com/api/pdf/confirm',{method:'POST',headers:{origin:'https://adultsvskids.com','content-type':'application/json'},body:JSON.stringify({session_id:'cs_test_fixture123'})});
 assert.equal((await confirmation.POST(confirmRequest)).status,404);assert.equal(confirms,0);
 console.log('PASS: PDF price/identity/mode validation, four-book bundle, unpaid/expired sessions, forged/tampered/stale webhooks, refund revocation, and cross-family confirmation denial.');
+
+// Real checkout route: Link is hidden while dynamic payment methods and all
+// existing PDF prices, account metadata and delivery URLs remain in place.
+const originalBundlePrice=process.env.STRIPE_PDF_BUNDLE_PRICE;
+process.env.STRIPE_PDF_BUNDLE_PRICE='price_fixture_bundle';
+let checkoutParams;
+const checkoutRoute=moduleAt('app/api/pdf/checkout/route.ts',{
+ '../../../../lib/auth/session':{verifiedMember:async()=>({user:{id:owner,email:'family@example.test'},headers:new Headers()}),memberReply:(data,status)=>Response.json(data,{status})},
+ '../../../../lib/request-origin':{requestOrigin:()=> 'https://adultsvskids.com'},
+ '../../../../config/pdfs':catalog,
+ '../../../../lib/payments/server':{
+  availablePdfs:async()=>catalog.pdfProducts.map(p=>({...p,available:true})),
+  paymentLive:()=>false,paymentOrigin:()=> 'https://adultsvskids.com',
+  paymentAdmin:()=>({from:()=>({select:()=>({eq:()=>({gte:async()=>({count:0,error:null})})}),insert:async()=>({error:null})})}),
+  stripeClient:()=>({prices:{retrieve:async id=>({id,active:true,type:'one_time',currency:'usd',unit_amount:995,livemode:false})},checkout:{sessions:{create:async params=>{checkoutParams=params;return {url:'https://checkout.stripe.com/c/pay/cs_test_fixture'};}}}}),
+ },
+});
+const created=await checkoutRoute.POST(new Request('https://adultsvskids.com/api/pdf/checkout',{method:'POST',headers:{origin:'https://adultsvskids.com','content-type':'application/json'},body:JSON.stringify({products:['bundle']})}));
+assert.equal(created.status,200);
+assert.equal(checkoutParams.wallet_options.link.display,'never');
+assert.equal(checkoutParams.payment_method_types,undefined);
+assert.equal(checkoutParams.allowed_payment_method_types,undefined);
+assert.equal(checkoutParams.excluded_payment_method_types,undefined);
+assert.equal(checkoutParams.client_reference_id,owner);
+assert.deepEqual(Array.from(checkoutParams.line_items,i=>i.price),['price_fixture_bundle']);
+assert.match(checkoutParams.success_url,/\/family\/downloads\?session_id=/);
+if(originalBundlePrice===undefined)delete process.env.STRIPE_PDF_BUNDLE_PRICE;else process.env.STRIPE_PDF_BUNDLE_PRICE=originalBundlePrice;
+console.log('PASS: PDF Checkout creation hides only Link while retaining dynamic payment methods, bundle price, account ownership and delivery URL.');
