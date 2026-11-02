@@ -107,10 +107,7 @@ function openGame(id){
   series=null;
   game=GAMES.find(g=>g.id===id); rememberGame(id); lobby.hidden=true; arena.hidden=false;
   $('game-title').textContent=`${game.icon} ${game.name}`; used={}; wins=[0,0]; round=1; attempt=0; starter=0; turn=0; champion=-1; results=[];
-  scoreboard(); screen(`<div class="intro"><span class="giant-icon">${game.icon}</span><p class="eyebrow">${game.tag}</p><h3>Parents vs. kids.<br>Bring your game face.</h3><p>${game.description}</p><div class="rule-chips"><span>2 teams · 1 device</span><span>First to 3 round wins</span></div></div>`);
-  button('Parents first →',()=>{starter=0;beginRound();});
-  button('Kids first →',()=>{starter=1;beginRound();});
-  status('Who goes first? Choose parents or kids to start the match.'); focusFirst();
+  starter=Math.random()<.5?0:1;turn=starter;beginRound();
 }
 function startSeries(){
   clearTimeout(featuredTimer);
@@ -119,11 +116,7 @@ function startSeries(){
   startRecording('series',series.games.map(g=>g.id));
   wins=[0,0]; round=1; attempt=0; starter=0; turn=0; champion=-1; results=[]; used={};
   game=series.games[0]; lobby.hidden=true; arena.hidden=false;
-  $('game-title').textContent='Random 3 Game Pick Challenge'; scoreboard();
-  screen('<div class="intro"><span class="giant-icon">🏆</span><p class="eyebrow">BEST OF THREE DIFFERENT GAMES</p><h3>Three games.<br>One family showdown.</h3><p>Your random lineup is ready! Play one round of each game. Each win earns one series point. We play all three, even if a team wins the first two. Ties replay the same game.</p><div class="rule-chips"><span>No repeat games</span><span>Automatic next game</span><span>Most game wins takes it</span></div></div>');
-  button('Parents first →',()=>{series.first=0;startSeriesGame();});
-  button('Kids first →',()=>{series.first=1;startSeriesGame();});
-  status('Choose who starts game one. Starting teams alternate each game.'); focusFirst();
+  series.first=Math.random()<.5?0:1;startSeriesGame();
 }
 function startSeriesGame(){
   clearTimers(); game=series.games[series.index]; round=series.index+1; attempt=0;
@@ -135,14 +128,13 @@ function finishSeriesGame(winner,detail){
   const complete=series.winners.length===3;
   champion=complete?(wins[0]>wins[1]?0:1):-1; scoreboard();
   if(complete)saveCompleted();
-  screen(`<div class="result"><span class="giant-icon">${winner===null?'🤝':complete?'🏆':'🎉'}</span><p class="eyebrow">${complete?'SERIES COMPLETE':winner===null?'TIE · SAME GAME':'GAME COMPLETE'}</p><h3>${complete?`${teamName(champion)} win the series!`:winner===null?'It’s a tie!':`${teamName(winner)} win game ${series.index+1}!`}</h3><p>${detail}</p><div class="final-score">${wins[0]} <span>–</span> ${wins[1]}</div><p>${complete?'Three games. One great time together. High fives all around.':winner===null?'No point awarded. Replay this game to settle it.':`Up next: ${series.games[series.index+1].icon} ${series.games[series.index+1].name}. Starting in <strong id="next-game-countdown">5</strong> seconds…`}</p></div>`);
+  screen(`<div class="result"><span class="giant-icon">${winner===null?'🤝':complete?'🏆':'🎉'}</span><p class="eyebrow">${complete?'SERIES COMPLETE':winner===null?'TIE · SAME GAME':'GAME COMPLETE'}</p><h3>${complete?`${teamName(champion)} win the series!`:winner===null?'It’s a tie!':`${teamName(winner)} win game ${series.index+1}!`}</h3><p>${detail}</p><div class="final-score">${wins[0]} <span>–</span> ${wins[1]}</div><p>${complete?'Three games. One great time together. High fives all around.':winner===null?'No point awarded. Replay this game to settle it.':`Up next: ${series.games[series.index+1].icon} ${series.games[series.index+1].name}. Starting in <strong id="next-game-countdown">2</strong> seconds…`}</p></div>`);
   if(complete){button('New random challenge →',startSeries);button('Return to Arcade',()=>{$('arcade-return').click();},stage,'text-button');}
-  else if(winner===null) button('Replay game →',()=>{attempt++;starter=1-starter;beginRound();});
+  else if(winner===null){later(()=>{attempt++;starter=1-starter;beginRound();},2200);}
   else {
     // Both countdown and button use one guarded transition; screen changes cancel timers.
-    let moved=false,remaining=5;
+    let moved=false,remaining=2;
     const next=()=>{if(moved)return;moved=true;series.index++;startSeriesGame();};
-    button('Next game now →',next);
     const tick=()=>{remaining--;if(remaining===0)return next();$('next-game-countdown').textContent=remaining;later(tick,1000);};
     later(tick,1000);
   }
@@ -150,8 +142,16 @@ function finishSeriesGame(winner,detail){
   status(complete?`${teamName(champion)} win the series ${wins[champion]}–${wins[1-champion]}.`:winner===null?'Tie! Replay this game.':`${teamName(winner)} earn one series point.`);focusFirst();
 }
 function handoff(team,detail,action){
-  turn=team; scoreboard(); screen(`<div class="handoff"><span class="giant-icon" aria-hidden="true">${team===0?'🙌':'✌️'}</span><p class="eyebrow">PASS THE DEVICE</p><h3>${teamName(team)}, you’re up!</h3><p>${detail}</p><small>Other team: cheer them on. Keep answers to yourself!</small></div>`);
-  button(`${teamName(team)} ready →`,action); status('The game waits while you pass the device.'); focusFirst();
+  turn=team;scoreboard();
+  screen(`<div class="handoff"><span class="giant-icon" aria-hidden="true">${team===0?'🙌':'✌️'}</span><p class="eyebrow">PASS THE DEVICE · STARTING AUTOMATICALLY</p><h3>${teamName(team)}, you’re up!</h3><p>${detail}</p><p id="handoff-countdown" class="handoff-countdown" style="font-size:42px;font-weight:900;color:#111">4</p><small>Get ready. No button needed.</small></div>`);
+  status(`${teamName(team)} start in four seconds. Pass the device.`);
+  let remaining=4;
+  function tick(){
+    if(document.hidden){later(tick,250);return;}
+    remaining--;if(remaining===0){action();focusFirst();return;}
+    $('handoff-countdown').textContent=remaining;later(tick,1000);
+  }
+  later(tick,1000);
 }
 function beginRound(){
   results=[]; turn=starter; scoreboard(); status('');
@@ -168,7 +168,7 @@ function beginRound(){
   teamReady(starter);
 }
 function teamReady(team,previous=''){
-  let detail=`Your own turn starts only when you’re ready. ${game.description}`;
+  let detail=`Your turn starts after the countdown. ${game.description}`;
   if(game.id==='challenge') detail=`Pick ONE player per team. Same challenge, same 20 seconds. ${game.challenge[0]}: ${game.challenge[1]} The other team counts. You can play seated.`;
   handoff(team,(previous?previous+' ':'')+detail,()=>({spot, trivia:quiz,word:quiz,tap:quickTap,picture:quiz,number:quiz,challenge,maze:mazeDash,code:codeBreaker,golf:miniGolf}[game.id])());
 }
@@ -180,13 +180,15 @@ function finishRound(winner,detail){
   screen(`<div class="result"><span class="giant-icon">${winner===null?'🤝':champion>=0?'🏆':'🎉'}</span><p class="eyebrow">${champion>=0?'BRAGGING RIGHTS EARNED':winner===null?'EVEN STEVEN':'ROUND COMPLETE'}</p><h3>${winner===null?'It’s a tie!':`${teamName(winner)} ${champion>=0?'win the match!':'win this round!'}`}</h3><p>${detail}</p><div class="final-score">${wins[0]} <span>–</span> ${wins[1]}</div><p>${champion>=0?'High fives all around. The best win is playing together.':winner===null?'No round awarded. Let’s replay with a fresh challenge.':'Pass it back. The next round is waiting.'}</p></div>`);
   let moved=false;
   const nextRound=()=>{
-    if(moved)return;moved=true;
+    if(moved)return;
+    if(document.hidden){later(nextRound,250);return;}
+    moved=true;
     if(champion>=0) return openGame(game.id);
     if(winner!==null){round++; attempt=0;}else attempt++;
     starter=1-starter; beginRound();
   };
-  button(champion>=0?'Rematch →':winner===null?'Replay round →':'Next round →',nextRound);
-  if(champion<0&&['memory','tic','rps'].includes(game.id)){
+  if(champion>=0)button('Rematch →',nextRound);
+  if(champion<0){
     const note=document.createElement('p');note.className='auto-note';note.textContent='Next round starts automatically in 2 seconds…';stage.appendChild(note);later(nextRound,2200);
   }
   react(winner===null?'turn':'win',winner===null?'Tie — rematch!':`${teamName(winner)} win!`);
@@ -212,7 +214,7 @@ function memory(){
   const deck=shuffle([...ANIMALS,...ANIMALS]); let revealed=[],matched=new Set(),points=[0,0],locked=true,preview=true;
   screen('<div class="turn-strip" id="turn-strip"></div><div id="memory-cards" class="memory-grid"></div><div id="memory-action"></div>');
   function draw(){
-    $('turn-strip').textContent=preview?'Look closely! Cards hide in five seconds.':`${teamName(turn)}’ turn · Pairs: Adults ${points[0]} / Kids ${points[1]}`;
+    $('turn-strip').textContent=preview?`${teamName(turn)} go first! Look closely — cards hide in five seconds.`:`${teamName(turn)}’ turn · Pairs: Adults ${points[0]} / Kids ${points[1]}`;
     const holder=$('memory-cards');
     if(!holder.children.length)deck.forEach((symbol,i)=>button('?',()=>flip(i),holder,'memory-card'));
     deck.forEach((symbol,i)=>{
@@ -239,8 +241,7 @@ function memory(){
     draw();
   }
   draw(); status('Five-second preview — both teams can look!');
-  function hidePreview(){if(!preview)return;preview=false;locked=false;draw();$('memory-action').replaceChildren();status(`${teamName(turn)}: find a pair.`);}
-  button('Ready? Play now →',hidePreview,$('memory-action'));
+  function hidePreview(){if(!preview)return;if(document.hidden){later(hidePreview,250);return;}preview=false;locked=false;draw();$('memory-action').replaceChildren();status(`${teamName(turn)}: find a pair.`);}
   later(hidePreview,5000);
 }
 function tic(){
@@ -336,7 +337,7 @@ function quickTap(){
   screen('<div class="turn-strip"><span id="tap-progress"></span></div><div id="tap-zone"></div>');
   function prepare(){
     phase='ready';$('tap-progress').textContent=`${teamName(turn)} · Test ${trial+1} / 3`;
-    $('tap-zone').replaceChildren();button('Start reaction test →',wait,$('tap-zone'),'tap-pad ready');
+    $('tap-zone').replaceChildren();wait();
     status('Rest a finger near the pad. Wait for the yellow GO! signal, then tap.');
   }
   function wait(){
@@ -347,8 +348,7 @@ function quickTap(){
   function record(ms,early){
     if(phase!=='waiting'&&phase!=='green')return;phase='result';clearTimers();values.push(ms);trial++;
     $('tap-zone').replaceChildren();const p=document.createElement('p');p.className='reaction-result';p.textContent=early?'Too soon! +1,500 ms':ms>=1500?'Time’s up! 1,500 ms':`${ms} ms`;$('tap-zone').appendChild(p);
-    if(trial===3){const avg=Math.round(values.reduce((a,b)=>a+b,0)/3);button('Finish turn →',()=>finishTurn({score:avg,elapsed:avg,label:`${avg} ms average`}),$('tap-zone'));}
-    else button('Next test →',prepare,$('tap-zone'));
+    later(()=>{if(trial===3){const avg=Math.round(values.reduce((a,b)=>a+b,0)/3);finishTurn({score:avg,elapsed:avg,label:`${avg} ms average`});}else prepare();},1000);
     status('Lower is faster. Same three tests for each team.');
   }
   prepare();
@@ -459,11 +459,11 @@ function miniGolf(){
   function endHole(sunk){
     total+=sunk?shots:5;$('golf-controls').hidden=true;
     const note=document.createElement('p');note.textContent=sunk?`In the cup! ${shots} ${shots===1?'stroke':'strokes'}.`:'Four shots used. This hole counts as five strokes.';$('golf-hole-result').appendChild(note);
-    draw();button(hole===2?'Finish turn →':'Next hole →',()=>{
+    draw();later(()=>{
       if(finished)return;
       if(hole===2){finished=true;finishTurn({score:total,elapsed:0,label:`${total} strokes across 3 holes`});}
       else {hole++;startHole();}
-    },$('golf-hole-result'));
+    },1200);
     status(sunk?'Nice putt!':'Keep going! A new hole is waiting.');focusFirst();
   }
   const shoot=button('Putt →',()=>{

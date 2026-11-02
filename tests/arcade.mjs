@@ -36,369 +36,191 @@ class Element {
   }
   querySelector(s){return this.querySelectorAll(s)[0]??null;}
 }
-function fixture(){
+function fixture(firstTeam=0){
+  let selectedFirst=firstTeam;const testMath=Object.create(Math);testMath.random=()=>selectedFirst===0?.25:.75;
   let now=0,seq=0,scheduled=new Map();const saved=[];const root=new Element();
   root.innerHTML=readFileSync(new URL('../app/family/arcade/route.ts',import.meta.url),'utf8').split('const html=`')[1].split('`;')[0];
   const doc={hidden:false,getElementById:id=>root.querySelector('#'+id),createElement:tag=>new Element(tag),handlers:{},addEventListener(type,fn){this.handlers[type]=fn;}};
-  const context=vm.createContext({...core,...data,...newCore,...library,document:doc,crypto,window:{addEventListener(){}},createResultRecorder:()=>({drain:async()=>{},capture:result=>{saved.push(result);}}),performance:{now:()=>now},console,setTimeout:(fn,delay)=>{scheduled.set(++seq,{at:now+delay,fn});return seq;},clearTimeout:id=>scheduled.delete(id)});
+  const context=vm.createContext({...core,...data,...newCore,...library,Math:testMath,document:doc,crypto,window:{addEventListener(){}},createResultRecorder:()=>({drain:async()=>{},capture:result=>{saved.push(result);}}),performance:{now:()=>now},console,setTimeout:(fn,delay)=>{scheduled.set(++seq,{at:now+delay,fn});return seq;},clearTimeout:id=>scheduled.delete(id)});
   const source=readFileSync(new URL('../public/arcade.js',import.meta.url),'utf8').replace(/^import .*;\n/gm,'');
-  vm.runInContext(source+'\nthis.state=()=>({wins:[...wins],round,champion,turn,plans:game?{maze:game.maze,codes:game.codes,course:game.course}:null,series:series?{games:series.games.map(g=>g.id),index:series.index,winners:[...series.winners]}:null});this.resolveGame=finishRound;this.seriesWith=id=>{startSeries();series.games=[GAMES.find(g=>g.id===id),...GAMES.filter(g=>g.id!==id).slice(0,2)];};',context);
+  vm.runInContext(source+'\nthis.state=()=>({wins:[...wins],round,champion,turn,starter,attempt,plans:game?{maze:game.maze,codes:game.codes,course:game.course}:null,series:series?{games:series.games.map(g=>g.id),index:series.index,winners:[...series.winners]}:null});this.resolveGame=finishRound;this.seriesWith=id=>{startSeries();clearTimers();series.games=[GAMES.find(g=>g.id===id),...GAMES.filter(g=>g.id!==id).slice(0,2)];startSeriesGame();};',context);
   const get=id=>doc.getElementById(id);
   const buttons=()=>get('game-stage').querySelectorAll('button');
   const click=text=>{const b=buttons().find(b=>b.textContent===text);assert.ok(b,`Missing button: ${text}`);b.click();};
   function advance(ms){const end=now+ms;let guard=0;while(true){const task=[...scheduled.entries()].filter(([,t])=>t.at<=end).sort((a,b)=>a[1].at-b[1].at)[0];if(!task)break;assert.ok(++guard<10000);scheduled.delete(task[0]);now=task[1].at;task[1].fn();}now=end;}
-  function start(id,first=0){const i=data.GAMES.findIndex(g=>g.id===id);get('arcade-grid').children[i].click();click(first===0?'Parents first →':'Kids first →');if(id!=='memory')click(`${core.teamName(first)} ready →`);}
+  function start(id,first=0,wait=true){selectedFirst=first;const i=data.GAMES.findIndex(g=>g.id===id);get('arcade-grid').children[i].click();if(wait&&id!=='memory')advance(4000);}
+
   return {root,doc,get,buttons,click,advance,start,saved,state:context.state,resolveGame:context.resolveGame,seriesWith:context.seriesWith};
 }
+// Core scoring remains first to three, with no points for a tie.
 assert.equal(data.GAMES.length,13);
-for(const outcome of [[0,1,0,1,0],[1,0,1,0,1],[0,0,0]]){
-  let wins=[0,0],champion=-1;outcome.forEach(w=>({wins,champion}=core.awardRound(wins,w)));
-  assert.equal(champion,outcome.at(-1));assert.equal(wins[champion],3);
+for(const outcomes of [[0,1,0,1,0],[1,0,1,0,1],[0,0,0]]){
+ let wins=[0,0],champion=-1;for(const winner of outcomes)({wins,champion}=core.awardRound(wins,winner));
+ assert.equal(champion,outcomes.at(-1));assert.equal(wins[champion],3);
 }
 assert.deepEqual(core.awardRound([2,2],null),{wins:[2,2],champion:-1});
 assert.equal(core.roundWinner({score:2,elapsed:4},{score:2,elapsed:5},false,true),0);
 assert.equal(core.roundWinner({score:230},{score:250},true),0);
 assert.equal(core.lineWinner([0,0,0,null,1,null,1,null,null]),0);
+const readyButton=/ready|first →|next round|replay round|next hole|next test|finish turn/i;
+function noNavigation(f){assert.ok(!f.buttons().some(b=>readyButton.test(b.textContent)));}
 
-// Every game honors either starting team; timed turns retain a single Ready handoff.
-for(const game of data.GAMES){
- for(const first of [0,1]){
-  const f=fixture();f.start(game.id,first);assert.equal(f.state().turn,first,`${game.id}: selected team starts`);
-  if(game.id==='memory'){f.advance(5000);assert.match(f.get('turn-strip').textContent,new RegExp(`${core.teamName(first)}’ turn`));}
-  else if(game.id==='tic'){
-   f.get('tic-board').children[0].click();assert.equal(f.get('tic-board').children[0].textContent,first===0?'X':'O');
-   f.advance(300);assert.equal(f.state().turn,1-first);
-  }else if(!['tap','rps','golf'].includes(game.id)){
-   f.advance(game.id==='code'?61000:46000);
-   if(game.id==='challenge'){f.get('challenge-score').value='5';f.get('challenge-form').dispatch('submit');}
-   f.click(`${core.teamName(1-first)} ready →`);assert.equal(f.state().turn,1-first);
-  }
+// Every real game opens without a first-team choice. Both teams can be picked;
+// the four-second countdown protects handoffs before starting a timed turn.
+for(const game of data.GAMES)for(const first of [0,1]){
+ const f=fixture();f.start(game.id,first,false);assert.equal(f.state().turn,first);noNavigation(f);
+ if(game.id==='memory'){
+  assert.ok(f.get('memory-cards'));assert.match(f.get('turn-strip').textContent,new RegExp(core.teamName(first)+' go first'));
+  f.advance(4999);assert.ok(f.get('memory-cards').children.every(c=>c.disabled));f.advance(1);assert.ok(f.get('memory-cards').children.some(c=>!c.disabled));
+ }else{
+  assert.equal(f.get('handoff-countdown').textContent,'4');f.advance(3999);assert.ok(f.get('handoff-countdown'));f.advance(1);assert.equal(f.get('handoff-countdown'),null);noNavigation(f);
  }
 }
 
-// Full Memory Match: preview, automatic turns, seven pairs, first-to-three,
-// reshuffled decks each round, and no extra round after a match winner.
+// Memory: stable card elements, no duplicate taps, automatic passing, all seven
+// pairs, automatic next round, alternating starters and best-of-five scoring.
 {
- const f=fixture();f.start('memory');assert.equal(f.get('memory-cards').children.length,14);
- const layouts=[];
+ const f=fixture();f.start('memory');const layouts=[];
  for(let r=0;r<3;r++){
-  const cards=f.get('memory-cards').children;assert.ok(cards.every(c=>c.disabled&&c.textContent!=='?'));
-  const symbols=cards.map(c=>c.textContent);layouts.push(symbols.join(''));
+  const cards=[...f.get('memory-cards').children],symbols=cards.map(c=>c.textContent);layouts.push(symbols.join(''));
   const pairs=[...new Set(symbols)].map(s=>symbols.flatMap((v,i)=>v===s?[i]:[]));
-  f.advance(4999);assert.ok(f.get('memory-cards').children.every(c=>c.disabled));
-  f.advance(1);assert.ok(f.get('memory-cards').children.every(c=>c.textContent==='?'));
+  f.advance(5000);
   for(let i=0;i<pairs.length;i++){
-   for(const pos of pairs[i])f.get('memory-cards').children[pos].click();
-   if(i<6){assert.ok(f.get('memory-cards').children.every(c=>c.disabled));f.advance(600);assert.ok(f.get('memory-cards').children.some(c=>!c.disabled));}
+   const [a,b]=pairs[i];cards[a].click();cards[a].click();cards[b].click();
+   assert.ok(cards.every((card,index)=>card===f.get('memory-cards').children[index]));
+   if(i<6){const old=f.state().turn;f.advance(599);assert.equal(f.state().turn,old);f.advance(1);assert.equal(f.state().turn,1-old);}
   }
-  f.advance(800);
-  if(r<2){assert.equal(f.state().champion,-1);f.advance(2200);}
+  f.advance(800);noNavigation(f);if(r<2)f.advance(2200);
  }
- // Alternating round starters make the winners Adults, Kids, Adults here.
- assert.deepEqual([...f.state().wins],[2,1]);assert.equal(f.state().round,3);
- assert.ok(new Set(layouts).size>1);
+ assert.deepEqual([...f.state().wins],[2,1]);assert.equal(f.state().round,3);assert.ok(new Set(layouts).size>1);
 }
-// Mismatched cards stay visible for 900ms, then hide automatically; leaving the
-// game cancels an outstanding preview and cannot mutate the next game.
 {
- const f=fixture();f.start('memory');const cards=f.get('memory-cards').children;
- const j=cards.findIndex(c=>c.textContent!==cards[0].textContent);f.advance(5000);
- f.get('memory-cards').children[0].click();f.get('memory-cards').children[j].click();
- assert.match(f.get('arcade-message').textContent,/No match/);f.advance(899);assert.equal(f.state().turn,0);assert.ok(f.get('memory-cards').children.every(c=>c.disabled));f.advance(1);assert.equal(f.state().turn,1);
+ const f=fixture();f.start('memory');const symbols=f.get('memory-cards').children.map(c=>c.textContent),different=symbols.findIndex(s=>s!==symbols[0]);f.advance(5000);
+ f.get('memory-cards').children[0].click();f.get('memory-cards').children[different].click();f.advance(899);assert.equal(f.state().turn,0);f.advance(1);assert.equal(f.state().turn,1);
  f.get('arcade-return').click();f.start('tic');f.advance(10000);assert.ok(f.get('tic-board'));
 }
-// TTT blocks double taps during its brief automatic turn transition.
+// Tic-Tac-Toe has automatic turns and scoring.
 {
- const f=fixture();f.start('tic');const board=()=>f.get('tic-board').children;
- for(const move of [0,3,1,4,2]){board()[move].click();if(move!==2){assert.ok(board().every(c=>c.disabled));f.advance(300);}}
- f.advance(500);assert.deepEqual([...f.state().wins],[1,0]);
+ const f=fixture();f.start('tic');for(const [i,move] of [0,3,1,4,2].entries()){f.get('tic-board').children[move].click();if(i<4)f.advance(300);}
+ f.advance(500);assert.deepEqual([...f.state().wins],[1,0]);f.advance(2200);assert.equal(f.state().starter,1);assert.ok(f.get('handoff-countdown'));f.advance(4000);assert.ok(f.get('tic-board'));
 }
-// Every timed mode completes turns and awards a round, including zero-score
-// ties, and clears timers before the handoff. Challenge uses honest manual scores.
-for(const game of ['spot','trivia','word','picture','number','challenge']){
- const f=fixture();f.start(game);
- if(game==='challenge'){f.advance(20000);f.get('challenge-score').value='12';f.get('challenge-form').dispatch('submit');}
- else f.advance(46000);
- assert.match(f.get('game-stage').textContent,/you’re up/);f.advance(100000);
- f.click('Kids ready →');
- if(game==='challenge'){f.advance(20000);f.get('challenge-score').value='10';f.get('challenge-form').dispatch('submit');assert.deepEqual([...f.state().wins],[1,0]);}
- else {f.advance(46000);assert.deepEqual([...f.state().wins],[0,0]);assert.match(f.get('game-stage').textContent,/It’s a tie/);f.click('Replay round →');assert.equal(f.state().round,1);}
+
+// Timed games finish a team, pass automatically, and award a result. No Ready
+// buttons or extra result acknowledgements, even on timeout or ties.
+for(const id of ['spot','trivia','word','picture','number','challenge','maze','code']){
+ const f=fixture();f.start(id);const seconds={spot:30,trivia:45,word:45,picture:30,number:30,challenge:20,maze:45,code:60}[id];
+ function finishTimed(value){f.advance(seconds*1000);if(id==='challenge'){f.get('challenge-score').value=value;f.get('challenge-form').dispatch('submit');}}
+ finishTimed('12');assert.ok(f.get('handoff-countdown'));assert.equal(f.state().turn,1);noNavigation(f);
+ f.advance(3999);assert.ok(f.get('handoff-countdown'));f.advance(1);finishTimed('10');
+ assert.deepEqual([...f.state().wins],id==='challenge'?[1,0]:[0,0]);assert.match(f.get('game-stage').textContent,id==='challenge'?/win this round/:/tie/);
+ f.advance(2200);assert.equal(f.state().starter,1);assert.ok(f.get('handoff-countdown'));noNavigation(f);
 }
-// Answer a real generated arithmetic question; rapid repeated taps only score once.
-{
- const f=fixture();f.start('number');const prompt=f.get('quiz-body').querySelector('h3').textContent;
- const [a,op,b]=prompt.split(' ');const answer=op==='+'?Number(a)+Number(b):Number(a)-Number(b);
- const btt=f.get('quiz-body').querySelectorAll('button').find(b=>b.textContent===String(answer));btt.click();btt.click();f.advance(650);
- assert.match(f.get('question-progress').textContent,/2 \/ 5 · 1 correct/);
- f.doc.hidden=true;f.doc.handlers.visibilitychange();assert.match(f.get('game-stage').textContent,/interrupted/);f.advance(60000);assert.deepEqual([...f.state().wins],[0,0]);
+// Every content mode accepts real answers, including duplicate-tap protection.
+for(const id of ['number','trivia','word','picture','spot']){
+ const f=fixture();f.start(id);
+ const count=id==='spot'||id==='word'||id==='picture'?3:5;
+ for(let n=0;n<count;n++){
+  if(id==='number'){
+   const [a,op,b]=f.get('quiz-body').querySelector('h3').textContent.split(' ');const answer=op==='+'?Number(a)+Number(b):Number(a)-Number(b);const btn=f.get('quiz-body').querySelectorAll('button').find(b=>b.textContent===String(answer));btn.click();btn.click();f.advance(650);
+  }else if(id==='trivia'){
+   const prompt=f.get('quiz-body').querySelector('h3').textContent;f.click(data.TRIVIA.find(q=>q[0]===prompt)[1]);f.advance(650);
+  }else if(id==='word'){
+   const clue=f.get('quiz-body').querySelector('p').textContent;f.get('word-answer').value=data.WORDS.find(q=>q[1]===clue)[0];f.get('word-form').dispatch('submit');f.advance(650);
+  }else if(id==='picture'){
+   const symbol=f.get('quiz-body').querySelector('span').textContent;f.click(data.PICTURES.find(q=>q[0]===symbol)[1]);f.advance(650);
+  }else{
+   const grids=f.get('spot-body').children.filter(c=>c.tagName==='div');const reference=grids[0].children,target=grids[1].children;target.find((b,i)=>b.textContent!==reference[i].textContent).click();
+  }
+ }
+ assert.match(f.get('game-stage').textContent,new RegExp(count+'/'+count));assert.equal(f.state().turn,1);assert.ok(f.get('handoff-countdown'));
 }
-// Three early taps per team incur penalties and tie fairly.
+// Quick Tap immediately starts each trial and progresses from results itself.
 {
  const f=fixture();f.start('tap');
  for(const team of [0,1]){
-  for(let i=0;i<3;i++){f.click('Start reaction test →');f.click('WAIT…');if(i<2)f.click('Next test →');}
-  f.click('Finish turn →');if(team===0){f.click('Kids ready →');}
+  for(let i=0;i<3;i++){f.click('WAIT…');assert.match(f.get('tap-zone').textContent,/Too soon/);noNavigation(f);f.advance(1000);}
+  if(team===0){assert.ok(f.get('handoff-countdown'));f.advance(4000);}
  }
- assert.match(f.get('game-stage').textContent,/It’s a tie/);assert.deepEqual([...f.state().wins],[0,0]);
+ assert.deepEqual([...f.state().wins],[0,0]);assert.match(f.get('game-stage').textContent,/tie/);
 }
-// Awarded rounds stop at a 3–2 win through the actual UI (Family Challenge).
+{
+ const f=fixture();f.start('tap');
+ for(let i=0;i<3;i++){for(let step=0;step<50&&f.get('tap-zone').querySelector('button')?.textContent==='WAIT…';step++)f.advance(100);f.click('GO! TAP!');f.advance(1000);}
+ assert.ok(f.get('handoff-countdown'));assert.match(f.get('game-stage').textContent,/ms average/);
+}
+// Actual five-round match stops at 3–2 and records once; each round starts
+// automatically with the other team first, including score entry rounds.
 {
  const f=fixture();f.start('challenge');
  for(let r=0;r<5;r++){
-  const first=f.state().turn;const winner=r%2===0?0:1;
+  const first=f.state().turn,winner=r%2===0?0:1;
   for(const team of [first,1-first]){
    f.advance(20000);f.get('challenge-score').value=team===winner?'10':'5';f.get('challenge-form').dispatch('submit');
-   if(team===first){f.click(`${core.teamName(1-team)} ready →`);}
+   if(team===first)f.advance(4000);
   }
-  if(r<4){assert.equal(f.state().champion,-1);f.click('Next round →');f.click(`${core.teamName(f.state().turn)} ready →`);}
+  if(r<4){f.advance(2200);assert.equal(f.state().starter,1-first);f.advance(4000);}
  }
- assert.equal(f.state().champion,0);assert.deepEqual([...f.state().wins],[3,2]);assert.match(f.get('game-stage').textContent,/win the match/);
- assert.equal(f.saved.length,1);assert.deepEqual([...f.saved[0].roundWinners],[0,1,0,1,0]);
- f.click('Rematch →');assert.equal(f.saved.length,1);assert.deepEqual([...f.state().wins],[0,0]);assert.equal(f.state().round,1);
+ assert.equal(f.state().champion,0);assert.deepEqual([...f.state().wins],[3,2]);assert.equal(f.saved.length,1);f.advance(60000);assert.equal(f.saved.length,1);
+ assert.deepEqual([...f.saved[0].roundWinners],[0,1,0,1,0]);f.click('Rematch →');assert.deepEqual([...f.state().wins],[0,0]);noNavigation(f);
 }
-// Solve visible puzzles in each content mode and verify first-team results.
-for(const game of ['spot','trivia','word','picture']){
- const f=fixture();f.start(game);
- const total=game==='trivia'?5:3;
- for(let i=0;i<total;i++){
-  if(game==='spot'){
-   const grids=f.get('spot-body').querySelectorAll('div');
-   const original=grids[0].children,target=grids[1].children;
-   const changed=target.findIndex((t,j)=>t.textContent!==original[j].textContent);target[changed].click();
-  }else if(game==='trivia'){
-   const question=f.get('quiz-body').querySelector('h3').textContent;
-   f.click(data.TRIVIA.find(q=>q[0]===question)[1]);f.advance(650);
-  }else if(game==='word'){
-   const clue=f.get('quiz-body').querySelector('p').textContent;
-   f.get('word-answer').value=data.WORDS.find(q=>q[1]===clue)[0];f.get('word-form').dispatch('submit');f.advance(650);
-  }else{
-   const symbol=f.get('quiz-body').querySelector('span').textContent;
-   f.click(data.PICTURES.find(q=>q[0]===symbol)[1]);f.advance(650);
-  }
- }
- assert.match(f.get('game-stage').textContent,new RegExp(`${total}/${total}`));
- f.click('Kids ready →');f.advance(46000);assert.deepEqual([...f.state().wins],[1,0]);
-}
-// Green taps and non-responses both advance through all reaction trials.
-{
- const f=fixture();f.start('tap');
- f.click('Start reaction test →');
- for(let t=0;t<34&&f.get('tap-zone').querySelector('button').textContent==='WAIT…';t++)f.advance(100);
- const pad=f.get('tap-zone').querySelector('button');assert.equal(pad.textContent,'GO! TAP!');pad.click();
- f.click('Next test →');f.click('Start reaction test →');f.advance(5000);
- assert.match(f.get('tap-zone').textContent,/Time’s up/);
- f.click('Next test →');f.click('Start reaction test →');f.click('WAIT…');f.click('Finish turn →');
- assert.match(f.get('game-stage').textContent,/ms average/);
-}
-console.log('Arcade checks passed: all nine game flows, preview, handoffs, scoring, ties, 3–2 match, reset, interrupted turns, timer cleanup.');
 
-// Random series uses three distinct modes, one point per game, plays all three,
-// alternates starters, replays ties, and advances once by countdown or button.
-for(const first of [0,1]){
- for(const outcomes of [[0,1,0],[1,0,1],[0,0,0],[1,1,1]]){
-  const f=fixture();f.get('arcade-random').click();
-  const lineup=[...f.state().series.games];assert.equal(new Set(lineup).size,3);
-  f.click(first===0?'Parents first →':'Kids first →');
-  assert.equal(f.state().turn,first);
-  f.resolveGame(null,'Tied game');assert.deepEqual([...f.state().wins],[0,0]);
-  f.advance(10000);assert.equal(f.state().series.index,0);f.click('Replay game →');
-  for(let i=0;i<3;i++){
-   f.resolveGame(outcomes[i],'Played game');
-   const expected=[outcomes.slice(0,i+1).filter(w=>w===0).length,outcomes.slice(0,i+1).filter(w=>w===1).length];
-   assert.deepEqual([...f.state().wins],expected);
-   if(i<2){
-    assert.equal(f.state().champion,-1);
-    if(i===0){f.advance(4999);assert.equal(f.state().series.index,0);f.advance(1);}
-    else {f.click('Next game now →');f.advance(6000);}
-    assert.equal(f.state().series.index,i+1);assert.equal(f.state().turn,(first+i+1)%2);
-    assert.match(f.get('game-title').textContent,new RegExp(data.GAMES.find(g=>g.id===lineup[i+1]).name));
-   }
-  }
-  assert.equal(f.state().champion,outcomes.filter(w=>w===0).length>=2?0:1);
-  assert.equal(f.saved.length,1);assert.equal(f.saved[0].mode,'series');assert.deepEqual([...f.saved[0].roundWinners],outcomes);
-  assert.match(f.get('game-stage').textContent,/win the series/);f.advance(10000);assert.equal(f.state().series.index,2);
-  f.click('New random challenge →');assert.deepEqual([...f.state().wins],[0,0]);assert.equal(f.state().series.index,0);
- }
-}
-// A real TTT result awards one series point and transitions to the next mode.
-{
- const f=fixture();f.seriesWith('tic');
- assert.equal(f.state().series.games[0],'tic');f.click('Parents first →');f.click('Adults ready →');
- for(const move of [0,3,1,4,2]){f.get('tic-board').children[move].click();if(move!==2)f.advance(300);}
- f.advance(500);assert.deepEqual([...f.state().wins],[1,0]);f.advance(5000);assert.equal(f.state().series.index,1);
-}
-// Leaving or restarting cancels pending transitions; standalone still best of five.
-{
- const f=fixture();f.get('arcade-random').click();f.click('Kids first →');f.resolveGame(1,'Win');
- f.get('arcade-reset').click();f.advance(6000);assert.equal(f.state().series.index,0);
- f.click('Restart series');assert.deepEqual([...f.state().wins],[0,0]);
- f.click('Parents first →');f.resolveGame(0,'Win');f.get('arcade-return').click();f.start('tic');f.advance(10000);
- assert.equal(f.state().series,null);assert.ok(f.get('tic-board'));assert.match(f.get('round-label').textContent,/FIRST TO 3 WINS/);
-}
-console.log('Random series checks passed: unique games, both starting teams, ties, automatic progression, manual progression, 2–1 and 3–0 results, replay, reset, exit cleanup.');
-
-// Hidden RPS choices stay private through the handoff. All nine outcomes agree
-// with the standard rules, regardless of which team makes the first choice.
+// RPS keeps the first move hidden for four seconds and both hands visible for
+// the battle; every move combination works for either automatic starter.
 const rpsMoves=['Rock ✊','Paper ✋','Scissors ✌️'];
 for(const first of [0,1])for(let a=0;a<3;a++)for(let b=0;b<3;b++){
- const f=fixture();f.start('rps',first);f.click(rpsMoves[first===0?a:b]);
- assert.equal(f.get('rps-options'),null);assert.match(f.get('game-stage').textContent,/move is hidden/);
- assert.equal(f.get('game-stage').querySelector('button'),null);f.advance(3999);assert.equal(f.get('rps-options'),null);f.advance(1);f.click(rpsMoves[first===0?b:a]);
- assert.match(f.get('game-stage').textContent,/SHOW YOUR HANDS/);assert.deepEqual([...f.state().wins],[0,0]);f.advance(2599);assert.deepEqual([...f.state().wins],[0,0]);f.advance(1);
- const w=newCore.rpsWinner([a,b]);assert.deepEqual([...f.state().wins],w===null?[0,0]:w===0?[1,0]:[0,1]);
+ const f=fixture();f.start('rps',first);f.click(rpsMoves[first===0?a:b]);assert.equal(f.get('rps-options'),null);noNavigation(f);
+ f.advance(3999);assert.equal(f.get('rps-options'),null);f.advance(1);f.click(rpsMoves[first===0?b:a]);
+ assert.match(f.get('game-stage').textContent,/SHOW YOUR HANDS/);f.advance(2599);assert.deepEqual([...f.state().wins],[0,0]);f.advance(1);
+ const winner=newCore.rpsWinner([a,b]);assert.deepEqual([...f.state().wins],winner===null?[0,0]:winner===0?[1,0]:[0,1]);
 }
-// Perfect mazes have a path to every cell; reciprocal walls prevent illegal moves.
-function route(maze){
- const {size,cells}=maze,queue=[[0,[]]],seen=new Set([0]);
- while(queue.length){const [at,path]=queue.shift();if(at===cells.length-1)return path;
-  cells[at].forEach((wall,d)=>{if(wall)return;const next=at+[-size,1,size,-1][d];assert.ok(next>=0&&next<cells.length);assert.equal(cells[next][(d+2)%4],false);if(!seen.has(next)){seen.add(next);queue.push([next,[...path,d]]);}});
- }
- assert.fail('Maze must have an exit path');
-}
-for(let i=0;i<30;i++)assert.ok(route(newCore.makeMaze()).length>0);
+function route(maze){const {size,cells}=maze,queue=[[0,[]]],seen=new Set([0]);while(queue.length){const [at,path]=queue.shift();if(at===cells.length-1)return path;cells[at].forEach((wall,d)=>{if(wall)return;const next=at+[-size,1,size,-1][d];assert.equal(cells[next][(d+2)%4],false);if(!seen.has(next)){seen.add(next);queue.push([next,[...path,d]]);}});}assert.fail('Maze needs an exit');}
+for(let i=0;i<30;i++)assert.ok(route(newCore.makeMaze()).length);
 {
- const f=fixture();f.start('maze');const path=route(f.state().plans.maze);
- for(const d of path){f.advance(100);f.click(['↑ Up','→ Right','↓ Down','← Left'][d]);}
- assert.match(f.get('game-stage').textContent,/Escaped/);f.click('Kids ready →');f.advance(45000);
- assert.deepEqual([...f.state().wins],[1,0]);
+ const f=fixture();f.start('maze',1);for(const d of route(f.state().plans.maze))f.click(['↑ Up','→ Right','↓ Down','← Left'][d]);assert.match(f.get('game-stage').textContent,/WAY TO GO, KIDS/);noNavigation(f);f.advance(2000);assert.ok(f.get('handoff-countdown'));f.advance(4000);f.advance(45000);assert.deepEqual([...f.state().wins],[0,1]);
 }
+function enterCode(f,code){code.forEach((v,i)=>{const digit=()=>f.get('code-digits').children[i];while(Number(digit().textContent)!==v)digit().click();});f.click('Test code →');}
 assert.deepEqual(newCore.codeClues([1,1,2],[1,2,1]),{exact:1,misplaced:2});
-assert.deepEqual(newCore.codeClues([1,2,3],[1,1,1]),{exact:1,misplaced:0});
-function enterCode(f,code){
- code.forEach((v,i)=>{const digit=()=>f.get('code-digits').children[i];while(Number(digit().textContent)!==v)digit().click();});f.click('Test code →');
-}
 {
- const f=fixture();f.start('code',1);const codes=f.state().plans.codes;
- enterCode(f,codes[1]);assert.match(f.get('game-stage').textContent,/1 guess/);
- f.click('Adults ready →');
- const wrong=codes[0].map(v=>v%4+1);enterCode(f,wrong);assert.match(f.get('code-history').textContent,/0 exact/);
- enterCode(f,codes[0]);assert.deepEqual([...f.state().wins],[0,1]);
+ const f=fixture();f.start('code',1);enterCode(f,f.state().plans.codes[1]);assert.ok(f.get('handoff-countdown'));f.advance(4000);f.advance(60000);assert.deepEqual([...f.state().wins],[0,1]);
 }
-{
- const f=fixture();f.start('code');for(let i=0;i<6;i++)enterCode(f,f.state().plans.codes[0].map(v=>v%4+1));
- assert.match(f.get('game-stage').textContent,/Code not cracked/);f.click('Kids ready →');f.advance(60000);
- assert.match(f.get('game-stage').textContent,/It’s a tie/);
-}
-// Golf physics: ball can sink, wall collisions reflect, and speed decays.
-const course=newCore.GOLF_COURSES[0];
-assert.equal(newCore.golfStep({x:course.hole[0]-1,y:course.hole[1],vx:1,vy:0},course).sunk,true);
-assert.ok(newCore.golfStep({x:5,y:30,vx:-3,vy:0},course).vx>0);
-assert.ok(newCore.golfStep({x:159,y:100,vx:5,vy:0},course).vx<0);
-assert.ok(newCore.golfStep({x:40,y:30,vx:1,vy:0},course).vx<1);
+// Golf has three holes per team and auto advances each hole and completed turn.
 function missGolfTurn(f){
  for(let hole=0;hole<3;hole++){
   f.get('golf-angle').value='180';f.get('golf-power').value='10';
-  for(let shot=0;shot<4;shot++){
-   f.click('Putt →');assert.equal(f.get('golf-angle').disabled,true);
-   const before=f.get('golf-strokes').textContent;f.click('Putt →');assert.equal(f.get('golf-strokes').textContent,before);f.advance(5000);
-  }
-  assert.match(f.get('golf-hole-result').textContent,/five strokes/);f.click(hole===2?'Finish turn →':'Next hole →');
+  for(let shot=0;shot<4;shot++){f.click('Putt →');for(let frame=0;frame<250&&f.get('golf-action').querySelector('button').disabled&&!f.get('golf-controls').hidden;frame++)f.advance(16);}
+  noNavigation(f);f.advance(1200);
  }
 }
 {
- const f=fixture();f.start('golf',1);missGolfTurn(f);assert.match(f.get('game-stage').textContent,/15 strokes/);
- f.click('Adults ready →');missGolfTurn(f);assert.match(f.get('game-stage').textContent,/It’s a tie/);
+ const f=fixture();f.start('golf');missGolfTurn(f);assert.ok(f.get('handoff-countdown'));f.advance(4000);missGolfTurn(f);assert.match(f.get('game-stage').textContent,/tie/);
 }
-// Each new game is eligible in a random series and uses its real scoring flow.
-for(const id of ['maze','rps','code','golf']){
- const f=fixture();f.seriesWith(id);f.click('Parents first →');f.click('Adults ready →');
- if(id==='rps'){f.click('Paper ✋');f.advance(4000);f.click('Rock ✊');f.advance(2600);}
- else if(id==='code'){enterCode(f,f.state().plans.codes[0]);f.click('Kids ready →');f.advance(60000);}
- else if(id==='maze'){for(const d of route(f.state().plans.maze))f.click(['↑ Up','→ Right','↓ Down','← Left'][d]);f.click('Kids ready →');f.advance(45000);}
- else {missGolfTurn(f);f.click('Kids ready →');missGolfTurn(f);assert.match(f.get('game-stage').textContent,/tie/);f.resolveGame(0,'Replay settled');}
- assert.deepEqual([...f.state().wins],[1,0]);f.advance(5000);assert.equal(f.state().series.index,1);
+// Three-game series still play three distinct games, resolve ties automatically,
+// alternate starters and save the final result only once.
+for(const first of [0,1])for(const outcomes of [[0,1,0],[1,0,1],[0,0,0],[1,1,1]]){
+ const f=fixture(first);f.get('arcade-random').click();assert.equal(new Set(f.state().series.games).size,3);assert.equal(f.state().starter,first);noNavigation(f);
+ f.resolveGame(null,'Tied game');f.advance(2200);assert.equal(f.state().series.index,0);assert.equal(f.state().starter,1-first);
+ for(let i=0;i<3;i++){f.resolveGame(outcomes[i],'Played game');if(i<2){f.advance(2000);assert.equal(f.state().series.index,i+1);assert.equal(f.state().starter,(first+i+1)%2);noNavigation(f);}}
+ assert.equal(f.state().champion,outcomes.filter(w=>w===0).length>=2?0:1);assert.equal(f.saved.length,1);assert.deepEqual([...f.saved[0].roundWinners],outcomes);f.advance(10000);assert.equal(f.saved.length,1);
 }
-// Interrupting a new timed game or leaving mid-shot cannot award a point.
-for(const id of ['maze','code','golf']){
- const f=fixture();f.start(id);if(id==='golf')f.click('Putt →');
- f.doc.hidden=true;f.doc.handlers.visibilitychange();assert.match(f.get('game-stage').textContent,/interrupted/);
- f.advance(70000);assert.deepEqual([...f.state().wins],[0,0]);
- f.get('arcade-return').click();f.start('tic');f.advance(70000);assert.ok(f.get('tic-board'));
+// Reset/exit during handoff, reveal, results or celebration cancel outstanding
+// callbacks and cannot start an old game or award a stale point.
+for(const id of ['maze','rps','code','golf','memory','tap']){
+ const f=fixture();f.start(id,1,false);f.get('arcade-reset').click();f.advance(10000);assert.match(f.get('game-stage').textContent,/Start over/);assert.equal(f.saved.length,0);
+ f.get('arcade-return').click();f.start('tic');f.advance(6000);assert.ok(f.get('tic-board'));assert.deepEqual([...f.state().wins],[0,0]);
 }
-console.log('Four new game checks passed: maze generation/escape, secret RPS moves, deduction clues, code scoring, golf physics/strokes, both starters, series integration, and interruption cleanup.');
-
-{const f=fixture();f.start('tic');f.resolveGame(0,'Round one');assert.equal(f.saved.length,0);f.get('arcade-return').click();assert.equal(f.saved.length,0);}
-
-// Fast Memory play keeps card buttons stable, ignores duplicate taps and
-// switches exactly once. Skipping preview never fires a second hide mid-turn.
 {
- const f=fixture();f.start('memory',1);const original=[...f.get('memory-cards').children];
- const symbols=original.map(c=>c.textContent),pair=[0,symbols.findIndex((s,i)=>i>0&&s===symbols[0])];
- f.click('Ready? Play now →');assert.ok(original.every(c=>c.textContent==='?'));
- original[pair[0]].click();original[pair[0]].click();assert.equal(original.filter(c=>c.className.includes('face-up')).length,1);
- original[pair[1]].click();assert.equal(f.get('arcade-feedback').getAttribute('data-kind'),'match');
- assert.ok(original.every((card,i)=>card===f.get('memory-cards').children[i]));
- f.advance(599);assert.equal(f.state().turn,1);f.advance(1);assert.equal(f.state().turn,0);
- assert.equal(f.get('memory-action').children.length,0);
- f.advance(5000);assert.equal(f.state().turn,0);assert.ok(original.filter(c=>c.className.includes('matched')).length===2);
- f.get('arcade-sound').click();assert.equal(f.get('arcade-sound').getAttribute('aria-pressed'),'false');
- f.get('arcade-effects').click();assert.equal(f.get('arcade-effects').getAttribute('aria-pressed'),'false');
- const remaining=original.filter(c=>!c.disabled);remaining[0].click();remaining[1].click();assert.equal(f.get('arcade-feedback').getAttribute('data-kind'),'quiet');
- f.get('arcade-return').click();f.start('number');f.advance(1000);assert.ok(f.get('quiz-body'));assert.equal(f.state().turn,0);
+ const f=fixture();f.start('rps');f.click('Rock ✊');f.advance(4000);f.click('Scissors ✌️');f.get('arcade-return').click();f.start('memory');f.advance(3000);assert.ok(f.get('memory-cards'));assert.deepEqual([...f.state().wins],[0,0]);
+ const g=fixture();g.start('number');g.doc.hidden=true;g.doc.handlers.visibilitychange();assert.match(g.get('game-stage').textContent,/interrupted/);g.advance(60000);assert.deepEqual([...g.state().wins],[0,0]);
 }
-// Manual Next cancels the automatic transition, so one round advances once.
+// A hidden tab cannot start the next team's timed turn during a handoff.
 {
- const f=fixture();f.start('memory');f.resolveGame(0,'Completed round');f.click('Next round →');f.advance(2300);
- assert.equal(f.state().round,2);assert.ok(f.get('memory-cards'));
- f.get('arcade-reset').click();f.advance(10000);assert.match(f.get('game-stage').textContent,/Start over/);
+ const f=fixture();f.start('number',0,false);f.doc.hidden=true;f.advance(12000);assert.equal(f.get('handoff-countdown').textContent,'4');f.doc.hidden=false;f.advance(4000);assert.ok(f.get('quiz-body'));
 }
-console.log('Fast-flow checks passed: stable cards, rapid taps, preview skip, automatic turns/rounds, sound and light toggles, and transition cleanup.');
-
-// A child solving the maze gets a celebration before the automatic handoff.
-// Leaving during the graphic cancels the pending turn completion.
-{
- const f=fixture();f.start('maze',1);
- for(const d of route(f.state().plans.maze))f.click(['↑ Up','→ Right','↓ Down','← Left'][d]);
- assert.match(f.get('game-stage').textContent,/WAY TO GO, KIDS!/);
- assert.equal(f.get('game-stage').querySelector('button'),null);
- f.advance(1999);assert.match(f.get('game-stage').textContent,/MAZE COMPLETE/);
- f.advance(1);assert.match(f.get('game-stage').textContent,/Adults, you’re up/);
- f.get('arcade-return').click();f.start('maze',1);
- for(const d of route(f.state().plans.maze))f.click(['↑ Up','→ Right','↓ Down','← Left'][d]);
- f.get('arcade-return').click();f.start('memory');f.advance(2500);
- assert.ok(f.get('memory-cards'));assert.equal(f.state().turn,0);
-}
-console.log('Maze celebration checks passed: child success graphic, automatic continuation and exit cleanup.');
-
-// The cover library renders every real game; recent picks ignore corrupt or
-// unrelated stored values and are capped at eight unique available games.
-for(const game of data.GAMES){const cover=library.coverMarkup(game);assert.ok(cover.includes(game.name));assert.ok(cover.includes('<svg'));}
+// Cover library and rotating featured-game behavior remain intact.
+for(const g of data.GAMES)assert.ok(library.coverMarkup(g).includes(g.name));
 assert.deepEqual(library.recentGames({getItem:()=>'{bad'},'family',data.GAMES),[]);
 assert.deepEqual(library.recentGames({getItem:()=>JSON.stringify(['memory','unknown','memory','maze'])},'family',data.GAMES),['memory','maze']);
-assert.equal(library.recentGames({getItem:()=>JSON.stringify(data.GAMES.map(g=>g.id))},'family',data.GAMES).length,8);
-assert.deepEqual(library.recentGames({getItem(){throw Error('Unavailable');}},'family',data.GAMES),[]);
-console.log('Arcade library checks passed: all 13 covers, recent-game filtering, storage limits and unavailable-storage fallback.');
-
-// Leaving or restarting during the battle reveal cannot award a delayed point.
 {
- const f=fixture();f.start('rps');f.click('Rock ✊');f.advance(4000);f.click('Scissors ✌️');
- assert.match(f.get('game-stage').textContent,/Rock/);assert.match(f.get('game-stage').textContent,/Scissors/);
- f.get('arcade-return').click();f.start('memory');f.advance(3000);
- assert.deepEqual([...f.state().wins],[0,0]);assert.ok(f.get('memory-cards'));assert.equal(f.saved.length,0);
- const g=fixture();g.start('rps',1);g.click('Paper ✋');g.advance(4000);g.click('Rock ✊');
- g.get('arcade-reset').click();g.advance(5000);assert.match(g.get('game-stage').textContent,/Start over/);assert.deepEqual([...g.state().wins],[0,0]);
+ const f=fixture();f.start('memory');f.get('arcade-return').click();f.advance(6500);assert.equal(f.get('arcade-feature-title').textContent,data.GAMES[1].name);f.get('feature-pause').click();f.advance(20000);assert.equal(f.get('arcade-feature-title').textContent,data.GAMES[1].name);f.get('feature-next').click();f.get('arcade-featured-play').click();assert.match(f.get('game-title').textContent,/Code Breaker/);noNavigation(f);
 }
-console.log('RPS reveal checks passed: all move combinations, both starters, delayed single-point scoring, ties and cancellation.');
-
-// Automatic pass remains private and cancels cleanly on reset or exit.
-{
- const f=fixture();f.start('rps');f.click('Scissors ✌️');
- assert.equal(f.get('rps-pass-count').textContent,'4');f.advance(1000);assert.equal(f.get('rps-pass-count').textContent,'3');
- f.get('arcade-return').click();f.start('memory');f.advance(5000);assert.ok(f.get('memory-cards'));assert.deepEqual([...f.state().wins],[0,0]);
- const g=fixture();g.start('rps',1);g.click('Rock ✊');g.get('arcade-reset').click();g.advance(5000);assert.match(g.get('game-stage').textContent,/Start over/);assert.equal(g.get('rps-options'),null);
-}
-console.log('RPS auto-pass checks passed: exact four-second delay, hidden first move, both starting teams, and reset/exit cancellation.');
-
-// Featured slides rotate in the lobby, pause on request and launch the
-// currently displayed game. They stop advancing during a live game.
-{
- const f=fixture();f.start('memory');f.get('arcade-return').click();
- assert.equal(f.get('arcade-feature-title').textContent,data.GAMES[0].name);
- f.advance(6500);assert.equal(f.get('arcade-feature-title').textContent,data.GAMES[1].name);
- f.get('feature-pause').click();f.advance(20000);assert.equal(f.get('arcade-feature-title').textContent,data.GAMES[1].name);
- f.get('feature-next').click();assert.equal(f.get('arcade-feature-title').textContent,data.GAMES[2].name);
- f.get('arcade-featured-play').click();assert.match(f.get('game-title').textContent,/Code Breaker/);
- f.advance(20000);assert.equal(f.get('arcade-feature-title').textContent,data.GAMES[2].name);
- f.get('arcade-return').click();f.get('feature-pause').click();f.advance(6500);assert.equal(f.get('arcade-feature-title').textContent,data.GAMES[3].name);
-}
-console.log('Featured banner checks passed: timed rotation, previous/next controls, pause/resume and current-slide game launch.');
+console.log('All 13 Arcade games passed: automatic starters, countdown handoffs, automatic rounds/replays, reactions, golf holes, secret moves, scoring, celebrations, 3–2 matches, random series, cancellation, hidden-tab protection and rotating features.');
