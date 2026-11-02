@@ -45,3 +45,40 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid #111;
 .code-digits{display:flex;justify-content:center;gap:12px;margin:24px auto}.code-digit{width:72px;min-height:80px;background:var(--yellow);border:2px solid #111;border-radius:14px;font-size:38px;font-weight:900;cursor:pointer}.code-history{padding-left:24px;text-align:left;font-size:13px;line-height:1.7;max-width:380px;margin:20px auto}.code-history li{border-bottom:1px solid #ddd;padding:8px 0}
 .golf-course{max-width:540px;margin:20px auto}.golf-course svg{width:100%;height:auto;display:block}.golf-course text{fill:#111}#golf-controls{max-width:400px;margin:20px auto}#golf-controls input{accent-color:#111;padding:0;min-height:44px;margin:2px 0 18px}#golf-controls label{line-height:1.5}.golf-course+div .primary{width:100%}
 @media(max-width:600px){.rps-options{gap:6px}.rps-options .answer{font-size:14px;padding:8px}.maze-cell{font-size:22px}}
+
+/* Arcade room: the supplied photo, framed like the reference banner. */
+body{background:#080811;min-height:100vh;isolation:isolate}
+body::before{content:"";position:fixed;inset:-15vh -25vw;z-index:-1;pointer-events:none;background:linear-gradient(180deg,rgba(5,5,14,.72),rgba(5,5,14,.9)),url('/assets/arcade-room.webp') center/cover no-repeat}
+header{background:rgba(6,6,13,.94);border-bottom:1px solid #ffd52280;box-shadow:0 4px 24px #0008}
+main{padding-top:28px}
+.arcade-heading{position:relative;isolation:isolate;overflow:hidden;min-height:330px;padding:48px 46px;gap:28px;border:1px solid #ffd52266;border-radius:28px;background:#11101b;box-shadow:0 8px 40px #000a,0 0 28px #ffd5221f;margin-bottom:30px}
+.arcade-heading::before{content:"";position:absolute;inset:0;z-index:-2;background:url('/assets/arcade-room.webp') left center/145% auto no-repeat}
+.arcade-heading::after{content:"";position:absolute;inset:17px;z-index:-1;border-radius:24px;background:rgba(4,5,13,.74);border-bottom:9px solid var(--yellow);box-shadow:0 10px 24px #ffd52233}
+.arcade-heading>div:first-child{max-width:660px}
+.arcade-heading .eyebrow{font-size:clamp(10px,1.6vw,15px);letter-spacing:2.5px;line-height:1.7;margin:0 0 20px}
+.arcade-heading h1{font-size:clamp(38px,6.5vw,70px);line-height:1;letter-spacing:-2px;margin:0 0 24px;color:#fff}
+.arcade-heading h1 span{display:none}
+.arcade-heading .tagline{font-size:clamp(15px,2.1vw,21px);line-height:1.6;max-width:480px;color:#e8e8ed;margin:0}
+.arcade-badge{width:142px;height:142px;font-size:23px;border:0;transform:rotate(8deg);box-shadow:7px 10px 0 #ffffff26,0 0 35px #ffd52220;line-height:1.05}
+.arcade-badge span{font-size:23px}
+.play-banner{box-shadow:0 5px 20px #0005;border-color:#ffd522}
+.random-challenge{border-color:#ffd52299;background:rgba(8,8,18,.95);box-shadow:0 4px 0 var(--yellow),0 0 24px #ffd52212}
+.random-challenge:hover{background:#1d1925;box-shadow:0 4px 0 var(--yellow),0 0 30px #ffd52238}
+.game-tile{border-color:#ffffff80;box-shadow:0 5px 0 #000a,0 8px 20px #0006}
+.game-tile.pink,.game-tile.yellow{background:rgba(10,10,20,.96);border-color:#ffd52299;box-shadow:0 4px 0 var(--yellow),0 8px 20px #0006}
+.game-tile.blue{background:#fff}.game-tile.mint{background:var(--yellow);border-color:#ffd522}
+.game-tile:hover{box-shadow:0 7px 0 #ffd522,0 0 25px #ffd52230}
+.lobby-note{color:#e2dfee;background:#090914d9;padding:14px 18px;border:1px solid #ffffff26;border-radius:12px;line-height:1.7}
+#arcade-game{border:2px solid var(--yellow);box-shadow:0 5px 0 #ffd52266,0 0 36px #ffd52222,0 20px 60px #0009}
+@media(max-width:600px){
+ main{padding-top:18px}
+ .arcade-heading{min-height:270px;padding:32px 24px;gap:12px;border-radius:22px;margin-bottom:24px}
+ .arcade-heading::before{background-size:auto 140%;background-position:18% center}
+ .arcade-heading::after{inset:10px;border-radius:17px;border-bottom-width:6px}
+ .arcade-heading .eyebrow{font-size:9px;letter-spacing:1.2px;margin-bottom:15px}
+ .arcade-heading h1{font-size:clamp(30px,7.8vw,46px);letter-spacing:-1.5px;margin-bottom:18px}
+ .arcade-heading .tagline{font-size:14px;max-width:215px}
+ .arcade-badge{width:78px;height:78px;font-size:13px;box-shadow:4px 6px 0 #ffffff26}
+ .arcade-badge span{font-size:14px}
+}
+@media(max-width:360px){.arcade-heading{padding:30px 20px;gap:8px}.arcade-heading h1{font-size:28px}.arcade-badge{width:64px;height:64px;font-size:11px}.arcade-badge span{font-size:12px}}
