@@ -1,4 +1,4 @@
-import {GAMES, ANIMALS, TRIVIA, WORDS, PICTURES, CHALLENGES} from './arcade-data.js';
+import {GAMES, ANIMALS, TRIVIA, WORDS, PICTURES, CHALLENGES} from './arcade-data.js?v=3';
 import {teamName, shuffle, roundWinner, awardRound, lineWinner} from './arcade-core.js';
 
 const $ = id => document.getElementById(id);
@@ -197,7 +197,7 @@ function quickTap(){
   function prepare(){
     phase='ready';$('tap-progress').textContent=`${teamName(turn)} · Test ${trial+1} / 3`;
     $('tap-zone').replaceChildren();button('Start reaction test →',wait,$('tap-zone'),'tap-pad ready');
-    status('Rest a finger near the pad. Wait for GREEN, then tap.');
+    status('Rest a finger near the pad. Wait for the yellow GO! signal, then tap.');
   }
   function wait(){
     if(phase!=='ready')return;phase='waiting';$('tap-zone').replaceChildren();
