@@ -1,6 +1,8 @@
 import {verifiedMember,memberReply} from '../../../lib/auth/session';
 import {checked} from '../../../lib/data';
 import {requestOrigin} from '../../../lib/request-origin';
+import {paymentAdmin} from '../../../lib/payments/server';
+import {pdfProducts} from '../../../config/pdfs';
 export const dynamic='force-dynamic';
 const sources={families:{table:'families',fields:'user_id,name,email,team_a,team_b,created_at,clock_started_at,marketing',sort:'created_at'},messages:{table:'messages',fields:'id,user_id,kind,body,permission,created_at',sort:'created_at'},waitlist:{table:'app_waitlist',fields:'name,email,created_at,consent_version',sort:'created_at'},interests:{table:'legacy_interests',fields:'user_id,created_at',sort:'created_at'},announcements:{table:'admin_announcements',fields:'id,title,body,status,created_at,updated_at',sort:'updated_at'},audit:{table:'admin_events',fields:'id,action,entity_id,details,created_at',sort:'created_at'}} as const;
 export async function GET(request:Request){
@@ -9,6 +11,19 @@ export async function GET(request:Request){
  if(!auth.isAdmin)return memberReply({error:'Administrator access required.'},403,auth.headers);
  try{
  const url=new URL(request.url),section=url.searchParams.get('section')||'overview';
+ if(section==='purchases'){
+ const page=Math.max(0,Math.min(100000,Number.parseInt(url.searchParams.get('page')||'0',10)||0));
+ // The service client is used only after the verified administrator check above.
+ // Customers retain their existing owner-only row-level security policy.
+ const client=paymentAdmin();
+ const result=await client.from('pdf_orders').select('session_id,user_id,product_ids,amount_total,currency,status,paid_at',{count:'exact'}).order('paid_at',{ascending:false}).order('session_id').range(page*25,page*25+24);
+ const orders=checked(result)||[];
+ const ids=[...new Set(orders.map(r=>r.user_id))];
+ const families=ids.length?checked(await client.from('families').select('user_id,name,email').in('user_id',ids)):[];
+ const profiles=new Map((families||[]).map(f=>[f.user_id,f]));
+ const rows=orders.map(order=>({...order,name:profiles.get(order.user_id)?.name||'Family profile unavailable',email:profiles.get(order.user_id)?.email||'',items:order.product_ids.map((id:string)=>pdfProducts.find(p=>p.id===id)?.title||id).join('; ')}));
+ return memberReply({rows,count:result.count||0,page,pageSize:25},200,auth.headers);
+ }
  if(section==='overview'){
  const metrics=checked(await auth.client.rpc('admin_overview'));
  return memberReply({metrics,emailReady:process.env.AUTH_EMAIL_READY==='true',registrationOpen:process.env.AUTH_REGISTRATION_OPEN==='true',loadedAt:new Date().toISOString()},200,auth.headers);
