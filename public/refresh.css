@@ -62,15 +62,14 @@ header{display:grid;grid-template-columns:92px 65px minmax(0,1fr);align-items:ce
 
 .product-art.product-photo{background:#fff;padding:16px;display:flex;align-items:center;justify-content:center}.product-art.product-photo img{display:block;width:100%;height:100%;max-height:220px;object-fit:contain}
 
-/* Native arcade invitation, designed as part of the homepage. */
-.arcade-banner{max-width:1000px;margin:22px auto 20px;padding:0 10px}
-.arcade-banner-link{position:relative;isolation:isolate;display:flex;align-items:center;gap:24px;padding:26px 30px;overflow:hidden;border:1px solid #303030;border-radius:16px;background:#111;color:#fff;text-decoration:none;box-shadow:0 6px 0 #ffd522}
-.arcade-banner-link::after{content:"";position:absolute;z-index:-1;right:14%;top:-90px;width:100px;height:360px;transform:rotate(26deg);border-left:1px solid #ffd52222;border-right:28px solid #ffd52208;pointer-events:none}
-.arcade-banner-icon{display:flex;flex:0 0 96px;flex-direction:column;align-items:center;justify-content:center;width:96px;height:96px;border-radius:20px;background:#ffd522;color:#111;transform:rotate(-6deg);box-shadow:4px 4px 0 #ffffff20}
-.arcade-banner-icon svg{width:65px;height:53px}.arcade-banner-icon>span{font:900 9px/1.4 Arial,sans-serif;letter-spacing:-.3px}.arcade-banner-icon b{font-size:8px}
-.arcade-banner-copy{flex:1;min-width:0}.arcade-banner-eyebrow{display:block;color:#d5d2c6;font:700 9px/1.4 Arial,sans-serif;letter-spacing:1.6px}
-.arcade-banner-copy h2{margin:9px 0 8px;font:800 clamp(26px,2.7vw,34px)/1.05 'Barlow Condensed',Impact,sans-serif;letter-spacing:-.3px}.arcade-banner-copy h2 em{color:#ffd522;font-style:normal}.arcade-banner-copy p{margin:0;color:#d5d2c6;font:400 12px/1.5 Arial,sans-serif}
-.arcade-banner-action{display:flex;flex-direction:column;align-items:center;gap:11px;flex-shrink:0}.arcade-banner-cta{display:flex;align-items:center;justify-content:center;gap:16px;padding:15px 17px;background:#ffd522;color:#111;border-radius:7px;font:800 12px/1.3 Arial,sans-serif;transition:background .15s,transform .15s}.arcade-banner-cta b{font-size:19px;line-height:1}.arcade-banner-note{color:#bbb7a8;font:700 7px/1.5 Arial,sans-serif;letter-spacing:.9px}.arcade-banner-link:hover .arcade-banner-cta{background:#ffe66d;transform:translateY(-2px)}.arcade-banner-link:focus-visible{outline:3px solid #111;outline-offset:7px}
-@media(max-width:800px){.arcade-banner-link{gap:18px;padding:22px}.arcade-banner-icon{width:76px;height:80px;flex-basis:76px}.arcade-banner-icon svg{width:53px}.arcade-banner-copy h2{font-size:28px}.arcade-banner-action{max-width:230px}.arcade-banner-cta{font-size:11px;padding:14px 12px;gap:10px}}
-@media(max-width:600px){.arcade-banner{margin:15px auto 22px;padding:0 12px}.arcade-banner-link{display:grid;grid-template-columns:64px minmax(0,1fr);gap:17px;padding:23px 20px;border-radius:13px}.arcade-banner-icon{width:64px;height:73px;border-radius:14px}.arcade-banner-icon svg{width:47px;height:43px}.arcade-banner-icon>span{font-size:6px}.arcade-banner-eyebrow{font-size:7px;letter-spacing:1px}.arcade-banner-copy h2{font-size:29px;margin:7px 0}.arcade-banner-copy h2 em{display:block}.arcade-banner-copy p{font-size:11px;line-height:1.5}.arcade-banner-action{grid-column:1/-1;width:100%;max-width:none;gap:10px}.arcade-banner-cta{width:100%;padding:15px;font-size:13px}.arcade-banner-note{font-size:7px}}
-@media(prefers-reduced-motion:reduce){.arcade-banner-cta{transition:none}.arcade-banner-link:hover .arcade-banner-cta{transform:none}}
+/* Compact landing-page account bar. */
+.arcade-banner{max-width:1000px;margin:16px auto 20px;padding:0 10px}
+.arcade-banner-link{display:block;padding:14px 20px 12px;border:1px solid #303030;border-radius:12px;background:#111;color:#fff;text-decoration:none;box-shadow:0 3px 0 #ffd522}
+.arcade-banner-action{display:flex;flex-direction:column;align-items:center;gap:9px;width:100%}
+.arcade-banner-cta{display:flex;align-items:center;justify-content:center;gap:18px;width:100%;min-height:44px;padding:12px 16px;background:#ffd522;color:#111;border-radius:7px;font:800 14px/1.3 Arial,sans-serif;transition:background .15s}
+.arcade-banner-cta b{font-size:20px;line-height:1}
+.arcade-banner-note{color:#bbb7a8;text-align:center;font:700 8px/1.5 Arial,sans-serif;letter-spacing:1px}
+.arcade-banner-link:hover .arcade-banner-cta{background:#ffe66d}
+.arcade-banner-link:focus-visible{outline:3px solid #111;outline-offset:5px}
+@media(max-width:600px){.arcade-banner{margin:12px auto 16px;padding:0 12px}.arcade-banner-link{padding:12px 14px 10px;border-radius:10px}.arcade-banner-cta{font-size:13px;padding:12px;gap:12px}.arcade-banner-note{font-size:7px;letter-spacing:.7px}.arcade-banner-action{gap:8px}}
+@media(prefers-reduced-motion:reduce){.arcade-banner-cta{transition:none}}
