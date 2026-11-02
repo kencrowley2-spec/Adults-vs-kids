@@ -9,7 +9,7 @@ const grades=(score:number)=>score>=85?'A':score>=70?'B':score>=55?'C':score>=40
 export async function GET(request:Request){
  const path=new URL(request.url).pathname;
  if(path==='/api/impact')return json({connected:false,recordedBookUnits:null,estimatedSeconds:null,minutesPerBook:45});
- if(path==='/api/status')return json({clockStartedAt:brand.clockStartedAt,checkoutOpen:false,membershipsOpen:false,emailDelivery:process.env.AUTH_EMAIL_READY==='true'});
+ if(path==='/api/status')return json({clockStartedAt:brand.clockStartedAt,checkoutOpen:process.env.PDF_CHECKOUT_OPEN==='true',membershipsOpen:false,emailDelivery:process.env.AUTH_EMAIL_READY==='true'});
  if(path==='/api/legacy')return json({active:false,claimed:0,total:2000,note:'Enrollment is not open. No membership numbers have been issued.'});
  const auth=await verifiedMember(request),reply=(body:object,status=200)=>memberReply(body,status,auth.headers);
  try{

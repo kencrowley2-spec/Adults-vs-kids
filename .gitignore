@@ -45,3 +45,6 @@ yarn-error.log*
 .DS_Store
 
 /.vercel/
+
+# Supabase CLI local state
+/supabase/.temp/
