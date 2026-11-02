@@ -3,10 +3,29 @@ import {teamName, shuffle, roundWinner, awardRound, lineWinner} from './arcade-c
 
 import {makeMaze, codeClues, rpsWinner, GOLF_COURSES, golfStep} from './arcade-new-core.js?v=5';
 
+import {createResultRecorder} from './arcade-results.js?v=1';
+
 const $ = id => document.getElementById(id);
 const lobby=$('arcade-lobby'), arena=$('arcade-game'), stage=$('game-stage');
 let game, wins=[0,0], round=1, attempt=0, starter=0, turn=0, results=[], champion=-1;
-let series=null;
+let series=null,recording=null;
+const arcadeAccountId=$('arcade-game').getAttribute('data-account-id');
+const recorder=createResultRecorder({
+ accountId:arcadeAccountId,
+ storage:{getItem:key=>localStorage.getItem(key),setItem:(key,value)=>localStorage.setItem(key,value)},
+ send:result=>fetch('/api/arcade/results',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({...result,accountId:arcadeAccountId})}),
+ changed:({pending,storageFailed})=>{const el=$('arcade-save-status');if(el)el.textContent=pending?`A completed result is waiting to save. ${storageFailed?'Keep this page open and retry.':'It will retry when you’re connected.'}`:'Completed matches update your family’s lifetime score.';}
+});
+recorder.drain();
+window.addEventListener('online',()=>recorder.drain());
+$('arcade-save-retry').addEventListener('click',()=>recorder.drain());
+function startRecording(mode,gameIds){recording={id:crypto.randomUUID(),mode,gameIds,roundWinners:[],complete:false};}
+function saveCompleted(){
+ if(!recording||recording.complete)return;
+ recording.complete=true;
+ const {id,mode,gameIds,roundWinners}=recording;
+ recorder.capture({id,mode,gameIds:[...gameIds],roundWinners:[...roundWinners]});
+}
 let timers=[], generation=0, timed=false, used={};
 const names=['Adults','Kids'];
 function clearTimers(){ generation++; timers.forEach(clearTimeout); timers=[]; timed=false; }
@@ -30,6 +49,7 @@ function pick(key,source,n){
   return used[key].splice(0,n);
 }
 function openGame(id){
+  startRecording('single',[id]);
   series=null;
   game=GAMES.find(g=>g.id===id); lobby.hidden=true; arena.hidden=false;
   $('game-title').textContent=`${game.icon} ${game.name}`; used={}; wins=[0,0]; round=1; attempt=0; starter=0; turn=0; champion=-1; results=[];
@@ -41,6 +61,7 @@ function openGame(id){
 function startSeries(){
   clearTimers();
   series={games:shuffle(GAMES).slice(0,3),index:0,winners:[],first:0};
+  startRecording('series',series.games.map(g=>g.id));
   wins=[0,0]; round=1; attempt=0; starter=0; turn=0; champion=-1; results=[]; used={};
   game=series.games[0]; lobby.hidden=true; arena.hidden=false;
   $('game-title').textContent='Random 3 Game Pick Challenge'; scoreboard();
@@ -58,6 +79,7 @@ function finishSeriesGame(winner,detail){
   if(winner!==null){wins[winner]++;series.winners.push(winner);}
   const complete=series.winners.length===3;
   champion=complete?(wins[0]>wins[1]?0:1):-1; scoreboard();
+  if(complete)saveCompleted();
   screen(`<div class="result"><span class="giant-icon">${winner===null?'🤝':complete?'🏆':'🎉'}</span><p class="eyebrow">${complete?'SERIES COMPLETE':winner===null?'TIE · SAME GAME':'GAME COMPLETE'}</p><h3>${complete?`${teamName(champion)} win the series!`:winner===null?'It’s a tie!':`${teamName(winner)} win game ${series.index+1}!`}</h3><p>${detail}</p><div class="final-score">${wins[0]} <span>–</span> ${wins[1]}</div><p>${complete?'Three games. One great time together. High fives all around.':winner===null?'No point awarded. Replay this game to settle it.':`Up next: ${series.games[series.index+1].icon} ${series.games[series.index+1].name}. Starting in <strong id="next-game-countdown">5</strong> seconds…`}</p></div>`);
   if(complete){button('New random challenge →',startSeries);button('Return to Arcade',()=>{$('arcade-return').click();},stage,'text-button');}
   else if(winner===null) button('Replay game →',()=>{attempt++;starter=1-starter;beginRound();});
@@ -95,8 +117,10 @@ function teamReady(team){
   handoff(team,detail,()=>({spot, trivia:quiz,word:quiz,tap:quickTap,picture:quiz,number:quiz,challenge,maze:mazeDash,code:codeBreaker,golf:miniGolf}[game.id])());
 }
 function finishRound(winner,detail){
+  if(recording&&winner!==null&&!recording.complete)recording.roundWinners.push(winner);
   if(series)return finishSeriesGame(winner,detail);
   const awarded=awardRound(wins,winner); wins=awarded.wins; champion=awarded.champion; scoreboard();
+  if(champion>=0)saveCompleted();
   screen(`<div class="result"><span class="giant-icon">${winner===null?'🤝':champion>=0?'🏆':'🎉'}</span><p class="eyebrow">${champion>=0?'BRAGGING RIGHTS EARNED':winner===null?'EVEN STEVEN':'ROUND COMPLETE'}</p><h3>${winner===null?'It’s a tie!':`${teamName(winner)} ${champion>=0?'win the match!':'win this round!'}`}</h3><p>${detail}</p><div class="final-score">${wins[0]} <span>–</span> ${wins[1]}</div><p>${champion>=0?'High fives all around. The best win is playing together.':winner===null?'No round awarded. Let’s replay with a fresh challenge.':'Pass it back. The next round is waiting.'}</p></div>`);
   button(champion>=0?'Rematch →':winner===null?'Replay round →':'Next round →',()=>{
     if(champion>=0) return openGame(game.id);

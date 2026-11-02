@@ -82,3 +82,4 @@ main{padding-top:28px}
  .arcade-badge span{font-size:14px}
 }
 @media(max-width:360px){.arcade-heading{padding:30px 20px;gap:8px}.arcade-heading h1{font-size:28px}.arcade-badge{width:64px;height:64px;font-size:11px}.arcade-badge span{font-size:12px}}
+.arcade-saving{margin-top:26px;padding:16px 20px;border:1px solid #ffffff40;border-radius:14px;background:#090914ed;color:#ddd;font-size:12px;line-height:1.6;text-align:center}.arcade-saving p{margin:0 0 6px}.arcade-saving a,.arcade-saving .text-button{color:#ffd522}.arcade-saving a{display:inline-block;padding:10px}

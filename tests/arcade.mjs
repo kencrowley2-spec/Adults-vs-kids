@@ -12,6 +12,7 @@ class Element {
   appendChild(el){this.children.push(el);return el;}
   replaceChildren(...els){this.children=els;this._text='';}
   setAttribute(k,v){this.attrs[k]=v;if(k==='id')this.id=v;if(k==='class')this.className=v;}
+  getAttribute(k){return this.attrs[k]??null;}
   addEventListener(type,fn){(this.handlers[type]??=[]).push(fn);}
   click(){if(!this.disabled)this.dispatch('click');}
   dispatch(type){for(const fn of this.handlers[type]??[])fn({preventDefault(){}});}
@@ -35,10 +36,10 @@ class Element {
   querySelector(s){return this.querySelectorAll(s)[0]??null;}
 }
 function fixture(){
-  let now=0,seq=0,scheduled=new Map();const root=new Element();
+  let now=0,seq=0,scheduled=new Map();const saved=[];const root=new Element();
   root.innerHTML=readFileSync(new URL('../app/family/arcade/route.ts',import.meta.url),'utf8').split('const html=`')[1].split('`;')[0];
   const doc={hidden:false,getElementById:id=>root.querySelector('#'+id),createElement:tag=>new Element(tag),handlers:{},addEventListener(type,fn){this.handlers[type]=fn;}};
-  const context=vm.createContext({...core,...data,...newCore,document:doc,performance:{now:()=>now},console,setTimeout:(fn,delay)=>{scheduled.set(++seq,{at:now+delay,fn});return seq;},clearTimeout:id=>scheduled.delete(id)});
+  const context=vm.createContext({...core,...data,...newCore,document:doc,crypto,window:{addEventListener(){}},createResultRecorder:()=>({drain:async()=>{},capture:result=>{saved.push(result);}}),performance:{now:()=>now},console,setTimeout:(fn,delay)=>{scheduled.set(++seq,{at:now+delay,fn});return seq;},clearTimeout:id=>scheduled.delete(id)});
   const source=readFileSync(new URL('../public/arcade.js',import.meta.url),'utf8').replace(/^import .*;\n/gm,'');
   vm.runInContext(source+'\nthis.state=()=>({wins:[...wins],round,champion,turn,plans:game?{maze:game.maze,codes:game.codes,course:game.course}:null,series:series?{games:series.games.map(g=>g.id),index:series.index,winners:[...series.winners]}:null});this.resolveGame=finishRound;this.seriesWith=id=>{startSeries();series.games=[GAMES.find(g=>g.id===id),...GAMES.filter(g=>g.id!==id).slice(0,2)];};',context);
   const get=id=>doc.getElementById(id);
@@ -46,7 +47,7 @@ function fixture(){
   const click=text=>{const b=buttons().find(b=>b.textContent===text);assert.ok(b,`Missing button: ${text}`);b.click();};
   function advance(ms){const end=now+ms;let guard=0;while(true){const task=[...scheduled.entries()].filter(([,t])=>t.at<=end).sort((a,b)=>a[1].at-b[1].at)[0];if(!task)break;assert.ok(++guard<10000);scheduled.delete(task[0]);now=task[1].at;task[1].fn();}now=end;}
   function start(id,first=0){const i=data.GAMES.findIndex(g=>g.id===id);get('arcade-grid').children[i].click();click(first===0?'Parents first →':'Kids first →');click(`${core.teamName(first)} ready →`);}
-  return {root,doc,get,buttons,click,advance,start,state:context.state,resolveGame:context.resolveGame,seriesWith:context.seriesWith};
+  return {root,doc,get,buttons,click,advance,start,saved,state:context.state,resolveGame:context.resolveGame,seriesWith:context.seriesWith};
 }
 assert.equal(data.GAMES.length,13);
 for(const outcome of [[0,1,0,1,0],[1,0,1,0,1],[0,0,0]]){
@@ -151,7 +152,8 @@ for(const game of ['spot','trivia','word','picture','number','challenge']){
   if(r<4){assert.equal(f.state().champion,-1);f.click('Next round →');f.click(`${core.teamName(f.state().turn)} ready →`);}
  }
  assert.equal(f.state().champion,0);assert.deepEqual([...f.state().wins],[3,2]);assert.match(f.get('game-stage').textContent,/win the match/);
- f.click('Rematch →');assert.deepEqual([...f.state().wins],[0,0]);assert.equal(f.state().round,1);
+ assert.equal(f.saved.length,1);assert.deepEqual([...f.saved[0].roundWinners],[0,1,0,1,0]);
+ f.click('Rematch →');assert.equal(f.saved.length,1);assert.deepEqual([...f.state().wins],[0,0]);assert.equal(f.state().round,1);
 }
 // Solve visible puzzles in each content mode and verify first-team results.
 for(const game of ['spot','trivia','word','picture']){
@@ -212,6 +214,7 @@ for(const first of [0,1]){
    }
   }
   assert.equal(f.state().champion,outcomes.filter(w=>w===0).length>=2?0:1);
+  assert.equal(f.saved.length,1);assert.equal(f.saved[0].mode,'series');assert.deepEqual([...f.saved[0].roundWinners],outcomes);
   assert.match(f.get('game-stage').textContent,/win the series/);f.advance(10000);assert.equal(f.state().series.index,2);
   f.click('New random challenge →');assert.deepEqual([...f.state().wins],[0,0]);assert.equal(f.state().series.index,0);
  }
@@ -311,3 +314,5 @@ for(const id of ['maze','code','golf']){
  f.get('arcade-return').click();f.start('tic');f.advance(70000);assert.ok(f.get('tic-board'));
 }
 console.log('Four new game checks passed: maze generation/escape, secret RPS moves, deduction clues, code scoring, golf physics/strokes, both starters, series integration, and interruption cleanup.');
+
+{const f=fixture();f.start('tic');f.resolveGame(0,'Round one');assert.equal(f.saved.length,0);f.get('arcade-return').click();assert.equal(f.saved.length,0);}
