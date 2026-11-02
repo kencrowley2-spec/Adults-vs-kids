@@ -35,3 +35,13 @@ Checkout and paid memberships remain closed pending payment implementation. Futu
 ## Validation performed during migration
 
 The production build, TypeScript check, and administrator-access tests pass. Transactional database checks cover owner access, cross-family read/write denial, anonymous waitlist privacy, quiz interval enforcement, and followup creation; test users and transactional fixtures were rolled back. HTTP checks cover public routes, sign-in requirements, forged identity-header rejection, origin checks, invalid waitlist rejection, a real waitlist write to Supabase, and duplicate signup handling. The production invitation and recovery delivery checks described above passed; the account owner still needs to complete the first password and sign-in flow.
+
+## Administrator workspace
+
+`/admin/login` uses the same verified Supabase email/password account as family sign-in. The founder email is checked on the server for the page and every administrator API request. The entry link is at the lower right of the login and signup panels. No administrator password is embedded in source or stored separately.
+
+`/admin` includes the family directory, founder inbox and challenge reviews, app waitlist, founding-family interest, sample-game library, announcements, activity totals, configuration status, and role information. Directories are paginated (25 rows) and CSV exports contain the current page; overview exports contain the seven UTC dates shown in the chart. Family totals count dashboard profiles, not all Auth users. Analytics count saved records and make no online-user or revenue estimates.
+
+Founder-only review notes, announcement drafts, and append-only workspace events have their own RLS policies. Announcement inserts/updates and review changes create audit events in the same database transaction. Only the latest updated published announcement appears on verified member dashboards; drafts are private, and publishing sends no email. The founder can archive announcements. This portal does not grant new administrators, delete customer accounts, process payments, or claim live AI functionality.
+
+Verification: `npm test`, `npm run build`, JavaScript syntax checks, and the transactional database assertions in `tests/admin-access.sql`. The SQL tests roll back all fixtures, including test announcements and their audit events.
