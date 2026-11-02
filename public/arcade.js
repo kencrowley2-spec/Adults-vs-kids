@@ -348,7 +348,12 @@ function rockPaperScissors(){
       const pick=button(move,()=>{
         if(choices[turn]!==null)return;choices[turn]=i;
         if(choices[1-turn]===null){
-          handoff(1-first,'The first move is hidden. Choose yours without looking back.',choose);
+          turn=1-first;scoreboard();
+          screen(`<div class="handoff"><span class="giant-icon" aria-hidden="true">🙌</span><p class="eyebrow">PASS THE DEVICE</p><h3>${teamName(turn)}, you’re next!</h3><p>The first move is hidden. Pass the device without looking back.</p><p class="rps-pass-count" style="font-size:48px;font-weight:900;color:#111" id="rps-pass-count">4</p><small>Your choices appear automatically.</small></div>`);
+          status(`Pass to ${teamName(turn)}. Their choices open in four seconds.`);
+          let remaining=4;
+          const tick=()=>{remaining--;if(remaining===0){choose();focusFirst();return;}$('rps-pass-count').textContent=remaining;later(tick,1000);};
+          later(tick,1000);
         }else reveal();
       },$('rps-options'),'answer rps-choice');
       pick.innerHTML=`<span class="rps-choice-label">${labels[i]}</span> <span class="rps-choice-hand" aria-hidden="true">${hands[i]}</span>`;

@@ -243,7 +243,7 @@ const rpsMoves=['Rock ✊','Paper ✋','Scissors ✌️'];
 for(const first of [0,1])for(let a=0;a<3;a++)for(let b=0;b<3;b++){
  const f=fixture();f.start('rps',first);f.click(rpsMoves[first===0?a:b]);
  assert.equal(f.get('rps-options'),null);assert.match(f.get('game-stage').textContent,/move is hidden/);
- f.click(`${core.teamName(1-first)} ready →`);f.click(rpsMoves[first===0?b:a]);
+ assert.equal(f.get('game-stage').querySelector('button'),null);f.advance(3999);assert.equal(f.get('rps-options'),null);f.advance(1);f.click(rpsMoves[first===0?b:a]);
  assert.match(f.get('game-stage').textContent,/SHOW YOUR HANDS/);assert.deepEqual([...f.state().wins],[0,0]);f.advance(2599);assert.deepEqual([...f.state().wins],[0,0]);f.advance(1);
  const w=newCore.rpsWinner([a,b]);assert.deepEqual([...f.state().wins],w===null?[0,0]:w===0?[1,0]:[0,1]);
 }
@@ -302,7 +302,7 @@ function missGolfTurn(f){
 // Each new game is eligible in a random series and uses its real scoring flow.
 for(const id of ['maze','rps','code','golf']){
  const f=fixture();f.seriesWith(id);f.click('Parents first →');f.click('Adults ready →');
- if(id==='rps'){f.click('Paper ✋');f.click('Kids ready →');f.click('Rock ✊');f.advance(2600);}
+ if(id==='rps'){f.click('Paper ✋');f.advance(4000);f.click('Rock ✊');f.advance(2600);}
  else if(id==='code'){enterCode(f,f.state().plans.codes[0]);f.click('Kids ready →');f.advance(60000);}
  else if(id==='maze'){for(const d of route(f.state().plans.maze))f.click(['↑ Up','→ Right','↓ Down','← Left'][d]);f.click('Kids ready →');f.advance(45000);}
  else {missGolfTurn(f);f.click('Kids ready →');missGolfTurn(f);assert.match(f.get('game-stage').textContent,/tie/);f.resolveGame(0,'Replay settled');}
@@ -371,11 +371,20 @@ console.log('Arcade library checks passed: all 13 covers, recent-game filtering,
 
 // Leaving or restarting during the battle reveal cannot award a delayed point.
 {
- const f=fixture();f.start('rps');f.click('Rock ✊');f.click('Kids ready →');f.click('Scissors ✌️');
+ const f=fixture();f.start('rps');f.click('Rock ✊');f.advance(4000);f.click('Scissors ✌️');
  assert.match(f.get('game-stage').textContent,/Rock/);assert.match(f.get('game-stage').textContent,/Scissors/);
  f.get('arcade-return').click();f.start('memory');f.advance(3000);
  assert.deepEqual([...f.state().wins],[0,0]);assert.ok(f.get('memory-cards'));assert.equal(f.saved.length,0);
- const g=fixture();g.start('rps',1);g.click('Paper ✋');g.click('Adults ready →');g.click('Rock ✊');
+ const g=fixture();g.start('rps',1);g.click('Paper ✋');g.advance(4000);g.click('Rock ✊');
  g.get('arcade-reset').click();g.advance(5000);assert.match(g.get('game-stage').textContent,/Start over/);assert.deepEqual([...g.state().wins],[0,0]);
 }
 console.log('RPS reveal checks passed: all move combinations, both starters, delayed single-point scoring, ties and cancellation.');
+
+// Automatic pass remains private and cancels cleanly on reset or exit.
+{
+ const f=fixture();f.start('rps');f.click('Scissors ✌️');
+ assert.equal(f.get('rps-pass-count').textContent,'4');f.advance(1000);assert.equal(f.get('rps-pass-count').textContent,'3');
+ f.get('arcade-return').click();f.start('memory');f.advance(5000);assert.ok(f.get('memory-cards'));assert.deepEqual([...f.state().wins],[0,0]);
+ const g=fixture();g.start('rps',1);g.click('Rock ✊');g.get('arcade-reset').click();g.advance(5000);assert.match(g.get('game-stage').textContent,/Start over/);assert.equal(g.get('rps-options'),null);
+}
+console.log('RPS auto-pass checks passed: exact four-second delay, hidden first move, both starting teams, and reset/exit cancellation.');
