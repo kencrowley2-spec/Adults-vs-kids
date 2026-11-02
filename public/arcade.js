@@ -26,7 +26,9 @@ function openGame(id){
   game=GAMES.find(g=>g.id===id); lobby.hidden=true; arena.hidden=false;
   $('game-title').textContent=`${game.icon} ${game.name}`; used={}; wins=[0,0]; round=1; attempt=0; starter=0; turn=0; champion=-1; results=[];
   scoreboard(); screen(`<div class="intro"><span class="giant-icon">${game.icon}</span><p class="eyebrow">${game.tag}</p><h3>Parents vs. kids.<br>Bring your game face.</h3><p>${game.description}</p><div class="rule-chips"><span>2 teams · 1 device</span><span>First to 3 round wins</span></div></div>`);
-  button('Let’s play →',beginRound); status('Choose one parent or a team of adults. The kids play as the other team.'); focusFirst();
+  button('Parents first →',()=>{starter=0;beginRound();});
+  button('Kids first →',()=>{starter=1;beginRound();});
+  status('Who goes first? Choose parents or kids to start the match.'); focusFirst();
 }
 function handoff(team,detail,action){
   turn=team; scoreboard(); screen(`<div class="handoff"><span class="giant-icon" aria-hidden="true">${team===0?'🙌':'✌️'}</span><p class="eyebrow">PASS THE DEVICE</p><h3>${teamName(team)}, you’re up!</h3><p>${detail}</p><small>Other team: cheer them on. Keep answers to yourself!</small></div>`);

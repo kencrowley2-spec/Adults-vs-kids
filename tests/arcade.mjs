@@ -44,7 +44,7 @@ function fixture(){
   const buttons=()=>get('game-stage').querySelectorAll('button');
   const click=text=>{const b=buttons().find(b=>b.textContent===text);assert.ok(b,`Missing button: ${text}`);b.click();};
   function advance(ms){const end=now+ms;let guard=0;while(true){const task=[...scheduled.entries()].filter(([,t])=>t.at<=end).sort((a,b)=>a[1].at-b[1].at)[0];if(!task)break;assert.ok(++guard<10000);scheduled.delete(task[0]);now=task[1].at;task[1].fn();}now=end;}
-  function start(id){const i=data.GAMES.findIndex(g=>g.id===id);get('arcade-grid').children[i].click();click('Let’s play →');click('Adults ready →');}
+  function start(id,first=0){const i=data.GAMES.findIndex(g=>g.id===id);get('arcade-grid').children[i].click();click(first===0?'Parents first →':'Kids first →');click(`${core.teamName(first)} ready →`);}
   return {root,doc,get,buttons,click,advance,start,state:context.state};
 }
 assert.equal(data.GAMES.length,9);
@@ -56,6 +56,22 @@ assert.deepEqual(core.awardRound([2,2],null),{wins:[2,2],champion:-1});
 assert.equal(core.roundWinner({score:2,elapsed:4},{score:2,elapsed:5},false,true),0);
 assert.equal(core.roundWinner({score:230},{score:250},true),0);
 assert.equal(core.lineWinner([0,0,0,null,1,null,1,null,null]),0);
+
+// Every game honors either starting team, with the existing handoff preserved.
+for(const game of data.GAMES){
+ for(const first of [0,1]){
+  const f=fixture();f.start(game.id,first);assert.equal(f.state().turn,first,`${game.id}: selected team starts`);
+  if(game.id==='memory'){f.advance(5000);assert.match(f.get('turn-strip').textContent,new RegExp(`${core.teamName(first)}’ turn`));}
+  else if(game.id==='tic'){
+   f.get('tic-board').children[0].click();assert.equal(f.get('tic-board').children[0].textContent,first===0?'X':'O');
+   f.click(`Pass to ${core.teamName(1-first)} →`);assert.equal(f.state().turn,1-first);
+  }else if(game.id!=='tap'){
+   f.advance(46000);
+   if(game.id==='challenge'){f.get('challenge-score').value='5';f.get('challenge-form').dispatch('submit');}
+   f.click(`Pass to ${core.teamName(1-first)} →`);f.click(`${core.teamName(1-first)} ready →`);assert.equal(f.state().turn,1-first);
+  }
+ }
+}
 
 // Full Memory Match: preview, pass every attempt, seven pairs, first-to-three,
 // reshuffled decks each round, and no extra round after a match winner.
@@ -162,7 +178,8 @@ for(const game of ['spot','trivia','word','picture']){
 // Green taps and non-responses both advance through all reaction trials.
 {
  const f=fixture();f.start('tap');
- f.click('Start reaction test →');f.advance(3500);
+ f.click('Start reaction test →');
+ for(let t=0;t<34&&f.get('tap-zone').querySelector('button').textContent==='WAIT…';t++)f.advance(100);
  const pad=f.get('tap-zone').querySelector('button');assert.equal(pad.textContent,'GO! TAP!');pad.click();
  f.click('Next test →');f.click('Start reaction test →');f.advance(5000);
  assert.match(f.get('tap-zone').textContent,/Time’s up/);
