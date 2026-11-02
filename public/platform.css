@@ -4,3 +4,5 @@ body.platform{margin:0;background:#f5f4ef;color:#171c19;font-family:Arial,Helvet
 @media(prefers-reduced-motion:reduce){.round-card{transition:none;transform:none!important}}
 /* Override the older member menu layout for the persistent platform sidebar. */
 .platform .platform-sidebar nav{grid-template-columns:1fr;background:transparent;padding:0;margin:0;border-radius:0;gap:7px}.platform .platform-sidebar .sidebar-bottom{margin-top:auto;padding-top:18px}.platform-brand img{object-fit:contain;background:#ffd522}
+
+.platform-stats .family-legacy-clock{font-size:clamp(20px,2vw,30px);font-variant-numeric:tabular-nums;letter-spacing:1px;color:#171c19;white-space:nowrap}.platform-stats .family-clock-caption{display:block;font-size:9px;font-weight:800;letter-spacing:1.1px;color:#666}.platform-stats .family-clock-note{display:block;font-size:11px;font-weight:600;line-height:1.35;color:#4d5149;margin-top:6px}
