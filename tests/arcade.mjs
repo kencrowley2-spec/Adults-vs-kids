@@ -4,6 +4,7 @@ import {readFileSync} from 'node:fs';
 import * as core from '../public/arcade-core.js';
 import * as data from '../public/arcade-data.js';
 import * as newCore from '../public/arcade-new-core.js';
+import * as library from '../public/arcade-library.js';
 
 // Small DOM/clock fixture executes the actual game controller without a browser
 // or real-time waits. Browser QA covers layout and native form behavior.
@@ -39,7 +40,7 @@ function fixture(){
   let now=0,seq=0,scheduled=new Map();const saved=[];const root=new Element();
   root.innerHTML=readFileSync(new URL('../app/family/arcade/route.ts',import.meta.url),'utf8').split('const html=`')[1].split('`;')[0];
   const doc={hidden:false,getElementById:id=>root.querySelector('#'+id),createElement:tag=>new Element(tag),handlers:{},addEventListener(type,fn){this.handlers[type]=fn;}};
-  const context=vm.createContext({...core,...data,...newCore,document:doc,crypto,window:{addEventListener(){}},createResultRecorder:()=>({drain:async()=>{},capture:result=>{saved.push(result);}}),performance:{now:()=>now},console,setTimeout:(fn,delay)=>{scheduled.set(++seq,{at:now+delay,fn});return seq;},clearTimeout:id=>scheduled.delete(id)});
+  const context=vm.createContext({...core,...data,...newCore,...library,document:doc,crypto,window:{addEventListener(){}},createResultRecorder:()=>({drain:async()=>{},capture:result=>{saved.push(result);}}),performance:{now:()=>now},console,setTimeout:(fn,delay)=>{scheduled.set(++seq,{at:now+delay,fn});return seq;},clearTimeout:id=>scheduled.delete(id)});
   const source=readFileSync(new URL('../public/arcade.js',import.meta.url),'utf8').replace(/^import .*;\n/gm,'');
   vm.runInContext(source+'\nthis.state=()=>({wins:[...wins],round,champion,turn,plans:game?{maze:game.maze,codes:game.codes,course:game.course}:null,series:series?{games:series.games.map(g=>g.id),index:series.index,winners:[...series.winners]}:null});this.resolveGame=finishRound;this.seriesWith=id=>{startSeries();series.games=[GAMES.find(g=>g.id===id),...GAMES.filter(g=>g.id!==id).slice(0,2)];};',context);
   const get=id=>doc.getElementById(id);
@@ -357,3 +358,12 @@ console.log('Fast-flow checks passed: stable cards, rapid taps, preview skip, au
  assert.ok(f.get('memory-cards'));assert.equal(f.state().turn,0);
 }
 console.log('Maze celebration checks passed: child success graphic, automatic continuation and exit cleanup.');
+
+// The cover library renders every real game; recent picks ignore corrupt or
+// unrelated stored values and are capped at eight unique available games.
+for(const game of data.GAMES){const cover=library.coverMarkup(game);assert.ok(cover.includes(game.name));assert.ok(cover.includes('<svg'));}
+assert.deepEqual(library.recentGames({getItem:()=>'{bad'},'family',data.GAMES),[]);
+assert.deepEqual(library.recentGames({getItem:()=>JSON.stringify(['memory','unknown','memory','maze'])},'family',data.GAMES),['memory','maze']);
+assert.equal(library.recentGames({getItem:()=>JSON.stringify(data.GAMES.map(g=>g.id))},'family',data.GAMES).length,8);
+assert.deepEqual(library.recentGames({getItem(){throw Error('Unavailable');}},'family',data.GAMES),[]);
+console.log('Arcade library checks passed: all 13 covers, recent-game filtering, storage limits and unavailable-storage fallback.');

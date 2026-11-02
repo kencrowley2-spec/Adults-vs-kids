@@ -1,3 +1,4 @@
+import {coverMarkup,recentGames} from './arcade-library.js?v=1';
 import {GAMES, ANIMALS, TRIVIA, WORDS, PICTURES, CHALLENGES} from './arcade-data.js?v=5';
 import {teamName, shuffle, roundWinner, awardRound, lineWinner} from './arcade-core.js';
 
@@ -75,7 +76,7 @@ function pick(key,source,n){
 function openGame(id){
   startRecording('single',[id]);
   series=null;
-  game=GAMES.find(g=>g.id===id); lobby.hidden=true; arena.hidden=false;
+  game=GAMES.find(g=>g.id===id); rememberGame(id); lobby.hidden=true; arena.hidden=false;
   $('game-title').textContent=`${game.icon} ${game.name}`; used={}; wins=[0,0]; round=1; attempt=0; starter=0; turn=0; champion=-1; results=[];
   scoreboard(); screen(`<div class="intro"><span class="giant-icon">${game.icon}</span><p class="eyebrow">${game.tag}</p><h3>Parents vs. kids.<br>Bring your game face.</h3><p>${game.description}</p><div class="rule-chips"><span>2 teams · 1 device</span><span>First to 3 round wins</span></div></div>`);
   button('Parents first →',()=>{starter=0;beginRound();});
@@ -438,10 +439,28 @@ function miniGolf(){
   startHole();
 }
 
-GAMES.forEach(g=>{
-  const tile=button('',()=>openGame(g.id),$('arcade-grid'),`game-tile ${g.color}`);
-  tile.innerHTML=`<span class="tile-top"><span class="emoji" aria-hidden="true">${g.icon}</span><span class="tile-arrow" aria-hidden="true">↗</span></span><small>${g.tag}</small><b>${g.name}</b><span class="tile-footer">PLAY NOW <span>BEST OF 5</span></span>`;
-});
+const recentKey=`avk-arcade-recent:${arcadeAccountId}`;
+function gameTile(g,parent){
+ const tile=button('',()=>openGame(g.id),parent,'game-tile cover-tile');
+ tile.setAttribute('data-game',g.id);tile.setAttribute('aria-label',`Play ${g.name}`);tile.innerHTML=coverMarkup(g);return tile;
+}
+function renderRecent(){
+ let ids=[];try{ids=recentGames(localStorage,recentKey,GAMES);}catch{}
+ $('arcade-recent-section').hidden=!ids.length;$('arcade-recent').replaceChildren();
+ ids.forEach(id=>gameTile(GAMES.find(g=>g.id===id),$('arcade-recent')));
+}
+function rememberGame(id){
+ try{const ids=recentGames(localStorage,recentKey,GAMES);localStorage.setItem(recentKey,JSON.stringify([id,...ids.filter(x=>x!==id)].slice(0,8)));}catch{}
+ renderRecent();
+}
+GAMES.forEach(g=>gameTile(g,$('arcade-grid')));
+['memory','maze','golf','tap','tic','trivia','rps'].forEach(id=>gameTile(GAMES.find(g=>g.id===id),$('arcade-favorites')));
+renderRecent();
+for(const shelf of ['favorites','recent','all']){
+ const track=$(shelf==='all'?'arcade-grid':`arcade-${shelf}`);
+ for(const [direction,sign] of [['prev',-1],['next',1]])$(`shelf-${shelf}-${direction}`).addEventListener('click',()=>track.scrollBy({left:sign*track.clientWidth*.8,behavior:window.matchMedia?.('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'}));
+}
+$('arcade-featured-play').addEventListener('click',()=>openGame('memory'));
 $('arcade-random').addEventListener('click',startSeries);
 $('arcade-return').addEventListener('click',()=>{clearTimers();series=null;arena.hidden=true;lobby.hidden=false;game=null;$('arcade-grid').querySelector('button')?.focus();});
 $('arcade-reset').addEventListener('click',()=>{
