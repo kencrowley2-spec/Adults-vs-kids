@@ -120,3 +120,67 @@ body{background:#0a101d}body::before{display:none}header{max-width:none;padding:
 @keyframes rps-clash-left{50%{transform:translateX(12px) rotate(12deg) scale(1.08)}}@keyframes rps-clash-right{50%{transform:translateX(-12px) rotate(-12deg) scale(1.08)}}
 @media(max-width:600px){.rps-options{gap:8px}.rps-options .rps-choice{min-height:145px;padding:16px 5px;gap:10px}.rps-choice-hand{font-size:clamp(50px,15vw,72px)}.rps-choice-label{font-size:14px}.rps-battle-board{gap:8px}.rps-battle-team{padding:18px 5px;border-radius:14px}.rps-battle-team>b{font-size:10px;letter-spacing:.7px}.rps-battle-hand{font-size:clamp(62px,20vw,90px)}.rps-battle-team>strong{font-size:17px}.rps-battle-vs{font-size:15px}}
 @media(prefers-reduced-motion:reduce){.rps-battle-hand{animation:none!important}}
+
+/* Every game opens as a viewport-sized play screen, like the compact timer. */
+body:has(#arcade-game:not([hidden])){overflow:hidden;overscroll-behavior:none}
+#arcade-game:not([hidden]){position:fixed;inset:0;z-index:100;width:100%;max-width:none;height:100vh;height:var(--arena-height,100dvh);margin:0;border:0;border-radius:0;box-shadow:none;background:#fff;display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto auto auto auto auto minmax(0,1fr) auto;gap:5px 8px;padding:max(8px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) max(8px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left));overflow:hidden}
+#arcade-game .arena-top{grid-column:1/-1;grid-row:1;min-height:28px}.arena-top .text-button{min-height:32px;padding:6px;font-size:11px}
+#arcade-game #game-title{grid-column:1;grid-row:2;font-size:clamp(16px,3.8vw,22px);letter-spacing:-.5px;margin:0;text-align:left;align-self:center;line-height:1.15}
+#arcade-game .arcade-controls{grid-column:2;grid-row:2;margin:0;gap:5px}.arcade-controls button{min-height:30px;padding:5px 8px;font-size:9px}
+#arcade-game #series-lineup{grid-column:1/-1;grid-row:3;margin:0 auto;width:100%;max-width:680px;gap:4px}.series-pick{padding:4px 6px;border-radius:5px}.series-pick small{font-size:7px;margin:0}.series-pick b{font-size:9px}
+#arcade-game #arcade-score{grid-column:1/-1;grid-row:4;width:100%;max-width:680px;gap:7px;margin:0 auto}.team-score{padding:6px 10px;border-radius:9px;display:flex;align-items:center;justify-content:space-between;gap:8px}.team-score>span{font-size:9px;letter-spacing:.5px}.team-score strong{font-size:25px;line-height:1;margin:0}.team-score .win-dots{display:none}
+#arcade-game #round-label{grid-column:1;grid-row:5;align-self:center;text-align:left;font-size:8px;letter-spacing:.5px;margin:0;line-height:1.3}
+#arcade-game .arcade-feedback{grid-column:2;grid-row:5;margin:0;height:25px;gap:5px}.arcade-feedback b{font-size:9px;max-width:125px;line-height:1.1}.arcade-bulbs{gap:4px}.arcade-bulbs i{width:8px;height:8px;border-width:1px}
+.game-viewport{grid-column:1/-1;grid-row:6;min-height:0;min-width:0;overflow:hidden;position:relative}
+#arcade-game #game-stage{width:100%;max-width:680px;min-height:0;margin:0 auto;padding:2px 4px 5px;transform:scale(var(--game-scale,1));transform-origin:top center}
+#arcade-game .arena-bottom{grid-column:1/-1;grid-row:7;display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0;padding:4px 0 0;min-height:32px}
+#arcade-game #arcade-message{font-size:10px;line-height:1.3;margin:0;min-height:0;text-align:left;flex:1}
+#arcade-game #arcade-reset{font-size:9px;padding:8px 3px;white-space:nowrap;min-height:32px}
+#arcade-game #game-stage p{font-size:12px;line-height:1.4;margin:7px 0}
+#arcade-game #game-stage h3{font-size:clamp(21px,5vw,29px);line-height:1.1;margin:10px 0}
+#arcade-game #game-stage small{font-size:10px;line-height:1.35;margin-top:8px}
+#game-stage .giant-icon{font-size:42px;line-height:1.15;margin:8px auto}
+#game-stage .rule-chips{margin:10px 0;gap:5px}.rule-chips span{font-size:9px;padding:7px 9px}
+#game-stage .primary{min-height:44px;margin:8px 4px;padding:11px 16px;font-size:13px}
+#game-stage .turn-strip{padding:7px 10px;margin:0 0 8px;min-height:32px;font-size:11px}.turn-strip strong{font-size:18px}
+#game-stage .memory-grid{max-width:min(320px,100%);gap:6px}.memory-card{border-radius:9px;font-size:28px}
+#game-stage .tic-grid{max-width:min(280px,100%);gap:6px}.tic-cell{font-size:42px}
+#game-stage .rps-options{margin:12px 0;gap:8px}.rps-options .rps-choice{min-height:130px;padding:14px 6px;gap:8px}.rps-choice-hand{font-size:clamp(56px,15vw,80px)}.rps-choice-label{font-size:15px}
+#game-stage .rps-battle{padding:4px 0 8px}.rps-battle h3{margin:8px 0 14px}.rps-battle-team{padding:14px 6px;border-radius:14px}.rps-battle-hand{font-size:clamp(64px,20vw,96px);margin:10px 0}.rps-battle-team>strong{font-size:18px;margin-top:7px}#game-stage #rps-battle-call{min-height:36px;font-size:15px;margin:14px 0 0}
+#game-stage .rps-pass-count{font-size:42px!important;margin:8px 0!important}
+#game-stage .maze-board{width:min(260px,46dvh,100%);margin:8px auto}.maze-cell{font-size:18px}
+#game-stage .maze-controls{grid-template-columns:repeat(4,minmax(0,1fr));max-width:360px;gap:6px}
+#game-stage .maze-controls .answer{flex-direction:column;gap:1px;min-height:65px;padding:4px;border-width:2px;box-shadow:0 2px 0 #111}
+#game-stage .maze-direction-arrow{font-size:38px;line-height:1}.maze-controls .maze-direction-label{font-size:10px}
+#game-stage .maze-celebration{padding:15px 10px;margin:8px auto}#game-stage .maze-celebration .giant-icon{font-size:72px}
+#game-stage .answer-grid{gap:8px;margin-top:12px}.answer-grid .answer{min-height:48px;padding:10px;font-size:14px}
+#game-stage .answer-feedback{padding:8px;font-size:12px}
+#game-stage .mystery{width:138px;height:138px;margin:10px auto}.mystery>span{font-size:98px}
+#game-stage .math-question{font-size:42px;margin:14px 0}
+#game-stage .scramble{font-size:32px;letter-spacing:7px;margin:14px 0}
+#game-stage form{margin:10px auto;max-width:340px}#game-stage label{font-size:11px;margin-bottom:5px}#game-stage input{font-size:16px;padding:10px;min-height:44px}#game-stage form .primary{margin:8px 0}
+#game-stage #spot-body{display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:440px;margin:auto}
+#spot-body>.reference{grid-column:1;grid-row:1}#spot-body>.spot-grid:not(.reference){grid-column:2;grid-row:1}#spot-body>p{display:none}
+#spot-body .spot-grid{width:100%;margin:0;gap:5px}#spot-body .spot-grid span,#spot-body .spot-tile{font-size:28px}
+#game-stage .tap-pad{min-height:150px;font-size:25px;padding:18px}#game-stage .reaction-result{font-size:28px!important;margin:35px 0}
+#game-stage .code-digits{margin:10px auto;gap:10px}.code-digit{width:60px;min-height:62px;font-size:34px}
+#game-stage .code-history{display:grid;grid-template-columns:1fr 1fr;gap:0 16px;font-size:10px;line-height:1.35;margin:7px auto;padding-left:18px;max-width:440px}.code-history li{padding:5px 0}
+#game-stage .golf-course{max-width:380px;margin:7px auto}
+#game-stage #golf-controls{display:grid;grid-template-columns:1fr 1fr;gap:5px 12px;margin:6px auto;max-width:440px}
+#golf-controls label[for="golf-angle"]{grid-column:1;grid-row:1}#golf-controls label[for="golf-power"]{grid-column:2;grid-row:1}
+#game-stage #golf-controls input{min-height:38px;margin:0;padding:0}#golf-angle{grid-column:1;grid-row:2}#golf-power{grid-column:2;grid-row:2}#golf-action{grid-column:1/-1;grid-row:3}#golf-action .primary{margin:4px 0;width:100%}
+#game-stage .challenge-clock{font-size:64px;margin:14px auto}
+#game-stage .final-score{font-size:48px;margin:14px 0}
+@media(max-height:500px) and (orientation:landscape){#arcade-game:not([hidden]){grid-template-columns:minmax(180px,29%) minmax(0,1fr);grid-template-rows:30px auto auto auto minmax(0,1fr) 32px;gap:4px 12px}#arcade-game .arena-top{grid-column:1/-1;grid-row:1}#arcade-game #game-title{grid-column:1;grid-row:2;font-size:17px}#arcade-game .arcade-controls{grid-column:1;grid-row:3;justify-content:flex-start}#arcade-game #arcade-score{grid-column:1;grid-row:4;grid-template-columns:1fr}#arcade-game .team-score{padding:8px}#arcade-game #series-lineup{grid-column:1;grid-row:5;align-self:start}#arcade-game #round-label{grid-column:1;grid-row:6}#arcade-game .arcade-feedback{display:none}#arcade-game .game-viewport{grid-column:2;grid-row:2/7}#arcade-game .arena-bottom{grid-column:1;grid-row:7}#arcade-game #game-stage{max-width:540px}}
+
+.feature-banner-hit{position:absolute;inset:0;z-index:4;border:0;background:transparent;cursor:pointer;border-radius:inherit}
+.feature-banner-hit:focus-visible{outline:4px solid #fff;outline-offset:-7px;box-shadow:inset 0 0 0 10px #111}
+.arcade-feature h1{max-width:640px;font-size:clamp(34px,4.4vw,60px);line-height:1.03;overflow-wrap:break-word}
+.feature-pagination{display:flex;align-items:center;justify-content:flex-end;gap:10px;color:#b5c1d8;font-size:10px;margin-top:10px}
+.feature-pagination button{background:#152034;border:1px solid #ffffff30;color:#fff;border-radius:5px;min-height:32px;min-width:32px;cursor:pointer;font-size:18px}
+.feature-pagination #feature-pause{font-size:10px;padding:5px 12px}
+.feature-poster{position:absolute;right:100px;top:20px;width:212px;height:280px;border:3px solid #fff;border-radius:12px;background:linear-gradient(145deg,var(--cover-a),var(--cover-b));box-shadow:8px 12px 0 #0004;transform:rotate(8deg);display:flex;flex-direction:column;overflow:hidden;color:#fff;text-align:left}
+.feature-poster .cover-brand{font-size:9px}.feature-poster .cover-art{top:23px}.feature-poster .cover-info{margin-top:auto;padding:0 15px 15px;background:linear-gradient(transparent,#0005)}
+.feature-poster .cover-info small{font-size:7px;display:block;margin-bottom:6px;font-weight:800}
+.feature-poster .cover-info b{font-size:28px;font-weight:900;letter-spacing:-1px;line-height:1;display:block;text-shadow:1px 2px 0 #0005}
+@media(max-width:760px){.arcade-feature h1{font-size:clamp(27px,5vw,40px);letter-spacing:-1px}.feature-poster{right:8px;top:62px;width:110px;height:154px;border-width:2px;border-radius:8px}.feature-poster .cover-brand{font-size:5px;margin:8px 7px 0}.feature-poster .cover-art{top:15px}.feature-poster .cover-info{padding:0 8px 8px}.feature-poster .cover-info small{font-size:4px;margin-bottom:3px}.feature-poster .cover-info b{font-size:16px;letter-spacing:-.4px}.feature-poster .cover-play{font-size:4px;padding:5px 7px}.feature-poster .cover-play span{font-size:4px}.feature-copy .feature-play{font-size:7px;max-width:190px;line-height:1.5}}

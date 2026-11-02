@@ -55,10 +55,38 @@ $('arcade-effects').textContent=`Lights: ${effectsOn?'on':'off'}`;
 $('arcade-effects').addEventListener('click',()=>{effectsOn=!effectsOn;$('arcade-effects').textContent=`Lights: ${effectsOn?'on':'off'}`;$('arcade-effects').setAttribute('aria-pressed',String(effectsOn));$('arcade-feedback').setAttribute('data-kind','');});
 function clearTimers(){ generation++; timers.forEach(clearTimeout); timers=[]; timed=false; }
 function later(fn,delay){ const token=generation; const timer=setTimeout(()=>{if(token===generation)fn();},delay); timers.push(timer); }
-function screen(html){ clearTimers(); $('arcade-feedback').setAttribute('data-kind','');$('feedback-caption').textContent='';stage.innerHTML=html; }
+function screen(html){ clearTimers(); $('arcade-feedback').setAttribute('data-kind','');$('feedback-caption').textContent='';stage.innerHTML=html; scheduleGameFit(); }
 function button(label,action,parent=stage,className='primary'){
   const b=document.createElement('button'); b.type='button'; b.className=className; b.textContent=label; b.addEventListener('click',action); parent.appendChild(b); return b;
 }
+
+function fitGameViewport(){
+  const viewport=$('game-viewport');
+  if(arena.hidden||!stage.style||!viewport?.clientHeight)return;
+  // Measure the natural compact layout, then fit every control inside the arena.
+  // A transform preserves the same hit targets and game state across resizes.
+  const height=viewport.clientHeight,width=viewport.clientWidth;
+  stage.style.setProperty('--play-height',height+'px');
+  const scale=Math.min(1,height/Math.max(stage.scrollHeight,1),width/Math.max(stage.scrollWidth,1));
+  stage.style.setProperty('--game-scale',String(Math.max(.1,scale)));
+}
+let fitPending=false;
+function scheduleGameFit(){
+  if(fitPending||typeof requestAnimationFrame!=='function')return;
+  fitPending=true;requestAnimationFrame(()=>{fitPending=false;fitGameViewport();});
+}
+if(typeof ResizeObserver!=='undefined'){
+ const observer=new ResizeObserver(scheduleGameFit);observer.observe($('game-viewport'));observer.observe(stage);
+}
+if(typeof MutationObserver!=='undefined')new MutationObserver(scheduleGameFit).observe(stage,{childList:true,subtree:true,characterData:true});
+function updateArenaHeight(){
+ if(arena.style)arena.style.setProperty('--arena-height',(window.visualViewport?.height||window.innerHeight)+'px');
+ scheduleGameFit();
+}
+window.addEventListener('resize',updateArenaHeight);
+window.visualViewport?.addEventListener('resize',updateArenaHeight);
+updateArenaHeight();
+
 function focusFirst(){ stage.querySelector('button,input')?.focus({preventScroll:true}); }
 function status(text){$('arcade-message').textContent=text;}
 function scoreboard(){
@@ -74,6 +102,7 @@ function pick(key,source,n){
   return used[key].splice(0,n);
 }
 function openGame(id){
+  clearTimeout(featuredTimer);
   startRecording('single',[id]);
   series=null;
   game=GAMES.find(g=>g.id===id); rememberGame(id); lobby.hidden=true; arena.hidden=false;
@@ -84,6 +113,7 @@ function openGame(id){
   status('Who goes first? Choose parents or kids to start the match.'); focusFirst();
 }
 function startSeries(){
+  clearTimeout(featuredTimer);
   clearTimers();
   series={games:shuffle(GAMES).slice(0,3),index:0,winners:[],first:0};
   startRecording('series',series.games.map(g=>g.id));
@@ -477,13 +507,34 @@ for(const shelf of ['favorites','recent','all']){
  const track=$(shelf==='all'?'arcade-grid':`arcade-${shelf}`);
  for(const [direction,sign] of [['prev',-1],['next',1]])$(`shelf-${shelf}-${direction}`).addEventListener('click',()=>track.scrollBy({left:sign*track.clientWidth*.8,behavior:window.matchMedia?.('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'}));
 }
-$('arcade-featured-play').addEventListener('click',()=>openGame('memory'));
+let featuredIndex=0,featuredPaused=false,featuredTimer=null;
+function renderFeatured(){
+ const g=GAMES[featuredIndex];
+ $('arcade-feature-title').textContent=g.name;
+ $('feature-description').textContent=g.tag;
+ $('feature-play-label').textContent='▶ PLAY '+g.name.toUpperCase();
+ $('arcade-featured-play').setAttribute('aria-label','Play '+g.name);
+ $('feature-art').innerHTML=`<div class="feature-poster" data-game="${g.id}">${coverMarkup(g)}</div><span class="feature-stamp">LESS SUPERVISING.<br><b>MORE PLAYING.</b></span>`;
+ $('feature-position').textContent=(featuredIndex+1)+' / '+GAMES.length;
+}
+function scheduleFeatured(){
+ clearTimeout(featuredTimer);
+ if(featuredPaused||!arena.hidden||document.hidden)return;
+ featuredTimer=setTimeout(()=>{featuredIndex=(featuredIndex+1)%GAMES.length;renderFeatured();scheduleFeatured();},6500);
+}
+$('arcade-featured-play').addEventListener('click',()=>openGame(GAMES[featuredIndex].id));
+$('feature-prev').addEventListener('click',()=>{featuredIndex=(featuredIndex+GAMES.length-1)%GAMES.length;renderFeatured();scheduleFeatured();});
+$('feature-next').addEventListener('click',()=>{featuredIndex=(featuredIndex+1)%GAMES.length;renderFeatured();scheduleFeatured();});
+$('feature-pause').addEventListener('click',()=>{featuredPaused=!featuredPaused;$('feature-pause').textContent=featuredPaused?'Resume slides':'Pause slides';$('feature-pause').setAttribute('aria-pressed',String(featuredPaused));scheduleFeatured();});
+renderFeatured();scheduleFeatured();
+
 $('arcade-random').addEventListener('click',startSeries);
-$('arcade-return').addEventListener('click',()=>{clearTimers();series=null;arena.hidden=true;lobby.hidden=false;game=null;$('arcade-grid').querySelector('button')?.focus();});
+$('arcade-return').addEventListener('click',()=>{clearTimers();series=null;arena.hidden=true;lobby.hidden=false;game=null;scheduleFeatured();$('arcade-grid').querySelector('button')?.focus();});
 $('arcade-reset').addEventListener('click',()=>{
   if(!game)return;const saved=game.id;const wasSeries=!!series;screen('<div class="result"><h3>Start over?</h3><p>The current game and all points in this match or series will reset.</p></div>');
   button(wasSeries?'Restart series':'Restart match',()=>wasSeries?startSeries():openGame(saved));button('Return to Arcade',()=>{$('arcade-return').click();},stage,'text-button');status('Match paused. Choose restart or return to the Arcade.');
 });
 document.addEventListener('visibilitychange',()=>{
+  if(document.hidden)clearTimeout(featuredTimer);else scheduleFeatured();
   if(document.hidden&&timed&&game){clearTimers();screen('<div class="result"><h3>Let’s give both teams a fair turn.</h3><p>The timed game was interrupted. Replay this round with no round win awarded.</p></div>');button('Replay this round →',beginRound);status('Round interrupted. Match score is unchanged.');}
 });

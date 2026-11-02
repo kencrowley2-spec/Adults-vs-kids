@@ -388,3 +388,17 @@ console.log('RPS reveal checks passed: all move combinations, both starters, del
  const g=fixture();g.start('rps',1);g.click('Rock ✊');g.get('arcade-reset').click();g.advance(5000);assert.match(g.get('game-stage').textContent,/Start over/);assert.equal(g.get('rps-options'),null);
 }
 console.log('RPS auto-pass checks passed: exact four-second delay, hidden first move, both starting teams, and reset/exit cancellation.');
+
+// Featured slides rotate in the lobby, pause on request and launch the
+// currently displayed game. They stop advancing during a live game.
+{
+ const f=fixture();f.start('memory');f.get('arcade-return').click();
+ assert.equal(f.get('arcade-feature-title').textContent,data.GAMES[0].name);
+ f.advance(6500);assert.equal(f.get('arcade-feature-title').textContent,data.GAMES[1].name);
+ f.get('feature-pause').click();f.advance(20000);assert.equal(f.get('arcade-feature-title').textContent,data.GAMES[1].name);
+ f.get('feature-next').click();assert.equal(f.get('arcade-feature-title').textContent,data.GAMES[2].name);
+ f.get('arcade-featured-play').click();assert.match(f.get('game-title').textContent,/Code Breaker/);
+ f.advance(20000);assert.equal(f.get('arcade-feature-title').textContent,data.GAMES[2].name);
+ f.get('arcade-return').click();f.get('feature-pause').click();f.advance(6500);assert.equal(f.get('arcade-feature-title').textContent,data.GAMES[3].name);
+}
+console.log('Featured banner checks passed: timed rotation, previous/next controls, pause/resume and current-slide game launch.');
