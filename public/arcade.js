@@ -1,5 +1,7 @@
-import {GAMES, ANIMALS, TRIVIA, WORDS, PICTURES, CHALLENGES} from './arcade-data.js?v=3';
+import {GAMES, ANIMALS, TRIVIA, WORDS, PICTURES, CHALLENGES} from './arcade-data.js?v=5';
 import {teamName, shuffle, roundWinner, awardRound, lineWinner} from './arcade-core.js';
+
+import {makeMaze, codeClues, rpsWinner, GOLF_COURSES, golfStep} from './arcade-new-core.js?v=5';
 
 const $ = id => document.getElementById(id);
 const lobby=$('arcade-lobby'), arena=$('arcade-game'), stage=$('game-stage');
@@ -77,6 +79,10 @@ function beginRound(){
   results=[]; turn=starter; scoreboard(); status('');
   if(game.id==='memory') return handoff(turn,'Both teams: watch the five-second card preview together. Then the starting team gets the first pick.',memory);
   if(game.id==='tic') return handoff(turn,`${teamName(turn)} makes the first move. Adults use X; kids use O.`,tic);
+  if(game.id==='rps')return handoff(turn,'Keep your move secret. The other team should look away until you pass the device.',rockPaperScissors);
+  if(game.id==='maze')game.maze=makeMaze();
+  if(game.id==='code')game.codes=[0,1].map(()=>Array.from({length:3},()=>1+Math.floor(Math.random()*4)));
+  if(game.id==='golf')game.course=shuffle(GOLF_COURSES).slice(0,3);
   if(game.id==='challenge') game.challenge=pick('challenge',CHALLENGES,1)[0];
   if(game.id==='trivia') game.questions=pick('trivia',TRIVIA,10);
   if(game.id==='word') game.words=pick('word',WORDS,6);
@@ -86,7 +92,7 @@ function beginRound(){
 function teamReady(team){
   let detail=`Your own turn starts only when you’re ready. ${game.description}`;
   if(game.id==='challenge') detail=`Pick ONE player per team. Same challenge, same 20 seconds. ${game.challenge[0]}: ${game.challenge[1]} The other team counts. You can play seated.`;
-  handoff(team,detail,()=>({spot, trivia:quiz,word:quiz,tap:quickTap,picture:quiz,number:quiz,challenge}[game.id])());
+  handoff(team,detail,()=>({spot, trivia:quiz,word:quiz,tap:quickTap,picture:quiz,number:quiz,challenge,maze:mazeDash,code:codeBreaker,golf:miniGolf}[game.id])());
 }
 function finishRound(winner,detail){
   if(series)return finishSeriesGame(winner,detail);
@@ -105,7 +111,7 @@ function finishTurn(result){
     screen(`<div class="result"><span class="giant-icon">👏</span><h3>${teamName(turn)}’ turn is complete!</h3><p>${result.label}</p><p>Pass the device for the other team’s challenge.</p></div>`);
     button(`Pass to ${teamName(1-turn)} →`,()=>teamReady(1-turn)); status('Nice effort! Both teams get a full turn.'); focusFirst();
   }else{
-    const lower=game.id==='tap'; const timeBreak=['spot','word','picture','number'].includes(game.id);
+    const lower=['tap','golf'].includes(game.id); const timeBreak=['spot','word','picture','number','maze'].includes(game.id);
     const winner=roundWinner(results[0],results[1],lower,timeBreak);
     const detail=names.map((n,i)=>`${n}: ${results[i].label}`).join(' · ');
     finishRound(winner,detail);
@@ -259,6 +265,109 @@ function challenge(){
     if(finished)return;finished=true;screen(`<div class="result"><span class="giant-icon">⏱</span><h3>Stop! How many?</h3><p>Other team: enter the repetitions you counted for ${teamName(turn)}.</p><form id="challenge-form"><label for="challenge-score">Repetitions completed</label><input id="challenge-score" type="number" min="0" max="999" step="1" inputmode="numeric" required><button class="primary" type="submit">Confirm score →</button></form><p class="clue">Scores are counted by your family. Be fair. Have fun.</p></div>`);
     $('challenge-form').addEventListener('submit',e=>{e.preventDefault();const value=Number($('challenge-score').value);if(Number.isInteger(value)&&value>=0&&value<=999)finishTurn({score:value,elapsed:20,label:`${value} repetitions`});});status('Time! Enter the score together.');focusFirst();
   });status('Go! Twenty seconds. Count each complete repetition.');
+}
+
+function rockPaperScissors(){
+  const choices=[null,null],moves=['Rock ✊','Paper ✋','Scissors ✌️'];
+  const first=starter;
+  function choose(){
+    screen(`<p class="eyebrow">${teamName(turn).toUpperCase()} · SECRET MOVE</p><h3>What’s your move?</h3><p>Other team: look away. Your choice stays hidden until both teams have picked.</p><div id="rps-options" class="rps-options"></div>`);
+    moves.forEach((move,i)=>button(move,()=>{
+      if(choices[turn]!==null)return;choices[turn]=i;
+      if(choices[1-turn]===null){
+        handoff(1-first,'The first move is hidden. Choose yours without looking back.',choose);
+      }else finishRound(rpsWinner(choices),`Adults: ${moves[choices[0]]} · Kids: ${moves[choices[1]]}`);
+    },$('rps-options'),'answer'));
+    status(`${teamName(turn)}: pick a secret move.`);focusFirst();
+  }
+  choose();
+}
+function mazeDash(){
+  const {size,cells}=game.maze;let position=0,settled=false,steps=0;
+  const started=performance.now(),delta=[-size,1,size,-1];
+  screen('<div class="turn-strip"><span id="maze-progress"></span><strong id="game-clock"></strong></div><p>Use the arrows to reach the flag. Solid black lines are walls.</p><div id="maze-board" class="maze-board" role="img" aria-label="Maze"></div><div id="maze-controls" class="maze-controls"></div>');
+  function finish(escaped){
+    if(settled)return;settled=true;
+    const elapsed=escaped?(performance.now()-started)/1000:45;
+    finishTurn({score:escaped?1:0,elapsed,label:escaped?`Escaped in ${elapsed.toFixed(1)}s · ${steps} moves`:'No escape in 45 seconds'});
+  }
+  function draw(){
+    $('maze-progress').textContent=`${teamName(turn)} · ${steps} moves`;
+    $('maze-board').innerHTML=cells.map((walls,i)=>`<span class="maze-cell ${i===position?'player':''}" style="border-top:${walls[0]?3:0}px solid #111;border-right:${walls[1]?3:0}px solid #111;border-bottom:${walls[2]?3:0}px solid #111;border-left:${walls[3]?3:0}px solid #111">${i===position?'●':i===cells.length-1?'⚑':''}</span>`).join('');
+    $('maze-board').setAttribute('aria-label',`Player row ${Math.floor(position/size)+1}, column ${position%size+1}. Goal row ${size}, column ${size}.`);
+    $('maze-controls').replaceChildren();
+    ['↑ Up','→ Right','↓ Down','← Left'].forEach((label,d)=>{
+      const b=button(label,()=>{
+        if(settled||cells[position][d])return;
+        position+=delta[d];steps++;if(position===cells.length-1)return finish(true);draw();
+      },$('maze-controls'),'answer');b.disabled=cells[position][d];
+    });
+  }
+  draw();startClock(45,()=>finish(false));status('Find the flag. You can only move through open paths.');
+}
+function codeBreaker(){
+  let guesses=0,settled=false,guess=[1,1,1];const secret=game.codes[turn];
+  screen('<div class="turn-strip"><span id="code-progress"></span><strong id="game-clock"></strong></div><h3>Crack the three-digit code.</h3><p>Tap a digit to cycle 1 → 2 → 3 → 4. Repeats are allowed. Exact = correct digit and place. Misplaced = correct digit, different place.</p><div id="code-digits" class="code-digits"></div><div id="code-action"></div><ol id="code-history" class="code-history" aria-label="Your guesses"></ol>');
+  function finish(solved){if(settled)return;settled=true;finishTurn({score:solved?7-guesses:0,elapsed:0,label:solved?`Code cracked in ${guesses} ${guesses===1?'guess':'guesses'}`:`Code not cracked · ${guesses} guesses`});}
+  function draw(){
+    $('code-progress').textContent=`${teamName(turn)} · Guess ${guesses+1} of 6`;
+    $('code-digits').replaceChildren();
+    guess.forEach((v,i)=>{const b=button(String(v),()=>{if(settled)return;guess[i]=guess[i]%4+1;draw();},$('code-digits'),'code-digit');b.setAttribute('aria-label',`Digit ${i+1}: ${v}. Tap to change.`);});
+  }
+  button('Test code →',()=>{
+    if(settled)return;guesses++;const clues=codeClues(secret,guess);
+    if(clues.exact===3)return finish(true);
+    const row=document.createElement('li');row.textContent=`${guess.join(' ')} — ${clues.exact} exact · ${clues.misplaced} misplaced`;$('code-history').appendChild(row);
+    if(guesses===6)return finish(false);
+    draw();status(`${clues.exact} exact, ${clues.misplaced} misplaced. Use the clues for your next guess.`);
+  },$('code-action'));
+  draw();startClock(60,()=>finish(false));status('Your secret code is ready. Six guesses. Think it through.');
+}
+function miniGolf(){
+  let hole=0,shots=0,total=0,moving=false,finished=false,ball;
+  screen('<div class="turn-strip"><span id="golf-progress"></span><strong id="golf-strokes"></strong></div><div id="golf-course" class="golf-course"></div><div id="golf-controls"><label for="golf-angle">Aim: <span id="golf-angle-value"></span>° (0° right · 90° down · 180° left · 270° up)</label><input id="golf-angle" type="range" min="0" max="355" step="5" value="340"><label for="golf-power">Power: <span id="golf-power-value"></span>%</label><input id="golf-power" type="range" min="10" max="100" step="5" value="55"><div id="golf-action"></div></div><div id="golf-hole-result"></div>');
+  const angle=$('golf-angle'),power=$('golf-power');angle.value='340';power.value='55';
+  function draw(){
+    const c=game.course[hole],[wx,wy,ww,wh]=c.wall;
+    const rad=Number(angle.value)*Math.PI/180;
+    $('golf-progress').textContent=`${teamName(turn)} · Hole ${hole+1} of 3`;
+    $('golf-strokes').textContent=`Shot ${Math.min(shots+1,4)} / 4 · Total ${total}`;
+    $('golf-angle-value').textContent=angle.value;$('golf-power-value').textContent=power.value;
+    $('golf-course').innerHTML=`<svg viewBox="0 0 360 200" role="img" aria-label="Mini golf hole ${hole+1}. Ball at ${Math.round(ball.x)}, ${Math.round(ball.y)}. Cup at ${c.hole[0]}, ${c.hole[1]}. Wall in the middle."><rect width="360" height="200" rx="8" fill="#ffd522" stroke="#111" stroke-width="6"></rect><rect x="${wx}" y="${wy}" width="${ww}" height="${wh}" fill="#111"></rect><circle cx="${c.hole[0]}" cy="${c.hole[1]}" r="10" fill="#111"></circle><text x="${c.hole[0]+12}" y="${c.hole[1]+4}" font-size="16">⚑</text>${moving?'':`<line x1="${ball.x}" y1="${ball.y}" x2="${ball.x+Math.cos(rad)*40}" y2="${ball.y+Math.sin(rad)*40}" stroke="#111" stroke-width="2" stroke-dasharray="4 3"></line>`}<circle cx="${ball.x}" cy="${ball.y}" r="4" fill="#fff" stroke="#111" stroke-width="1.5"></circle></svg>`;
+  }
+  function startHole(){
+    shots=0;moving=false;ball={x:game.course[hole].ball[0],y:game.course[hole].ball[1],vx:0,vy:0};
+    $('golf-hole-result').replaceChildren();$('golf-controls').hidden=false;
+    angle.disabled=false;power.disabled=false;shoot.disabled=false;draw();status('Line up the dashed aim guide. Bank around the black wall. A gentle ball can drop into the cup.');
+  }
+  function endHole(sunk){
+    total+=sunk?shots:5;$('golf-controls').hidden=true;
+    const note=document.createElement('p');note.textContent=sunk?`In the cup! ${shots} ${shots===1?'stroke':'strokes'}.`:'Four shots used. This hole counts as five strokes.';$('golf-hole-result').appendChild(note);
+    draw();button(hole===2?'Finish turn →':'Next hole →',()=>{
+      if(finished)return;
+      if(hole===2){finished=true;finishTurn({score:total,elapsed:0,label:`${total} strokes across 3 holes`});}
+      else {hole++;startHole();}
+    },$('golf-hole-result'));
+    status(sunk?'Nice putt!':'Keep going! A new hole is waiting.');focusFirst();
+  }
+  const shoot=button('Putt →',()=>{
+    if(moving||finished||$('golf-controls').hidden)return;
+    moving=true;timed=true;shots++;angle.disabled=true;power.disabled=true;shoot.disabled=true;
+    const rad=Number(angle.value)*Math.PI/180,speed=Number(power.value)*0.09;
+    ball.vx=Math.cos(rad)*speed;ball.vy=Math.sin(rad)*speed;
+    let frames=0;
+    function frame(){
+      ball=golfStep(ball,game.course[hole]);frames++;draw();
+      if(ball.sunk||Math.hypot(ball.vx,ball.vy)<0.12||frames>=240){
+        moving=false;timed=false;
+        if(ball.sunk||shots===4)return endHole(ball.sunk);
+        angle.disabled=false;power.disabled=false;shoot.disabled=false;draw();status('Ball stopped. Adjust your aim and power for the next putt.');
+      }else later(frame,16);
+    }
+    frame();
+  },$('golf-action'));
+  angle.addEventListener('input',()=>{if(!moving)draw();});power.addEventListener('input',()=>{if(!moving)draw();});
+  startHole();
 }
 
 GAMES.forEach(g=>{

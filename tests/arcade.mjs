@@ -3,6 +3,7 @@ import vm from 'node:vm';
 import {readFileSync} from 'node:fs';
 import * as core from '../public/arcade-core.js';
 import * as data from '../public/arcade-data.js';
+import * as newCore from '../public/arcade-new-core.js';
 
 // Small DOM/clock fixture executes the actual game controller without a browser
 // or real-time waits. Browser QA covers layout and native form behavior.
@@ -37,17 +38,17 @@ function fixture(){
   let now=0,seq=0,scheduled=new Map();const root=new Element();
   root.innerHTML=readFileSync(new URL('../app/family/arcade/route.ts',import.meta.url),'utf8').split('const html=`')[1].split('`;')[0];
   const doc={hidden:false,getElementById:id=>root.querySelector('#'+id),createElement:tag=>new Element(tag),handlers:{},addEventListener(type,fn){this.handlers[type]=fn;}};
-  const context=vm.createContext({...core,...data,document:doc,performance:{now:()=>now},console,setTimeout:(fn,delay)=>{scheduled.set(++seq,{at:now+delay,fn});return seq;},clearTimeout:id=>scheduled.delete(id)});
+  const context=vm.createContext({...core,...data,...newCore,document:doc,performance:{now:()=>now},console,setTimeout:(fn,delay)=>{scheduled.set(++seq,{at:now+delay,fn});return seq;},clearTimeout:id=>scheduled.delete(id)});
   const source=readFileSync(new URL('../public/arcade.js',import.meta.url),'utf8').replace(/^import .*;\n/gm,'');
-  vm.runInContext(source+'\nthis.state=()=>({wins:[...wins],round,champion,turn,series:series?{games:series.games.map(g=>g.id),index:series.index,winners:[...series.winners]}:null});this.resolveGame=finishRound;',context);
+  vm.runInContext(source+'\nthis.state=()=>({wins:[...wins],round,champion,turn,plans:game?{maze:game.maze,codes:game.codes,course:game.course}:null,series:series?{games:series.games.map(g=>g.id),index:series.index,winners:[...series.winners]}:null});this.resolveGame=finishRound;this.seriesWith=id=>{startSeries();series.games=[GAMES.find(g=>g.id===id),...GAMES.filter(g=>g.id!==id).slice(0,2)];};',context);
   const get=id=>doc.getElementById(id);
   const buttons=()=>get('game-stage').querySelectorAll('button');
   const click=text=>{const b=buttons().find(b=>b.textContent===text);assert.ok(b,`Missing button: ${text}`);b.click();};
   function advance(ms){const end=now+ms;let guard=0;while(true){const task=[...scheduled.entries()].filter(([,t])=>t.at<=end).sort((a,b)=>a[1].at-b[1].at)[0];if(!task)break;assert.ok(++guard<10000);scheduled.delete(task[0]);now=task[1].at;task[1].fn();}now=end;}
   function start(id,first=0){const i=data.GAMES.findIndex(g=>g.id===id);get('arcade-grid').children[i].click();click(first===0?'Parents first →':'Kids first →');click(`${core.teamName(first)} ready →`);}
-  return {root,doc,get,buttons,click,advance,start,state:context.state,resolveGame:context.resolveGame};
+  return {root,doc,get,buttons,click,advance,start,state:context.state,resolveGame:context.resolveGame,seriesWith:context.seriesWith};
 }
-assert.equal(data.GAMES.length,9);
+assert.equal(data.GAMES.length,13);
 for(const outcome of [[0,1,0,1,0],[1,0,1,0,1],[0,0,0]]){
   let wins=[0,0],champion=-1;outcome.forEach(w=>({wins,champion}=core.awardRound(wins,w)));
   assert.equal(champion,outcome.at(-1));assert.equal(wins[champion],3);
@@ -65,8 +66,8 @@ for(const game of data.GAMES){
   else if(game.id==='tic'){
    f.get('tic-board').children[0].click();assert.equal(f.get('tic-board').children[0].textContent,first===0?'X':'O');
    f.click(`Pass to ${core.teamName(1-first)} →`);assert.equal(f.state().turn,1-first);
-  }else if(game.id!=='tap'){
-   f.advance(46000);
+  }else if(!['tap','rps','golf'].includes(game.id)){
+   f.advance(game.id==='code'?61000:46000);
    if(game.id==='challenge'){f.get('challenge-score').value='5';f.get('challenge-form').dispatch('submit');}
    f.click(`Pass to ${core.teamName(1-first)} →`);f.click(`${core.teamName(1-first)} ready →`);assert.equal(f.state().turn,1-first);
   }
@@ -217,7 +218,7 @@ for(const first of [0,1]){
 }
 // A real TTT result awards one series point and transitions to the next mode.
 {
- let f;for(let i=0;i<100;i++){f=fixture();f.get('arcade-random').click();if(f.state().series.games[0]==='tic')break;}
+ const f=fixture();f.seriesWith('tic');
  assert.equal(f.state().series.games[0],'tic');f.click('Parents first →');f.click('Adults ready →');
  for(const move of [0,3,1,4,2]){f.get('tic-board').children[move].click();if(move!==2)f.click(`Pass to ${core.teamName(1-f.state().turn)} →`);}
  f.advance(500);assert.deepEqual([...f.state().wins],[1,0]);f.advance(5000);assert.equal(f.state().series.index,1);
@@ -231,3 +232,82 @@ for(const first of [0,1]){
  assert.equal(f.state().series,null);assert.ok(f.get('tic-board'));assert.match(f.get('round-label').textContent,/FIRST TO 3 WINS/);
 }
 console.log('Random series checks passed: unique games, both starting teams, ties, automatic progression, manual progression, 2–1 and 3–0 results, replay, reset, exit cleanup.');
+
+// Hidden RPS choices stay private through the handoff. All nine outcomes agree
+// with the standard rules, regardless of which team makes the first choice.
+const rpsMoves=['Rock ✊','Paper ✋','Scissors ✌️'];
+for(const first of [0,1])for(let a=0;a<3;a++)for(let b=0;b<3;b++){
+ const f=fixture();f.start('rps',first);f.click(rpsMoves[first===0?a:b]);
+ assert.equal(f.get('rps-options'),null);assert.match(f.get('game-stage').textContent,/move is hidden/);
+ f.click(`${core.teamName(1-first)} ready →`);f.click(rpsMoves[first===0?b:a]);
+ const w=newCore.rpsWinner([a,b]);assert.deepEqual([...f.state().wins],w===null?[0,0]:w===0?[1,0]:[0,1]);
+}
+// Perfect mazes have a path to every cell; reciprocal walls prevent illegal moves.
+function route(maze){
+ const {size,cells}=maze,queue=[[0,[]]],seen=new Set([0]);
+ while(queue.length){const [at,path]=queue.shift();if(at===cells.length-1)return path;
+  cells[at].forEach((wall,d)=>{if(wall)return;const next=at+[-size,1,size,-1][d];assert.ok(next>=0&&next<cells.length);assert.equal(cells[next][(d+2)%4],false);if(!seen.has(next)){seen.add(next);queue.push([next,[...path,d]]);}});
+ }
+ assert.fail('Maze must have an exit path');
+}
+for(let i=0;i<30;i++)assert.ok(route(newCore.makeMaze()).length>0);
+{
+ const f=fixture();f.start('maze');const path=route(f.state().plans.maze);
+ for(const d of path){f.advance(100);f.click(['↑ Up','→ Right','↓ Down','← Left'][d]);}
+ assert.match(f.get('game-stage').textContent,/Escaped/);f.click('Pass to Kids →');f.click('Kids ready →');f.advance(45000);
+ assert.deepEqual([...f.state().wins],[1,0]);
+}
+assert.deepEqual(newCore.codeClues([1,1,2],[1,2,1]),{exact:1,misplaced:2});
+assert.deepEqual(newCore.codeClues([1,2,3],[1,1,1]),{exact:1,misplaced:0});
+function enterCode(f,code){
+ code.forEach((v,i)=>{const digit=()=>f.get('code-digits').children[i];while(Number(digit().textContent)!==v)digit().click();});f.click('Test code →');
+}
+{
+ const f=fixture();f.start('code',1);const codes=f.state().plans.codes;
+ enterCode(f,codes[1]);assert.match(f.get('game-stage').textContent,/1 guess/);
+ f.click('Pass to Adults →');f.click('Adults ready →');
+ const wrong=codes[0].map(v=>v%4+1);enterCode(f,wrong);assert.match(f.get('code-history').textContent,/0 exact/);
+ enterCode(f,codes[0]);assert.deepEqual([...f.state().wins],[0,1]);
+}
+{
+ const f=fixture();f.start('code');for(let i=0;i<6;i++)enterCode(f,f.state().plans.codes[0].map(v=>v%4+1));
+ assert.match(f.get('game-stage').textContent,/Code not cracked/);f.click('Pass to Kids →');f.click('Kids ready →');f.advance(60000);
+ assert.match(f.get('game-stage').textContent,/It’s a tie/);
+}
+// Golf physics: ball can sink, wall collisions reflect, and speed decays.
+const course=newCore.GOLF_COURSES[0];
+assert.equal(newCore.golfStep({x:course.hole[0]-1,y:course.hole[1],vx:1,vy:0},course).sunk,true);
+assert.ok(newCore.golfStep({x:5,y:30,vx:-3,vy:0},course).vx>0);
+assert.ok(newCore.golfStep({x:159,y:100,vx:5,vy:0},course).vx<0);
+assert.ok(newCore.golfStep({x:40,y:30,vx:1,vy:0},course).vx<1);
+function missGolfTurn(f){
+ for(let hole=0;hole<3;hole++){
+  f.get('golf-angle').value='180';f.get('golf-power').value='10';
+  for(let shot=0;shot<4;shot++){
+   f.click('Putt →');assert.equal(f.get('golf-angle').disabled,true);
+   const before=f.get('golf-strokes').textContent;f.click('Putt →');assert.equal(f.get('golf-strokes').textContent,before);f.advance(5000);
+  }
+  assert.match(f.get('golf-hole-result').textContent,/five strokes/);f.click(hole===2?'Finish turn →':'Next hole →');
+ }
+}
+{
+ const f=fixture();f.start('golf',1);missGolfTurn(f);assert.match(f.get('game-stage').textContent,/15 strokes/);
+ f.click('Pass to Adults →');f.click('Adults ready →');missGolfTurn(f);assert.match(f.get('game-stage').textContent,/It’s a tie/);
+}
+// Each new game is eligible in a random series and uses its real scoring flow.
+for(const id of ['maze','rps','code','golf']){
+ const f=fixture();f.seriesWith(id);f.click('Parents first →');f.click('Adults ready →');
+ if(id==='rps'){f.click('Paper ✋');f.click('Kids ready →');f.click('Rock ✊');}
+ else if(id==='code'){enterCode(f,f.state().plans.codes[0]);f.click('Pass to Kids →');f.click('Kids ready →');f.advance(60000);}
+ else if(id==='maze'){for(const d of route(f.state().plans.maze))f.click(['↑ Up','→ Right','↓ Down','← Left'][d]);f.click('Pass to Kids →');f.click('Kids ready →');f.advance(45000);}
+ else {missGolfTurn(f);f.click('Pass to Kids →');f.click('Kids ready →');missGolfTurn(f);assert.match(f.get('game-stage').textContent,/tie/);f.resolveGame(0,'Replay settled');}
+ assert.deepEqual([...f.state().wins],[1,0]);f.advance(5000);assert.equal(f.state().series.index,1);
+}
+// Interrupting a new timed game or leaving mid-shot cannot award a point.
+for(const id of ['maze','code','golf']){
+ const f=fixture();f.start(id);if(id==='golf')f.click('Putt →');
+ f.doc.hidden=true;f.doc.handlers.visibilitychange();assert.match(f.get('game-stage').textContent,/interrupted/);
+ f.advance(70000);assert.deepEqual([...f.state().wins],[0,0]);
+ f.get('arcade-return').click();f.start('tic');f.advance(70000);assert.ok(f.get('tic-board'));
+}
+console.log('Four new game checks passed: maze generation/escape, secret RPS moves, deduction clues, code scoring, golf physics/strokes, both starters, series integration, and interruption cleanup.');
