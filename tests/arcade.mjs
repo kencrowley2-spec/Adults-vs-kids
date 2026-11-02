@@ -341,3 +341,19 @@ console.log('Four new game checks passed: maze generation/escape, secret RPS mov
  f.get('arcade-reset').click();f.advance(10000);assert.match(f.get('game-stage').textContent,/Start over/);
 }
 console.log('Fast-flow checks passed: stable cards, rapid taps, preview skip, automatic turns/rounds, sound and light toggles, and transition cleanup.');
+
+// A child solving the maze gets a celebration before the automatic handoff.
+// Leaving during the graphic cancels the pending turn completion.
+{
+ const f=fixture();f.start('maze',1);
+ for(const d of route(f.state().plans.maze))f.click(['↑ Up','→ Right','↓ Down','← Left'][d]);
+ assert.match(f.get('game-stage').textContent,/WAY TO GO, KIDS!/);
+ assert.equal(f.get('game-stage').querySelector('button'),null);
+ f.advance(1999);assert.match(f.get('game-stage').textContent,/MAZE COMPLETE/);
+ f.advance(1);assert.match(f.get('game-stage').textContent,/Adults, you’re up/);
+ f.get('arcade-return').click();f.start('maze',1);
+ for(const d of route(f.state().plans.maze))f.click(['↑ Up','→ Right','↓ Down','← Left'][d]);
+ f.get('arcade-return').click();f.start('memory');f.advance(2500);
+ assert.ok(f.get('memory-cards'));assert.equal(f.state().turn,0);
+}
+console.log('Maze celebration checks passed: child success graphic, automatic continuation and exit cleanup.');

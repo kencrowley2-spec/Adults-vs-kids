@@ -352,7 +352,12 @@ function mazeDash(){
   function finish(escaped){
     if(settled)return;settled=true;
     const elapsed=escaped?(performance.now()-started)/1000:45;
-    finishTurn({score:escaped?1:0,elapsed,label:escaped?`Escaped in ${elapsed.toFixed(1)}s · ${steps} moves`:'No escape in 45 seconds'});
+    const result={score:escaped?1:0,elapsed,label:escaped?`Escaped in ${elapsed.toFixed(1)}s · ${steps} moves`:'No escape in 45 seconds'};
+    if(escaped&&turn===1){
+      screen('<div class="result maze-celebration"><div class="maze-confetti" aria-hidden="true"><i>★</i><i>✦</i><i>★</i><i>✦</i><i>★</i><i>✦</i></div><span class="giant-icon" role="img" aria-label="Celebration">🎉</span><p class="eyebrow">MAZE COMPLETE!</p><h3>WAY TO GO, KIDS!</h3><p>You found the way out!</p><p>'+result.label+'</p></div>');
+      react('win','MAZE COMPLETE!');status('Way to go, Kids! You completed the maze!');
+      later(()=>finishTurn(result),2000);
+    }else finishTurn(result);
   }
   function draw(){
     $('maze-progress').textContent=`${teamName(turn)} · ${steps} moves`;
