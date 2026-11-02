@@ -4,6 +4,7 @@ import {teamName, shuffle, roundWinner, awardRound, lineWinner} from './arcade-c
 const $ = id => document.getElementById(id);
 const lobby=$('arcade-lobby'), arena=$('arcade-game'), stage=$('game-stage');
 let game, wins=[0,0], round=1, attempt=0, starter=0, turn=0, results=[], champion=-1;
+let series=null;
 let timers=[], generation=0, timed=false, used={};
 const names=['Adults','Kids'];
 function clearTimers(){ generation++; timers.forEach(clearTimeout); timers=[]; timed=false; }
@@ -15,20 +16,58 @@ function button(label,action,parent=stage,className='primary'){
 function focusFirst(){ stage.querySelector('button,input')?.focus({preventScroll:true}); }
 function status(text){$('arcade-message').textContent=text;}
 function scoreboard(){
-  $('arcade-score').innerHTML=names.map((name,i)=>`<div class="team-score ${turn===i&&champion<0?'current':''}"><span>${i===0?'★':'✦'} TEAM ${name.toUpperCase()}</span><strong>${wins[i]}</strong><div class="win-dots" aria-label="${wins[i]} of 3 round wins">${[0,1,2].map(n=>`<i class="${n<wins[i]?'won':''}"></i>`).join('')}</div></div>`).join('');
-  $('round-label').textContent=champion>=0?'MATCH COMPLETE':`ROUND ${round} OF 5${attempt?' · TIE REPLAY':''} · FIRST TO 3 WINS`;
+  $('match-format').textContent=series?'3-GAME SERIES':'BEST OF FIVE';
+  $('arcade-reset').textContent=series?'Restart series ↻':'Restart match ↻';
+  $('series-lineup').hidden=!series;
+  if(series) $('series-lineup').innerHTML=series.games.map((g,i)=>`<div class="series-pick ${i===series.index?'active':''}"><small>GAME ${i+1}${series.winners[i]!==undefined?` · ${teamName(series.winners[i])} win`:''}</small><b>${g.icon} ${g.name}</b></div>`).join('');
+  $('arcade-score').innerHTML=names.map((name,i)=>`<div class="team-score ${turn===i&&champion<0?'current':''}"><span>${i===0?'★':'✦'} TEAM ${name.toUpperCase()}</span><strong>${wins[i]}</strong><div class="win-dots" aria-label="${wins[i]} ${series?'game':'round'} wins">${[0,1,2].map(n=>`<i class="${n<wins[i]?'won':''}"></i>`).join('')}</div></div>`).join('');
+  $('round-label').textContent=series?`${champion>=0?'SERIES COMPLETE':`GAME ${series.index+1} OF 3${attempt?' · TIE REPLAY':''}`} · SERIES SCORE` : champion>=0?'MATCH COMPLETE':`ROUND ${round} OF 5${attempt?' · TIE REPLAY':''} · FIRST TO 3 WINS`;
 }
 function pick(key,source,n){
   if(!used[key] || used[key].length<n) used[key]=shuffle(source);
   return used[key].splice(0,n);
 }
 function openGame(id){
+  series=null;
   game=GAMES.find(g=>g.id===id); lobby.hidden=true; arena.hidden=false;
   $('game-title').textContent=`${game.icon} ${game.name}`; used={}; wins=[0,0]; round=1; attempt=0; starter=0; turn=0; champion=-1; results=[];
   scoreboard(); screen(`<div class="intro"><span class="giant-icon">${game.icon}</span><p class="eyebrow">${game.tag}</p><h3>Parents vs. kids.<br>Bring your game face.</h3><p>${game.description}</p><div class="rule-chips"><span>2 teams · 1 device</span><span>First to 3 round wins</span></div></div>`);
   button('Parents first →',()=>{starter=0;beginRound();});
   button('Kids first →',()=>{starter=1;beginRound();});
   status('Who goes first? Choose parents or kids to start the match.'); focusFirst();
+}
+function startSeries(){
+  clearTimers();
+  series={games:shuffle(GAMES).slice(0,3),index:0,winners:[],first:0};
+  wins=[0,0]; round=1; attempt=0; starter=0; turn=0; champion=-1; results=[]; used={};
+  game=series.games[0]; lobby.hidden=true; arena.hidden=false;
+  $('game-title').textContent='Random 3 Game Pick Challenge'; scoreboard();
+  screen('<div class="intro"><span class="giant-icon">🏆</span><p class="eyebrow">BEST OF THREE DIFFERENT GAMES</p><h3>Three games.<br>One family showdown.</h3><p>Your random lineup is ready! Play one round of each game. Each win earns one series point. We play all three, even if a team wins the first two. Ties replay the same game.</p><div class="rule-chips"><span>No repeat games</span><span>Automatic next game</span><span>Most game wins takes it</span></div></div>');
+  button('Parents first →',()=>{series.first=0;startSeriesGame();});
+  button('Kids first →',()=>{series.first=1;startSeriesGame();});
+  status('Choose who starts game one. Starting teams alternate each game.'); focusFirst();
+}
+function startSeriesGame(){
+  clearTimers(); game=series.games[series.index]; round=series.index+1; attempt=0;
+  starter=(series.first+series.index)%2; turn=starter;
+  $('game-title').textContent=`${game.icon} ${game.name}`; beginRound();
+}
+function finishSeriesGame(winner,detail){
+  if(winner!==null){wins[winner]++;series.winners.push(winner);}
+  const complete=series.winners.length===3;
+  champion=complete?(wins[0]>wins[1]?0:1):-1; scoreboard();
+  screen(`<div class="result"><span class="giant-icon">${winner===null?'🤝':complete?'🏆':'🎉'}</span><p class="eyebrow">${complete?'SERIES COMPLETE':winner===null?'TIE · SAME GAME':'GAME COMPLETE'}</p><h3>${complete?`${teamName(champion)} win the series!`:winner===null?'It’s a tie!':`${teamName(winner)} win game ${series.index+1}!`}</h3><p>${detail}</p><div class="final-score">${wins[0]} <span>–</span> ${wins[1]}</div><p>${complete?'Three games. One great time together. High fives all around.':winner===null?'No point awarded. Replay this game to settle it.':`Up next: ${series.games[series.index+1].icon} ${series.games[series.index+1].name}. Starting in <strong id="next-game-countdown">5</strong> seconds…`}</p></div>`);
+  if(complete){button('New random challenge →',startSeries);button('Return to Arcade',()=>{$('arcade-return').click();},stage,'text-button');}
+  else if(winner===null) button('Replay game →',()=>{attempt++;starter=1-starter;beginRound();});
+  else {
+    // Both countdown and button use one guarded transition; screen changes cancel timers.
+    let moved=false,remaining=5;
+    const next=()=>{if(moved)return;moved=true;series.index++;startSeriesGame();};
+    button('Next game now →',next);
+    const tick=()=>{remaining--;if(remaining===0)return next();$('next-game-countdown').textContent=remaining;later(tick,1000);};
+    later(tick,1000);
+  }
+  status(complete?`${teamName(champion)} win the series ${wins[champion]}–${wins[1-champion]}.`:winner===null?'Tie! Replay this game.':`${teamName(winner)} earn one series point.`);focusFirst();
 }
 function handoff(team,detail,action){
   turn=team; scoreboard(); screen(`<div class="handoff"><span class="giant-icon" aria-hidden="true">${team===0?'🙌':'✌️'}</span><p class="eyebrow">PASS THE DEVICE</p><h3>${teamName(team)}, you’re up!</h3><p>${detail}</p><small>Other team: cheer them on. Keep answers to yourself!</small></div>`);
@@ -50,6 +89,7 @@ function teamReady(team){
   handoff(team,detail,()=>({spot, trivia:quiz,word:quiz,tap:quickTap,picture:quiz,number:quiz,challenge}[game.id])());
 }
 function finishRound(winner,detail){
+  if(series)return finishSeriesGame(winner,detail);
   const awarded=awardRound(wins,winner); wins=awarded.wins; champion=awarded.champion; scoreboard();
   screen(`<div class="result"><span class="giant-icon">${winner===null?'🤝':champion>=0?'🏆':'🎉'}</span><p class="eyebrow">${champion>=0?'BRAGGING RIGHTS EARNED':winner===null?'EVEN STEVEN':'ROUND COMPLETE'}</p><h3>${winner===null?'It’s a tie!':`${teamName(winner)} ${champion>=0?'win the match!':'win this round!'}`}</h3><p>${detail}</p><div class="final-score">${wins[0]} <span>–</span> ${wins[1]}</div><p>${champion>=0?'High fives all around. The best win is playing together.':winner===null?'No round awarded. Let’s replay with a fresh challenge.':'Pass it back. The next round is waiting.'}</p></div>`);
   button(champion>=0?'Rematch →':winner===null?'Replay round →':'Next round →',()=>{
@@ -225,10 +265,11 @@ GAMES.forEach(g=>{
   const tile=button('',()=>openGame(g.id),$('arcade-grid'),`game-tile ${g.color}`);
   tile.innerHTML=`<span class="tile-top"><span class="emoji" aria-hidden="true">${g.icon}</span><span class="tile-arrow" aria-hidden="true">↗</span></span><small>${g.tag}</small><b>${g.name}</b><span class="tile-footer">PLAY NOW <span>BEST OF 5</span></span>`;
 });
-$('arcade-return').addEventListener('click',()=>{clearTimers();arena.hidden=true;lobby.hidden=false;game=null;$('arcade-grid').querySelector('button')?.focus();});
+$('arcade-random').addEventListener('click',startSeries);
+$('arcade-return').addEventListener('click',()=>{clearTimers();series=null;arena.hidden=true;lobby.hidden=false;game=null;$('arcade-grid').querySelector('button')?.focus();});
 $('arcade-reset').addEventListener('click',()=>{
-  if(!game)return;const saved=game.id;screen('<div class="result"><h3>Start this match over?</h3><p>The current round and match score will reset.</p></div>');
-  button('Restart match',()=>openGame(saved));button('Return to Arcade',()=>{$('arcade-return').click();},stage,'text-button');status('Match paused. Choose restart or return to the Arcade.');
+  if(!game)return;const saved=game.id;const wasSeries=!!series;screen('<div class="result"><h3>Start over?</h3><p>The current game and all points in this match or series will reset.</p></div>');
+  button(wasSeries?'Restart series':'Restart match',()=>wasSeries?startSeries():openGame(saved));button('Return to Arcade',()=>{$('arcade-return').click();},stage,'text-button');status('Match paused. Choose restart or return to the Arcade.');
 });
 document.addEventListener('visibilitychange',()=>{
   if(document.hidden&&timed&&game){clearTimers();screen('<div class="result"><h3>Let’s give both teams a fair turn.</h3><p>The timed game was interrupted. Replay this round with no round win awarded.</p></div>');button('Replay this round →',beginRound);status('Round interrupted. Match score is unchanged.');}

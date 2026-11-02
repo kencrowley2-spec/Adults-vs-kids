@@ -39,13 +39,13 @@ function fixture(){
   const doc={hidden:false,getElementById:id=>root.querySelector('#'+id),createElement:tag=>new Element(tag),handlers:{},addEventListener(type,fn){this.handlers[type]=fn;}};
   const context=vm.createContext({...core,...data,document:doc,performance:{now:()=>now},console,setTimeout:(fn,delay)=>{scheduled.set(++seq,{at:now+delay,fn});return seq;},clearTimeout:id=>scheduled.delete(id)});
   const source=readFileSync(new URL('../public/arcade.js',import.meta.url),'utf8').replace(/^import .*;\n/gm,'');
-  vm.runInContext(source+'\nthis.state=()=>({wins:[...wins],round,champion,turn});',context);
+  vm.runInContext(source+'\nthis.state=()=>({wins:[...wins],round,champion,turn,series:series?{games:series.games.map(g=>g.id),index:series.index,winners:[...series.winners]}:null});this.resolveGame=finishRound;',context);
   const get=id=>doc.getElementById(id);
   const buttons=()=>get('game-stage').querySelectorAll('button');
   const click=text=>{const b=buttons().find(b=>b.textContent===text);assert.ok(b,`Missing button: ${text}`);b.click();};
   function advance(ms){const end=now+ms;let guard=0;while(true){const task=[...scheduled.entries()].filter(([,t])=>t.at<=end).sort((a,b)=>a[1].at-b[1].at)[0];if(!task)break;assert.ok(++guard<10000);scheduled.delete(task[0]);now=task[1].at;task[1].fn();}now=end;}
   function start(id,first=0){const i=data.GAMES.findIndex(g=>g.id===id);get('arcade-grid').children[i].click();click(first===0?'Parents first →':'Kids first →');click(`${core.teamName(first)} ready →`);}
-  return {root,doc,get,buttons,click,advance,start,state:context.state};
+  return {root,doc,get,buttons,click,advance,start,state:context.state,resolveGame:context.resolveGame};
 }
 assert.equal(data.GAMES.length,9);
 for(const outcome of [[0,1,0,1,0],[1,0,1,0,1],[0,0,0]]){
@@ -187,3 +187,47 @@ for(const game of ['spot','trivia','word','picture']){
  assert.match(f.get('game-stage').textContent,/ms average/);
 }
 console.log('Arcade checks passed: all nine game flows, preview, handoffs, scoring, ties, 3–2 match, reset, interrupted turns, timer cleanup.');
+
+// Random series uses three distinct modes, one point per game, plays all three,
+// alternates starters, replays ties, and advances once by countdown or button.
+for(const first of [0,1]){
+ for(const outcomes of [[0,1,0],[1,0,1],[0,0,0],[1,1,1]]){
+  const f=fixture();f.get('arcade-random').click();
+  const lineup=[...f.state().series.games];assert.equal(new Set(lineup).size,3);
+  f.click(first===0?'Parents first →':'Kids first →');
+  assert.equal(f.state().turn,first);
+  f.resolveGame(null,'Tied game');assert.deepEqual([...f.state().wins],[0,0]);
+  f.advance(10000);assert.equal(f.state().series.index,0);f.click('Replay game →');
+  for(let i=0;i<3;i++){
+   f.resolveGame(outcomes[i],'Played game');
+   const expected=[outcomes.slice(0,i+1).filter(w=>w===0).length,outcomes.slice(0,i+1).filter(w=>w===1).length];
+   assert.deepEqual([...f.state().wins],expected);
+   if(i<2){
+    assert.equal(f.state().champion,-1);
+    if(i===0){f.advance(4999);assert.equal(f.state().series.index,0);f.advance(1);}
+    else {f.click('Next game now →');f.advance(6000);}
+    assert.equal(f.state().series.index,i+1);assert.equal(f.state().turn,(first+i+1)%2);
+    assert.match(f.get('game-title').textContent,new RegExp(data.GAMES.find(g=>g.id===lineup[i+1]).name));
+   }
+  }
+  assert.equal(f.state().champion,outcomes.filter(w=>w===0).length>=2?0:1);
+  assert.match(f.get('game-stage').textContent,/win the series/);f.advance(10000);assert.equal(f.state().series.index,2);
+  f.click('New random challenge →');assert.deepEqual([...f.state().wins],[0,0]);assert.equal(f.state().series.index,0);
+ }
+}
+// A real TTT result awards one series point and transitions to the next mode.
+{
+ let f;for(let i=0;i<100;i++){f=fixture();f.get('arcade-random').click();if(f.state().series.games[0]==='tic')break;}
+ assert.equal(f.state().series.games[0],'tic');f.click('Parents first →');f.click('Adults ready →');
+ for(const move of [0,3,1,4,2]){f.get('tic-board').children[move].click();if(move!==2)f.click(`Pass to ${core.teamName(1-f.state().turn)} →`);}
+ f.advance(500);assert.deepEqual([...f.state().wins],[1,0]);f.advance(5000);assert.equal(f.state().series.index,1);
+}
+// Leaving or restarting cancels pending transitions; standalone still best of five.
+{
+ const f=fixture();f.get('arcade-random').click();f.click('Kids first →');f.resolveGame(1,'Win');
+ f.get('arcade-reset').click();f.advance(6000);assert.equal(f.state().series.index,0);
+ f.click('Restart series');assert.deepEqual([...f.state().wins],[0,0]);
+ f.click('Parents first →');f.resolveGame(0,'Win');f.get('arcade-return').click();f.start('tic');f.advance(10000);
+ assert.equal(f.state().series,null);assert.ok(f.get('tic-board'));assert.match(f.get('round-label').textContent,/FIRST TO 3 WINS/);
+}
+console.log('Random series checks passed: unique games, both starting teams, ties, automatic progression, manual progression, 2–1 and 3–0 results, replay, reset, exit cleanup.');
