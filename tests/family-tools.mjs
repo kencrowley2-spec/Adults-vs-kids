@@ -1,0 +1,20 @@
+import vm from 'node:vm';
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+const elements=new Map(),listeners=new Map(),intervals=new Map();let tickId=0,now=0;
+function element(id){if(!elements.has(id)){const classes=new Set();elements.set(id,{value:'',checked:true,disabled:false,innerHTML:'',textContent:'',dataset:{},classList:{add:c=>classes.add(c),remove:c=>classes.delete(c),contains:c=>classes.has(c),toggle:(c,on)=>on?classes.add(c):classes.delete(c)},setAttribute(){},removeAttribute(){},addEventListener:(n,f)=>listeners.set(id+':'+n,f),showModal(){this.open=true},close(){this.open=false;listeners.get(id+':close')?.()},querySelectorAll:()=>scoreButtons})}return elements.get(id)}
+const scoreButtons=[0,1].flatMap(i=>[-1,1].map(delta=>({dataset:{showdownTeam:String(i),delta:String(delta)}})));
+const context={document:{getElementById:element,addEventListener:(n,f)=>listeners.set(n,f)},window:{addEventListener:(n,f)=>listeners.set(n,f)},performance:{now:()=>now},setInterval:(f,ms)=>{const id=++tickId;intervals.set(id,{f,ms});return id},clearInterval:id=>intervals.delete(id),console};
+vm.runInNewContext(fs.readFileSync('public/family-tools.js','utf8'),context);
+const click=id=>element(id).onclick(),round=()=>element('showdownRound').textContent;
+context.window.openFamilyTools();assert.equal(round(),'ROUND 1 OF 12');assert.equal(element('showdownPrev').disabled,true);
+scoreButtons[0].onclick();assert.equal(element('showdownScore0').textContent,0);scoreButtons[1].onclick();assert.equal(element('showdownScore0').textContent,1);
+await click('showdownStart');assert.equal(element('showdownStart').disabled,true);assert.match(element('showdownStatus').textContent,/Audio is unavailable/);
+now=15000;click('showdownStop');assert.equal(element('showdownStop').disabled,true);assert.equal(intervals.size,0);
+await click('showdownStart');now=61000;for(const {f} of [...intervals.values()])f();assert.match(element('showdownStatus').textContent,/TIME!/);assert.equal(intervals.size,0);
+const tracks=new Set([element('showdownTrack').textContent]);for(let i=2;i<=12;i++){click('showdownNext');assert.equal(round(),`ROUND ${i} OF 12`);tracks.add(element('showdownTrack').textContent)}assert.equal(tracks.size,12);
+click('showdownNext');assert.equal(round(),'ROUND 12 OF 12');assert.match(element('showdownStatus').textContent,/wins/);assert.equal(element('showdownStart').disabled,true);
+click('showdownNew');assert.equal(round(),'ROUND 1 OF 12');assert.equal(element('showdownScore0').textContent,0);
+await click('showdownStart');element('memberDialog').close();assert.equal(intervals.size,0);assert.equal(element('memberDialog').classList.contains('showdown-tools'),false);
+context.window.openFamilyTools();assert.equal(round(),'ROUND 1 OF 12');assert.equal(element('showdownStart').disabled,false);
+console.log('PASS: timer start/pause/resume/expiry, audio-unavailable fallback, 12 distinct rounds, nonnegative scores, final winner, full reset, and close cleanup.');
