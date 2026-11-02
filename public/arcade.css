@@ -83,3 +83,13 @@ main{padding-top:28px}
 }
 @media(max-width:360px){.arcade-heading{padding:30px 20px;gap:8px}.arcade-heading h1{font-size:28px}.arcade-badge{width:64px;height:64px;font-size:11px}.arcade-badge span{font-size:12px}}
 .arcade-saving{margin-top:26px;padding:16px 20px;border:1px solid #ffffff40;border-radius:14px;background:#090914ed;color:#ddd;font-size:12px;line-height:1.6;text-align:center}.arcade-saving p{margin:0 0 6px}.arcade-saving a,.arcade-saving .text-button{color:#ffd522}.arcade-saving a{display:inline-block;padding:10px}
+
+/* Short, local reactions keep shared play moving without full-screen flashes. */
+.arcade-controls{display:flex;justify-content:flex-end;gap:8px;margin:0 0 8px}.arcade-controls button{border:1px solid #ddd;border-radius:20px;padding:8px 12px;background:#f4f4f4;color:#111;font-size:11px;font-weight:700;cursor:pointer;min-height:36px}
+.arcade-feedback{height:52px;display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:10px}.arcade-feedback b{font-size:13px}.arcade-bulbs{display:flex;gap:9px}.arcade-bulbs i{display:block;width:13px;height:13px;border:2px solid #a89743;border-radius:50%;background:#f4edc9}
+.arcade-feedback[data-kind="match"] .arcade-bulbs i,.arcade-feedback[data-kind="win"] .arcade-bulbs i,.arcade-feedback[data-kind="tap"] .arcade-bulbs i{background:#ffd522;border-color:#9a7c00;box-shadow:0 0 12px #ffd522;animation:bulb-pop .45s ease-out 1}
+.arcade-feedback[data-kind="turn"] .arcade-bulbs i{background:#fff;border-color:#111}
+@keyframes bulb-pop{0%{transform:scale(.9)}45%{transform:scale(1.25)}100%{transform:scale(1)}}
+.memory-card{transition:background-color .12s,transform .12s;touch-action:manipulation}.memory-card.face-up{transform:translateY(-2px)}.memory-card.matched{background:#ffd522;box-shadow:0 0 10px #ffd52280}
+#game-stage .auto-note{font-size:12px;color:#666}
+@media(prefers-reduced-motion:reduce){.arcade-feedback .arcade-bulbs i{animation:none!important;box-shadow:none!important}.memory-card.face-up{transform:none}}

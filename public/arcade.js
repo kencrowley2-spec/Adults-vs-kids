@@ -28,9 +28,33 @@ function saveCompleted(){
 }
 let timers=[], generation=0, timed=false, used={};
 const names=['Adults','Kids'];
+let soundOn=true, effectsOn=!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches, audioContext, feedbackSequence=0;
+function unlockAudio(){
+  if(!soundOn)return;
+  try{const Audio=window.AudioContext||window.webkitAudioContext;if(!Audio)return;audioContext??=new Audio();if(audioContext.state==='suspended')audioContext.resume().catch(()=>{});}catch{}
+}
+document.addEventListener('pointerdown',unlockAudio);
+document.addEventListener('keydown',unlockAudio);
+function chime(kind){
+  if(!soundOn)return;unlockAudio();if(!audioContext||audioContext.state!=='running')return;
+  try{
+    const notes=kind==='win'?[523,659,784]:kind==='match'?[660,880]:kind==='tap'?[440]:[330,440];
+    notes.forEach((frequency,i)=>{const oscillator=audioContext.createOscillator(),gain=audioContext.createGain(),at=audioContext.currentTime+i*.075;oscillator.type='sine';oscillator.frequency.value=frequency;gain.gain.setValueAtTime(0,at);gain.gain.linearRampToValueAtTime(.045,at+.008);gain.gain.exponentialRampToValueAtTime(.001,at+.12);oscillator.connect(gain);gain.connect(audioContext.destination);oscillator.start(at);oscillator.stop(at+.14);});
+  }catch{}
+}
+function react(kind,label){
+  chime(kind);const sequence=++feedbackSequence;
+  $('feedback-caption').textContent=label;
+  $('arcade-feedback').setAttribute('data-kind',effectsOn?kind:'quiet');
+  later(()=>{if(sequence!==feedbackSequence)return;$('arcade-feedback').setAttribute('data-kind','');$('feedback-caption').textContent='';},650);
+}
+$('arcade-sound').addEventListener('click',()=>{soundOn=!soundOn;$('arcade-sound').textContent=`Sound: ${soundOn?'on':'off'}`;$('arcade-sound').setAttribute('aria-pressed',String(soundOn));if(soundOn)chime('match');});
+$('arcade-effects').setAttribute('aria-pressed',String(effectsOn));
+$('arcade-effects').textContent=`Lights: ${effectsOn?'on':'off'}`;
+$('arcade-effects').addEventListener('click',()=>{effectsOn=!effectsOn;$('arcade-effects').textContent=`Lights: ${effectsOn?'on':'off'}`;$('arcade-effects').setAttribute('aria-pressed',String(effectsOn));$('arcade-feedback').setAttribute('data-kind','');});
 function clearTimers(){ generation++; timers.forEach(clearTimeout); timers=[]; timed=false; }
 function later(fn,delay){ const token=generation; const timer=setTimeout(()=>{if(token===generation)fn();},delay); timers.push(timer); }
-function screen(html){ clearTimers(); stage.innerHTML=html; }
+function screen(html){ clearTimers(); $('arcade-feedback').setAttribute('data-kind','');$('feedback-caption').textContent='';stage.innerHTML=html; }
 function button(label,action,parent=stage,className='primary'){
   const b=document.createElement('button'); b.type='button'; b.className=className; b.textContent=label; b.addEventListener('click',action); parent.appendChild(b); return b;
 }
@@ -91,6 +115,7 @@ function finishSeriesGame(winner,detail){
     const tick=()=>{remaining--;if(remaining===0)return next();$('next-game-countdown').textContent=remaining;later(tick,1000);};
     later(tick,1000);
   }
+  react(winner===null?'turn':'win',winner===null?'Tie — rematch!':`${teamName(winner)} win!`);
   status(complete?`${teamName(champion)} win the series ${wins[champion]}–${wins[1-champion]}.`:winner===null?'Tie! Replay this game.':`${teamName(winner)} earn one series point.`);focusFirst();
 }
 function handoff(team,detail,action){
@@ -99,7 +124,7 @@ function handoff(team,detail,action){
 }
 function beginRound(){
   results=[]; turn=starter; scoreboard(); status('');
-  if(game.id==='memory') return handoff(turn,'Both teams: watch the five-second card preview together. Then the starting team gets the first pick.',memory);
+  if(game.id==='memory') return memory();
   if(game.id==='tic') return handoff(turn,`${teamName(turn)} makes the first move. Adults use X; kids use O.`,tic);
   if(game.id==='rps')return handoff(turn,'Keep your move secret. The other team should look away until you pass the device.',rockPaperScissors);
   if(game.id==='maze')game.maze=makeMaze();
@@ -111,10 +136,10 @@ function beginRound(){
   if(game.id==='picture') game.pictures=pick('picture',PICTURES,6);
   teamReady(starter);
 }
-function teamReady(team){
+function teamReady(team,previous=''){
   let detail=`Your own turn starts only when you’re ready. ${game.description}`;
   if(game.id==='challenge') detail=`Pick ONE player per team. Same challenge, same 20 seconds. ${game.challenge[0]}: ${game.challenge[1]} The other team counts. You can play seated.`;
-  handoff(team,detail,()=>({spot, trivia:quiz,word:quiz,tap:quickTap,picture:quiz,number:quiz,challenge,maze:mazeDash,code:codeBreaker,golf:miniGolf}[game.id])());
+  handoff(team,(previous?previous+' ':'')+detail,()=>({spot, trivia:quiz,word:quiz,tap:quickTap,picture:quiz,number:quiz,challenge,maze:mazeDash,code:codeBreaker,golf:miniGolf}[game.id])());
 }
 function finishRound(winner,detail){
   if(recording&&winner!==null&&!recording.complete)recording.roundWinners.push(winner);
@@ -122,18 +147,25 @@ function finishRound(winner,detail){
   const awarded=awardRound(wins,winner); wins=awarded.wins; champion=awarded.champion; scoreboard();
   if(champion>=0)saveCompleted();
   screen(`<div class="result"><span class="giant-icon">${winner===null?'🤝':champion>=0?'🏆':'🎉'}</span><p class="eyebrow">${champion>=0?'BRAGGING RIGHTS EARNED':winner===null?'EVEN STEVEN':'ROUND COMPLETE'}</p><h3>${winner===null?'It’s a tie!':`${teamName(winner)} ${champion>=0?'win the match!':'win this round!'}`}</h3><p>${detail}</p><div class="final-score">${wins[0]} <span>–</span> ${wins[1]}</div><p>${champion>=0?'High fives all around. The best win is playing together.':winner===null?'No round awarded. Let’s replay with a fresh challenge.':'Pass it back. The next round is waiting.'}</p></div>`);
-  button(champion>=0?'Rematch →':winner===null?'Replay round →':'Next round →',()=>{
+  let moved=false;
+  const nextRound=()=>{
+    if(moved)return;moved=true;
     if(champion>=0) return openGame(game.id);
     if(winner!==null){round++; attempt=0;}else attempt++;
     starter=1-starter; beginRound();
-  });
+  };
+  button(champion>=0?'Rematch →':winner===null?'Replay round →':'Next round →',nextRound);
+  if(champion<0&&['memory','tic','rps'].includes(game.id)){
+    const note=document.createElement('p');note.className='auto-note';note.textContent='Next round starts automatically in 2 seconds…';stage.appendChild(note);later(nextRound,2200);
+  }
+  react(winner===null?'turn':'win',winner===null?'Tie — rematch!':`${teamName(winner)} win!`);
   status(champion>=0?`${teamName(winner)} win ${wins[winner]}–${wins[1-winner]}.`:winner===null?'Tie! Replay this round.':`${teamName(winner)} earn one round win.`); focusFirst();
 }
 function finishTurn(result){
   results[turn]=result;
   if(!results[1-turn]){
-    screen(`<div class="result"><span class="giant-icon">👏</span><h3>${teamName(turn)}’ turn is complete!</h3><p>${result.label}</p><p>Pass the device for the other team’s challenge.</p></div>`);
-    button(`Pass to ${teamName(1-turn)} →`,()=>teamReady(1-turn)); status('Nice effort! Both teams get a full turn.'); focusFirst();
+    const previous=`${teamName(turn)}: ${result.label}.`;
+    teamReady(1-turn,previous);
   }else{
     const lower=['tap','golf'].includes(game.id); const timeBreak=['spot','word','picture','number','maze'].includes(game.id);
     const winner=roundWinner(results[0],results[1],lower,timeBreak);
@@ -150,28 +182,35 @@ function memory(){
   screen('<div class="turn-strip" id="turn-strip"></div><div id="memory-cards" class="memory-grid"></div><div id="memory-action"></div>');
   function draw(){
     $('turn-strip').textContent=preview?'Look closely! Cards hide in five seconds.':`${teamName(turn)}’ turn · Pairs: Adults ${points[0]} / Kids ${points[1]}`;
-    const holder=$('memory-cards'); holder.replaceChildren();
-    deck.forEach((symbol,i)=>{const visible=preview||revealed.includes(i)||matched.has(i); const b=button(visible?symbol:'?',()=>flip(i),holder,`memory-card${visible?' face-up':''}${matched.has(i)?' matched':''}`);b.disabled=locked||visible;b.setAttribute('aria-label',visible?`Card ${i+1}: ${symbol}${matched.has(i)?', matched':''}`:`Hidden card ${i+1}`);});
+    const holder=$('memory-cards');
+    if(!holder.children.length)deck.forEach((symbol,i)=>button('?',()=>flip(i),holder,'memory-card'));
+    deck.forEach((symbol,i)=>{
+      const visible=preview||revealed.includes(i)||matched.has(i),b=holder.children[i];
+      b.textContent=visible?symbol:'?';b.className=`memory-card${visible?' face-up':''}${matched.has(i)?' matched':''}`;
+      b.disabled=locked||visible;b.setAttribute('aria-label',visible?`Card ${i+1}: ${symbol}${matched.has(i)?', matched':''}`:`Hidden card ${i+1}`);
+    });
   }
   function flip(i){
     if(locked||revealed.includes(i)||matched.has(i))return;
-    revealed.push(i);
+    revealed.push(i);chime('tap');
     if(revealed.length===2){
       locked=true; const match=deck[revealed[0]]===deck[revealed[1]];
       if(match){revealed.forEach(id=>matched.add(id));points[turn]++;}
-      if(matched.size===deck.length){draw(); later(()=>finishRound(points[0]>points[1]?0:1,`Pairs found — Adults ${points[0]} · Kids ${points[1]}`),800);return;}
-      status(match?'A pair! One point. Now pass the device.':'No match. Remember those cards, then pass the device.');
+      if(matched.size===deck.length){draw();react('win','All pairs found!'); later(()=>finishRound(points[0]>points[1]?0:1,`Pairs found — Adults ${points[0]} · Kids ${points[1]}`),800);return;}
+      status(match?'A pair! Ding! Next team coming up…':'No match. Remember those cards — next team coming up…');
       draw();
-      button('Hide cards & pass →',()=>{
-        revealed=[];turn=1-turn;scoreboard();draw();$('memory-action').replaceChildren();
-        button(`${teamName(turn)} ready →`,()=>{locked=false;draw();$('memory-action').replaceChildren();status(`${teamName(turn)}: find a pair.`);},$('memory-action'));
-        status(`Pass the device to ${teamName(turn)}.`);
-      },$('memory-action'));return;
+      react(match?'match':'turn',match?'MATCH! +1 pair':'Next team…');
+      later(()=>{
+        revealed=[];turn=1-turn;locked=false;scoreboard();draw();
+        status(`${teamName(turn)}: find a pair.`);
+      },match?600:900);return;
     }
     draw();
   }
   draw(); status('Five-second preview — both teams can look!');
-  later(()=>{preview=false;locked=false;draw();status(`${teamName(turn)}: find a pair.`);},5000);
+  function hidePreview(){if(!preview)return;preview=false;locked=false;draw();$('memory-action').replaceChildren();status(`${teamName(turn)}: find a pair.`);}
+  button('Ready? Play now →',hidePreview,$('memory-action'));
+  later(hidePreview,5000);
 }
 function tic(){
   let board=Array(9).fill(null),locked=false;
@@ -184,7 +223,7 @@ function tic(){
   function move(i){
     if(locked||board[i]!==null)return; board[i]=turn; const winner=lineWinner(board);
     if(winner!==null||board.every(v=>v!==null)){locked=true;draw();later(()=>finishRound(winner,winner===null?'Full board. Nobody connected three.':`${teamName(winner)} connected three!`),500);return;}
-    locked=true;draw();button(`Pass to ${teamName(1-turn)} →`,()=>{turn=1-turn;locked=false;scoreboard();$('tic-action').replaceChildren();draw();status(`${teamName(turn)}: choose a square.`);},$('tic-action'));status('Pass the device before the next move.');
+    locked=true;draw();react('tap','Nice move!');later(()=>{turn=1-turn;locked=false;scoreboard();draw();status(`${teamName(turn)}: choose a square.`);},300);status('Next team…');
   }
   draw();status(`${teamName(turn)}: choose a square.`);
 }
@@ -235,7 +274,7 @@ function quiz(){
     if(settled||locked||performance.now()>=deadline)return;locked=true;
     if(correct)points++;stage.querySelectorAll('button,input').forEach(el=>el.disabled=true);
     const feedback=document.createElement('p');feedback.className=`answer-feedback ${correct?'correct':''}`;feedback.textContent=correct?'Correct! ✦':`Good try! Answer: ${answer}`;$('quiz-body').appendChild(feedback);
-    status(correct?'Correct!':'Keep going!');
+    react(correct?'match':'turn',correct?'Correct!':'Keep going!');status(correct?'Correct!':'Keep going!');
     later(()=>{index++;if(index===count)finish();else nextQuestion();},650);
   }
   nextQuestion();status(`${teamName(turn)}’ turn. The clock is running!`);
@@ -256,7 +295,7 @@ function spot(){
     original.forEach((icon,i)=>{const value=i===changed?icons[5]:icon; const b=button(value,()=>{
       if(settled||performance.now()>=deadline)return;
       if(i!==changed){mistakes++;b.disabled=true;b.classList.add('wrong');status('Try another tile. One second added to your time.');return;}
-      points++;index++;if(index===3)finish();else puzzle();
+      points++;index++;if(index===3)finish();else {puzzle();react('match','Found it!');}
     },target,'spot-tile');b.setAttribute('aria-label',`Changed grid tile ${i+1}: ${value}`);});
   }
   puzzle();status('Find three differences. Wrong taps add one second to your result.');
