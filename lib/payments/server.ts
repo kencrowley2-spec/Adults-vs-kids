@@ -2,7 +2,7 @@ import Stripe from 'stripe';
 import {createClient} from '@supabase/supabase-js';
 import {pdfCart,pdfProducts} from '../../config/pdfs';
 import {paidOrder} from './policy';
-export function stripeClient(){const key=process.env.STRIPE_SECRET_KEY;if(!key)throw new Error('Payments are being connected.');return new Stripe(key,{maxNetworkRetries:2,timeout:15000});}
+export function stripeClient(){const key=process.env.STRIPE_SECRET_KEY;if(!key)throw new Error('Payments are being connected.');return new Stripe(key,{httpClient:Stripe.createFetchHttpClient(),maxNetworkRetries:2,timeout:15000});}
 export function paymentAdmin(){const url=process.env.SUPABASE_URL,key=process.env.SUPABASE_SERVICE_ROLE_KEY;if(!url||!key)throw new Error('Download delivery is being connected.');return createClient(url,key,{auth:{persistSession:false,autoRefreshToken:false}});}
 export const paymentLive=()=>process.env.STRIPE_MODE==='live';
 export const paymentsConfigured=()=>process.env.PDF_CHECKOUT_OPEN==='true'&&!!process.env.STRIPE_SECRET_KEY&&!!process.env.STRIPE_WEBHOOK_SECRET&&!!process.env.SUPABASE_SERVICE_ROLE_KEY;

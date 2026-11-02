@@ -5,7 +5,7 @@ Stripe holds the four $2.99 one-time products and a $9.95 four-book bundle. No a
 
 ## Current activation gate
 
-Checkout remains closed (`PDF_CHECKOUT_OPEN=false`) until private assets, server credentials, a webhook, and a real Stripe sandbox checkout-to-download test are verified. Production price IDs are configured in the existing Vercel project. Do not use live credentials with sandbox price IDs or vice versa.
+Production uses Stripe live prices, protected server credentials, a signed webhook, and four verified private PDFs. `PDF_CHECKOUT_OPEN` is the deployment activation switch; set it to `false` and redeploy to pause new sales. Do not use live credentials with sandbox price IDs or vice versa.
 
 Server-only environment variables:
 
@@ -30,10 +30,12 @@ The private Supabase bucket is `paid-pdfs`. Upload the approved complete PDFs as
 | Make-It-and-Play-It | 119 | bb00569d33ded7ff4a9bb25edee3374e8e498c3124fbcd71265626d23d773fb5 |
 | Young Adult | 90 | e9bf87ab01837fe8aacd256fb8c2436207cb4b1e32188e8dd3e781a38df3d445 |
 
-Source files have been located, page-count checked, and their covers visually checked. Full-file delivery review and private upload are pending. No paid files have been committed to Git.
+Source files have been located, page-count checked, and their covers visually checked. Private uploads were downloaded again and SHA-256 matched to these originals. All four asset readiness flags are enabled. No paid files have been committed to Git.
 
 ## Validation
 
 Run `npm run build`, `npm run typecheck`, `npm test`, `node tests/pdf-payments.mjs`, and `node tests/pdf-http.mjs`. With the local production server running, `node tests/logout-origin.mjs` checks origin-safe sign-out.
 
 Before opening sales, complete a Stripe sandbox purchase and verify the paid account can download the exact PDF, another account cannot, and an unpaid/cancelled checkout cannot unlock it. Replay the same signed event to verify no duplicate order, then refund the sandbox payment and verify access is revoked. Confirm webhooks succeed if the buyer never returns to the site. Do not use real customer charges for testing.
+
+The optional `tests/pdf-integration.mjs` accepts a JSON object on stdin with `stripeKey` (test mode only), `supabaseUrl`, `publishableKey`, and `serverKey`. It creates disposable Auth users and Stripe test products, prints a hosted test Checkout URL for completion with Stripe test data, and removes the Auth fixtures and archives products afterward. Supply original PDFs in the adjacent `pdf-source` folder for byte comparisons. Do not commit credentials or source PDFs. Node behind an HTTP proxy may require `--use-env-proxy` and localhost in `NO_PROXY`.

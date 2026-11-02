@@ -2,9 +2,9 @@
   "clockStartedAt": "2026-10-30T15:32:00.000Z",
   "founderName": "Ken Crowley",
   "bundleCents": 995,
-  "individualCents": 199,
+  "individualCents": 299,
   "membershipsOpen": false,
-  "checkoutOpen": false,
+  "checkoutOpen": true,
   "bundleBookCount": 4,
   "salesTrackingConnected": false,
   "estimatedMinutesPerBook": 45
