@@ -3,7 +3,7 @@ const env = process.env;
 import { isAdministrator } from './access';
 export function memberClient(request:Request){
  const baseUrl=env.SUPABASE_URL,key=env.SUPABASE_PUBLISHABLE_KEY;
- const headers=new Headers({'Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer'});
+ const headers=new Headers({'Cache-Control':'private, no-store','X-Content-Type-Options':'nosniff','Referrer-Policy':'same-origin'});
  if(!baseUrl||!key)return {client:null,headers};
  const incoming=parseCookieHeader(request.headers.get('Cookie')||'');
  const client=createServerClient(baseUrl,key,{cookieOptions:{httpOnly:true,secure:new URL(request.url).protocol==='https:',sameSite:'lax',path:'/'},cookies:{getAll:()=>incoming.map(c=>({name:c.name,value:c.value??''})),setAll:(cookies)=>{for(const c of cookies){headers.append('Set-Cookie',serializeCookieHeader(c.name,c.value,c.options));const old=incoming.find(x=>x.name===c.name);if(old)old.value=c.value;else incoming.push({name:c.name,value:c.value})}}}});
