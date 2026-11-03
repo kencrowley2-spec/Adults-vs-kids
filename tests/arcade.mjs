@@ -279,8 +279,8 @@ assert.deepEqual(newCore.codeClues([1,1,2],[1,2,1]),{exact:1,misplaced:2});
 // The safe prominently explains number buttons and speaks the same instruction.
 {
  const f=fixture(0,true);f.start('code');
- assert.equal(f.get('safe-screen-label').textContent,'PRESS BUTTON TO CHANGE NUMBERS');
- assert.match(f.speech.spoken.at(-1).text,/^Press button to change numbers/);
+ assert.equal(f.get('safe-screen-label').textContent,'PRESS NUMBER BOX TO CHANGE THE NUMBERS');
+ assert.match(f.speech.spoken.at(-1).text,/^Press number box to change the numbers/);
  const spoken=f.speech.spoken.length;f.click('Hear instructions 🔊');assert.equal(f.speech.spoken.length,spoken+1);
  f.get('arcade-sound').click();f.click('Hear instructions 🔊');assert.equal(f.speech.spoken.length,spoken+1);
 }
