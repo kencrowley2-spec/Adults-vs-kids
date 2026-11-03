@@ -89,11 +89,11 @@ body.platform{margin:0;background:#f5f4ef;color:#171c19;font-family:Arial,Helvet
 
 .platform-footer{flex-wrap:wrap}.platform-footer .return-website{order:-1;flex-basis:100%;width:100%;padding:12px 0;font-size:20px;font-weight:900;line-height:1.4;letter-spacing:.1px;color:#111;text-align:left;text-decoration:underline;text-underline-offset:4px}.platform-footer .return-website:hover{color:#6c5600}
 
-/* Community game ideas use the same clean button style as book shopping. */
+/* Game ideas match the dashboard’s dark cards and yellow accents. */
 .platform-stats .game-idea-card{padding:0;background:transparent;border:0;box-shadow:none;align-items:stretch}
-.platform .game-idea-card .paperback-buy-button{width:100%;justify-content:space-between;align-self:stretch;white-space:normal}
+.platform .game-idea-card .paperback-buy-button{width:100%;justify-content:space-between;align-self:stretch;white-space:normal;background:#101216;color:#fff;border:1px solid #ffd522;box-shadow:none}
 .platform .game-idea-card .paperback-buy-copy{font-size:20px;line-height:1.2}
-.platform .game-idea-card .paperback-buy-copy small{letter-spacing:0;line-height:1.5;font-size:12px}
+.platform .game-idea-card .paperback-buy-copy small{letter-spacing:0;line-height:1.5;font-size:12px;color:#d5d5d5}
 .platform .game-idea-arrow{font-size:32px;line-height:1}
 .platform #memberDialog .game-idea-form{display:grid;gap:15px;margin-top:20px}
 .platform #memberDialog .game-idea-summary{margin-top:14px;line-height:1.65;font-size:15px}
@@ -104,3 +104,9 @@ body.platform{margin:0;background:#f5f4ef;color:#171c19;font-family:Arial,Helvet
 .platform #memberDialog .game-idea-form .primary{background:#ffd006;color:#111}
 .platform #memberDialog{max-height:calc(100dvh - 32px);overflow-y:auto}
 @media(max-width:760px){.platform .game-idea-card .paperback-buy-button{min-height:100px}.platform .game-idea-card .paperback-buy-copy{font-size:20px}}
+
+.platform .game-idea-card .paperback-buy-button:hover{background:#181a1e;border-color:#ffd522;box-shadow:0 0 12px #ffd52218}
+.platform .game-idea-card .paperback-buy-button:focus-visible{outline:3px solid #ffd522;outline-offset:4px}
+.platform .game-idea-card .paperback-click-cue{flex-shrink:0;border:0;border-radius:999px;background:#ffd522;color:#111;padding:10px 14px;gap:8px;font-weight:900;letter-spacing:.7px}
+.platform .game-idea-card .game-idea-arrow{font-size:25px;color:#111}
+@media(max-width:600px){.platform .game-idea-card .paperback-buy-button{gap:12px}.platform .game-idea-card .paperback-click-cue{padding:10px 12px;font-size:9px;gap:5px}}
