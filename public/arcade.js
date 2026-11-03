@@ -1,5 +1,5 @@
 import {coverMarkup,recentGames} from './arcade-library.js?v=1';
-import {GAMES, ANIMALS, TRIVIA, WORDS, PICTURES, CHALLENGES} from './arcade-data.js?v=5';
+import {GAMES, ANIMALS, TRIVIA, WORDS, PICTURES, CHALLENGES} from './arcade-data.js?v=6';
 import {teamName, shuffle, roundWinner, awardRound, lineWinner} from './arcade-core.js';
 
 import {makeMaze, codeClues, rpsWinner, GOLF_COURSES, golfStep} from './arcade-new-core.js?v=5';
@@ -318,9 +318,10 @@ function startClock(seconds,onEnd){
 }
 function memory(){
   const deck=shuffle([...ANIMALS,...ANIMALS]); let revealed=[],matched=new Set(),points=[0,0],locked=true,preview=true;
-  screen('<div class="turn-strip" id="turn-strip"></div><div id="memory-cards" class="memory-grid"></div><div id="memory-action"></div>');
+  screen('<div class="turn-strip" id="turn-strip"></div><div class="memory-round-score"><p>ROUND POINTS · 1 PAIR = 1 POINT</p><div role="status" aria-live="polite" aria-atomic="true"><span>ADULTS <strong id="memory-adult-points">0</strong></span><span>KIDS <strong id="memory-kid-points">0</strong></span></div><small>Most points wins this round. First to 3 round wins takes the match.</small></div><div id="memory-cards" class="memory-grid"></div><div id="memory-action"></div>');
   function draw(){
-    $('turn-strip').textContent=preview?`${teamName(turn)} go first! Look closely — cards hide in five seconds.`:`${teamName(turn)}’ turn · Pairs: Adults ${points[0]} / Kids ${points[1]}`;
+    $('turn-strip').textContent=preview?`${teamName(turn)} go first! Look closely — cards hide in five seconds.`:`${teamName(turn)}’ turn · Find a pair to earn 1 point.`;
+    $('memory-adult-points').textContent=String(points[0]);$('memory-kid-points').textContent=String(points[1]);
     const holder=$('memory-cards');
     if(!holder.children.length)deck.forEach((symbol,i)=>button('?',()=>flip(i),holder,'memory-card'));
     deck.forEach((symbol,i)=>{
@@ -335,10 +336,10 @@ function memory(){
     if(revealed.length===2){
       locked=true; const match=deck[revealed[0]]===deck[revealed[1]];
       if(match){revealed.forEach(id=>matched.add(id));points[turn]++;}
-      if(matched.size===deck.length){draw();react('win','All pairs found!'); later(()=>finishRound(points[0]>points[1]?0:1,`Pairs found — Adults ${points[0]} · Kids ${points[1]}`),800);return;}
-      status(match?'A pair! Ding! Next team coming up…':'No match. Remember those cards — next team coming up…');
+      if(matched.size===deck.length){draw();react('win',`${teamName(turn)} +1 POINT!`); later(()=>finishRound(roundWinner({score:points[0]},{score:points[1]}),`Round points — Adults ${points[0]} · Kids ${points[1]}. One matching pair = one point. Most points wins the round.`),800);return;}
+      status(match?`${teamName(turn)} earn 1 point! Next team coming up…`:'No match. Remember those cards — next team coming up…');
       draw();
-      react(match?'match':'turn',match?'MATCH! +1 pair':'Next team…');
+      react(match?'match':'turn',match?`${teamName(turn)} +1 POINT!`:'Next team…');
       later(()=>{
         revealed=[];turn=1-turn;locked=false;scoreboard();draw();
         status(`${teamName(turn)}: find a pair.`);

@@ -93,20 +93,42 @@ for(const game of data.GAMES)for(const first of [0,1]){
  for(let r=0;r<3;r++){
   const cards=[...f.get('memory-cards').children],symbols=cards.map(c=>c.textContent);layouts.push(symbols.join(''));
   const pairs=[...new Set(symbols)].map(s=>symbols.flatMap((v,i)=>v===s?[i]:[]));
-  f.advance(5000);
+  f.advance(5000);const expected=[0,0];
+  assert.equal(f.get('memory-adult-points').textContent,'0');assert.equal(f.get('memory-kid-points').textContent,'0');
   for(let i=0;i<pairs.length;i++){
-   const [a,b]=pairs[i];cards[a].click();cards[a].click();cards[b].click();
+   const [a,b]=pairs[i],team=f.state().turn;cards[a].click();cards[a].click();
+   assert.equal(Number(f.get(team===0?'memory-adult-points':'memory-kid-points').textContent),expected[team]);
+   cards[b].click();expected[team]++;cards[b].click();
+   assert.equal(Number(f.get('memory-adult-points').textContent),expected[0]);assert.equal(Number(f.get('memory-kid-points').textContent),expected[1]);
    assert.ok(cards.every((card,index)=>card===f.get('memory-cards').children[index]));
    if(i<6){const old=f.state().turn;f.advance(599);assert.equal(f.state().turn,old);f.advance(1);assert.equal(f.state().turn,1-old);}
   }
-  f.advance(800);noNavigation(f);if(r<2)f.advance(2200);
+  f.advance(800);assert.match(f.get('game-stage').textContent,new RegExp(`Round points — Adults ${expected[0]} · Kids ${expected[1]}`));noNavigation(f);if(r<2)f.advance(2200);
  }
  assert.deepEqual([...f.state().wins],[2,1]);assert.equal(f.state().round,3);assert.ok(new Set(layouts).size>1);
 }
 {
  const f=fixture();f.start('memory');const symbols=f.get('memory-cards').children.map(c=>c.textContent),different=symbols.findIndex(s=>s!==symbols[0]);f.advance(5000);
- f.get('memory-cards').children[0].click();f.get('memory-cards').children[different].click();f.advance(899);assert.equal(f.state().turn,0);f.advance(1);assert.equal(f.state().turn,1);
+ f.get('memory-cards').children[0].click();f.get('memory-cards').children[different].click();assert.equal(f.get('memory-adult-points').textContent,'0');assert.equal(f.get('memory-kid-points').textContent,'0');f.advance(899);assert.equal(f.state().turn,0);f.advance(1);assert.equal(f.state().turn,1);
  f.get('arcade-return').click();f.start('tic');f.advance(10000);assert.ok(f.get('tic-board'));
+}
+// Memory awards the round to the highest points total, not the starter or
+// the team finding the last pair. Misses and repeat taps never award points.
+for(const first of [0,1]){
+ const f=fixture();f.start('memory',first);
+ const cards=f.get('memory-cards').children,symbols=cards.map(c=>c.textContent);
+ const pairs=[...new Set(symbols)].map(s=>symbols.flatMap((v,i)=>v===s?[i]:[]));
+ f.advance(5000);
+ const [missA]=pairs[0],[missB]=pairs[1];cards[missA].click();cards[missB].click();f.advance(900);
+ for(let i=0;i<pairs.length;i++){
+  if(i===5){cards[pairs[5][0]].click();cards[pairs[6][0]].click();f.advance(900);}
+  for(const at of pairs[i])cards[at].click();
+  if(i<6)f.advance(600);
+ }
+ assert.equal(f.state().turn,first,'The final pair is found by the team with fewer points');
+ assert.equal(f.get(first===0?'memory-kid-points':'memory-adult-points').textContent,'4');
+ f.advance(800);assert.equal(f.state().wins[1-first],1);assert.equal(f.state().wins[first],0);
+ assert.match(f.get('game-stage').textContent,new RegExp(core.teamName(1-first)+' win this round'));
 }
 // Tic-Tac-Toe has automatic turns and scoring.
 {
