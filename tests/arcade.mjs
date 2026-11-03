@@ -36,14 +36,21 @@ class Element {
   }
   querySelector(s){return this.querySelectorAll(s)[0]??null;}
 }
-function fixture(firstTeam=0,withSpeech=false){
+function fixture(firstTeam=0,withSpeech=false,withAudio=false){
   let selectedFirst=firstTeam;const testMath=Object.create(Math);testMath.random=()=>selectedFirst===0?.25:.75;
   let now=0,seq=0,scheduled=new Map();const saved=[];const root=new Element();
   root.innerHTML=readFileSync(new URL('../app/family/arcade/route.ts',import.meta.url),'utf8').split('const html=`')[1].split('`;')[0];
   const doc={hidden:false,getElementById:id=>root.querySelector('#'+id),createElement:tag=>new Element(tag),handlers:{},addEventListener(type,fn){this.handlers[type]=fn;}};
   const speech={spoken:[],cancels:0,getVoices:()=>[{lang:'en-US',localService:true}],cancel(){this.cancels++;},speak(utterance){this.spoken.push(utterance);utterance.onstart?.();}};
   const voiceWindow=withSpeech?{speechSynthesis:speech,SpeechSynthesisUtterance:class {constructor(text){this.text=text;}}}:{};
-  const context=vm.createContext({...core,...data,...newCore,...library,Math:testMath,document:doc,crypto,window:{addEventListener(){},...voiceWindow},createResultRecorder:()=>({drain:async()=>{},capture:result=>{saved.push(result);}}),performance:{now:()=>now},console,setTimeout:(fn,delay)=>{scheduled.set(++seq,{at:now+delay,fn});return seq;},clearTimeout:id=>scheduled.delete(id)});
+  const audio={nodes:[],gains:[]};
+  class AudioContextMock {
+    constructor(){this.state='running';this.destination={};}
+    get currentTime(){return now/1000;}
+    createGain(){const gain={gain:{value:1,setValueAtTime(){},linearRampToValueAtTime(){},exponentialRampToValueAtTime(){}},connect(){},disconnect(){this.disconnected=true;}};audio.gains.push(gain);return gain;}
+    createOscillator(){const node={frequency:{value:0,setValueAtTime(){},exponentialRampToValueAtTime(){}},stops:[],connect(){},disconnect(){this.disconnected=true;},start(){this.started=true;},stop(at){this.stops.push(at);}};audio.nodes.push(node);return node;}
+  }
+  const context=vm.createContext({...core,...data,...newCore,...library,Math:testMath,document:doc,crypto,window:{addEventListener(){},...voiceWindow,...(withAudio?{AudioContext:AudioContextMock}:{})},createResultRecorder:()=>({drain:async()=>{},capture:result=>{saved.push(result);}}),performance:{now:()=>now},console,setTimeout:(fn,delay)=>{scheduled.set(++seq,{at:now+delay,fn});return seq;},clearTimeout:id=>scheduled.delete(id)});
   const source=readFileSync(new URL('../public/arcade.js',import.meta.url),'utf8').replace(/^import .*;\n/gm,'');
   vm.runInContext(source+'\nthis.state=()=>({wins:[...wins],round,champion,turn,starter,attempt,plans:game?{maze:game.maze,codes:game.codes,course:game.course}:null,series:series?{games:series.games.map(g=>g.id),index:series.index,winners:[...series.winners]}:null});this.resolveGame=finishRound;this.seriesWith=id=>{startSeries();clearTimers();series.games=[GAMES.find(g=>g.id===id),...GAMES.filter(g=>g.id!==id).slice(0,2)];startSeriesGame();};',context);
   const get=id=>doc.getElementById(id);
@@ -52,7 +59,7 @@ function fixture(firstTeam=0,withSpeech=false){
   function advance(ms){const end=now+ms;let guard=0;while(true){const task=[...scheduled.entries()].filter(([,t])=>t.at<=end).sort((a,b)=>a[1].at-b[1].at)[0];if(!task)break;assert.ok(++guard<10000);scheduled.delete(task[0]);now=task[1].at;task[1].fn();}now=end;}
   function start(id,first=0,wait=true){selectedFirst=first;const i=data.GAMES.findIndex(g=>g.id===id);get('arcade-grid').children[i].click();if(wait&&id!=='memory')advance(4000);}
 
-  return {root,doc,get,buttons,click,advance,start,saved,speech,state:context.state,resolveGame:context.resolveGame,seriesWith:context.seriesWith};
+  return {root,doc,get,buttons,click,advance,start,saved,speech,audio,state:context.state,resolveGame:context.resolveGame,seriesWith:context.seriesWith};
 }
 // Core scoring remains first to three, with no points for a tie.
 assert.equal(data.GAMES.length,13);
@@ -222,6 +229,37 @@ function enterCode(f,code){code.forEach((v,i)=>{const digit=()=>f.get('code-digi
 assert.deepEqual(newCore.codeClues([1,1,2],[1,2,1]),{exact:1,misplaced:2});
 {
  const f=fixture();f.start('code',1);enterCode(f,f.state().plans.codes[1]);assert.ok(f.get('handoff-countdown'));f.advance(4000);f.advance(60000);assert.deepEqual([...f.state().wins],[0,1]);
+}
+// Maze's soundtrack has independent music controls; movement effects follow
+// global Sound. Every transition stops the looping music and live notes.
+{
+ const f=fixture(0,false,true);f.start('maze');
+ assert.equal(f.get('maze-soundbar').getAttribute('data-playing'),'true');
+ assert.match(f.get('maze-music-status').textContent,/Now playing/);
+ assert.ok(f.audio.nodes.length>=3);
+ f.get('maze-music-volume').value='65';f.get('maze-music-volume').dispatch('input');
+ assert.equal(f.get('maze-music-volume-value').textContent,'65%');assert.equal(f.audio.gains[0].gain.value,.65);
+ const before=f.audio.nodes.length;
+ f.click(['↑ Up','→ Right','↓ Down','← Left'][route(f.state().plans.maze)[0]]);
+ assert.equal(f.audio.nodes.length,before+1,'One movement press plays one effect');
+ f.click('Pause music');assert.equal(f.get('maze-soundbar').getAttribute('data-playing'),'false');
+ const paused=f.audio.nodes.length;f.advance(500);assert.equal(f.audio.nodes.length,paused);
+ f.click('Play music');assert.equal(f.get('maze-soundbar').getAttribute('data-playing'),'true');
+ f.get('arcade-sound').click();assert.equal(f.get('maze-soundbar').getAttribute('data-playing'),'false');
+ assert.match(f.get('maze-music-status').textContent,/muted/);
+ const muted=f.audio.nodes.length;f.get('maze-controls').querySelectorAll('button').find(b=>!b.disabled).click();assert.equal(f.audio.nodes.length,muted);
+ f.get('arcade-sound').click();assert.equal(f.get('maze-soundbar').getAttribute('data-playing'),'true');
+ f.get('arcade-reset').click();assert.equal(f.get('maze-soundbar'),null);
+ const reset=f.audio.nodes.length;f.advance(1000);assert.equal(f.audio.nodes.length,reset);
+ f.click('Restart match');f.advance(4000);assert.equal(f.get('maze-soundbar').getAttribute('data-playing'),'true');
+ f.doc.hidden=true;f.doc.handlers.visibilitychange();
+ const hidden=f.audio.nodes.length;f.advance(1000);assert.equal(f.audio.nodes.length,hidden);
+ assert.match(f.get('game-stage').textContent,/interrupted/);
+}
+{
+ const f=fixture(0,false,true);f.start('maze');const notes=[...f.audio.nodes];
+ f.get('arcade-return').click();assert.ok(notes.every(n=>n.disconnected));
+ const total=f.audio.nodes.length;f.advance(1000);assert.equal(f.audio.nodes.length,total);
 }
 // Golf has three holes per team and auto advances each hole and completed turn.
 function missGolfTurn(f){

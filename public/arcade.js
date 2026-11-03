@@ -94,17 +94,71 @@ function chime(kind){
     notes.forEach((frequency,i)=>{const oscillator=audioContext.createOscillator(),gain=audioContext.createGain(),at=audioContext.currentTime+i*.075;oscillator.type='sine';oscillator.frequency.value=frequency;gain.gain.setValueAtTime(0,at);gain.gain.linearRampToValueAtTime(.045,at+.008);gain.gain.exponentialRampToValueAtTime(.001,at+.12);oscillator.connect(gain);gain.connect(audioContext.destination);oscillator.start(at);oscillator.stop(at+.14);});
   }catch{}
 }
+// Original, looping arcade groove: melody, bass, kick and hi-hat at 120 BPM.
+let mazeMusicOn=true, mazeMusicVolume=.35, mazeMusicActive=false, mazeMusicTimer=null, mazeMusicBus=null;
+const mazeMusicNodes=new Set();
+function updateMazeMusicUI(){
+  const panel=$('maze-soundbar');if(!panel)return;
+  panel.setAttribute('data-playing',String(mazeMusicActive));
+  $('maze-music-toggle').textContent=mazeMusicActive?'Pause music':'Play music';
+  $('maze-music-toggle').setAttribute('aria-pressed',String(mazeMusicActive));
+  $('maze-music-status').textContent=!soundOn?'Sound is muted':mazeMusicActive?'Now playing · Maze Groove':mazeMusicOn?'Tap Play music to start the beat':'Music paused · movement sounds stay on';
+}
+function stopMazeMusic(){
+  clearTimeout(mazeMusicTimer);mazeMusicTimer=null;mazeMusicActive=false;
+  for(const node of mazeMusicNodes){try{node.stop();node.disconnect();}catch{}}
+  mazeMusicNodes.clear();
+  if(mazeMusicBus){try{mazeMusicBus.disconnect();}catch{}mazeMusicBus=null;}
+  updateMazeMusicUI();
+}
+function startMazeMusic(){
+  stopMazeMusic();
+  if(!mazeMusicOn||!soundOn||!$('maze-soundbar')||document.hidden)return;
+  unlockAudio();
+  if(!audioContext||audioContext.state!=='running'){updateMazeMusicUI();return;}
+  mazeMusicActive=true;mazeMusicBus=audioContext.createGain();mazeMusicBus.gain.value=mazeMusicVolume;mazeMusicBus.connect(audioContext.destination);
+  const melody=[72,null,76,79,81,79,76,null,74,null,77,81,79,77,74,null,72,76,79,null,84,81,79,76,74,77,79,null,76,74,72,null];
+  const bass=[48,48,53,55];let step=0;
+  function tone(midi,duration,volume,type='square',fall=false){
+    const osc=audioContext.createOscillator(),gain=audioContext.createGain(),at=audioContext.currentTime;
+    osc.type=type;osc.frequency.setValueAtTime(440*2**((midi-69)/12),at);
+    if(fall)osc.frequency.exponentialRampToValueAtTime(45,at+duration);
+    gain.gain.setValueAtTime(0,at);gain.gain.linearRampToValueAtTime(volume,at+.008);gain.gain.exponentialRampToValueAtTime(.001,at+duration);
+    osc.connect(gain);gain.connect(mazeMusicBus);mazeMusicNodes.add(osc);
+    osc.onended=()=>{mazeMusicNodes.delete(osc);osc.disconnect();gain.disconnect();};osc.start(at);osc.stop(at+duration+.02);
+  }
+  function beat(){
+    if(!mazeMusicActive||document.hidden||!$('maze-soundbar')){stopMazeMusic();return;}
+    try{
+      const note=melody[step%melody.length];if(note!==null)tone(note,.16,.06,'triangle');
+      if(step%4===0){tone(bass[Math.floor(step/8)%4],.3,.1,'triangle');tone(43,.13,.16,'sine',true);}
+      if(step%4===2)tone(88,.045,.028,'triangle');
+      tone(110,.025,step%2===0?.01:.018,'square');
+    }catch{stopMazeMusic();return;}
+    step++;mazeMusicTimer=setTimeout(beat,125);
+  }
+  updateMazeMusicUI();beat();
+}
+function mazeSoundbar(){
+  const panel=document.createElement('div');panel.id='maze-soundbar';panel.className='maze-soundbar';
+  panel.innerHTML=`<span class="maze-equalizer" aria-hidden="true"><i></i><i></i><i></i><i></i></span><div class="maze-music-copy"><strong>MAZE GROOVE</strong><small id="maze-music-status" role="status" aria-live="polite"></small></div><button type="button" id="maze-music-toggle" aria-pressed="false">Play music</button><label for="maze-music-volume">Music <span id="maze-music-volume-value">${Math.round(mazeMusicVolume*100)}%</span></label><input id="maze-music-volume" type="range" min="0" max="100" step="5" value="${Math.round(mazeMusicVolume*100)}" aria-label="Maze background music volume">`;
+  stage.appendChild(panel);
+  $('maze-music-toggle').addEventListener('click',()=>{if(mazeMusicActive){mazeMusicOn=false;stopMazeMusic();}else{mazeMusicOn=true;startMazeMusic();}});
+  $('maze-music-volume').addEventListener('input',()=>{mazeMusicVolume=Number($('maze-music-volume').value)/100;$('maze-music-volume-value').textContent=`${Math.round(mazeMusicVolume*100)}%`;if(mazeMusicBus)mazeMusicBus.gain.value=mazeMusicVolume;});
+  startMazeMusic();
+}
+window.addEventListener('pagehide',stopMazeMusic);
 function react(kind,label){
   chime(kind);const sequence=++feedbackSequence;
   $('feedback-caption').textContent=label;
   $('arcade-feedback').setAttribute('data-kind',effectsOn?kind:'quiet');
   later(()=>{if(sequence!==feedbackSequence)return;$('arcade-feedback').setAttribute('data-kind','');$('feedback-caption').textContent='';},650);
 }
-$('arcade-sound').addEventListener('click',()=>{soundOn=!soundOn;$('arcade-sound').textContent=`Sound: ${soundOn?'on':'off'}`;$('arcade-sound').setAttribute('aria-pressed',String(soundOn));stopTriviaVoice();if(soundOn)chime('match');});
+$('arcade-sound').addEventListener('click',()=>{soundOn=!soundOn;$('arcade-sound').textContent=`Sound: ${soundOn?'on':'off'}`;$('arcade-sound').setAttribute('aria-pressed',String(soundOn));stopTriviaVoice();if(soundOn){chime('match');if($('maze-soundbar'))startMazeMusic();}else stopMazeMusic();});
 $('arcade-effects').setAttribute('aria-pressed',String(effectsOn));
 $('arcade-effects').textContent=`Lights: ${effectsOn?'on':'off'}`;
 $('arcade-effects').addEventListener('click',()=>{effectsOn=!effectsOn;$('arcade-effects').textContent=`Lights: ${effectsOn?'on':'off'}`;$('arcade-effects').setAttribute('aria-pressed',String(effectsOn));$('arcade-feedback').setAttribute('data-kind','');});
-function clearTimers(){ stopTriviaVoice(); generation++; timers.forEach(clearTimeout); timers=[]; timed=false; }
+function clearTimers(){ stopMazeMusic(); stopTriviaVoice(); generation++; timers.forEach(clearTimeout); timers=[]; timed=false; }
 function later(fn,delay){ const token=generation; const timer=setTimeout(()=>{if(token===generation)fn();},delay); timers.push(timer); }
 function screen(html){ clearTimers(); $('arcade-feedback').setAttribute('data-kind','');$('feedback-caption').textContent='';stage.innerHTML=html; scheduleGameFit(); }
 function button(label,action,parent=stage,className='primary'){
@@ -468,10 +522,12 @@ function mazeDash(){
     ['↑ Up','→ Right','↓ Down','← Left'].forEach((label,d)=>{
       const b=button(label,()=>{
         if(settled||cells[position][d])return;
+        chime('tap');
         position+=delta[d];steps++;if(position===cells.length-1)return finish(true);draw();
       },$('maze-controls'),'answer');b.innerHTML=`<span class="maze-direction-arrow" aria-hidden="true">${label[0]}</span> <span class="maze-direction-label">${label.slice(2)}</span>`;b.setAttribute('aria-label',label.slice(2));b.disabled=cells[position][d];
     });
   }
+  mazeSoundbar();
   draw();startClock(45,()=>finish(false));status('Find the flag. You can only move through open paths.');
 }
 function codeBreaker(){
