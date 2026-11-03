@@ -1,4 +1,4 @@
-export const ARCADE_GAMES=['memory','tic','spot','trivia','word','tap','picture','number','challenge','maze','rps','code','golf'];
+export const ARCADE_GAMES=['memory','tic','spot','trivia','word','tap','picture','number','challenge','maze','rps','code','golf','basketball'];
 type CompletedResult={id:string;mode:'single'|'series';gameIds:string[];roundWinners:number[]};
 export function completedResult(raw:unknown):CompletedResult{
  if(!raw||typeof raw!=='object')throw new Error('Invalid result');
@@ -11,6 +11,7 @@ export function completedResult(raw:unknown):CompletedResult{
  if(!Array.isArray(d.roundWinners)||d.roundWinners.some(w=>w!==0&&w!==1))throw new Error('Invalid outcomes');
  const rounds=d.roundWinners as number[];
  if(d.mode==='series') {if(rounds.length!==3)throw new Error('Series is incomplete');}
+ else if(games[0]==='basketball'){if(rounds.length!==1)throw new Error('Basketball is incomplete');}
  else {
   if(rounds.length<3||rounds.length>5)throw new Error('Match is incomplete');
   const wins=[0,0];rounds.forEach((w,i)=>{wins[w]++;if(i<rounds.length-1&&wins[w]>=3)throw new Error('Match already ended');});

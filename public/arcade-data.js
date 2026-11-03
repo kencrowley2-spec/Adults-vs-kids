@@ -1,4 +1,5 @@
 export const GAMES = [
+  {id:'basketball',icon:'🏀',name:'Basketball Showdown',tag:'FLICK. SWISH. BEAT THE BUZZER.',color:'yellow',description:'Flick upward from the basketball toward the hoop. Adults and kids get 30 seconds each. Every basket scores 2 points. Most points wins the showdown!'},
   {id:'maze',icon:'🧭',name:'Maze Dash',tag:'FIND YOUR WAY OUT.',color:'mint',description:'Navigate the maze with the arrow buttons. Both teams play the same maze with 45 seconds each. Reach the flag to win; if both escape, the faster team wins.'},
   {id:'rps',icon:'✊',name:'Rock Paper Scissors',tag:'PICK IT. HIDE IT. REVEAL IT.',color:'yellow',description:'Choose your move in secret, then pass the device. Rock beats scissors, scissors beats paper, paper beats rock. Matching moves replay the round.'},
   {id:'code',icon:'🔐',name:'Code Breaker',tag:'THINK. TEST. CRACK IT.',color:'blue',description:'Crack a secret three-digit code using numbers 1–4. Digits may repeat. Each team gets six guesses and 60 seconds with its own code. Clues show exact and misplaced digits. Solve in fewer guesses to win.'},

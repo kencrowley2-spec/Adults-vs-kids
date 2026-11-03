@@ -6,6 +6,8 @@ import {completedResult,sameResult} from '../lib/arcade/results.ts';
 import {createResultRecorder} from '../public/arcade-results.js';
 const id='11111111-1111-4111-8111-111111111111',owner='22222222-2222-4222-8222-222222222222',other='33333333-3333-4333-8333-333333333333';
 const single={id,mode:'single',gameIds:['memory'],roundWinners:[0,1,0,1,0]},series={id,mode:'series',gameIds:['maze','rps','golf'],roundWinners:[1,0,1]};
+assert.equal(completedResult({...single,gameIds:['basketball'],roundWinners:[1]}).roundWinners.length,1);
+assert.throws(()=>completedResult({...single,gameIds:['basketball'],roundWinners:[1,1,1]}));
 assert.equal(completedResult(single).roundWinners.length,5);assert.equal(completedResult(series).mode,'series');
 for(const patch of [{roundWinners:[0,0]},{roundWinners:[0,0,0,1]},{roundWinners:[0,1,0,1]},{roundWinners:[0,1,null]},{roundWinners:[2,2,2]},{id:'bad'},{gameIds:['made-up']},{gameIds:['tic','tic']},{mode:'edited'}])assert.throws(()=>completedResult({...single,...patch}));
 for(const patch of [{roundWinners:[1,1]},{gameIds:['maze','maze','golf']},{gameIds:['maze','rps','bad']}])assert.throws(()=>completedResult({...series,...patch}));

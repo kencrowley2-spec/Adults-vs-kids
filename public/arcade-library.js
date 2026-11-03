@@ -3,6 +3,8 @@ const svg=(body)=>`<svg viewBox="0 0 240 180" aria-hidden="true" focusable="fals
 const emoji=(symbol,x=120,y=128,size=90)=>`<text x="${x}" y="${y}" font-size="${size}" text-anchor="middle">${symbol}</text>`;
 const card=(x,y,r,body)=>`<g transform="translate(${x} ${y}) rotate(${r} 35 48)"><rect width="70" height="96" rx="10" fill="white" stroke="#111827" stroke-width="4"/>${body}</g>`;
 const art={
+ basketball:()=>`<rect x="44" y="15" width="152" height="100" rx="12" fill="#d7dfd7" stroke="#f7a54b" stroke-width="5"/><path d="M95 85V50h50v35" fill="none" stroke="#e97735" stroke-width="5"/><path d="m82 95 20 52h36l20-52m-66 0 22 52m34-52-22 52m-38-33h62m-54 17h44" fill="none" stroke="white" stroke-width="3"/><ellipse cx="120" cy="95" rx="43" ry="9" fill="none" stroke="#ff862d" stroke-width="6"/>${emoji('🏀',185,174,74)}`,
+
  memory:()=>card(31,48,-17,emoji('🐸',35,65,46))+card(89,25,9,emoji('🐼',35,65,46))+card(148,55,19,emoji('🐸',35,65,46)),
  maze:()=>`<g fill="none" stroke="#fff" stroke-width="9" stroke-linejoin="round"><path d="M31 155V28h175v127H69V65h97v51h-50"/><path d="M70 28v37M166 65h40M69 116H31"/></g><path d="M49 149V46h99v37h37v53h-67" stroke="#ffd522" stroke-width="6" fill="none" stroke-dasharray="9 6"/><circle cx="49" cy="150" r="11" fill="#ffd522"/>${emoji('🏁',121,139,38)}`,
  golf:()=>`<path d="M0 130Q70 65 130 130T260 114V190H0Z" fill="#b9ef63" stroke="#164d35" stroke-width="4"/><ellipse cx="166" cy="141" rx="24" ry="8" fill="#102623"/><path d="M166 140V33l50 22-50 18" fill="#ffd522" stroke="#17251a" stroke-width="4"/><path d="M49 70l39 70-27 8" fill="none" stroke="white" stroke-width="9"/><circle cx="78" cy="151" r="9" fill="white" stroke="#17251a" stroke-width="3"/>`,
@@ -17,5 +19,5 @@ const art={
  number:()=>`<g font-size="65" font-weight="900" fill="white" stroke="#182950" stroke-width="2"><text x="30" y="83" transform="rotate(-12 30 83)">7</text><text x="148" y="156" transform="rotate(13 148 156)">4</text></g><text x="109" y="119" text-anchor="middle" font-size="68" font-weight="900" fill="#ffd522">+</text><path d="M160 40h43M181 18v43M31 139h41" stroke="#ffd522" stroke-width="9"/>`,
  challenge:()=>emoji('🏆',122,142,128)+`<path d="m29 40 5 13 14 1-11 9 4 14-12-8-12 8 4-14-11-9 14-1Zm177 67 4 10 11 1-9 7 3 11-9-6-9 6 3-11-9-7 11-1Z" fill="white"/>`
 };
-export function coverMarkup(g){return `<span class="cover-brand">ADULTS vs. KIDS</span><span class="cover-art">${svg((art[g.id]||art.challenge)())}</span><span class="cover-info"><small>${g.tag}</small><b>${g.name}</b></span><span class="cover-play">PLAY NOW <span>BEST OF 5 ↗</span></span>`;}
+export function coverMarkup(g){return `<span class="cover-brand">ADULTS vs. KIDS</span><span class="cover-art">${svg((art[g.id]||art.challenge)())}</span><span class="cover-info"><small>${g.tag}</small><b>${g.name}</b></span><span class="cover-play">PLAY NOW <span>${g.id==='basketball'?'30 SEC EACH':'BEST OF 5'} ↗</span></span>`;}
 export function recentGames(storage,key,valid){try{const ids=JSON.parse(storage.getItem(key)||'[]');return Array.isArray(ids)?[...new Set(ids)].filter(id=>valid.some(g=>g.id===id)).slice(0,8):[];}catch{return [];}}

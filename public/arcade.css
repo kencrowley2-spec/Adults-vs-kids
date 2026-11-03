@@ -227,3 +227,10 @@ body::before{display:block;inset:0;background:linear-gradient(180deg,rgba(4,5,14
 .memory-round-score>div{display:flex;justify-content:space-around;gap:10px;padding:6px 12px;font-size:12px;font-weight:800}
 .memory-round-score strong{display:inline-block;margin-left:8px;font-size:26px;line-height:1;font-weight:900}
 .memory-round-score>small{display:block;padding:0 8px 6px;font-size:9px;line-height:1.4}
+
+/* A portrait arcade cabinet fills the available arena without page scrolling. */
+.basketball-cabinet{height:calc(var(--play-height,600px) - 8px);width:100%;display:flex;justify-content:center;position:relative;min-height:180px;background:#0d1211;border-radius:12px;overflow:hidden}
+#basketball-court{display:block;height:100%;width:auto;max-width:100%;aspect-ratio:400/760;object-fit:fill;touch-action:none;user-select:none;cursor:grab;outline-offset:-4px}
+#basketball-court:active{cursor:grabbing}#basketball-court:focus-visible{outline:3px solid #ffd522}
+.basketball-accessible{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+.game-tile[data-game="basketball"],.feature-poster[data-game="basketball"]{--cover-a:#64421b;--cover-b:#172923}

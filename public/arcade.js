@@ -1,5 +1,6 @@
-import {coverMarkup,recentGames} from './arcade-library.js?v=1';
-import {GAMES, ANIMALS, TRIVIA, WORDS, PICTURES, CHALLENGES} from './arcade-data.js?v=6';
+import {mountBasketball} from './arcade-basketball.js?v=1';
+import {coverMarkup,recentGames} from './arcade-library.js?v=2';
+import {GAMES, ANIMALS, TRIVIA, WORDS, PICTURES, CHALLENGES} from './arcade-data.js?v=7';
 import {teamName, shuffle, roundWinner, awardRound, lineWinner} from './arcade-core.js';
 
 import {makeMaze, codeClues, rpsWinner, GOLF_COURSES, golfStep} from './arcade-new-core.js?v=5';
@@ -97,7 +98,7 @@ document.addEventListener('keydown',unlockAudio);
 function chime(kind){
   if(!soundOn)return;unlockAudio();if(!audioContext||audioContext.state!=='running')return;
   try{
-    const notes=kind==='win'?[523,659,784]:kind==='match'?[660,880]:kind==='tap'?[440]:[330,440];
+    const notes=kind==='buzzer'?[130,100]:kind==='win'?[523,659,784]:kind==='match'?[660,880]:kind==='tap'?[440]:[330,440];
     notes.forEach((frequency,i)=>{const oscillator=audioContext.createOscillator(),gain=audioContext.createGain(),at=audioContext.currentTime+i*.075;oscillator.type='sine';oscillator.frequency.value=frequency;gain.gain.setValueAtTime(0,at);gain.gain.linearRampToValueAtTime(.045,at+.008);gain.gain.exponentialRampToValueAtTime(.001,at+.12);oscillator.connect(gain);gain.connect(audioContext.destination);oscillator.start(at);oscillator.stop(at+.14);});
   }catch{}
 }
@@ -202,12 +203,12 @@ updateArenaHeight();
 function focusFirst(){ stage.querySelector('button,input')?.focus({preventScroll:true}); }
 function status(text){$('arcade-message').textContent=text;}
 function scoreboard(){
-  $('match-format').textContent=series?'3-GAME SERIES':'BEST OF FIVE';
+  $('match-format').textContent=series?'3-GAME SERIES':game?.id==='basketball'?'30 SECONDS EACH':'BEST OF FIVE';
   $('arcade-reset').textContent=series?'Restart series ↻':'Restart match ↻';
   $('series-lineup').hidden=!series;
   if(series) $('series-lineup').innerHTML=series.games.map((g,i)=>`<div class="series-pick ${i===series.index?'active':''}"><small>GAME ${i+1}${series.winners[i]!==undefined?` · ${teamName(series.winners[i])} win`:''}</small><b>${g.icon} ${g.name}</b></div>`).join('');
-  $('arcade-score').innerHTML=names.map((name,i)=>`<div class="team-score ${turn===i&&champion<0?'current':''}"><span>${i===0?'★':'✦'} TEAM ${name.toUpperCase()}</span><strong>${wins[i]}</strong><div class="win-dots" aria-label="${wins[i]} ${series?'game':'round'} wins">${[0,1,2].map(n=>`<i class="${n<wins[i]?'won':''}"></i>`).join('')}</div></div>`).join('');
-  $('round-label').textContent=series?`${champion>=0?'SERIES COMPLETE':`GAME ${series.index+1} OF 3${attempt?' · TIE REPLAY':''}`} · SERIES SCORE` : champion>=0?'MATCH COMPLETE':`ROUND ${round} OF 5${attempt?' · TIE REPLAY':''} · FIRST TO 3 WINS`;
+  $('arcade-score').innerHTML=names.map((name,i)=>`<div class="team-score ${turn===i&&champion<0?'current':''}"><span>${i===0?'★':'✦'} TEAM ${name.toUpperCase()}</span><strong>${game?.id==='basketball'&&!series?(game.basketballPoints?.[i]??0):wins[i]}</strong><div class="win-dots" aria-label="${wins[i]} ${series?'game':'round'} wins">${[0,1,2].map(n=>`<i class="${n<wins[i]?'won':''}"></i>`).join('')}</div></div>`).join('');
+  $('round-label').textContent=game?.id==='basketball'&&!series?(champion>=0?'MATCH COMPLETE':'2 POINTS PER BASKET · MOST POINTS WINS'):series?`${champion>=0?'SERIES COMPLETE':`GAME ${series.index+1} OF 3${attempt?' · TIE REPLAY':''}`} · SERIES SCORE` : champion>=0?'MATCH COMPLETE':`ROUND ${round} OF 5${attempt?' · TIE REPLAY':''} · FIRST TO 3 WINS`;
 }
 function pick(key,source,n){
   if(!used[key] || used[key].length<n) used[key]=shuffle(source);
@@ -268,10 +269,11 @@ function handoff(team,detail,action){
   later(tick,1000);
 }
 function beginRound(){
-  results=[]; turn=starter; scoreboard(); status('');
+  results=[]; if(game.id==='basketball')game.basketballPoints=[0,0]; turn=starter; scoreboard(); status('');
   if(game.id==='memory') return memory();
   if(game.id==='tic') return handoff(turn,`${teamName(turn)} makes the first move. Adults use X; kids use O.`,tic);
   if(game.id==='rps')return handoff(turn,'Keep your move secret. The other team should look away until you pass the device.',rockPaperScissors);
+  if(game.id==='basketball')return teamReady(starter);
   if(game.id==='maze')game.maze=makeMaze();
   if(game.id==='code')game.codes=[0,1].map(()=>Array.from({length:3},()=>1+Math.floor(Math.random()*4)));
   if(game.id==='golf')game.course=shuffle(GOLF_COURSES).slice(0,3);
@@ -284,9 +286,10 @@ function beginRound(){
 function teamReady(team,previous=''){
   let detail=`Your turn starts after the countdown. ${game.description}`;
   if(game.id==='challenge') detail=`Pick ONE player per team. Same challenge, same 20 seconds. ${game.challenge[0]}: ${game.challenge[1]} The other team counts. You can play seated.`;
-  handoff(team,(previous?previous+' ':'')+detail,()=>({spot, trivia:quiz,word:quiz,tap:quickTap,picture:quiz,number:quiz,challenge,maze:mazeDash,code:codeBreaker,golf:miniGolf}[game.id])());
+  handoff(team,(previous?previous+' ':'')+detail,()=>({basketball,spot, trivia:quiz,word:quiz,tap:quickTap,picture:quiz,number:quiz,challenge,maze:mazeDash,code:codeBreaker,golf:miniGolf}[game.id])());
 }
 function finishRound(winner,detail){
+  if(game.id==='basketball'&&!series)return finishBasketballMatch(winner,detail);
   if(recording&&winner!==null&&!recording.complete)recording.roundWinners.push(winner);
   if(series)return finishSeriesGame(winner,detail);
   const awarded=awardRound(wins,winner); wins=awarded.wins; champion=awarded.champion; scoreboard();
@@ -319,6 +322,22 @@ function finishTurn(result){
     const detail=names.map((n,i)=>`${n}: ${results[i].label}`).join(' · ');
     finishRound(winner,detail);
   }
+}
+function finishBasketballMatch(winner,detail){
+ if(winner!==null){wins[winner]=1;champion=winner;if(recording)recording.roundWinners.push(winner);saveCompleted();}
+ scoreboard();
+ screen(`<div class="result"><span class="giant-icon">${winner===null?'🤝':'🏆'}</span><p class="eyebrow">BASKETBALL SHOWDOWN</p><h3>${winner===null?'It’s a tie!':`${teamName(winner)} win!`}</h3><p>${detail}</p><div class="final-score">${results[0].score} <span>–</span> ${results[1].score}</div><p>30 seconds each. Every basket counts for two.</p></div>`);
+ button(winner===null?'Play again →':'Rematch →',()=>openGame('basketball'));
+ button('Return to Arcade',()=>$('arcade-return').click(),stage,'text-button');
+ react(winner===null?'turn':'win',winner===null?'Even score!':`${teamName(winner)} win!`);
+ status(winner===null?'Tie game. Share a high five and play again!':`${teamName(winner)} win the basketball showdown!`);focusFirst();
+}
+function basketball(){
+ screen(`<div class="basketball-cabinet"><canvas id="basketball-court" tabindex="0" role="application" aria-label="Basketball court. Flick upward from the ball to shoot. Keyboard: arrows adjust aim and power, Space or Enter shoots."></canvas><div class="basketball-accessible" role="status" aria-live="polite"><span id="basketball-points">${teamName(turn)}: 0 points</span></div></div>`);
+ timed=true;
+ mountBasketball({canvas:$('basketball-court'),team:teamName(turn),later,sound:chime,onStatus:status,
+  onScore:points=>{game.basketballPoints[turn]=points;scoreboard();$('basketball-points').textContent=`${teamName(turn)}: ${points} points`;},
+  onEnd:result=>{timed=false;chime('buzzer');finishTurn(result);}});
 }
 function startClock(seconds,onEnd){
   const deadline=performance.now()+seconds*1000; timed=true;
@@ -619,7 +638,7 @@ function rememberGame(id){
  renderRecent();
 }
 GAMES.forEach(g=>gameTile(g,$('arcade-grid')));
-['memory','maze','golf','tap','tic','trivia','rps'].forEach(id=>gameTile(GAMES.find(g=>g.id===id),$('arcade-favorites')));
+['basketball','memory','maze','golf','tap','tic','trivia','rps'].forEach(id=>gameTile(GAMES.find(g=>g.id===id),$('arcade-favorites')));
 renderRecent();
 for(const shelf of ['favorites','recent','all']){
  const track=$(shelf==='all'?'arcade-grid':`arcade-${shelf}`);

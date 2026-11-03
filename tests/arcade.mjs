@@ -10,13 +10,14 @@ import * as library from '../public/arcade-library.js';
 // or real-time waits. Browser QA covers layout and native form behavior.
 class Element {
   constructor(tag='div'){this.tagName=tag;this.children=[];this.attrs={};this.handlers={};this.hidden=false;this.disabled=false;this.value='';this._text='';this.className='';this.classList={add:(s)=>{this.className+=' '+s;}};}
+  getContext(){return new Proxy({createRadialGradient:()=>({addColorStop(){}}),createLinearGradient:()=>({addColorStop(){}})}, {get:(target,key)=>target[key]??(()=>{})});}
   appendChild(el){this.children.push(el);return el;}
   replaceChildren(...els){this.children=els;this._text='';}
   setAttribute(k,v){this.attrs[k]=v;if(k==='id')this.id=v;if(k==='class')this.className=v;}
   getAttribute(k){return this.attrs[k]??null;}
   addEventListener(type,fn){(this.handlers[type]??=[]).push(fn);}
   click(){if(!this.disabled)this.dispatch('click');}
-  dispatch(type){for(const fn of this.handlers[type]??[])fn({preventDefault(){}});}
+  dispatch(type,event={}){for(const fn of this.handlers[type]??[])fn({preventDefault(){},...event});}
   focus(){}
   set textContent(s){this._text=String(s);this.children=[];}
   get textContent(){return this._text+this.children.map(c=>c.textContent).join('');}
@@ -51,6 +52,8 @@ function fixture(firstTeam=0,withSpeech=false,withAudio=false){
     createOscillator(){const node={frequency:{value:0,setValueAtTime(){},exponentialRampToValueAtTime(){}},stops:[],connect(){},disconnect(){this.disconnected=true;},start(){this.started=true;},stop(at){this.stops.push(at);}};audio.nodes.push(node);return node;}
   }
   const context=vm.createContext({...core,...data,...newCore,...library,Math:testMath,document:doc,crypto,window:{addEventListener(){},...voiceWindow,...(withAudio?{AudioContext:AudioContextMock}:{})},createResultRecorder:()=>({drain:async()=>{},capture:result=>{saved.push(result);}}),performance:{now:()=>now},console,setTimeout:(fn,delay)=>{scheduled.set(++seq,{at:now+delay,fn});return seq;},clearTimeout:id=>scheduled.delete(id)});
+  const basketballSource=readFileSync(new URL('../public/arcade-basketball.js',import.meta.url),'utf8').replace(/export /g,'');
+  vm.runInContext(basketballSource,context);
   const source=readFileSync(new URL('../public/arcade.js',import.meta.url),'utf8').replace(/^import .*;\n/gm,'');
   vm.runInContext(source+'\nthis.state=()=>({wins:[...wins],round,champion,turn,starter,attempt,plans:game?{maze:game.maze,codes:game.codes,course:game.course}:null,series:series?{games:series.games.map(g=>g.id),index:series.index,winners:[...series.winners]}:null});this.resolveGame=finishRound;this.seriesWith=id=>{startSeries();clearTimers();series.games=[GAMES.find(g=>g.id===id),...GAMES.filter(g=>g.id!==id).slice(0,2)];startSeriesGame();};',context);
   const get=id=>doc.getElementById(id);
@@ -62,7 +65,7 @@ function fixture(firstTeam=0,withSpeech=false,withAudio=false){
   return {root,doc,get,buttons,click,advance,start,saved,speech,audio,state:context.state,resolveGame:context.resolveGame,seriesWith:context.seriesWith};
 }
 // Core scoring remains first to three, with no points for a tie.
-assert.equal(data.GAMES.length,13);
+assert.equal(data.GAMES.length,14);
 for(const outcomes of [[0,1,0,1,0],[1,0,1,0,1],[0,0,0]]){
  let wins=[0,0],champion=-1;for(const winner of outcomes)({wins,champion}=core.awardRound(wins,winner));
  assert.equal(champion,outcomes.at(-1));assert.equal(wins[champion],3);
@@ -341,6 +344,45 @@ for(const g of data.GAMES)assert.ok(library.coverMarkup(g).includes(g.name));
 assert.deepEqual(library.recentGames({getItem:()=>'{bad'},'family',data.GAMES),[]);
 assert.deepEqual(library.recentGames({getItem:()=>JSON.stringify(['memory','unknown','memory','maze'])},'family',data.GAMES),['memory','maze']);
 {
- const f=fixture();f.start('memory');f.get('arcade-return').click();f.advance(6500);assert.equal(f.get('arcade-feature-title').textContent,data.GAMES[1].name);f.get('feature-pause').click();f.advance(20000);assert.equal(f.get('arcade-feature-title').textContent,data.GAMES[1].name);f.get('feature-next').click();f.get('arcade-featured-play').click();assert.match(f.get('game-title').textContent,/Code Breaker/);noNavigation(f);
+ const f=fixture();f.start('memory');f.get('arcade-return').click();f.advance(6500);assert.equal(f.get('arcade-feature-title').textContent,data.GAMES[1].name);f.get('feature-pause').click();f.advance(20000);assert.equal(f.get('arcade-feature-title').textContent,data.GAMES[1].name);f.get('feature-next').click();f.get('arcade-featured-play').click();assert.ok(f.get('game-title').textContent.includes(data.GAMES[2].name));noNavigation(f);
 }
-console.log('All 13 Arcade games passed: automatic starters, countdown handoffs, automatic rounds/replays, reactions, golf holes, secret moves, scoring, celebrations, 3–2 matches, random series, cancellation, hidden-tab protection and rotating features.');
+console.log('All 14 Arcade games passed: automatic starters, countdown handoffs, automatic rounds/replays, reactions, golf holes, secret moves, scoring, celebrations, 3–2 matches, random series, cancellation, hidden-tab protection and rotating features.');
+
+// Basketball: each team has exactly 30 seconds; baskets are two points;
+// the shot already released at the buzzer resolves, then the device passes.
+{
+ const f=fixture();f.start('basketball',1);
+ const court=f.get('basketball-court');court.dispatch('keydown',{key:' '});f.advance(720);
+ assert.equal(f.get('basketball-points').textContent,'Kids: 2 points');
+ f.advance(29280);assert.ok(f.get('handoff-countdown'));assert.equal(f.state().turn,0);
+ f.advance(4000);assert.ok(f.get('basketball-court'));f.advance(30000);
+ assert.equal(f.state().champion,1);assert.equal(f.saved.length,1);assert.deepEqual([...f.saved[0].roundWinners],[1]);
+ f.advance(30000);assert.equal(f.saved.length,1);
+}
+{
+ const f=fixture();f.start('basketball');f.advance(29880);f.get('basketball-court').dispatch('keydown',{key:' '});
+ f.advance(150);assert.ok(f.get('basketball-court'));f.advance(850);assert.ok(f.get('handoff-countdown'));
+ f.advance(4000);f.get('basketball-court').dispatch('keydown',{key:' '});f.advance(30000);
+ assert.match(f.get('game-stage').textContent,/It’s a tie/);assert.equal(f.saved.length,0);
+}
+{
+ const f=fixture();f.start('basketball');f.doc.hidden=true;f.doc.handlers.visibilitychange();
+ f.advance(60000);assert.equal(f.saved.length,0);assert.match(f.get('game-stage').textContent,/interrupted/);
+}
+console.log('Basketball passed: 30 seconds per team, 2 points per basket, handoff, buzzer shot, ties, one-time completion saving and interruption.');
+
+// Touch/mouse coordinates normalize to the same court at any display size.
+{
+ const f=fixture();f.start('basketball');const c=f.get('basketball-court');
+ c.getBoundingClientRect=()=>({left:10,top:20,width:200,height:380});c.setPointerCapture=()=>{};
+ const event=(x,y)=>({pointerId:1,clientX:10+x/2,clientY:20+y/2});
+ c.dispatch('pointerdown',event(200,650));c.dispatch('pointerup',event(200,498));f.advance(980);
+ assert.match(f.get('basketball-points').textContent,/2 points/);
+ c.dispatch('pointerdown',event(200,650));c.dispatch('pointerup',event(260,498));f.advance(980);
+ assert.match(f.get('basketball-points').textContent,/2 points/);
+ c.dispatch('pointerdown',event(200,650));c.dispatch('pointerup',event(200,620));f.advance(980);
+ assert.match(f.get('basketball-points').textContent,/2 points/);
+ c.dispatch('pointerdown',event(200,650));c.dispatch('pointercancel');c.dispatch('pointerup',event(200,498));f.advance(980);
+ assert.match(f.get('basketball-points').textContent,/2 points/);
+}
+console.log('Basketball gestures passed: scaled touch coordinates, made shot, wide shot, short shot, canceled gesture.');
