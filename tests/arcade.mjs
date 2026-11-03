@@ -276,6 +276,14 @@ assert.deepEqual(newCore.codeClues([1,1,2],[1,2,1]),{exact:1,misplaced:2});
 {
  const f=fixture();f.start('code',1);enterCode(f,f.state().plans.codes[1]);assert.equal(f.get('code-safe').getAttribute('data-open'),'true');f.advance(1500);assert.ok(f.get('handoff-countdown'));f.advance(4000);f.advance(60000);assert.deepEqual([...f.state().wins],[0,1]);
 }
+// The safe prominently explains number buttons and speaks the same instruction.
+{
+ const f=fixture(0,true);f.start('code');
+ assert.equal(f.get('safe-screen-label').textContent,'PRESS BUTTON TO CHANGE NUMBERS');
+ assert.match(f.speech.spoken.at(-1).text,/^Press button to change numbers/);
+ const spoken=f.speech.spoken.length;f.click('Hear instructions 🔊');assert.equal(f.speech.spoken.length,spoken+1);
+ f.get('arcade-sound').click();f.click('Hear instructions 🔊');assert.equal(f.speech.spoken.length,spoken+1);
+}
 // Safe checks each position only on Unlock, preserves green digits, and
 // lets players fix the remaining boxes without changing a correct number.
 {

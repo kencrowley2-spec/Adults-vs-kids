@@ -566,7 +566,7 @@ function mazeDash(){
 function codeBreaker(){
   let guesses=0,settled=false,guess=[1,1,1],matched=[false,false,false];
   const secret=game.codes[turn];
-  screen('<div class="turn-strip"><span id="code-progress"></span><strong id="game-clock"></strong></div><h3>Can you unlock the safe?</h3><p class="safe-instructions">Tap each number box to change it: <b>1 → 2 → 3 → 4 → 1</b>.<br>Then press <b>Unlock Safe</b>. Correct boxes glow green and stay locked in!</p><div class="code-safe" id="code-safe" data-open="false"><div class="safe-door"><span class="safe-hinge top" aria-hidden="true"></span><span class="safe-hinge bottom" aria-hidden="true"></span><div class="safe-brand">ADULTS vs. KIDS™ <span>FAMILY VAULT</span></div><div class="safe-lock-panel"><p class="safe-screen-label" id="safe-screen-label">TAP NUMBERS TO SET YOUR CODE</p><div id="code-digits" class="code-digits" role="group" aria-label="Three safe code number boxes"></div><div class="safe-screen-feedback" id="safe-feedback" role="status" aria-live="polite">Set all 3 numbers, then try the lock.</div></div><div class="safe-handle" aria-hidden="true"><i></i><i></i><i></i></div><div id="code-action"></div><p class="safe-footnote">Numbers can repeat · 6 tries · 60 seconds</p></div></div>');
+  screen('<div class="turn-strip"><span id="code-progress"></span><strong id="game-clock"></strong></div><h3>Can you unlock the safe?</h3><p class="safe-instructions">Tap each number box to change it: <b>1 → 2 → 3 → 4 → 1</b>.<br>Then press <b>Unlock Safe</b>. Correct boxes glow green and stay locked in!</p><div class="code-safe" id="code-safe" data-open="false"><div class="safe-door"><span class="safe-hinge top" aria-hidden="true"></span><span class="safe-hinge bottom" aria-hidden="true"></span><div class="safe-brand">ADULTS vs. KIDS™ <span>FAMILY VAULT</span></div><div class="safe-lock-panel"><p class="safe-screen-label" id="safe-screen-label">PRESS BUTTON TO CHANGE NUMBERS</p><div id="code-digits" class="code-digits" role="group" aria-label="Three safe code number boxes"></div><div class="safe-screen-feedback" id="safe-feedback" role="status" aria-live="polite">Set all 3 numbers, then try the lock.</div></div><div class="safe-handle" aria-hidden="true"><i></i><i></i><i></i></div><div id="code-action"></div><p class="safe-footnote">Numbers can repeat · 6 tries · 60 seconds</p></div></div>');
   function finish(solved){
     if(settled)return;settled=true;timed=false;
     const result={score:solved?7-guesses:0,elapsed:0,label:solved?`Safe unlocked in ${guesses} ${guesses===1?'try':'tries'}`:`Safe stayed locked · ${guesses} tries`};
@@ -603,7 +603,11 @@ function codeBreaker(){
     const feedback=correct===0?'No green lights yet. Change the numbers and try again.':`${correct} of 3 boxes correct! Keep the green numbers. Change the others.`;
     $('safe-feedback').textContent=feedback;react('tap',`${correct} / 3 CORRECT`);status(feedback);
   },$('code-action'),'safe-unlock');
+  const instructions='Press button to change numbers. Tap each number button to change it, then press Unlock Safe. Correct numbers glow green and stay locked in.';
+  const replay=button('Hear instructions 🔊',()=>readArcade(instructions,1),$('code-action'),'safe-voice');
+  replay.disabled=!canReadTrivia();
   draw();startClock(60,()=>{if(!settled)finish(false);});status('Tap the number boxes, then press Unlock Safe. Green means the number is correct and locked in.');
+  readArcade(instructions,1);
 }
 function miniGolf(){
   let hole=0,shots=0,total=0,moving=false,finished=false,ball;
