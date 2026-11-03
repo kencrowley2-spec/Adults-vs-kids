@@ -1,0 +1,30 @@
+import assert from 'node:assert/strict';
+import vm from 'node:vm';
+import ts from 'typescript';
+import {readFileSync} from 'node:fs';
+import {isFoundingMember} from '../lib/auth/founding.ts';
+const confirmed='2026-11-01T00:00:00Z';
+assert.equal(isFoundingMember(null),false);
+assert.equal(isFoundingMember({app_metadata:{is_founding_member:true}}),false);
+assert.equal(isFoundingMember({email_confirmed_at:confirmed,user_metadata:{is_founding_member:true}}),false);
+assert.equal(isFoundingMember({email_confirmed_at:confirmed,app_metadata:{is_founding_member:'true'}}),false);
+assert.equal(isFoundingMember({email_confirmed_at:confirmed,app_metadata:{is_founding_member:true}}),true);
+function compile(path,require=()=>{throw Error('Unexpected dependency')}){const exports={};vm.runInNewContext(ts.transpileModule(readFileSync(new URL(path,import.meta.url),'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText,{exports,require,Headers,Request,Response,Date,console});return exports;}
+const {dashboardBody}=compile('../lib/family-dashboard.ts');
+assert.ok(dashboardBody('Family','Player',false,1,true).includes('/assets/founding-members-badge.webp'));
+assert.ok(!dashboardBody('Family','Player',false,1).includes('/assets/founding-members-badge.webp'));
+assert.ok(!dashboardBody('Family','Player',true,1,true).includes('/assets/founding-members-badge.webp'));
+let user={id:'owner',email_confirmed_at:confirmed,app_metadata:{is_founding_member:true}},filter=null;
+const route=compile('../app/family/route.ts',name=>{
+ if(name.endsWith('/member-pages'))return {memberPage:(team,preview,name,clock,founder)=>dashboardBody(team,name,preview,clock,founder)};
+ if(name.endsWith('/auth/founding'))return {isFoundingMember};
+ if(name.endsWith('/data'))return {checked:r=>{if(r.error)throw Error('DB');return r.data}};
+ if(name.endsWith('/auth/session'))return {verifiedMember:async()=>({user,client:{from:()=>({select(){return this},eq(key,value){filter=[key,value];return this},maybeSingle:async()=>({data:{name:'Family',clock_started_at:1},error:null})})},headers:new Headers({'Cache-Control':'private, no-store'})}),memberReply:(body,status,headers)=>new Response(body,{status,headers}),memberRedirect:(path,headers)=>{headers.set('Location',path);return new Response(null,{status:303,headers})}};
+ throw Error(name);
+});
+const request=new Request('https://adultsvskids.com/family?foundingMember=true');
+let response=await route.GET(request);assert.ok((await response.text()).includes('/assets/founding-members-badge.webp'));assert.deepEqual(filter,['user_id','owner']);
+user={id:'normal',email_confirmed_at:confirmed,user_metadata:{is_founding_member:true}};
+response=await route.GET(request);assert.ok(!(await response.text()).includes('/assets/founding-members-badge.webp'));assert.equal(response.headers.get('cache-control'),'private, no-store');
+user=null;assert.equal((await route.GET(request)).status,303);
+console.log('PASS: server-awarded badge renders for confirmed founders only; editable metadata, URL flags, previews and normal users cannot grant it.');
