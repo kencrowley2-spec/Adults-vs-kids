@@ -16,6 +16,6 @@
 @media(min-width:1300px){.lp-slideshow{margin-left:-4.35%;margin-right:-4.35%}}
 @media(max-width:700px){.lp-slideshow{margin:0 -17px 16px}.lp-slide-stage{height:clamp(320px,88vw,460px)}.lp-hero{height:auto;background:none;padding-top:0}.lp-hero-copy{padding-top:0}.lp-hero-copy h1{font-size:clamp(28px,7.9vw,40px)}.lp-hero-copy p{font-size:16px}.lp-slide-controls{gap:9px}}
 @media(prefers-reduced-motion:reduce){.lp-slide{transition:none}}
-@media(max-width:700px){.lp-slide:first-child img{object-fit:cover}}
+@media(max-width:700px){.lp-slide img[src$="landing-family-personal.webp"]{object-fit:cover}}
 
 .lp-slide video{background:transparent}
