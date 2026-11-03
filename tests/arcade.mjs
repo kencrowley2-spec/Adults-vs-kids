@@ -5,6 +5,7 @@ import * as core from '../public/arcade-core.js';
 import * as data from '../public/arcade-data.js';
 import * as newCore from '../public/arcade-new-core.js';
 import * as library from '../public/arcade-library.js';
+import {clawPrizes,clawCatch} from '../public/arcade-claw.js';
 import {molePlan} from '../public/arcade-mole.js';
 import {treasurePlan} from '../public/arcade-treasure.js';
 
@@ -54,7 +55,8 @@ function fixture(firstTeam=0,withSpeech=false,withAudio=false,players=null){
     createGain(){const gain={gain:{value:1,setValueAtTime(){},linearRampToValueAtTime(){},exponentialRampToValueAtTime(){}},connect(){},disconnect(){this.disconnected=true;}};audio.gains.push(gain);return gain;}
     createOscillator(){const node={frequency:{value:0,setValueAtTime(){},exponentialRampToValueAtTime(){}},stops:[],connect(){},disconnect(){this.disconnected=true;},start(){this.started=true;},stop(at){this.stops.push(at);}};audio.nodes.push(node);return node;}
   }
-  const context=vm.createContext({molePlan,treasurePlan,...core,...data,...newCore,...library,Math:testMath,document:doc,crypto,CustomEvent:class{constructor(type,options){this.type=type;this.detail=options.detail;}},window:{dispatchEvent:e=>telemetry.push(e),addEventListener(){},...voiceWindow,...(withAudio?{AudioContext:AudioContextMock}:{})},createResultRecorder:()=>({drain:async()=>{},capture:result=>{saved.push(result);}}),performance:{now:()=>now},console,setTimeout:(fn,delay)=>{scheduled.set(++seq,{at:now+delay,fn});return seq;},clearTimeout:id=>scheduled.delete(id)});
+  const context=vm.createContext({clawPrizes,clawCatch,molePlan,treasurePlan,...core,...data,...newCore,...library,Math:testMath,document:doc,crypto,CustomEvent:class{constructor(type,options){this.type=type;this.detail=options.detail;}},window:{dispatchEvent:e=>telemetry.push(e),addEventListener(){},...voiceWindow,...(withAudio?{AudioContext:AudioContextMock}:{})},createResultRecorder:()=>({drain:async()=>{},capture:result=>{saved.push(result);}}),performance:{now:()=>now},console,setTimeout:(fn,delay)=>{scheduled.set(++seq,{at:now+delay,fn});return seq;},clearTimeout:id=>scheduled.delete(id)});
+  vm.runInContext(readFileSync(new URL('../public/arcade-claw.js',import.meta.url),'utf8').replace(/export /g,''),context);
   vm.runInContext(readFileSync(new URL('../public/arcade-mole.js',import.meta.url),'utf8').replace(/export /g,''),context);
   vm.runInContext(readFileSync(new URL('../public/arcade-frog.js',import.meta.url),'utf8').replace(/export /g,''),context);
   vm.runInContext(readFileSync(new URL('../public/arcade-treasure.js',import.meta.url),'utf8').replace(/export /g,''),context);
@@ -103,7 +105,7 @@ for(const id of data.GAMES.filter(g=>!g.comingSoon).map(g=>g.id)){
 }
 console.log('PASS: Kids vs. Kids across playable games, named turns and winners, series, balanced kid teams, escaped names, and no adult/kid lifetime-score writes.');
 // Core scoring remains first to three, with no points for a tie.
-assert.equal(data.GAMES.length,16);
+assert.equal(data.GAMES.length,17);
 for(const outcomes of [[0,1,0,1,0],[1,0,1,0,1],[0,0,0]]){
  let wins=[0,0],champion=-1;for(const winner of outcomes)({wins,champion}=core.awardRound(wins,winner));
  assert.equal(champion,outcomes.at(-1));assert.equal(wins[champion],3);
@@ -488,7 +490,7 @@ assert.deepEqual(library.recentGames({getItem:()=>JSON.stringify(['memory','unkn
 {
  const f=fixture();f.start('memory');f.get('arcade-return').click();f.advance(6500);assert.equal(f.get('arcade-feature-title').textContent,data.GAMES[1].name);f.get('feature-pause').click();f.advance(20000);assert.equal(f.get('arcade-feature-title').textContent,data.GAMES[1].name);f.get('feature-next').click();f.get('arcade-featured-play').click();assert.ok(f.get('game-title').textContent.includes(data.GAMES[2].name));noNavigation(f);
 }
-console.log('All 16 Arcade games passed: automatic starters, countdown handoffs, automatic rounds/replays, reactions, golf holes, secret moves, scoring, celebrations, 3–2 matches, random series, cancellation, hidden-tab protection and rotating features.');
+console.log('All 17 Arcade games passed: automatic starters, countdown handoffs, automatic rounds/replays, reactions, golf holes, secret moves, scoring, celebrations, 3–2 matches, random series, cancellation, hidden-tab protection and rotating features.');
 
 // Basketball: each team has exactly 30 seconds; baskets are two points;
 // the shot already released at the buzzer resolves, then the device passes.
@@ -675,3 +677,42 @@ for(const seed of [1,123,987654]){
  }
 }
 console.log('PASS: scaled touch hit targets, single-use moles, secondary finger blocking, cancel/exit cleanup and collision-free appearances.');
+
+// Real claw controller: three attempts, positioning and timing, fair handoff.
+{
+ const prizes=clawPrizes(123);
+ const small=prizes[0],large=prizes[1];
+ assert.equal(clawCatch(prizes,small.x+Math.sin(small.phase)*9,.5,0).points,1);
+ assert.equal(clawCatch(prizes,large.x+Math.sin(large.phase)*9,.5,0).points,3);
+ assert.equal(clawCatch(prizes,large.x,.75,0),null);
+ assert.equal(clawCatch(prizes,15,.5,0),null);
+ assert.deepEqual(clawPrizes(123),prizes);
+}
+for(const first of [0,1]){
+ const f=fixture();f.start('claw',first);
+ const seed=first===0?536870912:1610612734;
+ const large=clawPrizes(seed)[1];
+ for(let attempt=0;attempt<3;attempt++){
+  const board=f.get('claw-board');board.getBoundingClientRect=()=>({left:0,top:0,width:220,height:215});
+  // First grab aligns with a large prize and the center grip immediately.
+  const x=attempt===0?large.x+Math.sin(large.phase)*9:220;
+  board.dispatch('pointerdown',{pointerId:1,isPrimary:true,clientX:x/2});board.dispatch('pointerup',{pointerId:1});
+  f.get('claw-grab').click();f.get('claw-grab').click();f.advance(2400);
+ }
+ assert.ok(f.get('handoff-countdown'));assert.match(f.get('arcade-team-'+first).textContent,/3/);
+ f.advance(4000);
+ // Second side never presses drop: aim timers automatically use all 3 attempts.
+ f.advance(45000);
+ assert.equal(f.state().champion,first);assert.equal(f.saved.length,1);assert.equal(f.saved[0].gameIds[0],'claw');
+ assert.ok(f.get('claw-fireworks'));assert.match(f.get('game-stage').textContent,/Congratulations/);
+ f.advance(10000);assert.equal(f.saved.length,1);
+}
+{
+ const f=fixture();f.start('claw');f.advance(45000);f.advance(45000);
+ assert.equal(f.saved.length,0);assert.match(f.get('game-stage').textContent,/tie/);assert.ok(f.get('claw-fireworks'));
+}
+{
+ const f=fixture();f.start('claw');f.doc.hidden=true;f.doc.handlers.visibilitychange();f.advance(60000);
+ assert.match(f.get('game-stage').textContent,/interrupted/);assert.equal(f.saved.length,0);
+}
+console.log('PASS: Harper’s Claw Machine 1/3-point grabs, timing misses, three attempts, handoff, fireworks, ties and interruption.');

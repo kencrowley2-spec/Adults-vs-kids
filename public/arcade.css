@@ -321,3 +321,9 @@ body::before{display:block;inset:0;background:linear-gradient(180deg,rgba(4,5,14
 #mole-board{display:block;width:100%;height:auto;aspect-ratio:440/410;touch-action:none;cursor:none;border-radius:10px}
 #mole-board:focus-visible{outline:3px solid #fff;outline-offset:3px}
 .mole-help{text-align:center;font-size:11px;margin:8px 0 2px;color:#ffe3a4}
+
+.claw-cabinet{width:min(100%,510px);margin:auto;background:#261a46;padding:7px;border:3px solid #ffd522;border-radius:16px;box-shadow:0 7px 0 #190d2d}
+#claw-board{width:100%;height:auto;aspect-ratio:440/430;display:block;touch-action:none;border-radius:10px}
+#claw-board:focus-visible{outline:3px solid white}
+.claw-controls{display:flex;gap:7px;padding:7px}.claw-controls button{flex:1;min-height:44px;touch-action:none;font-size:12px;padding:9px 4px;background:#f6d86d;color:#291e3f;border:2px solid #fff0aa;border-radius:10px;font-weight:900}.claw-controls #claw-grab{background:#e8568e;color:#fff;flex:1.4}.claw-controls button:disabled{opacity:.55}
+.claw-result{position:relative;isolation:isolate}#claw-fireworks{position:absolute;inset:0 0 auto;width:100%;height:150px;pointer-events:none;z-index:-1}

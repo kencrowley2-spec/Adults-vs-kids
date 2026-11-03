@@ -61,3 +61,6 @@ for(const outcomes of [[0],[0,1],[0,0,1],[0,1,0,1,0]])assert.throws(()=>complete
 
 assert.equal(completedResult({...single,gameIds:['mole'],roundWinners:[1]}).roundWinners.length,1);
 assert.throws(()=>completedResult({...single,gameIds:['mole'],roundWinners:[1,1,1]}));
+
+assert.equal(completedResult({...single,gameIds:['claw'],roundWinners:[0]}).roundWinners.length,1);
+assert.throws(()=>completedResult({...single,gameIds:['claw'],roundWinners:[0,0,0]}));

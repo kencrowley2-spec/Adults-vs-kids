@@ -15,6 +15,7 @@ export const GAMES = [
   {id:'number',icon:'🔢',name:'Number Battle',tag:'MAKE EVERY ANSWER COUNT.',color:'mint',description:'Five addition or subtraction puzzles per team, with 30 seconds to answer. Most correct wins; equal scores use the faster time.'},
   {id:'challenge',icon:'🏆',name:'Family Challenge',tag:'PUT THE SCREEN TO WORK.',color:'pink',description:'A real-world, 20-second challenge for each team. The other team counts and enters the score honestly. Most repetitions wins. Clear a little space and play at your own pace.'},
   {id:'mole',icon:'🔨',name:'Whack-a-Mole',tag:'EIGHT HOLES. ONE MALLET. GO!',color:'yellow',description:'Two different moles pop out of eight holes at staggered times. Tap them with your one mallet! Each side gets 30 seconds, each hit earns 1 point, and most hits wins this one-round Showdown. Equal scores are a draw.'},
+  {id:'claw',icon:'🧸',name:'Harper’s Claw Machine Showdown',tag:'LINE IT UP. TIME IT. GRAB IT.',color:'pink',description:'Each player gets 3 attempts with an arcade claw. Drag or use the arrows to aim. Drop when the grip marker is green for small prizes (1 point) or gold for large prizes (3 points). You have 12 seconds to aim each grab. Most points wins this one-round Showdown. Equal scores are a draw.'},
 ];
 export const ANIMALS=['🐶','🦊','🐼','🐸','🦁','🐵','🐰'];
 export const TRIVIA = [
