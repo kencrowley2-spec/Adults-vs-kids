@@ -184,3 +184,13 @@ body:has(#arcade-game:not([hidden])){overflow:hidden;overscroll-behavior:none}
 .feature-poster .cover-info small{font-size:7px;display:block;margin-bottom:6px;font-weight:800}
 .feature-poster .cover-info b{font-size:28px;font-weight:900;letter-spacing:-1px;line-height:1;display:block;text-shadow:1px 2px 0 #0005}
 @media(max-width:760px){.arcade-feature h1{font-size:clamp(27px,5vw,40px);letter-spacing:-1px}.feature-poster{right:8px;top:62px;width:110px;height:154px;border-width:2px;border-radius:8px}.feature-poster .cover-brand{font-size:5px;margin:8px 7px 0}.feature-poster .cover-art{top:15px}.feature-poster .cover-info{padding:0 8px 8px}.feature-poster .cover-info small{font-size:4px;margin-bottom:3px}.feature-poster .cover-info b{font-size:16px;letter-spacing:-.4px}.feature-poster .cover-play{font-size:4px;padding:5px 7px}.feature-poster .cover-play span{font-size:4px}.feature-copy .feature-play{font-size:7px;max-width:190px;line-height:1.5}}
+
+/* Keep the supplied neon arcade room visible behind the game library. */
+body::before{display:block;inset:0;background:linear-gradient(180deg,rgba(4,5,14,.38),rgba(4,5,14,.58)),url('/assets/arcade-room.webp') center center/cover no-repeat}
+.arcade-library-top,.shelf-heading{background:rgba(6,8,18,.82);border:1px solid #ffffff26;border-radius:10px;padding:14px 16px}
+.arcade-library-top p{color:#e0e5ef}
+.library-format{color:#f0f2f7}
+.feature-pagination{color:#fff;text-shadow:0 1px 4px #000}
+.lobby-note{background:rgba(6,8,18,.85);border:1px solid #ffffff26;border-radius:10px}
+.lobby-note span{color:#d8deea}
+@media(max-width:760px){body::before{background-position:center center}.arcade-library-top,.shelf-heading{padding:12px}}
