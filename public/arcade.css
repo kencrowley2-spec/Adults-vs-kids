@@ -278,3 +278,6 @@ body::before{display:block;inset:0;background:linear-gradient(180deg,rgba(4,5,14
 @media(prefers-reduced-motion:reduce){.safe-prize-icon{animation:none}}
 
 #game-stage .safe-prize-page>p{color:#f0f0e6}#game-stage .safe-prize-page>.eyebrow,#game-stage .safe-prize-page>.safe-prize-found{color:#ffe993}#game-stage .safe-prize-page>.safe-prize-note{color:#c8cabb}.safe-prize-page .safe-point-score small{color:#e2dec7}
+
+/* The yellow team always owns the current Memory Match turn. */
+.memory-round-score>div{gap:6px;padding:6px}.memory-round-score>div>span{flex:1;display:block;padding:7px 8px;border-radius:8px;background:#111;color:#fff;border:2px solid #111;line-height:1.1}.memory-round-score>div>span[data-current="true"]{background:#ffd522;color:#111;box-shadow:0 0 0 2px #111}.memory-round-score em{display:block;font-style:normal;font-size:8px;font-weight:900;letter-spacing:1px;margin-top:4px}.memory-round-score>div>span[data-current="false"] em{color:#c7c7c7}#game-stage .memory-quick-rules{font-size:11px;font-weight:800;color:#111;line-height:1.35;margin:5px auto 8px;max-width:360px}#game-stage .memory-turn-strip{background:#ffd522;color:#111;border:2px solid #111}

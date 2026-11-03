@@ -1,6 +1,6 @@
 import {mountBasketball} from './arcade-basketball.js?v=1';
 import {coverMarkup,recentGames} from './arcade-library.js?v=2';
-import {GAMES, ANIMALS, TRIVIA, WORDS, PICTURES, CHALLENGES} from './arcade-data.js?v=9';
+import {GAMES, ANIMALS, TRIVIA, WORDS, PICTURES, CHALLENGES} from './arcade-data.js?v=10';
 import {teamName, shuffle, roundWinner, awardRound, lineWinner} from './arcade-core.js';
 
 import {makeMaze, codeClues, rpsWinner, GOLF_COURSES, golfStep} from './arcade-new-core.js?v=5';
@@ -207,7 +207,7 @@ function scoreboard(){
   $('arcade-reset').textContent=series?'Restart series ↻':'Restart match ↻';
   $('series-lineup').hidden=!series;
   if(series) $('series-lineup').innerHTML=series.games.map((g,i)=>`<div class="series-pick ${i===series.index?'active':''}"><small>GAME ${i+1}${series.winners[i]!==undefined?` · ${teamName(series.winners[i])} win`:''}</small><b>${g.icon} ${g.name}</b></div>`).join('');
-  $('arcade-score').innerHTML=names.map((name,i)=>`<div class="team-score ${turn===i&&champion<0?'current':''}"><span>${i===0?'★':'✦'} TEAM ${name.toUpperCase()}</span><strong>${game?.id==='basketball'&&!series?(game.basketballPoints?.[i]??0):game?.id==='code'&&champion<0?(game.safePoints?.[i]??0):wins[i]}</strong><div class="win-dots" aria-label="${wins[i]} ${series?'game':'round'} wins">${[0,1,2].map(n=>`<i class="${n<wins[i]?'won':''}"></i>`).join('')}</div></div>`).join('');
+  $('arcade-score').innerHTML=names.map((name,i)=>`<div id="arcade-team-${i}" class="team-score ${turn===i&&champion<0?'current':''}" aria-current="${turn===i&&champion<0}" aria-label="${name}${turn===i&&champion<0?', current turn':''}"><span>${i===0?'★':'✦'} TEAM ${name.toUpperCase()}</span><strong>${game?.id==='basketball'&&!series?(game.basketballPoints?.[i]??0):game?.id==='code'&&champion<0?(game.safePoints?.[i]??0):wins[i]}</strong><div class="win-dots" aria-label="${wins[i]} ${series?'game':'round'} wins">${[0,1,2].map(n=>`<i class="${n<wins[i]?'won':''}"></i>`).join('')}</div></div>`).join('');
   $('round-label').textContent=game?.id==='basketball'&&!series?(champion>=0?'MATCH COMPLETE':'2 POINTS PER BASKET · MOST POINTS WINS'):series?`${champion>=0?'SERIES COMPLETE':`GAME ${series.index+1} OF 3${attempt?' · TIE REPLAY':''}`} · SERIES SCORE` : champion>=0?'MATCH COMPLETE':`ROUND ${round} OF 5${attempt?' · TIE REPLAY':''} · FIRST TO 3 WINS`;
 }
 function pick(key,source,n){
@@ -347,10 +347,15 @@ function startClock(seconds,onEnd){
 }
 function memory(){
   const deck=shuffle([...ANIMALS,...ANIMALS]); let revealed=[],matched=new Set(),points=[0,0],locked=true,preview=true;
-  screen('<div class="turn-strip" id="turn-strip"></div><div class="memory-round-score"><p>ROUND POINTS · 1 PAIR = 1 POINT</p><div role="status" aria-live="polite" aria-atomic="true"><span>ADULTS <strong id="memory-adult-points">0</strong></span><span>KIDS <strong id="memory-kid-points">0</strong></span></div><small>Most points wins this round. First to 3 round wins takes the match.</small></div><div id="memory-cards" class="memory-grid"></div><div id="memory-action"></div>');
+  screen('<div class="turn-strip memory-turn-strip" id="turn-strip"></div><div class="memory-round-score"><p>ROUND POINTS · 1 PAIR = 1 POINT</p><div role="status" aria-live="polite" aria-atomic="true"><span id="memory-team-0">ADULTS <strong id="memory-adult-points">0</strong><em id="memory-team-0-turn"></em></span><span id="memory-team-1">KIDS <strong id="memory-kid-points">0</strong><em id="memory-team-1-turn"></em></span></div><small>Most points wins this round. First to 3 round wins takes the match.</small></div><p id="memory-rules" class="memory-quick-rules">Match = 1 point + go again. Miss = switch teams. Yellow team plays.</p><div id="memory-cards" class="memory-grid"></div><div id="memory-action"></div>');
   function draw(){
-    $('turn-strip').textContent=preview?`${teamName(turn)} go first! Look closely — cards hide in five seconds.`:`${teamName(turn)}’ turn · Find a pair to earn 1 point.`;
+    $('turn-strip').textContent=preview?`${teamName(turn)} go first! Look closely — cards hide in five seconds.`:`${teamName(turn)}’ TURN · Highlighted yellow · Match a pair to go again!`;
     $('memory-adult-points').textContent=String(points[0]);$('memory-kid-points').textContent=String(points[1]);
+    [0,1].forEach(team=>{
+      $('memory-team-'+team).setAttribute('data-current',String(team===turn));
+      $('memory-team-'+team).setAttribute('aria-current',String(team===turn));
+      $('memory-team-'+team+'-turn').textContent=team===turn?'YOUR TURN':'WAITING';
+    });
     const holder=$('memory-cards');
     if(!holder.children.length)deck.forEach((symbol,i)=>button('?',()=>flip(i),holder,'memory-card'));
     deck.forEach((symbol,i)=>{
@@ -366,17 +371,18 @@ function memory(){
       locked=true; const match=deck[revealed[0]]===deck[revealed[1]];
       if(match){revealed.forEach(id=>matched.add(id));points[turn]++;}
       if(matched.size===deck.length){draw();react('win',`${teamName(turn)} +1 POINT!`); later(()=>finishRound(roundWinner({score:points[0]},{score:points[1]}),`Round points — Adults ${points[0]} · Kids ${points[1]}. One matching pair = one point. Most points wins the round.`),800);return;}
-      status(match?`${teamName(turn)} earn 1 point! Next team coming up…`:'No match. Remember those cards — next team coming up…');
+      status(match?`${teamName(turn)} earn 1 point and go again!`:'No match. Remember those cards — next team coming up…');
       draw();
       react(match?'match':'turn',match?`${teamName(turn)} +1 POINT!`:'Next team…');
       later(()=>{
-        revealed=[];turn=1-turn;locked=false;scoreboard();draw();
+        revealed=[];if(!match)turn=1-turn;locked=false;scoreboard();draw();
         status(`${teamName(turn)}: find a pair.`);
       },match?600:900);return;
     }
     draw();
   }
-  draw(); status('Five-second preview — both teams can look!');
+  draw(); status('Five-second preview — both teams can look! Match = 1 point + go again. Miss = switch teams.');
+  readArcade('Match a pair: one point, go again. Miss: switch teams. Yellow team plays.',1);
   function hidePreview(){if(!preview)return;if(document.hidden){later(hidePreview,250);return;}preview=false;locked=false;draw();$('memory-action').replaceChildren();status(`${teamName(turn)}: find a pair.`);}
   later(hidePreview,5000);
 }
