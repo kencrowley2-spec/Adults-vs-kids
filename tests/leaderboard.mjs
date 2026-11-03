@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+import {timedResult} from '../lib/arcade/leaderboard.ts';
+import {createResultRecorder} from '../public/arcade-results.js';
+const id='12345678-1234-4234-8234-123456789012';
+for(const [game,score] of [['maze',1],['spot',3],['picture',3],['number',5]])assert.equal(timedResult({id,game,score,elapsedMs:5432}).elapsedMs,5432);
+for(const raw of [null,{id,game:'trivia',score:5,elapsedMs:5000},{id,game:'maze',score:0,elapsedMs:5000},{id,game:'picture',score:2,elapsedMs:5000},{id,game:'number',score:5,elapsedMs:30001},{id,game:'maze',score:1,elapsedMs:0},{id,game:'maze',score:1,elapsedMs:NaN},{id,game:'maze',score:1,elapsedMs:5.5},{id:'bad',game:'maze',score:1,elapsedMs:5000},{id,game:'__proto__',score:1,elapsedMs:5000}])assert.throws(()=>timedResult(raw));
+const values=new Map(),storage={getItem:key=>values.get(key)||null,setItem:(key,value)=>values.set(key,value)};
+let online=false,sent=[];
+const recorder=createResultRecorder({accountId:'family-a',namespace:'times',storage,send:async data=>{sent.push(data);return {ok:online};}});
+await recorder.capture({id,game:'maze',score:1,elapsedMs:5000});assert.equal(recorder.pendingCount(),1);
+const matches=createResultRecorder({accountId:'family-a',storage,send:async()=>({ok:true})});assert.equal(matches.pendingCount(),0);
+const other=createResultRecorder({accountId:'family-b',namespace:'times',storage,send:async()=>({ok:true})});assert.equal(other.pendingCount(),0);
+online=true;const restored=createResultRecorder({accountId:'family-a',namespace:'times',storage,send:async data=>{sent.push(data);return {ok:true};}});await restored.drain();assert.equal(restored.pendingCount(),0);assert.equal(sent[0].id,sent[1].id);
+console.log('PASS: all timed games, perfect completion, invalid/partial times, isolated durable timed queue and retry deduplication.');

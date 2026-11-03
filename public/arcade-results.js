@@ -1,7 +1,7 @@
 // Immutable completed-result queue. A match keeps its UUID through retries and
 // page reloads. Each queue belongs to one account, including on shared devices.
-export function createResultRecorder({accountId,storage,send,changed=()=>{}}){
- const key=`avk.arcade.results.v1.${accountId}`;
+export function createResultRecorder({accountId,storage,send,changed=()=>{},namespace='results'}){
+ const key=`avk.arcade.${namespace}.v1.${accountId}`;
  let pending=[],active=null,storageFailed=false;
  try{const parsed=JSON.parse(storage.getItem(key)||'[]');if(Array.isArray(parsed))pending=parsed.filter(r=>r&&typeof r.id==='string');}catch{}
  function persist(){try{storage.setItem(key,JSON.stringify(pending));storageFailed=false;}catch{storageFailed=true;}}

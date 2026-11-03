@@ -10,7 +10,7 @@ import {shuffle, roundWinner, awardRound, lineWinner} from './arcade-core.js';
 
 import {makeMaze, codeClues, rpsWinner, GOLF_COURSES, golfStep} from './arcade-new-core.js?v=5';
 
-import {createResultRecorder} from './arcade-results.js?v=1';
+import {createResultRecorder} from './arcade-results.js?v=2';
 
 const $ = id => document.getElementById(id);
 const lobby=$('arcade-lobby'), arena=$('arcade-game'), stage=$('game-stage');
@@ -24,6 +24,15 @@ const recorder=createResultRecorder({
  send:result=>fetch('/api/arcade/results',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({...result,accountId:arcadeAccountId})}),
  changed:({pending,storageFailed})=>{const el=$('arcade-save-status');if(el)el.textContent=pending?`A completed result is waiting to save. ${storageFailed?'Keep this page open and retry.':'It will retry when you’re connected.'}`:(kidsOnly?'Kids vs. Kids · scores count for this match.':'Completed matches update your family’s lifetime score.');}
 });
+const timeRecorder=createResultRecorder({
+ accountId:arcadeAccountId,namespace:'times',
+ storage:{getItem:key=>localStorage.getItem(key),setItem:(key,value)=>localStorage.setItem(key,value)},
+ send:result=>fetch('/api/arcade/leaderboard',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({...result,accountId:arcadeAccountId})}),
+ changed:({pending})=>{const el=$('arcade-timed-save');if(el)el.textContent=pending?'Your timed record is waiting to save. Retry saving when connected.':'Successful timed runs enter the next daily Top 100 update.';}
+});
+timeRecorder.drain();
+window.addEventListener('online',()=>timeRecorder.drain());
+$('arcade-save-retry').addEventListener('click',()=>timeRecorder.drain());
 recorder.drain();
 window.addEventListener('online',()=>recorder.drain());
 $('arcade-save-retry').addEventListener('click',()=>recorder.drain());
@@ -412,6 +421,10 @@ function finishRound(winner,detail){
   status(champion>=0?`${teamName(winner)} win ${wins[winner]}–${wins[1-winner]}.`:winner===null?'Tie! Replay this round.':`${teamName(winner)} earn one round win.`); focusFirst();
 }
 function finishTurn(result){
+  const target={maze:1,spot:3,picture:3,number:5}[game.id];
+  if(target&&result.score===target&&Number.isFinite(result.elapsed)&&result.elapsed>=.1&&result.elapsed<=({maze:45,spot:45,picture:30,number:30}[game.id])){
+    timeRecorder.capture({id:crypto.randomUUID(),game:game.id,score:result.score,elapsedMs:Math.round(result.elapsed*1000)});
+  }
   results[turn]=result;
   if(!results[1-turn]){
     const previous=`${teamName(turn)}: ${result.label}.`;
@@ -892,3 +905,6 @@ function finishClawMatch(winner,detail){
  react(winner===null?'turn':'win',winner===null?'Congratulations to both players!':`Congratulations, ${teamName(winner)}!`);
  status(winner===null?'Tie game! Congratulations to both players!':`Congratulations, ${teamName(winner)}! You win Harper’s Claw Machine Showdown!`);focusFirst();
 }
+
+const requestedGame=new URLSearchParams(location.search).get('game');
+if(GAMES.some(g=>g.id===requestedGame&&!g.comingSoon))openGame(requestedGame);

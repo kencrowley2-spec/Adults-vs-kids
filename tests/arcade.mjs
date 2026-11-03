@@ -42,7 +42,7 @@ class Element {
 }
 function fixture(firstTeam=0,withSpeech=false,withAudio=false,players=null){
   let selectedFirst=firstTeam;const testMath=Object.create(Math);testMath.random=()=>selectedFirst===0?.25:.75;
-  let now=0,seq=0,scheduled=new Map();const saved=[],telemetry=[];const root=new Element();
+  let now=0,seq=0,scheduled=new Map();const saved=[],timedSaved=[],telemetry=[];const root=new Element();
   root.innerHTML=readFileSync(new URL('../app/family/arcade/route.ts',import.meta.url),'utf8').split('const html=`')[1].split('`;')[0];
   if(players){const lineup=new Element();lineup.id='arcade-roster-lineup';lineup.setAttribute('data-adults',JSON.stringify(players[0]));lineup.setAttribute('data-kids',JSON.stringify(players[1]));root.appendChild(lineup);}
   const doc={hidden:false,getElementById:id=>root.querySelector('#'+id),createElement:tag=>new Element(tag),handlers:{},addEventListener(type,fn){this.handlers[type]=fn;}};
@@ -55,7 +55,7 @@ function fixture(firstTeam=0,withSpeech=false,withAudio=false,players=null){
     createGain(){const gain={gain:{value:1,setValueAtTime(){},linearRampToValueAtTime(){},exponentialRampToValueAtTime(){}},connect(){},disconnect(){this.disconnected=true;}};audio.gains.push(gain);return gain;}
     createOscillator(){const node={frequency:{value:0,setValueAtTime(){},exponentialRampToValueAtTime(){}},stops:[],connect(){},disconnect(){this.disconnected=true;},start(){this.started=true;},stop(at){this.stops.push(at);if(Number.isFinite(at))scheduled.set(++seq,{at:at*1000,fn:()=>this.onended?.()});else this.onended?.();}};audio.nodes.push(node);return node;}
   }
-  const context=vm.createContext({clawPrizes,clawCatch,molePlan,treasurePlan,...core,...data,...newCore,...library,Math:testMath,document:doc,crypto,CustomEvent:class{constructor(type,options){this.type=type;this.detail=options.detail;}},window:{dispatchEvent:e=>telemetry.push(e),addEventListener(){},...voiceWindow,...(withAudio?{AudioContext:AudioContextMock}:{})},createResultRecorder:()=>({drain:async()=>{},capture:result=>{saved.push(result);}}),performance:{now:()=>now},console,setTimeout:(fn,delay)=>{scheduled.set(++seq,{at:now+delay,fn});return seq;},clearTimeout:id=>scheduled.delete(id)});
+  const context=vm.createContext({URLSearchParams,location:{search:''},clawPrizes,clawCatch,molePlan,treasurePlan,...core,...data,...newCore,...library,Math:testMath,document:doc,crypto,CustomEvent:class{constructor(type,options){this.type=type;this.detail=options.detail;}},window:{dispatchEvent:e=>telemetry.push(e),addEventListener(){},...voiceWindow,...(withAudio?{AudioContext:AudioContextMock}:{})},createResultRecorder:({namespace})=>({drain:async()=>{},capture:result=>{(namespace==='times'?timedSaved:saved).push(result);}}),performance:{now:()=>now},console,setTimeout:(fn,delay)=>{scheduled.set(++seq,{at:now+delay,fn});return seq;},clearTimeout:id=>scheduled.delete(id)});
   vm.runInContext(readFileSync(new URL('../public/arcade-claw.js',import.meta.url),'utf8').replace(/export /g,''),context);
   vm.runInContext(readFileSync(new URL('../public/arcade-mole.js',import.meta.url),'utf8').replace(/export /g,''),context);
   vm.runInContext(readFileSync(new URL('../public/arcade-frog.js',import.meta.url),'utf8').replace(/export /g,''),context);
@@ -71,7 +71,7 @@ function fixture(firstTeam=0,withSpeech=false,withAudio=false,players=null){
   function advance(ms){const end=now+ms;let guard=0;while(true){const task=[...scheduled.entries()].filter(([,t])=>t.at<=end).sort((a,b)=>a[1].at-b[1].at)[0];if(!task)break;assert.ok(++guard<10000);scheduled.delete(task[0]);now=task[1].at;task[1].fn();}now=end;}
   function start(id,first=0,wait=true){selectedFirst=first;const i=data.GAMES.findIndex(g=>g.id===id);if(data.GAMES[i].comingSoon){data.GAMES[i].comingSoon=false;try{vm.runInContext('openGame('+JSON.stringify(id)+')',context);}finally{data.GAMES[i].comingSoon=true;}}else get('arcade-grid').children[i].click();if(wait&&id!=='memory')advance(4000);}
 
-  return {run:source=>vm.runInContext(source,context),clock:()=>now,root,doc,get,buttons,click,advance,start,saved,telemetry,speech,audio,state:context.state,resolveGame:context.resolveGame,seriesWith:context.seriesWith};
+  return {run:source=>vm.runInContext(source,context),clock:()=>now,root,doc,get,buttons,click,advance,start,saved,timedSaved,telemetry,speech,audio,state:context.state,resolveGame:context.resolveGame,seriesWith:context.seriesWith};
 }
 // Registered roster names appear under their own teams inside a game.
 {
@@ -752,3 +752,13 @@ for(const g of data.GAMES.filter(g=>!g.comingSoon)){
  assert.ok(f.get('competition-call'),g.id);assert.equal(f.get('game-stage').querySelector('img'),null);
 }
 console.log('PASS: competition targets, reverse starts, score ties, lead transitions, time/distance rules, frog marker, crown rematches, safe roster names and every game HUD.');
+
+// Successful timed turns save independently of match wins; partial turns do not.
+for(const [game,score] of [['maze',1],['spot',3],['picture',3],['number',5]]){
+ const f=fixture();f.start(game);
+ f.run(`finishTurn({score:${score},elapsed:5.432,label:'Complete'})`);
+ assert.equal(f.timedSaved.length,1);assert.equal(f.timedSaved[0].game,game);assert.equal(f.timedSaved[0].elapsedMs,5432);assert.equal(f.saved.length,0);
+}
+{const f=fixture();f.start('maze');f.run("finishTurn({score:0,elapsed:45,label:'No escape'})");assert.equal(f.timedSaved.length,0);}
+{const f=fixture();f.start('number');f.run("finishTurn({score:4,elapsed:12,label:'4/5'})");assert.equal(f.timedSaved.length,0);}
+console.log('PASS: timed records captured under the family account, partial/failed turns excluded, match ledger preserved.');
