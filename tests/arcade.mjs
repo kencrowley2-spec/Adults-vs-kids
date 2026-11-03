@@ -271,10 +271,33 @@ for(let i=0;i<30;i++)assert.ok(route(newCore.makeMaze()).length);
 {
  const f=fixture();f.start('maze',1);for(const d of route(f.state().plans.maze))f.click(['↑ Up','→ Right','↓ Down','← Left'][d]);assert.match(f.get('game-stage').textContent,/WAY TO GO, KIDS/);noNavigation(f);f.advance(2000);assert.ok(f.get('handoff-countdown'));f.advance(4000);f.advance(45000);assert.deepEqual([...f.state().wins],[0,1]);
 }
-function enterCode(f,code){code.forEach((v,i)=>{const digit=()=>f.get('code-digits').children[i];while(Number(digit().textContent)!==v)digit().click();});f.click('Test code →');}
+function enterCode(f,code){code.forEach((v,i)=>{const digit=()=>f.get('code-digits').children[i];while(Number(digit().textContent)!==v)digit().click();});f.click('Unlock Safe 🔓');}
 assert.deepEqual(newCore.codeClues([1,1,2],[1,2,1]),{exact:1,misplaced:2});
 {
- const f=fixture();f.start('code',1);enterCode(f,f.state().plans.codes[1]);assert.ok(f.get('handoff-countdown'));f.advance(4000);f.advance(60000);assert.deepEqual([...f.state().wins],[0,1]);
+ const f=fixture();f.start('code',1);enterCode(f,f.state().plans.codes[1]);assert.equal(f.get('code-safe').getAttribute('data-open'),'true');f.advance(1500);assert.ok(f.get('handoff-countdown'));f.advance(4000);f.advance(60000);assert.deepEqual([...f.state().wins],[0,1]);
+}
+// Safe checks each position only on Unlock, preserves green digits, and
+// lets players fix the remaining boxes without changing a correct number.
+{
+ const f=fixture();f.start('code');const secret=f.state().plans.codes[0];
+ const wrong=secret.map(v=>v%4+1);wrong[0]=secret[0];
+ enterCode(f,wrong);
+ const boxes=f.get('code-digits').children;
+ assert.equal(boxes[0].getAttribute('data-check'),'correct');assert.equal(boxes[0].disabled,true);
+ assert.equal(boxes[1].getAttribute('data-check'),'wrong');assert.equal(boxes[1].disabled,false);
+ const locked=boxes[0].textContent;boxes[0].click();assert.equal(boxes[0].textContent,locked);
+ boxes[1].click();assert.equal(boxes[1].getAttribute('data-check'),'unchecked');
+ assert.match(f.get('safe-feedback').textContent,/Press Unlock Safe/);
+ enterCode(f,secret);assert.equal(f.get('code-safe').getAttribute('data-open'),'true');
+ const unlock=f.buttons().find(b=>b.textContent==='Safe Unlocked! ✓');assert.equal(unlock.disabled,true);
+ f.advance(1500);assert.ok(f.get('handoff-countdown'));f.advance(4000);
+ assert.equal(f.get('code-safe').getAttribute('data-open'),'false');
+ assert.ok(f.get('code-digits').children.every(b=>!b.disabled));
+}
+{
+ const f=fixture();f.start('code');const wrong=f.state().plans.codes[0].map(v=>v%4+1);
+ for(let i=0;i<6;i++)enterCode(f,wrong);
+ assert.ok(f.get('handoff-countdown'),'Six wrong tries end the turn');
 }
 // Maze's soundtrack has independent music controls; movement effects follow
 // global Sound. Every transition stops the looping music and live notes.

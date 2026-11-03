@@ -234,3 +234,29 @@ body::before{display:block;inset:0;background:linear-gradient(180deg,rgba(4,5,14
 #basketball-court:active{cursor:grabbing}#basketball-court:focus-visible{outline:3px solid #ffd522}
 .basketball-accessible{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
 .game-tile[data-game="basketball"],.feature-poster[data-game="basketball"]{--cover-a:#64421b;--cover-b:#172923}
+
+/* Code Breaker: a compact, tactile safe with a position-by-position display. */
+#game-stage .safe-instructions{font-size:12px;line-height:1.5;margin:5px auto 10px;max-width:440px}
+.code-safe{max-width:360px;margin:0 auto;padding:13px;border:3px solid #303334;border-radius:28px;background:linear-gradient(135deg,#686b67,#242625 28%,#151716 65%,#73736a);box-shadow:inset 0 0 0 2px #91958a,0 7px 0 #111,0 10px 20px #0004}
+.safe-door{position:relative;isolation:isolate;padding:16px 27px 12px;border:3px solid #131614;border-radius:50px;background:radial-gradient(ellipse at 50% 28%,#343b35,#141a16 74%);box-shadow:inset 0 0 0 4px #555b52,inset 0 0 0 8px #1b201c,inset 0 0 20px 12px #0008;color:#fff}
+.safe-door:before{content:'';position:absolute;z-index:-1;inset:10px 13px 74px;border-radius:48%;border:9px solid #6c7064;background:linear-gradient(145deg,#484d45,#0d110e);box-shadow:inset 0 0 0 3px #131713,0 0 0 3px #090d0a,0 0 0 6px #3b4139}
+.safe-hinge{position:absolute;left:-12px;width:15px;height:32px;border-radius:4px;background:linear-gradient(90deg,#171b17,#a0a394,#353b32);border:2px solid #151a14}.safe-hinge.top{top:45px}.safe-hinge.bottom{bottom:55px}
+.safe-brand{font-size:10px;letter-spacing:1px;font-weight:900;color:#ffd522;margin:2px 0 13px}.safe-brand span{display:block;color:#afb9ab;font-size:7px;letter-spacing:3px;margin-top:4px}
+.safe-lock-panel{position:relative;background:#080e09;border:3px solid #606959;box-shadow:0 0 0 3px #0a100b,inset 0 2px 10px #000;border-radius:13px;padding:10px 8px 8px}
+#game-stage .safe-screen-label{color:#b4c0b3;font-size:8px;letter-spacing:1px;margin:0 0 8px;font-weight:800}
+#game-stage .code-safe .code-digits{margin:0;gap:9px;display:grid;grid-template-columns:repeat(3,1fr)}
+.code-safe .code-digit{width:100%;min-height:60px;padding:5px;color:#f5f8ee;background:linear-gradient(#353e36,#151e18);border:2px solid #a4aa9c;border-radius:9px;font-family:ui-monospace,monospace;font-size:38px;line-height:1.1;box-shadow:0 4px 0 #000;transition:background .15s,box-shadow .15s}
+.code-safe .code-digit:after{content:'TAP';display:block;font-family:Arial,sans-serif;font-size:7px;font-weight:800;letter-spacing:1px;margin-top:3px;color:#c6cebf}
+.code-safe .code-digit[data-check="wrong"]{border-color:#ffb74b;background:#392b15;color:#ffe0ad}
+.code-safe .code-digit[data-check="correct"],.code-safe .code-digit[data-check="correct"]:disabled{background:#76f89c;color:#092814;border-color:#b0ffc6;opacity:1;box-shadow:0 0 15px #32f47b88,inset 0 0 12px #c3ffd0;cursor:default}
+.code-safe .code-digit[data-check="correct"]:after{content:'✓ LOCKED';color:#0c4520}
+.code-safe .code-digit:focus-visible,.safe-unlock:focus-visible{outline:3px solid #ffd522;outline-offset:4px}
+#game-stage .safe-screen-feedback{font-size:10px;line-height:1.35;min-height:28px;display:grid;place-items:center;color:#cfdfcc;margin:9px 0 0}
+.safe-handle{position:relative;width:34px;height:34px;margin:12px auto;border-radius:50%;border:4px solid #9a9e8c;background:linear-gradient(130deg,#d6d8c9,#383f32);box-shadow:0 2px 0 #000;transition:transform .4s}
+.safe-handle i{position:absolute;left:11px;top:-4px;height:34px;width:4px;background:linear-gradient(#b7bbab,#555e4a);border:1px solid #262d20;border-radius:3px}.safe-handle i:nth-child(2){transform:rotate(60deg)}.safe-handle i:nth-child(3){transform:rotate(120deg)}
+.safe-unlock{display:block;width:100%;padding:12px 10px;border:2px solid #e9d76b;border-radius:10px;background:#ffd522;color:#111;font-size:15px;font-weight:900;box-shadow:0 4px 0 #8d7414;cursor:pointer}
+.safe-unlock:active{transform:translateY(2px);box-shadow:0 2px 0 #8d7414}
+#game-stage .safe-footnote{font-size:9px;color:#bec9b7;margin:10px 0 0}
+.code-safe[data-open="true"] .safe-lock-panel{border-color:#76f89c;box-shadow:0 0 16px #52ee7a66}.code-safe[data-open="true"] .safe-screen-feedback{color:#8affaa;font-weight:900;font-size:18px}.code-safe[data-open="true"] .safe-handle{transform:rotate(90deg)}.code-safe[data-open="true"] .safe-unlock{background:#76f89c;border-color:#b0ffc6;box-shadow:0 4px 0 #277b42;opacity:1}
+@media(max-height:720px){.code-safe{max-width:310px;padding:9px}.safe-door{padding:12px 22px 9px}.safe-brand{margin-bottom:10px}.safe-handle{margin:8px auto;width:28px;height:28px}.safe-handle i{left:8px;height:28px}.code-safe .code-digit{min-height:53px;font-size:32px}.safe-unlock{padding:10px}.safe-lock-panel{padding:8px 6px 6px}}
+@media(prefers-reduced-motion:reduce){.safe-handle{transition:none}}

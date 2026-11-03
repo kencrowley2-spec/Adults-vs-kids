@@ -1,6 +1,6 @@
 import {mountBasketball} from './arcade-basketball.js?v=1';
 import {coverMarkup,recentGames} from './arcade-library.js?v=2';
-import {GAMES, ANIMALS, TRIVIA, WORDS, PICTURES, CHALLENGES} from './arcade-data.js?v=7';
+import {GAMES, ANIMALS, TRIVIA, WORDS, PICTURES, CHALLENGES} from './arcade-data.js?v=8';
 import {teamName, shuffle, roundWinner, awardRound, lineWinner} from './arcade-core.js';
 
 import {makeMaze, codeClues, rpsWinner, GOLF_COURSES, golfStep} from './arcade-new-core.js?v=5';
@@ -564,22 +564,46 @@ function mazeDash(){
   draw();startClock(45,()=>finish(false));status('Find the flag. You can only move through open paths.');
 }
 function codeBreaker(){
-  let guesses=0,settled=false,guess=[1,1,1];const secret=game.codes[turn];
-  screen('<div class="turn-strip"><span id="code-progress"></span><strong id="game-clock"></strong></div><h3>Crack the three-digit code.</h3><p>Tap a digit to cycle 1 → 2 → 3 → 4. Repeats are allowed. Exact = correct digit and place. Misplaced = correct digit, different place.</p><div id="code-digits" class="code-digits"></div><div id="code-action"></div><ol id="code-history" class="code-history" aria-label="Your guesses"></ol>');
-  function finish(solved){if(settled)return;settled=true;finishTurn({score:solved?7-guesses:0,elapsed:0,label:solved?`Code cracked in ${guesses} ${guesses===1?'guess':'guesses'}`:`Code not cracked · ${guesses} guesses`});}
-  function draw(){
-    $('code-progress').textContent=`${teamName(turn)} · Guess ${guesses+1} of 6`;
-    $('code-digits').replaceChildren();
-    guess.forEach((v,i)=>{const b=button(String(v),()=>{if(settled)return;guess[i]=guess[i]%4+1;draw();},$('code-digits'),'code-digit');b.setAttribute('aria-label',`Digit ${i+1}: ${v}. Tap to change.`);});
+  let guesses=0,settled=false,guess=[1,1,1],matched=[false,false,false];
+  const secret=game.codes[turn];
+  screen('<div class="turn-strip"><span id="code-progress"></span><strong id="game-clock"></strong></div><h3>Can you unlock the safe?</h3><p class="safe-instructions">Tap each number box to change it: <b>1 → 2 → 3 → 4 → 1</b>.<br>Then press <b>Unlock Safe</b>. Correct boxes glow green and stay locked in!</p><div class="code-safe" id="code-safe" data-open="false"><div class="safe-door"><span class="safe-hinge top" aria-hidden="true"></span><span class="safe-hinge bottom" aria-hidden="true"></span><div class="safe-brand">ADULTS vs. KIDS™ <span>FAMILY VAULT</span></div><div class="safe-lock-panel"><p class="safe-screen-label" id="safe-screen-label">TAP NUMBERS TO SET YOUR CODE</p><div id="code-digits" class="code-digits" role="group" aria-label="Three safe code number boxes"></div><div class="safe-screen-feedback" id="safe-feedback" role="status" aria-live="polite">Set all 3 numbers, then try the lock.</div></div><div class="safe-handle" aria-hidden="true"><i></i><i></i><i></i></div><div id="code-action"></div><p class="safe-footnote">Numbers can repeat · 6 tries · 60 seconds</p></div></div>');
+  function finish(solved){
+    if(settled)return;settled=true;timed=false;
+    const result={score:solved?7-guesses:0,elapsed:0,label:solved?`Safe unlocked in ${guesses} ${guesses===1?'try':'tries'}`:`Safe stayed locked · ${guesses} tries`};
+    if(!solved)return finishTurn(result);
+    $('code-safe').setAttribute('data-open','true');
+    $('safe-screen-label').textContent='ACCESS GRANTED';
+    $('safe-feedback').textContent='SAFE UNLOCKED!';
+    unlock.disabled=true;unlock.textContent='Safe Unlocked! ✓';
+    react('win','SAFE UNLOCKED!');status(`${teamName(turn)} unlocked the safe!`);
+    later(()=>finishTurn(result),1500);
   }
-  button('Test code →',()=>{
-    if(settled)return;guesses++;const clues=codeClues(secret,guess);
-    if(clues.exact===3)return finish(true);
-    const row=document.createElement('li');row.textContent=`${guess.join(' ')} — ${clues.exact} exact · ${clues.misplaced} misplaced`;$('code-history').appendChild(row);
+  function draw(){
+    $('code-progress').textContent=`${teamName(turn)} · ${guesses} / 6 tries used`;
+    $('code-digits').replaceChildren();
+    guess.forEach((v,i)=>{
+      const b=button(String(v),()=>{
+        if(settled||matched[i])return;
+        guess[i]=guess[i]%4+1;chime('tap');
+        b.textContent=String(guess[i]);b.setAttribute('data-check','unchecked');
+        b.setAttribute('aria-label',`Box ${i+1}: ${guess[i]}. Tap to change the number.`);
+        $('safe-feedback').textContent='Press Unlock Safe to check your numbers.';
+      },$('code-digits'),'code-digit');
+      b.setAttribute('data-check',matched[i]?'correct':'unchecked');b.disabled=matched[i];
+      b.setAttribute('aria-label',matched[i]?`Box ${i+1}: ${v}. Correct number, locked in.`:`Box ${i+1}: ${v}. Tap to change the number.`);
+    });
+  }
+  const unlock=button('Unlock Safe 🔓',()=>{
+    if(settled)return;guesses++;
+    matched=guess.map((v,i)=>v===secret[i]);draw();
+    Array.from($('code-digits').children).forEach((b,i)=>b.setAttribute('data-check',matched[i]?'correct':'wrong'));
+    if(matched.every(Boolean))return finish(true);
     if(guesses===6)return finish(false);
-    draw();status(`${clues.exact} exact, ${clues.misplaced} misplaced. Use the clues for your next guess.`);
-  },$('code-action'));
-  draw();startClock(60,()=>finish(false));status('Your secret code is ready. Six guesses. Think it through.');
+    const correct=matched.filter(Boolean).length;
+    const feedback=correct===0?'No green lights yet. Change the numbers and try again.':`${correct} of 3 boxes correct! Keep the green numbers. Change the others.`;
+    $('safe-feedback').textContent=feedback;react('tap',`${correct} / 3 CORRECT`);status(feedback);
+  },$('code-action'),'safe-unlock');
+  draw();startClock(60,()=>{if(!settled)finish(false);});status('Tap the number boxes, then press Unlock Safe. Green means the number is correct and locked in.');
 }
 function miniGolf(){
   let hole=0,shots=0,total=0,moving=false,finished=false,ball;
