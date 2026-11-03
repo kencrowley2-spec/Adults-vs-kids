@@ -19,3 +19,5 @@
 @media(max-width:700px){.lp-slide img[src$="landing-family-personal.webp"]{object-fit:cover}}
 
 .lp-slide video{background:transparent}
+
+.lp-clock>.lp-clock-reminder{line-height:1.45;transform:none;padding-left:18px;text-wrap:balance}.lp-clock-reminder em{font-style:italic}@media(max-width:700px){.lp-clock>.lp-clock-reminder{padding:14px 0 0;max-width:32ch;margin:0 auto;line-height:1.5}}
