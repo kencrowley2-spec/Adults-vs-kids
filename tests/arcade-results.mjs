@@ -58,3 +58,6 @@ console.log('PASS: completed-only validation, account isolation, durable retry q
 
 for(const outcomes of [[0,0],[0,1,0],[1,1]])assert.equal(completedResult({...single,gameIds:['frog'],roundWinners:outcomes}).roundWinners.length,outcomes.length);
 for(const outcomes of [[0],[0,1],[0,0,1],[0,1,0,1,0]])assert.throws(()=>completedResult({...single,gameIds:['frog'],roundWinners:outcomes}));
+
+assert.equal(completedResult({...single,gameIds:['mole'],roundWinners:[1]}).roundWinners.length,1);
+assert.throws(()=>completedResult({...single,gameIds:['mole'],roundWinners:[1,1,1]}));

@@ -5,6 +5,7 @@ import * as core from '../public/arcade-core.js';
 import * as data from '../public/arcade-data.js';
 import * as newCore from '../public/arcade-new-core.js';
 import * as library from '../public/arcade-library.js';
+import {molePlan} from '../public/arcade-mole.js';
 import {treasurePlan} from '../public/arcade-treasure.js';
 
 // Small DOM/clock fixture executes the actual game controller without a browser
@@ -53,7 +54,8 @@ function fixture(firstTeam=0,withSpeech=false,withAudio=false,players=null){
     createGain(){const gain={gain:{value:1,setValueAtTime(){},linearRampToValueAtTime(){},exponentialRampToValueAtTime(){}},connect(){},disconnect(){this.disconnected=true;}};audio.gains.push(gain);return gain;}
     createOscillator(){const node={frequency:{value:0,setValueAtTime(){},exponentialRampToValueAtTime(){}},stops:[],connect(){},disconnect(){this.disconnected=true;},start(){this.started=true;},stop(at){this.stops.push(at);}};audio.nodes.push(node);return node;}
   }
-  const context=vm.createContext({treasurePlan,...core,...data,...newCore,...library,Math:testMath,document:doc,crypto,CustomEvent:class{constructor(type,options){this.type=type;this.detail=options.detail;}},window:{dispatchEvent:e=>telemetry.push(e),addEventListener(){},...voiceWindow,...(withAudio?{AudioContext:AudioContextMock}:{})},createResultRecorder:()=>({drain:async()=>{},capture:result=>{saved.push(result);}}),performance:{now:()=>now},console,setTimeout:(fn,delay)=>{scheduled.set(++seq,{at:now+delay,fn});return seq;},clearTimeout:id=>scheduled.delete(id)});
+  const context=vm.createContext({molePlan,treasurePlan,...core,...data,...newCore,...library,Math:testMath,document:doc,crypto,CustomEvent:class{constructor(type,options){this.type=type;this.detail=options.detail;}},window:{dispatchEvent:e=>telemetry.push(e),addEventListener(){},...voiceWindow,...(withAudio?{AudioContext:AudioContextMock}:{})},createResultRecorder:()=>({drain:async()=>{},capture:result=>{saved.push(result);}}),performance:{now:()=>now},console,setTimeout:(fn,delay)=>{scheduled.set(++seq,{at:now+delay,fn});return seq;},clearTimeout:id=>scheduled.delete(id)});
+  vm.runInContext(readFileSync(new URL('../public/arcade-mole.js',import.meta.url),'utf8').replace(/export /g,''),context);
   vm.runInContext(readFileSync(new URL('../public/arcade-frog.js',import.meta.url),'utf8').replace(/export /g,''),context);
   vm.runInContext(readFileSync(new URL('../public/arcade-treasure.js',import.meta.url),'utf8').replace(/export /g,''),context);
   vm.runInContext(readFileSync(new URL('../public/arcade-blocks.js',import.meta.url),'utf8').replace(/export /g,''),context);
@@ -101,7 +103,7 @@ for(const id of data.GAMES.filter(g=>!g.comingSoon).map(g=>g.id)){
 }
 console.log('PASS: Kids vs. Kids across playable games, named turns and winners, series, balanced kid teams, escaped names, and no adult/kid lifetime-score writes.');
 // Core scoring remains first to three, with no points for a tie.
-assert.equal(data.GAMES.length,15);
+assert.equal(data.GAMES.length,16);
 for(const outcomes of [[0,1,0,1,0],[1,0,1,0,1],[0,0,0]]){
  let wins=[0,0],champion=-1;for(const winner of outcomes)({wins,champion}=core.awardRound(wins,winner));
  assert.equal(champion,outcomes.at(-1));assert.equal(wins[champion],3);
@@ -486,7 +488,7 @@ assert.deepEqual(library.recentGames({getItem:()=>JSON.stringify(['memory','unkn
 {
  const f=fixture();f.start('memory');f.get('arcade-return').click();f.advance(6500);assert.equal(f.get('arcade-feature-title').textContent,data.GAMES[1].name);f.get('feature-pause').click();f.advance(20000);assert.equal(f.get('arcade-feature-title').textContent,data.GAMES[1].name);f.get('feature-next').click();f.get('arcade-featured-play').click();assert.ok(f.get('game-title').textContent.includes(data.GAMES[2].name));noNavigation(f);
 }
-console.log('All 15 Arcade games passed: automatic starters, countdown handoffs, automatic rounds/replays, reactions, golf holes, secret moves, scoring, celebrations, 3–2 matches, random series, cancellation, hidden-tab protection and rotating features.');
+console.log('All 16 Arcade games passed: automatic starters, countdown handoffs, automatic rounds/replays, reactions, golf holes, secret moves, scoring, celebrations, 3–2 matches, random series, cancellation, hidden-tab protection and rotating features.');
 
 // Basketball: each team has exactly 30 seconds; baskets are two points;
 // the shot already released at the buzzer resolves, then the device passes.
@@ -623,3 +625,53 @@ console.log('PASS: Frog Hop real moving-pad landings, three crossings/tries, mis
  const calls=pond.drawCalls.length;f.get('arcade-return').click();f.advance(5000);assert.equal(pond.drawCalls.length,calls);
 }
 console.log('PASS: hidden jump distance, direct pond hold/release, background frog ribbits, animated splash droplets and cleanup.');
+
+// One mallet, no multi-touch or repeated key farming, exact 30-second turns.
+assert.deepEqual(molePlan(123),molePlan(123));
+for(const first of [0,1]){
+ const f=fixture();f.start('mole',first);const board=f.get('mole-board');
+ assert.ok(board);f.advance(400);board.dispatch('keydown',{key:String(molePlan(536870912).find(e=>e.at===350)?.hole+1)});
+ // Find the live hole using real controls; only one can score at this instant.
+ for(let i=1;i<=8;i++){board.dispatch('keydown',{key:String(i)});f.advance(180);}
+ const before=f.get('arcade-team-'+first).textContent;
+ board.dispatch('keydown',{key:'1',repeat:true});assert.equal(f.get('arcade-team-'+first).textContent,before);
+ f.advance(30000-(f.clock()-4000));assert.ok(f.get('handoff-countdown'));
+ f.advance(4000);assert.ok(f.get('mole-board'));f.advance(30000);
+ assert.equal(f.saved.length,1);assert.equal(f.saved[0].gameIds[0],'mole');assert.deepEqual([...f.saved[0].roundWinners],[first]);
+ f.advance(20000);assert.equal(f.saved.length,1);
+}
+{
+ const f=fixture();f.start('mole');f.advance(30000);f.advance(4000);f.advance(30000);
+ assert.match(f.get('game-stage').textContent,/It’s a tie/);assert.equal(f.saved.length,0);
+}
+{
+ const f=fixture();f.start('mole');f.doc.hidden=true;f.doc.handlers.visibilitychange();f.advance(60000);
+ assert.match(f.get('game-stage').textContent,/interrupted/);assert.equal(f.saved.length,0);
+}
+console.log('PASS: Whack-a-Mole fair schedules, 30-second turns, single round, scoring, ties, one-time saving and interruption.');
+
+{
+ const f=fixture();f.start('mole');const board=f.get('mole-board');
+ board.getBoundingClientRect=()=>({left:10,top:20,width:220,height:205});board.setPointerCapture=()=>{};
+ const first=molePlan(536870912)[0],second=molePlan(536870912).find(e=>e.type===1);
+ const event=(hole,id=1,primary=true)=>({pointerId:id,isPrimary:primary,button:0,clientX:10+(61+hole%4*106)/2,clientY:20+(196+Math.floor(hole/4)*111-25)/2});
+ f.advance(500);board.dispatch('pointerdown',event(first.hole));
+ assert.match(f.get('arcade-team-0').textContent,/1/);
+ board.dispatch('pointerup',{pointerId:1});f.advance(200);board.dispatch('pointerdown',event(first.hole));
+ board.dispatch('pointerup',{pointerId:1});f.advance(250);
+ const before=f.get('arcade-team-0').textContent;
+ board.dispatch('pointerdown',event(second.hole,2,false));assert.equal(f.get('arcade-team-0').textContent,before);
+ board.dispatch('pointerdown',event(second.hole));
+ board.dispatch('pointerdown',event(second.hole,2));
+ assert.match(f.get('arcade-team-0').textContent,/2/);
+ board.dispatch('pointercancel',{pointerId:1});
+ f.get('arcade-return').click();f.advance(60000);assert.equal(f.saved.length,0);
+}
+for(const seed of [1,123,987654]){
+ const plan=molePlan(seed);assert.equal(new Set(plan.map(e=>e.type)).size,2);
+ assert.ok(plan.every(e=>e.hole>=0&&e.hole<8));
+ for(let i=0;i<plan.length;i++)for(let j=i+1;j<plan.length;j++){
+  const a=plan[i],b=plan[j];if(b.at<a.at+a.life)assert.notEqual(a.hole,b.hole);
+ }
+}
+console.log('PASS: scaled touch hit targets, single-use moles, secondary finger blocking, cancel/exit cleanup and collision-free appearances.');
