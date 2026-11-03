@@ -1,4 +1,4 @@
-import home from '../site-html';
+import home from '../legacy-site-html';
 import { shopProducts } from '../config/shop';
 const esc=(s:string)=>s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]!));
 function header(){return home.slice(home.indexOf('<header>'),home.indexOf('</header>')+9).replaceAll('href="#','href="/website#').replace('id="sectionMenuToggle"','id="shopMenu"').replace('aria-controls="sectionMenu"','aria-controls="shopMenuDialog"')}
