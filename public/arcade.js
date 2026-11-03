@@ -424,6 +424,13 @@ function tic(){
   }
   draw();ticStarterVoice($('tic-action'),false);status(`${teamName(turn)}: choose a square.`);
 }
+// Small answer pictures help younger players connect the spoken choice to its tile.
+function triviaAnswerIcon(value){
+ const picture=PICTURES.find(([,label])=>label.toLowerCase()===value.toLowerCase());if(picture)return picture[0];
+ if(/^\d+$/.test(value))return '🔢';
+ const icons={'Earth':'🌍','Mars':'🔴','Venus':'🪐','Saturn':'🪐','Butterflies':'🦋','Butterfly':'🦋','Beetles':'🪲','Bees':'🐝','Spiders':'🕷️','Spider':'🕷️','Ant':'🐜','Worm':'🪱','Ice':'🧊','Steam':'♨️','Sand':'🏖️','Cloud':'☁️','Clouds':'☁️','Triangle':'🔺','Square':'🟩','Circle':'⚪','Rectangle':'▰','Pentagon':'⬠','Hexagon':'⬡','Octagon':'🛑','Green':'🟢','Orange':'🟠','Purple':'🟣','Pink':'🩷','Red':'🔴','Blue':'🔵','Yellow':'🟡','Shark':'🦈','Trout':'🐟','Bear':'🐻','Potato':'🥔','Lettuce':'🥬','Honey':'🍯','Milk':'🥛','Flour':'🌾','Butter':'🧈','The Sun':'☀️','Sirius':'⭐','Polaris':'⭐','Vega':'⭐','Water':'💧','Sunlight':'☀️','Sound':'🔊','Piano':'🎹','Drum':'🥁','Flute':'🪈','Violin':'🎻','Summer':'☀️','Winter':'❄️','Autumn':'🍂','Spring again':'🌷','Robin':'🐦','Eagle':'🦅','Sparrow':'🐦','Pacific':'🌊','Atlantic':'🌊','Indian':'🌊','Arctic':'🧊','Snail':'🐌','Mouse':'🐭','Duck':'🦆','Broccoli':'🥦','Celery':'🥬','Spinach':'🥬','Thursday':'📅','Tuesday':'📅','Friday':'📅','Sunday':'📅','Basketball':'🏀','Soccer':'⚽','Tennis':'🎾','Baseball':'⚾','Gills':'🐟','Wings':'🪽','Fur':'🐻','Paws':'🐾','Thermometer':'🌡️','Ruler':'📏','Compass':'🧭','Scale':'⚖️','Hippo':'🦛','South':'⬇️','East':'➡️','West':'⬅️','Up':'⬆️','Puppy':'🐶','Kitten':'🐱','Calf':'🐮','Cub':'🐻','Roots':'🌱','Flower':'🌸','Leaves':'🍃','Fruit':'🍎','January':'📅','June':'📅','March':'📅','December':'📅','Hearing':'👂','Taste':'👅','Sight':'👁️','Smell':'👃','Clock':'🕒','Globe':'🌐','Magnet':'🧲','Oak tree':'🌳','Daisy':'🌼','Grass':'🌱','Tulip':'🌷','Constellation':'✨','Continent':'🌍','Volcano':'🌋','Island':'🏝️','Kangaroo':'🦘','Wolf':'🐺','Light':'💡','A bicycle':'🚲','A walking person':'🚶','Cheese':'🧀','Bread':'🍞','Rice':'🍚','Pasta':'🍝','Rain':'🌧️','Lava':'🌋','Smoke':'💨','Owl':'🦉','Timer':'⏱️'};
+ return icons[value]||'💬';
+}
 function quiz(){
   const count=game.id==='trivia'||game.id==='number'?5:3;
   const seconds=game.id==='word'||game.id==='trivia'?45:30;
@@ -465,7 +472,16 @@ function quiz(){
       later(()=>{if(!settled&&!locked&&index===qi)hint.textContent=`Clue: starts with ${label[0]}, ${label.replace(/ /g,'').length} letters.`;},4000);
     }else {const h=document.createElement('h3');h.className=game.id==='number'?'math-question':'';h.textContent=prompt;body.appendChild(h);}
     const options=document.createElement('div');options.className='answer-grid';body.appendChild(options);
-    choices.forEach(value=>button(value,()=>choose(value===answer,answer),options,'answer'));
+    choices.forEach((value,i)=>{
+      const option=button(value,()=>choose(value===answer,answer),options,'answer');
+      if(game.id!=='trivia')return;
+      option.setAttribute('data-answer',value);option.setAttribute('data-trivia-option',String(i+1));
+      option.setAttribute('aria-label',`Option ${i+1}: ${value}`);option.replaceChildren();
+      const number=document.createElement('span');number.className='trivia-option-number';number.textContent=String(i+1);number.setAttribute('aria-hidden','true');
+      const icon=document.createElement('span');icon.className='trivia-option-icon';icon.textContent=triviaAnswerIcon(value);icon.setAttribute('aria-hidden','true');
+      const label=document.createElement('span');label.className='trivia-option-text';label.textContent=value;
+      option.appendChild(number);option.appendChild(icon);option.appendChild(label);
+    });
     if(game.id==='trivia'){
       const narration=`${prompt} ${choices.map((value,i)=>`Option ${i+1}: ${value}.`).join(' ')}`;
       triviaAudioPanel(body,narration);readArcade(narration);

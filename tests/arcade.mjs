@@ -60,9 +60,9 @@ function fixture(firstTeam=0,withSpeech=false,withAudio=false,players=null){
   vm.runInContext(source+'\nthis.state=()=>({wins:[...wins],round,champion,turn,starter,attempt,plans:game?{maze:game.maze,codes:game.codes,safePoints:game.safePoints,course:game.course}:null,series:series?{games:series.games.map(g=>g.id),index:series.index,winners:[...series.winners]}:null});this.resolveGame=finishRound;this.seriesWith=id=>{startSeries();clearTimers();series.games=[GAMES.find(g=>g.id===id),...GAMES.filter(g=>g.id!==id).slice(0,2)];startSeriesGame();};',context);
   const get=id=>doc.getElementById(id);
   const buttons=()=>get('game-stage').querySelectorAll('button');
-  const click=text=>{const b=buttons().find(b=>b.textContent===text);assert.ok(b,`Missing button: ${text}`);b.click();};
+  const click=text=>{const b=buttons().find(b=>b.textContent===text||b.getAttribute('data-answer')===text);assert.ok(b,`Missing button: ${text}`);b.click();};
   function advance(ms){const end=now+ms;let guard=0;while(true){const task=[...scheduled.entries()].filter(([,t])=>t.at<=end).sort((a,b)=>a[1].at-b[1].at)[0];if(!task)break;assert.ok(++guard<10000);scheduled.delete(task[0]);now=task[1].at;task[1].fn();}now=end;}
-  function start(id,first=0,wait=true){selectedFirst=first;const i=data.GAMES.findIndex(g=>g.id===id);get('arcade-grid').children[i].click();if(wait&&id!=='memory')advance(4000);}
+  function start(id,first=0,wait=true){selectedFirst=first;const i=data.GAMES.findIndex(g=>g.id===id);if(data.GAMES[i].comingSoon){data.GAMES[i].comingSoon=false;try{vm.runInContext('openGame('+JSON.stringify(id)+')',context);}finally{data.GAMES[i].comingSoon=true;}}else get('arcade-grid').children[i].click();if(wait&&id!=='memory')advance(4000);}
 
   return {root,doc,get,buttons,click,advance,start,saved,telemetry,speech,audio,state:context.state,resolveGame:context.resolveGame,seriesWith:context.seriesWith};
 }
@@ -213,7 +213,7 @@ for(const id of ['number','trivia','word','picture','spot']){
  assert.match(f.speech.spoken.at(-1).text,/Turn your volume up/);
  f.advance(4000);
  const prompt=()=>f.get('quiz-body').querySelector('h3').textContent;
- const narration=()=>`${prompt()} ${f.get('quiz-body').querySelectorAll('button').filter(b=>b.className==='answer').map((b,i)=>`Option ${i+1}: ${b.textContent}.`).join(' ')}`;
+ const narration=()=>`${prompt()} ${f.get('quiz-body').querySelectorAll('button').filter(b=>b.className==='answer').map((b,i)=>`Option ${i+1}: ${b.getAttribute('data-answer')||b.textContent}.`).join(' ')}`;
  assert.equal(f.speech.spoken.at(-1).text,narration());
  assert.equal(f.get('trivia-audio').getAttribute('data-speaking'),'true');
  const first=f.speech.spoken.at(-1);
@@ -500,3 +500,26 @@ for(const first of [0,1]){
  f.advance(70000);assert.equal(f.saved.length,0);assert.match(f.get('game-stage').textContent,/interrupted/);
 }
 console.log('PASS: Block Showdown one-minute turns, both starting teams, one-round winner saving, draws and interruption handling.');
+
+// Every visible Trivia answer matches its spoken option and includes a tiny picture.
+{
+ const f=fixture(0,true);f.start('trivia');
+ for(let q=0;q<3;q++){
+  const choices=f.get('quiz-body').querySelectorAll('button').filter(b=>b.getAttribute('data-trivia-option'));
+  assert.equal(choices.length,4);
+  choices.forEach((b,i)=>{
+   const value=b.getAttribute('data-answer');
+   assert.equal(b.children[0].textContent,String(i+1));
+   assert.ok(b.children[1].textContent);assert.equal(b.children[1].getAttribute('aria-hidden'),'true');
+   assert.equal(b.children[2].textContent,value);assert.equal(b.getAttribute('aria-label'),`Option ${i+1}: ${value}`);
+   assert.ok(f.speech.spoken.at(-1).text.includes(`Option ${i+1}: ${value}.`));
+  });
+  choices[0].click();f.advance(650);
+ }
+}
+{
+ const f=fixture();const i=data.GAMES.findIndex(g=>g.id==='basketball');
+ const tile=f.get('arcade-grid').children[i];assert.equal(tile.disabled,true);assert.match(tile.textContent,/COMING SOON/);
+ tile.click();assert.equal(f.get('block-board'),null);assert.equal(f.get('basketball-court'),null);
+}
+console.log('PASS: numbered Trivia answer bubbles, tiny icons, exact speech/visual option agreement and coming-soon launch guard.');
