@@ -1,7 +1,7 @@
 import {mountBlocks} from './arcade-blocks.js?v=1';
 import {mountBasketball} from './arcade-basketball.js?v=1';
-import {coverMarkup,recentGames} from './arcade-library.js?v=3';
-import {GAMES, ANIMALS, TRIVIA, WORDS, PICTURES, CHALLENGES} from './arcade-data.js?v=11';
+import {coverMarkup,recentGames} from './arcade-library.js?v=4';
+import {GAMES, ANIMALS, TRIVIA, WORDS, PICTURES, CHALLENGES} from './arcade-data.js?v=12';
 import {teamName, shuffle, roundWinner, awardRound, lineWinner} from './arcade-core.js';
 
 import {makeMaze, codeClues, rpsWinner, GOLF_COURSES, golfStep} from './arcade-new-core.js?v=5';
@@ -221,6 +221,7 @@ function pick(key,source,n){
   return used[key].splice(0,n);
 }
 function openGame(id){
+  if(GAMES.find(g=>g.id===id)?.comingSoon)return;
   clearTimeout(featuredTimer);
   startRecording('single',[id]);
   window.dispatchEvent(new CustomEvent('avk:game-start',{detail:{game:id,id:recording.id}}));
@@ -232,7 +233,7 @@ function openGame(id){
 function startSeries(){
   clearTimeout(featuredTimer);
   clearTimers();
-  series={games:shuffle(GAMES).slice(0,3),index:0,winners:[],first:0};
+  series={games:shuffle(GAMES.filter(g=>!g.comingSoon)).slice(0,3),index:0,winners:[],first:0};
   startRecording('series',series.games.map(g=>g.id));
   wins=[0,0]; round=1; attempt=0; starter=0; turn=0; champion=-1; results=[]; used={};
   game=series.games[0]; lobby.hidden=true; arena.hidden=false;
@@ -711,7 +712,7 @@ function miniGolf(){
 const recentKey=`avk-arcade-recent:${arcadeAccountId}`;
 function gameTile(g,parent){
  const tile=button('',()=>openGame(g.id),parent,'game-tile cover-tile');
- tile.setAttribute('data-game',g.id);tile.setAttribute('aria-label',`Play ${g.name}`);tile.innerHTML=coverMarkup(g);return tile;
+ tile.setAttribute('data-game',g.id);tile.disabled=!!g.comingSoon;tile.setAttribute('data-coming-soon',String(!!g.comingSoon));tile.setAttribute('aria-label',g.comingSoon?`${g.name} — Coming Soon`:`Play ${g.name}`);tile.innerHTML=coverMarkup(g);return tile;
 }
 function renderRecent(){
  let ids=[];try{ids=recentGames(localStorage,recentKey,GAMES);}catch{}
@@ -734,8 +735,9 @@ function renderFeatured(){
  const g=GAMES[featuredIndex];
  $('arcade-feature-title').textContent=g.name;
  $('feature-description').textContent=g.tag;
- $('feature-play-label').textContent='▶ PLAY '+g.name.toUpperCase();
- $('arcade-featured-play').setAttribute('aria-label','Play '+g.name);
+ $('feature-play-label').textContent=g.comingSoon?'COMING SOON':'▶ PLAY '+g.name.toUpperCase();
+ $('arcade-featured-play').disabled=!!g.comingSoon;
+ $('arcade-featured-play').setAttribute('aria-label',g.comingSoon?g.name+' — Coming Soon':'Play '+g.name);
  $('feature-art').innerHTML=`<div class="feature-poster" data-game="${g.id}">${coverMarkup(g)}</div><span class="feature-stamp">LESS SUPERVISING.<br><b>MORE PLAYING.</b></span>`;
  $('feature-position').textContent=(featuredIndex+1)+' / '+GAMES.length;
 }
