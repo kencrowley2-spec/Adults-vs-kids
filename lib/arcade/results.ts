@@ -1,4 +1,4 @@
-export const ARCADE_GAMES=['memory','tic','spot','trivia','word','tap','picture','number','challenge','maze','rps','code','golf','basketball','blocks','treasure'];
+export const ARCADE_GAMES=['memory','tic','spot','trivia','word','tap','picture','number','challenge','maze','rps','code','golf','basketball','blocks','treasure','frog'];
 type CompletedResult={id:string;mode:'single'|'series';gameIds:string[];roundWinners:number[]};
 export function completedResult(raw:unknown):CompletedResult{
  if(!raw||typeof raw!=='object')throw new Error('Invalid result');
@@ -13,9 +13,10 @@ export function completedResult(raw:unknown):CompletedResult{
  if(d.mode==='series') {if(rounds.length!==3)throw new Error('Series is incomplete');}
  else if(['basketball','blocks','treasure'].includes(games[0])){if(rounds.length!==1)throw new Error('One-round match is incomplete');}
  else {
-  if(rounds.length<3||rounds.length>5)throw new Error('Match is incomplete');
-  const wins=[0,0];rounds.forEach((w,i)=>{wins[w]++;if(i<rounds.length-1&&wins[w]>=3)throw new Error('Match already ended');});
-  if(Math.max(...wins)!==3)throw new Error('Match is incomplete');
+  const target=games[0]==='frog'?2:3;
+  if(rounds.length<target||rounds.length>target*2-1)throw new Error('Match is incomplete');
+  const wins=[0,0];rounds.forEach((w,i)=>{wins[w]++;if(i<rounds.length-1&&wins[w]>=target)throw new Error('Match already ended');});
+  if(Math.max(...wins)!==target)throw new Error('Match is incomplete');
  }
  return {id:d.id,mode:d.mode,gameIds:[...games],roundWinners:[...rounds]};
 }

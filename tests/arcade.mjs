@@ -54,19 +54,20 @@ function fixture(firstTeam=0,withSpeech=false,withAudio=false,players=null){
     createOscillator(){const node={frequency:{value:0,setValueAtTime(){},exponentialRampToValueAtTime(){}},stops:[],connect(){},disconnect(){this.disconnected=true;},start(){this.started=true;},stop(at){this.stops.push(at);}};audio.nodes.push(node);return node;}
   }
   const context=vm.createContext({treasurePlan,...core,...data,...newCore,...library,Math:testMath,document:doc,crypto,CustomEvent:class{constructor(type,options){this.type=type;this.detail=options.detail;}},window:{dispatchEvent:e=>telemetry.push(e),addEventListener(){},...voiceWindow,...(withAudio?{AudioContext:AudioContextMock}:{})},createResultRecorder:()=>({drain:async()=>{},capture:result=>{saved.push(result);}}),performance:{now:()=>now},console,setTimeout:(fn,delay)=>{scheduled.set(++seq,{at:now+delay,fn});return seq;},clearTimeout:id=>scheduled.delete(id)});
+  vm.runInContext(readFileSync(new URL('../public/arcade-frog.js',import.meta.url),'utf8').replace(/export /g,''),context);
   vm.runInContext(readFileSync(new URL('../public/arcade-treasure.js',import.meta.url),'utf8').replace(/export /g,''),context);
   vm.runInContext(readFileSync(new URL('../public/arcade-blocks.js',import.meta.url),'utf8').replace(/export /g,''),context);
   const basketballSource=readFileSync(new URL('../public/arcade-basketball.js',import.meta.url),'utf8').replace(/export /g,'');
   vm.runInContext(basketballSource,context);
   const source=readFileSync(new URL('../public/arcade.js',import.meta.url),'utf8').replace(/^import .*;\n/gm,'');
-  vm.runInContext(source+'\nthis.state=()=>({wins:[...wins],round,champion,turn,starter,attempt,plans:game?{maze:game.maze,codes:game.codes,safePoints:game.safePoints,course:game.course}:null,series:series?{games:series.games.map(g=>g.id),index:series.index,winners:[...series.winners]}:null});this.resolveGame=finishRound;this.seriesWith=id=>{startSeries();clearTimers();series.games=[GAMES.find(g=>g.id===id),...GAMES.filter(g=>g.id!==id).slice(0,2)];startSeriesGame();};',context);
+  vm.runInContext(source+'\nthis.state=()=>({wins:[...wins],round,champion,turn,starter,attempt,plans:game?{maze:game.maze,codes:game.codes,safePoints:game.safePoints,course:game.course,frog:game.frogCourses}:null,series:series?{games:series.games.map(g=>g.id),index:series.index,winners:[...series.winners]}:null});this.resolveGame=finishRound;this.seriesWith=id=>{startSeries();clearTimers();series.games=[GAMES.find(g=>g.id===id),...GAMES.filter(g=>g.id!==id).slice(0,2)];startSeriesGame();};',context);
   const get=id=>doc.getElementById(id);
   const buttons=()=>get('game-stage').querySelectorAll('button');
   const click=text=>{const b=buttons().find(b=>b.textContent===text||b.getAttribute('data-answer')===text);assert.ok(b,`Missing button: ${text}`);b.click();};
   function advance(ms){const end=now+ms;let guard=0;while(true){const task=[...scheduled.entries()].filter(([,t])=>t.at<=end).sort((a,b)=>a[1].at-b[1].at)[0];if(!task)break;assert.ok(++guard<10000);scheduled.delete(task[0]);now=task[1].at;task[1].fn();}now=end;}
   function start(id,first=0,wait=true){selectedFirst=first;const i=data.GAMES.findIndex(g=>g.id===id);if(data.GAMES[i].comingSoon){data.GAMES[i].comingSoon=false;try{vm.runInContext('openGame('+JSON.stringify(id)+')',context);}finally{data.GAMES[i].comingSoon=true;}}else get('arcade-grid').children[i].click();if(wait&&id!=='memory')advance(4000);}
 
-  return {root,doc,get,buttons,click,advance,start,saved,telemetry,speech,audio,state:context.state,resolveGame:context.resolveGame,seriesWith:context.seriesWith};
+  return {clock:()=>now,root,doc,get,buttons,click,advance,start,saved,telemetry,speech,audio,state:context.state,resolveGame:context.resolveGame,seriesWith:context.seriesWith};
 }
 // Registered roster names appear under their own teams inside a game.
 {
@@ -205,7 +206,7 @@ for(const first of [0,1]){
 }
 // Timed games finish a team, pass automatically, and award a result. No Ready
 // buttons or extra result acknowledgements, even on timeout or ties.
-for(const id of ['spot','trivia','word','picture','number','challenge','maze']){
+for(const id of ['spot','trivia','picture','number','challenge','maze']){
  const f=fixture();f.start(id);const seconds={spot:30,trivia:45,word:45,picture:30,number:30,challenge:20,maze:45,code:60}[id];
  function finishTimed(value){f.advance(seconds*1000);if(id==='challenge'){f.get('challenge-score').value=value;f.get('challenge-form').dispatch('submit');}}
  finishTimed('12');assert.ok(f.get('handoff-countdown'));assert.equal(f.state().turn,1);noNavigation(f);
@@ -214,7 +215,7 @@ for(const id of ['spot','trivia','word','picture','number','challenge','maze']){
  f.advance(2200);assert.equal(f.state().starter,1);assert.ok(f.get('handoff-countdown'));noNavigation(f);
 }
 // Every content mode accepts real answers, including duplicate-tap protection.
-for(const id of ['number','trivia','word','picture','spot']){
+for(const id of ['number','trivia','picture','spot']){
  const f=fixture();f.start(id);
  const count=id==='spot'||id==='word'||id==='picture'?3:5;
  for(let n=0;n<count;n++){
@@ -222,8 +223,7 @@ for(const id of ['number','trivia','word','picture','spot']){
    const [a,op,b]=f.get('quiz-body').querySelector('h3').textContent.split(' ');const answer=op==='+'?Number(a)+Number(b):Number(a)-Number(b);const btn=f.get('quiz-body').querySelectorAll('button').find(b=>b.textContent===String(answer));btn.click();btn.click();f.advance(650);
   }else if(id==='trivia'){
    const prompt=f.get('quiz-body').querySelector('h3').textContent;f.click(data.TRIVIA.find(q=>q[0]===prompt)[1]);f.advance(650);
-  }else if(id==='word'){
-   const clue=f.get('quiz-body').querySelector('p').textContent;f.get('word-answer').value=data.WORDS.find(q=>q[1]===clue)[0];f.get('word-form').dispatch('submit');f.advance(650);
+
   }else if(id==='picture'){
    const symbol=f.get('quiz-body').querySelector('span').textContent;f.click(data.PICTURES.find(q=>q[0]===symbol)[1]);f.advance(650);
   }else{
@@ -571,3 +571,40 @@ console.log('PASS: Block Showdown one-minute turns, both starting teams, one-rou
  tile.click();assert.equal(f.get('block-board'),null);assert.equal(f.get('basketball-court'),null);
 }
 console.log('PASS: numbered Trivia answer bubbles, tiny icons, exact speech/visual option agreement and coming-soon launch guard.');
+
+// Frog Hop uses real hold/release controls, crossings and misses, then passes.
+{
+ const f=fixture(0,false,true);f.start('frog');
+ for(let trial=0;trial<3;trial++){
+  const course=f.state().plans.frog[trial],started=f.clock();let from=45;
+  for(const [index,pad] of [...course.pads,{x:course.finish,r:25,amplitude:0,phase:0}].entries()){
+   let hold=650;
+   for(let i=0;i<15;i++){
+    const target=pad.x+Math.sin(((f.clock()+hold+650-started)/1000)*1.4+pad.phase)*pad.amplitude;
+    const previous=index===0?null:course.pads[index-1];
+    const launch=previous?previous.x+Math.sin(((f.clock()+hold-started)/1000)*1.4+previous.phase)*previous.amplitude:45;
+    hold=(target-launch-24)/180*1400;
+   }
+   const jump=f.get('frog-jump');jump.dispatch('pointerdown',{pointerId:1});f.advance(hold);jump.dispatch('pointerup',{pointerId:1});f.advance(720);
+   from=pad.x+Math.sin(((f.clock()-started)/1000)*1.4+pad.phase)*pad.amplitude;
+   if(index<5)assert.equal(jump.disabled,false,`Try ${trial+1}, pad ${index+1}, hold ${hold}: ${f.get('arcade-message').textContent}`);
+  }
+  f.advance(1400);
+ }
+ assert.ok(f.get('handoff-countdown'));assert.match(f.get('game-stage').textContent,/3 crossings/);f.advance(4000);
+ for(let trial=0;trial<3;trial++){const jump=f.get('frog-jump');jump.dispatch('pointerdown',{pointerId:1});jump.dispatch('pointerup',{pointerId:1});f.advance(2100);}
+ assert.deepEqual([...f.state().wins],[1,0]);assert.match(f.get('game-stage').textContent,/win this round/);
+ f.advance(2200);assert.equal(f.state().starter,1);assert.match(f.get('round-label').textContent,/ROUND 2 OF 3/);
+ f.resolveGame(0,'Another pond won');assert.equal(f.state().champion,0);assert.equal(f.saved.length,1);assert.deepEqual([...f.saved[0].roundWinners],[0,0]);
+ assert.ok(f.audio.nodes.some(n=>n.stops.length),'Music and ribbits use stoppable audio nodes');
+}
+for(const outcomes of [[0,1,0],[1,1]]){
+ const f=fixture();f.start('frog');
+ outcomes.forEach((winner,i)=>{f.resolveGame(winner,'Pond played');if(i<outcomes.length-1)f.advance(2200);});
+ assert.equal(f.saved.length,1);assert.deepEqual([...f.saved[0].roundWinners],outcomes);assert.equal(f.state().champion,outcomes.at(-1));
+}
+{
+ const f=fixture();f.start('frog');f.get('frog-jump').dispatch('pointerdown',{pointerId:1});f.get('frog-jump').dispatch('pointercancel');f.advance(1500);assert.equal(f.get('frog-jump').disabled,false);
+ f.doc.hidden=true;f.doc.handlers.visibilitychange();f.advance(60000);assert.match(f.get('game-stage').textContent,/interrupted/);assert.equal(f.saved.length,0);
+}
+console.log('PASS: Frog Hop real moving-pad landings, three crossings/tries, misses, automatic passing, first-to-two rounds, audio, canceled input and hidden-tab cleanup.');

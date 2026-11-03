@@ -55,3 +55,6 @@ assert.equal(rows.get(id).user_id,owner);
 const response=await exports.GET(new Request('https://adultsvskids.com/api/arcade/results'));assert.equal(response.status,200);assert.deepEqual((await response.json()).score,{adults:1,kids:0,total:1});
 fail=true;assert.equal((await post({...series,id:other,accountId:owner})).status,503);assert.equal((await exports.GET(new Request('https://adultsvskids.com/api/arcade/results'))).status,503);
 console.log('PASS: completed-only validation, account isolation, durable retry queue, immutable UUID deduplication, origin/auth checks, totals API and database failures.');
+
+for(const outcomes of [[0,0],[0,1,0],[1,1]])assert.equal(completedResult({...single,gameIds:['frog'],roundWinners:outcomes}).roundWinners.length,outcomes.length);
+for(const outcomes of [[0],[0,1],[0,0,1],[0,1,0,1,0]])assert.throws(()=>completedResult({...single,gameIds:['frog'],roundWinners:outcomes}));

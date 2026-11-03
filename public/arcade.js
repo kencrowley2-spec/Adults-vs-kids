@@ -1,8 +1,9 @@
+import {mountFrog,frogCourses,frogRoundWinner} from './arcade-frog.js?v=1';
 import {mountTreasure,treasurePlan} from './arcade-treasure.js?v=1';
 import {mountBlocks} from './arcade-blocks.js?v=1';
 import {mountBasketball} from './arcade-basketball.js?v=1';
-import {coverMarkup,recentGames} from './arcade-library.js?v=5';
-import {GAMES, ANIMALS, TRIVIA, WORDS, PICTURES, CHALLENGES} from './arcade-data.js?v=13';
+import {coverMarkup,recentGames} from './arcade-library.js?v=6';
+import {GAMES, ANIMALS, TRIVIA, PICTURES, CHALLENGES} from './arcade-data.js?v=14';
 import {shuffle, roundWinner, awardRound, lineWinner} from './arcade-core.js';
 
 import {makeMaze, codeClues, rpsWinner, GOLF_COURSES, golfStep} from './arcade-new-core.js?v=5';
@@ -32,6 +33,7 @@ function saveCompleted(){
  const {id,mode,gameIds,roundWinners}=recording;
  recorder.capture({id,mode,gameIds:[...gameIds],roundWinners:[...roundWinners]});
 }
+let stopFrog=null;
 let timers=[], generation=0, timed=false, used={};
 const names=['Adults','Kids'];
 const selectedPlayers=[[],[]];
@@ -185,7 +187,7 @@ $('arcade-sound').addEventListener('click',()=>{soundOn=!soundOn;$('arcade-sound
 $('arcade-effects').setAttribute('aria-pressed',String(effectsOn));
 $('arcade-effects').textContent=`Lights: ${effectsOn?'on':'off'}`;
 $('arcade-effects').addEventListener('click',()=>{effectsOn=!effectsOn;$('arcade-effects').textContent=`Lights: ${effectsOn?'on':'off'}`;$('arcade-effects').setAttribute('aria-pressed',String(effectsOn));$('arcade-feedback').setAttribute('data-kind','');});
-function clearTimers(){ stopMazeMusic(); stopTriviaVoice(); generation++; timers.forEach(clearTimeout); timers=[]; timed=false; }
+function clearTimers(){ stopFrog?.();stopFrog=null; stopMazeMusic(); stopTriviaVoice(); generation++; timers.forEach(clearTimeout); timers=[]; timed=false; }
 function later(fn,delay){ const token=generation; const timer=setTimeout(()=>{if(token===generation)fn();},delay); timers.push(timer); }
 function screen(html){ clearTimers(); $('arcade-feedback').setAttribute('data-kind','');$('feedback-caption').textContent='';stage.innerHTML=html; scheduleGameFit(); }
 function button(label,action,parent=stage,className='primary'){
@@ -222,12 +224,12 @@ updateArenaHeight();
 function focusFirst(){ stage.querySelector('button,input')?.focus({preventScroll:true}); }
 function status(text){$('arcade-message').textContent=text;}
 function scoreboard(){
-  $('match-format').textContent=series?'3-GAME SERIES':game?.id==='treasure'?'5 GUESSES EACH · ONE ROUND':game?.id==='blocks'?'60 SECONDS EACH · ONE ROUND':game?.id==='basketball'?'30 SECONDS EACH':'BEST OF FIVE';
+  $('match-format').textContent=series?'3-GAME SERIES':game?.id==='frog'?'BEST OF THREE · 3 TRIES EACH':game?.id==='treasure'?'5 GUESSES EACH · ONE ROUND':game?.id==='blocks'?'60 SECONDS EACH · ONE ROUND':game?.id==='basketball'?'30 SECONDS EACH':'BEST OF FIVE';
   $('arcade-reset').textContent=series?'Restart series ↻':'Restart match ↻';
   $('series-lineup').hidden=!series;
   if(series) $('series-lineup').innerHTML=series.games.map((g,i)=>`<div class="series-pick ${i===series.index?'active':''}"><small>GAME ${i+1}${series.winners[i]!==undefined?` · ${teamLabel(series.winners[i])} win`:''}</small><b>${g.icon} ${g.name}</b></div>`).join('');
-  $('arcade-score').innerHTML=names.map((name,i)=>`<div id="arcade-team-${i}" class="team-score ${turn===i&&champion<0?'current':''}" aria-current="${turn===i&&champion<0}" aria-label="${escapePlayer(name)}${turn===i&&champion<0?', current turn':''}"><span>${i===0?'★':'✦'} ${kidsOnly?'':'TEAM '}${escapePlayer(name.toUpperCase())}</span>${!kidsOnly&&selectedPlayers[i].length?`<small class="arcade-player-names">${selectedPlayers[i].map(escapePlayer).join(' · ')}</small>`:''}<strong>${game?.id==='treasure'&&!series?(game.treasurePoints?.[i]??0):game?.id==='blocks'&&!series?(game.blockPoints?.[i]??0):game?.id==='basketball'&&!series?(game.basketballPoints?.[i]??0):game?.id==='code'&&champion<0?(game.safePoints?.[i]??0):wins[i]}</strong><div class="win-dots" ${game?.id==='treasure'&&!series?'hidden':''} aria-label="${wins[i]} ${series?'game':'round'} wins">${[0,1,2].map(n=>`<i class="${n<wins[i]?'won':''}"></i>`).join('')}</div></div>`).join('');
-  $('round-label').textContent=game?.id==='treasure'&&!series?(results[0]&&results[1]?'SHOWDOWN COMPLETE':'1 TREASURE = 1 POINT · MOST POINTS WINS'):game?.id==='blocks'&&!series?(results[0]&&results[1]?'MATCH COMPLETE':'1 PIECE = 1 POINT · MOST POINTS WINS'):game?.id==='basketball'&&!series?(champion>=0?'MATCH COMPLETE':'2 POINTS PER BASKET · MOST POINTS WINS'):series?`${champion>=0?'SERIES COMPLETE':`GAME ${series.index+1} OF 3${attempt?' · TIE REPLAY':''}`} · SERIES SCORE` : champion>=0?'MATCH COMPLETE':`ROUND ${round} OF 5${attempt?' · TIE REPLAY':''} · FIRST TO 3 WINS`;
+  $('arcade-score').innerHTML=names.map((name,i)=>`<div id="arcade-team-${i}" class="team-score ${turn===i&&champion<0?'current':''}" aria-current="${turn===i&&champion<0}" aria-label="${escapePlayer(name)}${turn===i&&champion<0?', current turn':''}"><span>${i===0?'★':'✦'} ${kidsOnly?'':'TEAM '}${escapePlayer(name.toUpperCase())}</span>${!kidsOnly&&selectedPlayers[i].length?`<small class="arcade-player-names">${selectedPlayers[i].map(escapePlayer).join(' · ')}</small>`:''}<strong>${game?.id==='treasure'&&!series?(game.treasurePoints?.[i]??0):game?.id==='blocks'&&!series?(game.blockPoints?.[i]??0):game?.id==='basketball'&&!series?(game.basketballPoints?.[i]??0):game?.id==='code'&&champion<0?(game.safePoints?.[i]??0):wins[i]}</strong><div class="win-dots" ${game?.id==='treasure'&&!series?'hidden':''} aria-label="${wins[i]} ${series?'game':'round'} wins">${Array.from({length:game?.id==='frog'&&!series?2:3},(_,n)=>n).map(n=>`<i class="${n<wins[i]?'won':''}"></i>`).join('')}</div></div>`).join('');
+  $('round-label').textContent=game?.id==='treasure'&&!series?(results[0]&&results[1]?'SHOWDOWN COMPLETE':'1 TREASURE = 1 POINT · MOST POINTS WINS'):game?.id==='blocks'&&!series?(results[0]&&results[1]?'MATCH COMPLETE':'1 PIECE = 1 POINT · MOST POINTS WINS'):game?.id==='basketball'&&!series?(champion>=0?'MATCH COMPLETE':'2 POINTS PER BASKET · MOST POINTS WINS'):series?`${champion>=0?'SERIES COMPLETE':`GAME ${series.index+1} OF 3${attempt?' · TIE REPLAY':''}`} · SERIES SCORE` : champion>=0?'MATCH COMPLETE':`ROUND ${round} OF ${game?.id==='frog'?3:5}${attempt?' · TIE REPLAY':''} · FIRST TO ${game?.id==='frog'?2:3} WINS`;
 }
 function pick(key,source,n){
   if(!used[key] || used[key].length<n) used[key]=shuffle(source);
@@ -301,14 +303,14 @@ function beginRound(){
   if(game.id==='golf')game.course=shuffle(GOLF_COURSES).slice(0,3);
   if(game.id==='challenge') game.challenge=pick('challenge',CHALLENGES,1)[0];
   if(game.id==='trivia') game.questions=pick('trivia',TRIVIA,10);
-  if(game.id==='word') game.words=pick('word',WORDS,6);
+  if(game.id==='frog')game.frogCourses=frogCourses();
   if(game.id==='picture') game.pictures=pick('picture',PICTURES,6);
   teamReady(starter);
 }
 function teamReady(team,previous=''){
   let detail=`Your turn starts after the countdown. ${game.description}`;
   if(game.id==='challenge') detail=`Pick ONE player per team. Same challenge, same 20 seconds. ${game.challenge[0]}: ${game.challenge[1]} The other team counts. You can play seated.`;
-  handoff(team,(previous?previous+' ':'')+detail,()=>({blocks,basketball,spot, trivia:quiz,word:quiz,treasure:treasureShuffle,picture:quiz,number:quiz,challenge,maze:mazeDash,code:codeBreaker,golf:miniGolf}[game.id])());
+  handoff(team,(previous?previous+' ':'')+detail,()=>({blocks,basketball,spot, trivia:quiz,frog:frogHop,treasure:treasureShuffle,picture:quiz,number:quiz,challenge,maze:mazeDash,code:codeBreaker,golf:miniGolf}[game.id])());
 }
 function finishRound(winner,detail){
   if(game.id==='treasure'&&!series)return finishTreasureMatch(winner,detail);
@@ -316,7 +318,7 @@ function finishRound(winner,detail){
   if(game.id==='basketball'&&!series)return finishBasketballMatch(winner,detail);
   if(recording&&winner!==null&&!recording.complete)recording.roundWinners.push(winner);
   if(series)return finishSeriesGame(winner,detail);
-  const awarded=awardRound(wins,winner); wins=awarded.wins; champion=awarded.champion; scoreboard();
+  const awarded=game.id==='frog'?(()=>{const next=[...wins];if(winner!==null)next[winner]++;return {wins:next,champion:next.findIndex(v=>v>=2)};})():awardRound(wins,winner); wins=awarded.wins; champion=awarded.champion; scoreboard();
   if(champion>=0)saveCompleted();
   screen(`<div class="result"><span class="giant-icon">${winner===null?'🤝':champion>=0?'🏆':'🎉'}</span><p class="eyebrow">${champion>=0?'BRAGGING RIGHTS EARNED':winner===null?'EVEN STEVEN':'ROUND COMPLETE'}</p><h3>${winner===null?'It’s a tie!':`${teamLabel(winner)} ${champion>=0?'win the match!':'win this round!'}`}</h3><p>${escapePlayer(detail)}</p><div class="final-score">${wins[0]} <span>–</span> ${wins[1]}</div><p>${champion>=0?'High fives all around. The best win is playing together.':winner===null?'No round awarded. Let’s replay with a fresh challenge.':'Pass it back. The next round is waiting.'}</p></div>`);
   let moved=false;
@@ -341,8 +343,8 @@ function finishTurn(result){
     const previous=`${teamName(turn)}: ${result.label}.`;
     teamReady(1-turn,previous);
   }else{
-    const lower=['golf'].includes(game.id); const timeBreak=['spot','word','picture','number','maze'].includes(game.id);
-    const winner=roundWinner(results[0],results[1],lower,timeBreak);
+    const lower=['golf'].includes(game.id); const timeBreak=['spot','picture','number','maze'].includes(game.id);
+    const winner=game.id==='frog'?frogRoundWinner(results[0],results[1]):roundWinner(results[0],results[1],lower,timeBreak);
     const detail=names.map((n,i)=>`${n}: ${results[i].label}`).join(' · ');
     finishRound(winner,detail);
   }
@@ -447,7 +449,7 @@ function triviaAnswerIcon(value){
 }
 function quiz(){
   const count=game.id==='trivia'||game.id==='number'?5:3;
-  const seconds=game.id==='word'||game.id==='trivia'?45:30;
+  const seconds=game.id==='trivia'?45:30;
   let index=0,points=0,settled=false,locked=false;
   const started=performance.now();
   screen('<div class="turn-strip"><span id="question-progress"></span><strong id="game-clock"></strong></div><div id="quiz-body"></div>');
@@ -463,13 +465,6 @@ function quiz(){
       const a=2+Math.floor(Math.random()*18),b=1+Math.floor(Math.random()*10),add=Math.random()<0.5;
       answer=String(add?a+b:Math.max(a,b)-Math.min(a,b)); prompt=add?`${a} + ${b} = ?`:`${Math.max(a,b)} − ${Math.min(a,b)} = ?`;
       const value=Number(answer);choices=shuffle([answer,String(value+1),String(value+3),String(value===0?2:value-1)]);
-    }
-    if(game.id==='word'){
-      const [word,clue]=game.words[offset+index];answer=word;
-      let letters=shuffle([...word]).join('');if(letters===word)letters=word.slice(1)+word[0];
-      body.innerHTML=`<p class="clue">${clue}</p><h3 class="scramble">${letters}</h3><form id="word-form"><label for="word-answer">Your answer</label><input id="word-answer" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="20" required><button class="primary" type="submit">Check word →</button></form>`;
-      $('word-form').addEventListener('submit',e=>{e.preventDefault();choose($('word-answer').value.trim().toUpperCase()===answer,answer);});
-      button('Skip this word',()=>choose(false,answer),body,'text-button');$('word-answer').focus({preventScroll:true});return;
     }
     if(game.id==='picture'){
       const [symbol,label]=game.pictures[offset+index];answer=label;prompt='What’s behind the tiles?';
@@ -530,6 +525,11 @@ function spot(){
     },target,'spot-tile');b.setAttribute('aria-label',`Changed grid tile ${i+1}: ${value}`);});
   }
   puzzle();status('Find three differences. Wrong taps add one second to your result.');
+}
+function frogHop(){
+ screen('<div class="frog-cabinet"><p id="frog-progress" class="frog-progress"></p><canvas id="frog-pond" role="img" aria-label="Frog crossing a pond with moving lily pads. Hold the jump button to charge; release to jump."></canvas><div class="frog-charge"><meter id="frog-power" min="0" max="100" value="0" aria-label="Jump power" aria-valuenow="0"></meter><button id="frog-jump" type="button">HOLD TO CHARGE · RELEASE TO HOP</button></div><div class="frog-audio"><button id="frog-music" type="button" aria-pressed="true">♫ Pond music: on</button><label for="frog-volume">Music volume</label><input id="frog-volume" type="range" min="0" max="100" value="30"></div><small>1 crossing = 1 point · 3 tries each · Distance breaks ties, then bonus flies.<br>Hold Space or Enter to charge on a keyboard. Turn your volume up for music and ribbits!</small></div>');
+ timed=true;unlockAudio();
+ stopFrog=mountFrog({canvas:$('frog-pond'),chargeButton:$('frog-jump'),musicButton:$('frog-music'),volumeInput:$('frog-volume'),progress:$('frog-progress'),meter:$('frog-power'),later,team:teamName(turn),courses:game.frogCourses,onStatus:status,onScore:points=>{game.frogPoints??=[0,0];game.frogPoints[turn]=points;},getAudioContext:()=>audioContext,isSoundOn:()=>soundOn,onEnd:result=>{timed=false;finishTurn(result);}});
 }
 function finishTreasureMatch(winner,detail){
  if(winner!==null){wins[winner]=1;champion=winner;if(recording)recording.roundWinners.push(winner);saveCompleted();}
