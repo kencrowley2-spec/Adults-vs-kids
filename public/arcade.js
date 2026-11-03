@@ -1,6 +1,6 @@
 import {mountClaw,clawPrizes,clawFireworks} from './arcade-claw.js?v=1';
 import {mountMole,molePlan} from './arcade-mole.js?v=1';
-import {mountFrog,frogCourses,frogRoundWinner} from './arcade-frog.js?v=2';
+import {mountFrog,frogCourses,frogRoundWinner} from './arcade-frog.js?v=3';
 import {mountTreasure,treasurePlan} from './arcade-treasure.js?v=1';
 import {mountBlocks} from './arcade-blocks.js?v=1';
 import {mountBasketball} from './arcade-basketball.js?v=1';
@@ -52,6 +52,70 @@ function teamName(team){return names[team];}
 if(kidsOnly)$('arcade-save-status').textContent='Kids vs. Kids · scores count for this match.';
 function teamLabel(team,uppercase=false){return escapePlayer(uppercase?teamName(team).toUpperCase():teamName(team));}
 const escapePlayer=value=>value.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+// One shared rivalry layer; scoring and result recording stay with each game.
+const defendingCrowns=new Map();
+let liveProgress=[null,null],competitionCue='',competitionPhase='play';
+function contender(team){return selectedPlayers[team].join(' & ')||teamName(team);}
+function contenderLabel(team){return escapePlayer(contender(team));}
+function matchupMarkup(){
+ return `<div class="competition-matchup">${[0,1].map(i=>`${i?'<b class="competition-vs">VS</b>':''}<div><span class="competitor-avatar" aria-hidden="true">${i?'⚡':'🔥'}</span><strong>${contenderLabel(i)}</strong>${defendingCrowns.get(series?'series':game.id)===i?'<small>👑 DEFENDING CHAMPION</small>':''}</div>`).join('')}</div>`;
+}
+function competitiveScore(team){
+ if(Number.isFinite(liveProgress[team]?.score))return liveProgress[team].score;
+ const pointsKey={claw:'clawPoints',mole:'molePoints',treasure:'treasurePoints',blocks:'blockPoints',basketball:'basketballPoints',code:'safePoints'}[game.id];
+ return pointsKey?game[pointsKey]?.[team]??0:liveProgress[team]?.score??0;
+}
+function competitionUpdate(progress){
+ if(progress)liveProgress[turn]={...liveProgress[turn],...progress};
+ const el=$('competition-call');if(!el||!game)return;
+ const opponent=1-turn,target=results[opponent],score=competitiveScore(turn),name=contender(turn),rival=contender(opponent);
+ let call,detail,cue='';
+ if(champion>=0){call=`👑 ${contender(champion)} TAKES THE CROWN!`;detail=`${contender(1-champion)} gets the next shot. Rematch?`;}
+ else if(competitionPhase==='result'){call='ROUND SETTLED!';detail=`Match score: ${contender(0)} ${wins[0]} · ${contender(1)} ${wins[1]}`;}
+ else if(game.id==='golf'&&target){call=`BEAT ${rival}'S ${target.score} STROKES!`;detail=`${score} strokes so far · Lower score wins · All 3 holes count.`;}
+ else if(game.id==='maze'&&target){call=target.score?`ESCAPE FASTER THAN ${rival}: ${target.elapsed.toFixed(1)}s!`:`ESCAPE TO BEAT ${rival}!`;detail=target.score?'Reach the flag before their time. Equal times share the round.':'They did not escape. Reach the flag to take the round!';}
+ else if(game.id==='frog'&&target){
+  const distance=liveProgress[turn]?.distance??0;
+  call=score>target.score?'AHEAD ON CROSSINGS!':score===target.score&&distance>target.distance?'AHEAD ON DISTANCE!':`${rival}'S TARGET: ${target.score} CROSSINGS`;
+  detail=`You: ${score} crossings · ${Math.round(distance)}% best. Target: ${Math.round(target.distance)}% · ${target.flies} flies. Crossings, then distance, then flies decide.`;
+  cue=score>target.score?'lead':score===target.score&&distance>target.distance?'distance':'';
+ }
+ else if(target){
+  const gap=target.score-score,step=game.id==='basketball'?2:1,timeBreak=['spot','picture','number','maze'].includes(game.id),maxScore={trivia:5,picture:3,number:5,spot:3,treasure:5,claw:9}[game.id];
+  call=gap<0?`${name} TAKES THE LEAD!`:gap===0?(timeBreak?'SCORE TIED — TIME DECIDES!':score===maxScore?'TIED AT THE MAXIMUM!':'TIED! ONE MORE TO LEAD!'):gap<=step?'ONE SCORE AWAY FROM A TIE!':`${gap} MORE TO TIE ${rival}!`;
+  detail=`BEAT ${rival}'S ${target.score} · You have ${score}${timeBreak?` · Their time: ${target.elapsed.toFixed(1)}s`:''}`;
+  if(competitionPhase==='handoff')call=target.score===maxScore&&!timeBreak?`MATCH ${rival}'S ${target.score} TO FORCE A REPLAY!`:`BEAT ${rival}'S ${target.score}!`;
+  cue=gap<0?'lead':gap===0?'tie':gap<=step?'close':'';
+ }
+ else if(['memory','code'].includes(game.id)){
+  const other=competitiveScore(opponent),gap=score-other;
+  call=gap>0?`${name} LEADS ${score}–${other}!`:gap===0?`TIED ${score}–${other}!`:`CATCH ${rival}: ${other}–${score}!`;
+  detail=game.id==='memory'?'One pair = one point. Most pairs wins the round.':'One safe = one point. First to 3 wins the round.';
+  cue=gap>0?'lead':gap===0?'tie':'';
+ }
+ else {
+  call=`${name}, YOU'RE UP!`;
+  detail=game.id==='tic'?'Connect three before your opponent.':game.id==='rps'?'Secret moves. One winner. Take the round!':`Set the score for ${rival} to beat!`;
+ }
+ const matchPoint=game.id==='frog'&&!series?1:2;
+ if(champion<0&&wins.some(n=>n===matchPoint))detail+=wins.every(n=>n===matchPoint)?' DECIDING ROUND — NEXT WIN TAKES THE CROWN!':` MATCH POINT: ${contender(wins[0]===matchPoint?0:1)}!`;
+ el.textContent=call;el.setAttribute('data-state',champion>=0?'champion':cue);
+ $('competition-detail').textContent=detail;
+ if(progress&&cue&&cue!==competitionCue&&competitionPhase==='play'){
+  react(cue==='lead'||cue==='distance'?'match':'turn',call);
+  // Keep quiz narration uninterrupted; visual callouts and chimes still react.
+  if(!['trivia','picture','number','code'].includes(game.id))readArcade(call,1);
+ }
+ if(progress)competitionCue=cue;
+}
+function competitionResult(){
+ if(champion<0)return '';
+ defendingCrowns.set(series?'series':game.id,champion);
+ const singleRound=['claw','mole','treasure','blocks','basketball'].includes(game.id)&&!series;
+ const scores=singleRound&&results[0]&&results[1]?results.map(r=>r.score):wins;
+ return `<div class="competition-victory ${effectsOn?'with-effects':''}"><p class="competition-crown">👑</p><strong>${contenderLabel(champion)} HAS THE CROWN!</strong>${matchupMarkup()}<small>${series?'SERIES GAME WINS':singleRound?'FINAL POINTS':'ROUND WINS'}</small><div class="competition-result-scores">${[0,1].map(i=>`<span>${contenderLabel(i)}<b>${scores[i]}</b></span>`).join('')}</div><p>${contenderLabel(1-champion)}, the scoreboard checked twice! Your comeback starts with a rematch!</p><small>Winner gets bragging rights. Everyone gets a high five.</small></div>`;
+}
 
 let soundOn=true, effectsOn=!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches, audioContext, feedbackSequence=0;
 // Speech uses the device's built-in voice; the slider controls narration,
@@ -118,11 +182,13 @@ function unlockAudio(){
 }
 document.addEventListener('pointerdown',unlockAudio);
 document.addEventListener('keydown',unlockAudio);
+const chimeNodes=new Set();
+function stopChimes(){for(const node of chimeNodes){try{node.stop();node.disconnect();}catch{}}chimeNodes.clear();}
 function chime(kind){
   if(!soundOn)return;unlockAudio();if(!audioContext||audioContext.state!=='running')return;
   try{
     const notes=kind==='buzzer'?[130,100]:kind==='win'?[523,659,784]:kind==='match'?[660,880]:kind==='tap'?[440]:[330,440];
-    notes.forEach((frequency,i)=>{const oscillator=audioContext.createOscillator(),gain=audioContext.createGain(),at=audioContext.currentTime+i*.075;oscillator.type='sine';oscillator.frequency.value=frequency;gain.gain.setValueAtTime(0,at);gain.gain.linearRampToValueAtTime(.045,at+.008);gain.gain.exponentialRampToValueAtTime(.001,at+.12);oscillator.connect(gain);gain.connect(audioContext.destination);oscillator.start(at);oscillator.stop(at+.14);});
+    notes.forEach((frequency,i)=>{const oscillator=audioContext.createOscillator(),gain=audioContext.createGain(),at=audioContext.currentTime+i*.075;oscillator.type='sine';oscillator.frequency.value=frequency;gain.gain.setValueAtTime(0,at);gain.gain.linearRampToValueAtTime(.045,at+.008);gain.gain.exponentialRampToValueAtTime(.001,at+.12);oscillator.connect(gain);gain.connect(audioContext.destination);chimeNodes.add(oscillator);oscillator.onended=()=>{chimeNodes.delete(oscillator);oscillator.disconnect();gain.disconnect();};oscillator.start(at);oscillator.stop(at+.14);});
   }catch{}
 }
 // Original, looping arcade groove: melody, bass, kick and hi-hat at 120 BPM.
@@ -185,15 +251,15 @@ function react(kind,label){
   $('arcade-feedback').setAttribute('data-kind',effectsOn?kind:'quiet');
   later(()=>{if(sequence!==feedbackSequence)return;$('arcade-feedback').setAttribute('data-kind','');$('feedback-caption').textContent='';},650);
 }
-$('arcade-sound').addEventListener('click',()=>{soundOn=!soundOn;$('arcade-sound').textContent=`Sound: ${soundOn?'on':'off'}`;$('arcade-sound').setAttribute('aria-pressed',String(soundOn));stopTriviaVoice();if(soundOn){chime('match');if($('maze-soundbar'))startMazeMusic();}else stopMazeMusic();});
+$('arcade-sound').addEventListener('click',()=>{soundOn=!soundOn;$('arcade-sound').textContent=`Sound: ${soundOn?'on':'off'}`;$('arcade-sound').setAttribute('aria-pressed',String(soundOn));stopTriviaVoice();if(soundOn){chime('match');if($('maze-soundbar'))startMazeMusic();}else {stopChimes();stopMazeMusic();}});
 $('arcade-effects').setAttribute('aria-pressed',String(effectsOn));
 $('arcade-effects').textContent=`Lights: ${effectsOn?'on':'off'}`;
 $('arcade-effects').addEventListener('click',()=>{effectsOn=!effectsOn;$('arcade-effects').textContent=`Lights: ${effectsOn?'on':'off'}`;$('arcade-effects').setAttribute('aria-pressed',String(effectsOn));$('arcade-feedback').setAttribute('data-kind','');});
-function clearTimers(){ stopClaw?.();stopClaw=null; stopMole?.();stopMole=null; stopFrog?.();stopFrog=null; stopMazeMusic(); stopTriviaVoice(); generation++; timers.forEach(clearTimeout); timers=[]; timed=false; }
+function clearTimers(){ stopChimes(); stopClaw?.();stopClaw=null; stopMole?.();stopMole=null; stopFrog?.();stopFrog=null; stopMazeMusic(); stopTriviaVoice(); generation++; timers.forEach(clearTimeout); timers=[]; timed=false; }
 function later(fn,delay){ const token=generation; const timer=setTimeout(()=>{if(token===generation)fn();},delay); timers.push(timer); }
-function screen(html){ clearTimers(); $('arcade-feedback').setAttribute('data-kind','');$('feedback-caption').textContent='';stage.innerHTML=html; scheduleGameFit(); }
+function screen(html){ clearTimers();competitionPhase=html.includes('class="handoff"')?'handoff':html.includes('class="result')?'result':'play'; $('arcade-feedback').setAttribute('data-kind','');$('feedback-caption').textContent='';stage.innerHTML=(champion>=0?competitionResult():'')+html;competitionUpdate();if(champion>=0)readArcade(`${contender(champion)} takes the crown! ${contender(1-champion)}, time for a comeback!`,1); scheduleGameFit(); }
 function button(label,action,parent=stage,className='primary'){
-  const b=document.createElement('button'); b.type='button'; b.className=className; b.textContent=label; b.addEventListener('click',action); parent.appendChild(b); return b;
+  const b=document.createElement('button'); b.type='button'; b.className=className; b.textContent=champion>=0&&/^(Rematch|New random)/.test(label)?'👑 Defend your crown · Rematch →':label; b.addEventListener('click',action); parent.appendChild(b); return b;
 }
 
 function fitGameViewport(){
@@ -230,7 +296,8 @@ function scoreboard(){
   $('arcade-reset').textContent=series?'Restart series ↻':'Restart match ↻';
   $('series-lineup').hidden=!series;
   if(series) $('series-lineup').innerHTML=series.games.map((g,i)=>`<div class="series-pick ${i===series.index?'active':''}"><small>GAME ${i+1}${series.winners[i]!==undefined?` · ${teamLabel(series.winners[i])} win`:''}</small><b>${g.icon} ${g.name}</b></div>`).join('');
-  $('arcade-score').innerHTML=names.map((name,i)=>`<div id="arcade-team-${i}" class="team-score ${turn===i&&champion<0?'current':''}" aria-current="${turn===i&&champion<0}" aria-label="${escapePlayer(name)}${turn===i&&champion<0?', current turn':''}"><span>${i===0?'★':'✦'} ${kidsOnly?'':'TEAM '}${escapePlayer(name.toUpperCase())}</span>${!kidsOnly&&selectedPlayers[i].length?`<small class="arcade-player-names">${selectedPlayers[i].map(escapePlayer).join(' · ')}</small>`:''}<strong>${game?.id==='claw'&&!series?(game.clawPoints?.[i]??0):game?.id==='mole'&&!series?(game.molePoints?.[i]??0):game?.id==='treasure'&&!series?(game.treasurePoints?.[i]??0):game?.id==='blocks'&&!series?(game.blockPoints?.[i]??0):game?.id==='basketball'&&!series?(game.basketballPoints?.[i]??0):game?.id==='code'&&champion<0?(game.safePoints?.[i]??0):wins[i]}</strong><div class="win-dots" ${['claw','mole','treasure'].includes(game?.id)&&!series?'hidden':''} aria-label="${wins[i]} ${series?'game':'round'} wins">${Array.from({length:game?.id==='frog'&&!series?2:3},(_,n)=>n).map(n=>`<i class="${n<wins[i]?'won':''}"></i>`).join('')}</div></div>`).join('');
+  $('arcade-score').innerHTML=names.map((name,i)=>`<div id="arcade-team-${i}" class="team-score ${turn===i&&champion<0?'current':''}" aria-current="${turn===i&&champion<0}" aria-label="${escapePlayer(name)}${turn===i&&champion<0?', current turn':''}"><span><span class="score-avatar" aria-hidden="true">${i===0?'🔥':'⚡'}</span> ${i===0?'★':'✦'} ${kidsOnly?'':'TEAM '}${escapePlayer(name.toUpperCase())}</span>${!kidsOnly&&selectedPlayers[i].length?`<small class="arcade-player-names">${selectedPlayers[i].map(escapePlayer).join(' · ')}</small>`:''}<strong>${game?.id==='claw'&&!series?(game.clawPoints?.[i]??0):game?.id==='mole'&&!series?(game.molePoints?.[i]??0):game?.id==='treasure'&&!series?(game.treasurePoints?.[i]??0):game?.id==='blocks'&&!series?(game.blockPoints?.[i]??0):game?.id==='basketball'&&!series?(game.basketballPoints?.[i]??0):game?.id==='code'&&champion<0?(game.safePoints?.[i]??0):wins[i]}</strong><div class="win-dots" ${['claw','mole','treasure'].includes(game?.id)&&!series?'hidden':''} aria-label="${wins[i]} ${series?'game':'round'} wins">${Array.from({length:game?.id==='frog'&&!series?2:3},(_,n)=>n).map(n=>`<i class="${n<wins[i]?'won':''}"></i>`).join('')}</div></div>`).join('');
+  const rivalry=document.createElement('div');rivalry.className='competition-hud';rivalry.innerHTML='<strong id="competition-call" role="status" aria-live="polite"></strong><small id="competition-detail"></small>';$('arcade-score').appendChild(rivalry);competitionUpdate();
   $('round-label').textContent=game?.id==='claw'&&!series?(results[0]&&results[1]?'SHOWDOWN COMPLETE':'SMALL = 1 POINT · LARGE = 3 POINTS'):game?.id==='mole'&&!series?(results[0]&&results[1]?'SHOWDOWN COMPLETE':'1 MOLE HIT = 1 POINT · MOST HITS WINS'):game?.id==='treasure'&&!series?(results[0]&&results[1]?'SHOWDOWN COMPLETE':'1 TREASURE = 1 POINT · MOST POINTS WINS'):game?.id==='blocks'&&!series?(results[0]&&results[1]?'MATCH COMPLETE':'1 PIECE = 1 POINT · MOST POINTS WINS'):game?.id==='basketball'&&!series?(champion>=0?'MATCH COMPLETE':'2 POINTS PER BASKET · MOST POINTS WINS'):series?`${champion>=0?'SERIES COMPLETE':`GAME ${series.index+1} OF 3${attempt?' · TIE REPLAY':''}`} · SERIES SCORE` : champion>=0?'MATCH COMPLETE':`ROUND ${round} OF ${game?.id==='frog'?3:5}${attempt?' · TIE REPLAY':''} · FIRST TO ${game?.id==='frog'?2:3} WINS`;
 }
 function pick(key,source,n){
@@ -281,20 +348,22 @@ function finishSeriesGame(winner,detail){
   status(complete?`${teamName(champion)} win the series ${wins[champion]}–${wins[1-champion]}.`:winner===null?'Tie! Replay this game.':`${teamName(winner)} earn one series point.`);focusFirst();
 }
 function handoff(team,detail,action){
-  turn=team;scoreboard();
-  screen(`<div class="handoff"><span class="giant-icon" aria-hidden="true">${team===0?'🙌':'✌️'}</span><p class="eyebrow">PASS THE DEVICE · STARTING AUTOMATICALLY</p><h3>${teamLabel(team)}, you’re up!</h3><p>${escapePlayer(detail)}</p><p id="handoff-countdown" class="handoff-countdown" style="font-size:42px;font-weight:900;color:#111">4</p><small>Get ready. No button needed.</small></div>`);
+  turn=team;competitionPhase='handoff';scoreboard();
+  screen(`<div class="handoff">${matchupMarkup()}<span class="giant-icon" aria-hidden="true">${team===0?'🙌':'✌️'}</span><p class="eyebrow">PASS THE DEVICE · STARTING AUTOMATICALLY</p><h3>${teamLabel(team)}, you’re up!</h3><p>${escapePlayer(detail)}</p><p id="handoff-countdown" class="handoff-countdown" style="font-size:42px;font-weight:900;color:#111">4</p><small>Get ready. No button needed.</small></div>`);
+  if(!['tic','trivia'].includes(game.id))readArcade(`${contender(team)}, you're up! ${results[1-team]?`Can you beat ${contender(1-team)}?`: `${contender(0)} versus ${contender(1)}. Who is taking the crown?`}`,1);
   if(game.id==='tic')ticStarterVoice();
   if(game.id==='trivia'){triviaAudioPanel(stage,'Turn your volume up for this one! Trivia Showdown reads each question and all answer choices out loud.',true);readArcade('Turn your volume up for this one!');}
   status(`${teamName(team)} start in four seconds. Pass the device.`);
   let remaining=4;
   function tick(){
     if(document.hidden){later(tick,250);return;}
-    remaining--;if(remaining===0){action();focusFirst();return;}
-    $('handoff-countdown').textContent=remaining;later(tick,1000);
+    remaining--;if(remaining===0){action();chime('match');focusFirst();return;}
+    chime('tap');$('handoff-countdown').textContent=remaining;later(tick,1000);
   }
   later(tick,1000);
 }
 function beginRound(){
+  liveProgress=[null,null];competitionCue='';competitionPhase='play';
   results=[]; if(game.id==='claw'){game.clawPoints=[0,0];game.clawLayout=clawPrizes(1+Math.floor(Math.random()*2147483645));} if(game.id==='mole'){game.molePoints=[0,0];game.molePlan=molePlan(1+Math.floor(Math.random()*2147483645));} if(game.id==='treasure'){game.treasurePoints=[0,0];game.treasurePlan=[treasurePlan(),treasurePlan()];} if(game.id==='blocks'){game.blockPoints=[0,0];game.blockSeed=1+Math.floor(Math.random()*2147483645);} if(game.id==='basketball')game.basketballPoints=[0,0]; if(game.id==='code')game.safePoints=[0,0]; turn=starter; scoreboard(); status('');
   if(game.id==='memory') return memory();
   if(game.id==='tic') return handoff(turn,`${teamName(turn)} makes the first move. ${teamName(0)} use X; ${teamName(1)} use O.`,tic);
@@ -310,6 +379,7 @@ function beginRound(){
   teamReady(starter);
 }
 function teamReady(team,previous=''){
+  competitionCue='';
   let detail=`Your turn starts after the countdown. ${game.description}`;
   if(game.id==='challenge') detail=`Pick ONE player per team. Same challenge, same 20 seconds. ${game.challenge[0]}: ${game.challenge[1]} The other team counts. You can play seated.`;
   handoff(team,(previous?previous+' ':'')+detail,()=>({claw:clawMachine,mole:whackAMole,blocks,basketball,spot, trivia:quiz,frog:frogHop,treasure:treasureShuffle,picture:quiz,number:quiz,challenge,maze:mazeDash,code:codeBreaker,golf:miniGolf}[game.id])());
@@ -374,14 +444,14 @@ function blocks(){
  screen('<div class="block-cabinet"><canvas id="block-board" tabindex="0" role="application" aria-label="Block puzzle. Drag pieces onto the grid. Or tap a piece then its top-left grid square. Keyboard: 1, 2, 3 select a piece; arrows move; Enter places it."></canvas><p class="block-help">Drag & drop · Green = fits · Full lines clear<br>Or tap a piece, then an empty square.</p></div>');
  timed=true;
  mountBlocks({canvas:$('block-board'),team:teamName(turn),later,sound:chime,onStatus:status,effects:effectsOn,seed:game.blockSeed,
-  onScore:points=>{game.blockPoints[turn]=points;scoreboard();},
+  onScore:points=>{game.blockPoints[turn]=points;scoreboard();competitionUpdate({score:points});},
   onEnd:result=>{timed=false;chime('buzzer');finishTurn(result);}});
 }
 function basketball(){
  screen(`<div class="basketball-cabinet"><canvas id="basketball-court" tabindex="0" role="application" aria-label="Basketball court. Flick upward from the ball to shoot. Keyboard: arrows adjust aim and power, Space or Enter shoots."></canvas><div class="basketball-accessible" role="status" aria-live="polite"><span id="basketball-points">${teamLabel(turn)}: 0 points</span></div></div>`);
  timed=true;
  mountBasketball({canvas:$('basketball-court'),team:teamName(turn),later,sound:chime,onStatus:status,
-  onScore:points=>{game.basketballPoints[turn]=points;scoreboard();$('basketball-points').textContent=`${teamName(turn)}: ${points} points`;},
+  onScore:points=>{game.basketballPoints[turn]=points;scoreboard();competitionUpdate({score:points});$('basketball-points').textContent=`${teamName(turn)}: ${points} points`;},
   onEnd:result=>{timed=false;chime('buzzer');finishTurn(result);}});
 }
 function startClock(seconds,onEnd){
@@ -399,6 +469,7 @@ function memory(){
       $('memory-team-'+team).setAttribute('aria-current',String(team===turn));
       $('memory-team-'+team+'-turn').textContent=team===turn?'YOUR TURN':'WAITING';
     });
+    liveProgress=points.map(score=>({score}));competitionUpdate();
     const holder=$('memory-cards');
     if(!holder.children.length)deck.forEach((symbol,i)=>button('?',()=>flip(i),holder,'memory-card'));
     deck.forEach((symbol,i)=>{
@@ -412,7 +483,7 @@ function memory(){
     revealed.push(i);chime('tap');
     if(revealed.length===2){
       locked=true; const match=deck[revealed[0]]===deck[revealed[1]];
-      if(match){revealed.forEach(id=>matched.add(id));points[turn]++;}
+      if(match){revealed.forEach(id=>matched.add(id));points[turn]++;competitionUpdate({score:points[turn]});}
       if(matched.size===deck.length){draw();react('win',`${teamName(turn)} +1 POINT!`); later(()=>finishRound(roundWinner({score:points[0]},{score:points[1]}),`Round points — ${teamName(0)} ${points[0]} · ${teamName(1)} ${points[1]}. One matching pair = one point. Most points wins the round.`),800);return;}
       status(match?`${teamName(turn)} earn 1 point and go again!`:'No match. Remember those cards — next team coming up…');
       draw();
@@ -502,7 +573,7 @@ function quiz(){
   }
   function choose(correct,answer){
     if(settled||locked||performance.now()>=deadline)return;locked=true;stopTriviaVoice();
-    if(correct)points++;stage.querySelectorAll('button,input').forEach(el=>el.disabled=true);
+    if(correct)points++;competitionUpdate({score:points});stage.querySelectorAll('button,input').forEach(el=>el.disabled=true);
     const feedback=document.createElement('p');feedback.className=`answer-feedback ${correct?'correct':''}`;feedback.textContent=correct?'Correct! ✦':`Good try! Answer: ${answer}`;$('quiz-body').appendChild(feedback);
     react(correct?'match':'turn',correct?'Correct!':'Keep going!');status(correct?'Correct!':'Keep going!');
     later(()=>{index++;if(index===count)finish();else nextQuestion();},650);
@@ -525,7 +596,7 @@ function spot(){
     original.forEach((icon,i)=>{const value=i===changed?icons[5]:icon; const b=button(value,()=>{
       if(settled||performance.now()>=deadline)return;
       if(i!==changed){mistakes++;b.disabled=true;b.classList.add('wrong');status('Try another tile. One second added to your time.');return;}
-      points++;index++;if(index===3)finish();else {puzzle();react('match','Found it!');}
+      points++;competitionUpdate({score:points});index++;if(index===3)finish();else {puzzle();react('match','Found it!');}
     },target,'spot-tile');b.setAttribute('aria-label',`Changed grid tile ${i+1}: ${value}`);});
   }
   puzzle();status('Find three differences. Wrong taps add one second to your result.');
@@ -533,7 +604,7 @@ function spot(){
 function frogHop(){
  screen('<div class="frog-cabinet"><p id="frog-progress" class="frog-progress"></p><canvas id="frog-pond" tabindex="0" role="application" aria-label="Frog crossing a pond with moving lily pads. Hold the jump button to charge; release to jump."></canvas><div class="frog-charge"><button id="frog-jump" type="button">HOLD TO CHARGE · RELEASE TO HOP</button></div><div class="frog-audio"><button id="frog-music" type="button" aria-pressed="true">🐸 Background ribbits: on</button><label for="frog-volume">Ribbit volume</label><input id="frog-volume" type="range" min="0" max="100" value="30"></div><small>1 crossing = 1 point · 3 tries each · Distance breaks ties, then bonus flies.<br>Hold Space or Enter to charge on a keyboard. Hold the frog or the jump button. Turn your volume up for ribbits!</small></div>');
  timed=true;unlockAudio();
- stopFrog=mountFrog({canvas:$('frog-pond'),chargeButton:$('frog-jump'),musicButton:$('frog-music'),volumeInput:$('frog-volume'),progress:$('frog-progress'),later,team:teamName(turn),courses:game.frogCourses,onStatus:status,onScore:points=>{game.frogPoints??=[0,0];game.frogPoints[turn]=points;},getAudioContext:()=>audioContext,isSoundOn:()=>soundOn,onEnd:result=>{timed=false;finishTurn(result);}});
+ stopFrog=mountFrog({canvas:$('frog-pond'),chargeButton:$('frog-jump'),musicButton:$('frog-music'),volumeInput:$('frog-volume'),progress:$('frog-progress'),later,team:teamName(turn),courses:game.frogCourses,onStatus:status,opponent:results[1-turn]?{name:contender(1-turn),...results[1-turn]}:null,onProgress:progress=>competitionUpdate(progress),onScore:points=>{game.frogPoints??=[0,0];game.frogPoints[turn]=points;competitionUpdate({score:points});},getAudioContext:()=>audioContext,isSoundOn:()=>soundOn,onEnd:result=>{timed=false;finishTurn(result);}});
 }
 function finishTreasureMatch(winner,detail){
  if(winner!==null){wins[winner]=1;champion=winner;if(recording)recording.roundWinners.push(winner);saveCompleted();}
@@ -546,7 +617,7 @@ function finishTreasureMatch(winner,detail){
 function treasureShuffle(){
  screen('<div id="treasure-stage"></div>');timed=true;
  mountTreasure({parent:$('treasure-stage'),plan:game.treasurePlan[turn],team:teamName(turn),later,sound:chime,onStatus:status,
-  onScore:points=>{game.treasurePoints[turn]=points;scoreboard();},
+  onScore:points=>{game.treasurePoints[turn]=points;scoreboard();competitionUpdate({score:points});},
   onEnd:result=>{timed=false;finishTurn(result);}});
 }
 function challenge(){
@@ -639,7 +710,7 @@ function codeBreaker(){
       teamReady(next,solved?`${teamName(scoringTeam)} earned 1 point!`:'The safe stayed locked. No point this turn.');
     }
     if(!solved){nextSafe();return;}
-    game.safePoints[scoringTeam]++;scoreboard();
+    game.safePoints[scoringTeam]++;scoreboard();competitionUpdate({score:game.safePoints[scoringTeam]});
     $('code-safe').setAttribute('data-open','true');
     $('safe-screen-label').textContent='ACCESS GRANTED';
     $('safe-feedback').textContent='SAFE UNLOCKED! +1 POINT';
@@ -707,7 +778,7 @@ function miniGolf(){
     angle.disabled=false;power.disabled=false;shoot.disabled=false;draw();status('Line up the dashed aim guide. Bank around the black wall. A gentle ball can drop into the cup.');
   }
   function endHole(sunk){
-    total+=sunk?shots:5;$('golf-controls').hidden=true;
+    total+=sunk?shots:5;competitionUpdate({score:total});$('golf-controls').hidden=true;
     const note=document.createElement('p');note.textContent=sunk?`In the cup! ${shots} ${shots===1?'stroke':'strokes'}.`:'Four shots used. This hole counts as five strokes.';$('golf-hole-result').appendChild(note);
     draw();later(()=>{
       if(finished)return;
@@ -794,7 +865,7 @@ function whackAMole(){
  screen('<div class="mole-cabinet"><canvas id="mole-board" tabindex="0" role="application" aria-label="Whack-a-Mole. Eight holes, two mole characters, one mallet. Tap the moles or use keys 1 through 8. Each hit earns one point."></canvas><p class="mole-help">One mallet · Tap to whack · Keyboard: 1–8</p></div>');
  timed=true;
  stopMole=mountMole({canvas:$('mole-board'),team:teamName(turn),plan:game.molePlan,later,sound:chime,onStatus:status,effects:effectsOn,
-  onScore:points=>{game.molePoints[turn]=points;scoreboard();},
+  onScore:points=>{game.molePoints[turn]=points;scoreboard();competitionUpdate({score:points});},
   onEnd:result=>{timed=false;chime('buzzer');finishTurn(result);}});
 }
 function finishMoleMatch(winner,detail){
@@ -810,7 +881,7 @@ function clawMachine(){
  screen('<div class="claw-cabinet"><canvas id="claw-board" tabindex="0" role="application" aria-label="Claw machine. Drag to aim, or use left and right arrows. Press Drop Claw or Space when the grip marker is green; large prizes need gold. Three attempts."></canvas><div class="claw-controls"><button id="claw-left" type="button" aria-label="Move claw left">◀ LEFT</button><button id="claw-grab" type="button">DROP CLAW</button><button id="claw-right" type="button" aria-label="Move claw right">RIGHT ▶</button></div><p class="mole-help">Drag to aim · Green grabs small · Gold grabs large</p></div>');
  timed=true;
  stopClaw=mountClaw({canvas:$('claw-board'),left:$('claw-left'),right:$('claw-right'),grab:$('claw-grab'),team:teamName(turn),prizes:game.clawLayout,later,sound:chime,onStatus:status,effects:effectsOn,
-  onScore:points=>{game.clawPoints[turn]=points;scoreboard();},onEnd:result=>{timed=false;chime('buzzer');finishTurn(result);}});
+  onScore:points=>{game.clawPoints[turn]=points;scoreboard();competitionUpdate({score:points});},onEnd:result=>{timed=false;chime('buzzer');finishTurn(result);}});
 }
 function finishClawMatch(winner,detail){
  if(winner!==null){wins[winner]=1;champion=winner;if(recording)recording.roundWinners.push(winner);saveCompleted();}

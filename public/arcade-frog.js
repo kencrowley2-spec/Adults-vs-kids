@@ -11,7 +11,7 @@ export function frogRoundWinner(a,b){
  for(const key of ['score','distance','flies'])if(a[key]!==b[key])return a[key]>b[key]?0:1;
  return null;
 }
-export function mountFrog({canvas,chargeButton,musicButton,volumeInput,progress,later,team,courses,onStatus,onScore,onEnd,getAudioContext,isSoundOn}){
+export function mountFrog({canvas,chargeButton,musicButton,volumeInput,progress,later,team,courses,onStatus,onScore,onEnd,opponent=null,onProgress=()=>{},getAudioContext,isSoundOn}){
  const ctx=canvas.getContext('2d');if(!ctx){onStatus('Pond graphics are unavailable. Please try another browser.');return ()=>{};}
  const ratio=Math.min(window.devicePixelRatio||1,2);canvas.width=480*ratio;canvas.height=280*ratio;ctx.scale(ratio,ratio);
  let attempt=0,points=0,farthest=0,flies=0,phase='ready',standing=-1,x=45,chargeAt=null,heldPointer=null,jump=null,started=performance.now(),stopped=false,music=true,volume=.3,nextRibbit=0,ribbit=0,splash=null;
@@ -25,7 +25,7 @@ export function mountFrog({canvas,chargeButton,musicButton,volumeInput,progress,
   splash=null;phase='ready';standing=-1;x=45;chargeAt=null;heldPointer=null;jump=null;started=performance.now();collected.clear();chargeButton.disabled=false;chargeButton.textContent='HOLD TO CHARGE · RELEASE TO HOP';
   onStatus(`${team}: try ${attempt+1} of 3. Hold to charge, release to hop. Reach the far bank for 1 point!`);hud();
  }
- function hud(){progress.textContent=`${team} · TRY ${attempt+1} / 3 · ${points} CROSSINGS · BEST ${Math.round(farthest)}% · ${flies} FLIES`;}
+ function hud(){onProgress({score:points,distance:farthest,flies});progress.textContent=`${team} · TRY ${attempt+1} / 3 · ${points} CROSSINGS · BEST ${Math.round(farthest)}% · ${flies} FLIES`;}
  function endAttempt(crossed,water=true){
   if(phase==='result'||stopped)return;phase='result';chargeAt=null;heldPointer=null;chargeButton.disabled=true;
   if(crossed){points++;farthest=100;onScore(points);tone(784,.25,.12);onStatus('POND CROSSED! +1 POINT!');chargeButton.textContent='POND CROSSED! +1 POINT';}
@@ -73,6 +73,11 @@ export function mountFrog({canvas,chargeButton,musicButton,volumeInput,progress,
   for(let i=0;i<10;i++){ctx.strokeStyle='#71d7d433';ctx.beginPath();ctx.ellipse((i*73-now/80)%560,90+(i%4)*42,28,4,0,0,Math.PI*2);ctx.stroke();}
   ctx.fillStyle='#6b973d';ctx.fillRect(view(-100),115,165,165);ctx.fillRect(view(course.finish-25),115,150,165);
   text('START',view(32),260,12);text('FINISH',view(course.finish+30),250,13,'#ffd522');
+  if(opponent){
+   const marker=view(45+(course.finish-45)*opponent.distance/100),labelX=Math.max(85,Math.min(395,marker));
+   ctx.save();ctx.strokeStyle='#ffd522';ctx.lineWidth=3;ctx.setLineDash([7,5]);ctx.beginPath();ctx.moveTo(marker,85);ctx.lineTo(marker,245);ctx.stroke();ctx.setLineDash([]);
+   text(`${opponent.name}: ${Math.round(opponent.distance)}% BEST`,labelX,96,11,'#ffd522');ctx.restore();
+  }
   course.pads.forEach((pad,i)=>{const px=view(frogPadX(pad,seconds));ctx.fillStyle='#1b4422';ctx.beginPath();ctx.ellipse(px,198,pad.r,13,0,0,Math.PI*2);ctx.fill();ctx.fillStyle='#83cb4b';ctx.beginPath();ctx.ellipse(px,191,pad.r,12,0,.2,Math.PI*1.95);ctx.lineTo(px,191);ctx.fill();if(pad.fly&&!collected.has(i))text('🪰',px,155+Math.sin(seconds*4)*4,20);});
   if(splash){
    const t=(now-splash.at)/1000,px=view(splash.x),fade=Math.max(0,1-t/1.4);

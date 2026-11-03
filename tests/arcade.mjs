@@ -53,7 +53,7 @@ function fixture(firstTeam=0,withSpeech=false,withAudio=false,players=null){
     constructor(){this.state='running';this.destination={};}
     get currentTime(){return now/1000;}
     createGain(){const gain={gain:{value:1,setValueAtTime(){},linearRampToValueAtTime(){},exponentialRampToValueAtTime(){}},connect(){},disconnect(){this.disconnected=true;}};audio.gains.push(gain);return gain;}
-    createOscillator(){const node={frequency:{value:0,setValueAtTime(){},exponentialRampToValueAtTime(){}},stops:[],connect(){},disconnect(){this.disconnected=true;},start(){this.started=true;},stop(at){this.stops.push(at);}};audio.nodes.push(node);return node;}
+    createOscillator(){const node={frequency:{value:0,setValueAtTime(){},exponentialRampToValueAtTime(){}},stops:[],connect(){},disconnect(){this.disconnected=true;},start(){this.started=true;},stop(at){this.stops.push(at);if(Number.isFinite(at))scheduled.set(++seq,{at:at*1000,fn:()=>this.onended?.()});else this.onended?.();}};audio.nodes.push(node);return node;}
   }
   const context=vm.createContext({clawPrizes,clawCatch,molePlan,treasurePlan,...core,...data,...newCore,...library,Math:testMath,document:doc,crypto,CustomEvent:class{constructor(type,options){this.type=type;this.detail=options.detail;}},window:{dispatchEvent:e=>telemetry.push(e),addEventListener(){},...voiceWindow,...(withAudio?{AudioContext:AudioContextMock}:{})},createResultRecorder:()=>({drain:async()=>{},capture:result=>{saved.push(result);}}),performance:{now:()=>now},console,setTimeout:(fn,delay)=>{scheduled.set(++seq,{at:now+delay,fn});return seq;},clearTimeout:id=>scheduled.delete(id)});
   vm.runInContext(readFileSync(new URL('../public/arcade-claw.js',import.meta.url),'utf8').replace(/export /g,''),context);
@@ -71,7 +71,7 @@ function fixture(firstTeam=0,withSpeech=false,withAudio=false,players=null){
   function advance(ms){const end=now+ms;let guard=0;while(true){const task=[...scheduled.entries()].filter(([,t])=>t.at<=end).sort((a,b)=>a[1].at-b[1].at)[0];if(!task)break;assert.ok(++guard<10000);scheduled.delete(task[0]);now=task[1].at;task[1].fn();}now=end;}
   function start(id,first=0,wait=true){selectedFirst=first;const i=data.GAMES.findIndex(g=>g.id===id);if(data.GAMES[i].comingSoon){data.GAMES[i].comingSoon=false;try{vm.runInContext('openGame('+JSON.stringify(id)+')',context);}finally{data.GAMES[i].comingSoon=true;}}else get('arcade-grid').children[i].click();if(wait&&id!=='memory')advance(4000);}
 
-  return {clock:()=>now,root,doc,get,buttons,click,advance,start,saved,telemetry,speech,audio,state:context.state,resolveGame:context.resolveGame,seriesWith:context.seriesWith};
+  return {run:source=>vm.runInContext(source,context),clock:()=>now,root,doc,get,buttons,click,advance,start,saved,telemetry,speech,audio,state:context.state,resolveGame:context.resolveGame,seriesWith:context.seriesWith};
 }
 // Registered roster names appear under their own teams inside a game.
 {
@@ -323,7 +323,7 @@ for(const first of [0,1])for(const tie of [false,true]){
   if(r<4){f.advance(2200);assert.equal(f.state().starter,1-first);f.advance(4000);}
  }
  assert.equal(f.state().champion,0);assert.deepEqual([...f.state().wins],[3,2]);assert.equal(f.saved.length,1);f.advance(60000);assert.equal(f.saved.length,1);
- assert.deepEqual([...f.saved[0].roundWinners],[0,1,0,1,0]);f.click('Rematch →');assert.deepEqual([...f.state().wins],[0,0]);noNavigation(f);
+ assert.deepEqual([...f.saved[0].roundWinners],[0,1,0,1,0]);f.click('👑 Defend your crown · Rematch →');assert.deepEqual([...f.state().wins],[0,0]);noNavigation(f);
 }
 
 // RPS keeps the first move hidden for four seconds and both hands visible for
@@ -426,8 +426,9 @@ for(const first of [0,1]){
  assert.equal(f.get('maze-soundbar').getAttribute('data-playing'),'true');
  assert.match(f.get('maze-music-status').textContent,/Now playing/);
  assert.ok(f.audio.nodes.length>=3);
+ const musicGain=f.audio.gains.find(g=>g.gain.value===.35);assert.ok(musicGain);
  f.get('maze-music-volume').value='65';f.get('maze-music-volume').dispatch('input');
- assert.equal(f.get('maze-music-volume-value').textContent,'65%');assert.equal(f.audio.gains[0].gain.value,.65);
+ assert.equal(f.get('maze-music-volume-value').textContent,'65%');assert.equal(musicGain.gain.value,.65);
  const before=f.audio.nodes.length;
  f.click(['↑ Up','→ Right','↓ Down','← Left'][route(f.state().plans.maze)[0]]);
  assert.equal(f.audio.nodes.length,before+1,'One movement press plays one effect');
@@ -615,10 +616,10 @@ console.log('PASS: Frog Hop real moving-pad landings, three crossings/tries, mis
 
 // Frog controls provide no aiming guide, ambient audio croaks, and misses splash.
 {
- const f=fixture(0,false,true);f.start('frog');f.advance(200);
+ const f=fixture(0,false,true);f.start('frog');f.advance(300); // Let the GO chime finish before checking ambient ribbits.
  assert.equal(f.get('frog-power'),null);
  assert.match(f.get('frog-music').textContent,/Background ribbits/);
- assert.ok(f.audio.nodes.length>=2);assert.ok(f.audio.nodes.every(n=>n.type==='sawtooth'));
+ assert.ok(f.audio.nodes.length>=2);assert.ok(f.audio.nodes.filter(n=>!n.disconnected).every(n=>n.type==='sawtooth'));
  const pond=f.get('frog-pond');pond.dispatch('pointerdown',{pointerId:2});f.advance(100);
  assert.equal(pond.drawCalls.some(c=>c.name==='setLineDash'),false);
  pond.dispatch('pointerup',{pointerId:2});f.advance(720);
@@ -716,3 +717,38 @@ for(const first of [0,1]){
  assert.match(f.get('game-stage').textContent,/interrupted/);assert.equal(f.saved.length,0);
 }
 console.log('PASS: Harper’s Claw Machine 1/3-point grabs, timing misses, three attempts, handoff, fireworks, ties and interruption.');
+
+// Rivalry HUD follows the actual opponent, including reverse starts, ties and overtakes.
+for(const first of [0,1]){
+ const f=fixture(0,true,false,[[],['Harper','Chloe']]);f.start('mole',first,false);
+ assert.match(f.get('game-stage').textContent,/HarperVS.*Chloe/);
+ f.run(`clearTimers();finishTurn({score:12,elapsed:30,label:'12 hits'});`);
+ assert.match(f.get('competition-call').textContent,new RegExp('BEAT '+(first===0?'Harper':'Chloe')+"'S 12"));
+ f.advance(4000);
+ f.run('competitionUpdate({score:9})');assert.match(f.get('competition-call').textContent,/3 MORE TO TIE/);
+ f.run('competitionUpdate({score:11})');assert.match(f.get('competition-call').textContent,/ONE SCORE AWAY/);
+ f.run('competitionUpdate({score:12})');assert.match(f.get('competition-call').textContent,/TIED/);
+ f.run('competitionUpdate({score:13})');assert.match(f.get('competition-call').textContent,/TAKES THE LEAD/);
+ const calls=f.speech.spoken.length;f.run('competitionUpdate({score:14})');assert.equal(f.speech.spoken.length,calls,'No repeated lead narration on every hit');
+ f.run('finishTurn({score:14,elapsed:30,label:"14 hits"})');
+ assert.match(f.get('game-stage').textContent,/HAS THE CROWN/);assert.equal(f.saved.length,0,'Kid-only results remain local');
+ f.click('👑 Defend your crown · Rematch →');assert.match(f.get('game-stage').textContent,/DEFENDING CHAMPION/);
+ assert.deepEqual([...f.state().wins],[0,0]);assert.doesNotMatch(f.get('competition-detail').textContent,/BEAT.*14/);
+}
+// Time and distance tie breakers never claim an outright win prematurely.
+{
+ const f=fixture();f.start('spot');f.run('finishTurn({score:3,elapsed:8.5,label:"3 found"})');f.advance(4000);
+ f.run('competitionUpdate({score:3})');assert.match(f.get('competition-call').textContent,/TIME DECIDES/);assert.match(f.get('competition-detail').textContent,/8.5s/);
+ const frog=fixture();frog.start('frog');frog.run('finishTurn({score:1,distance:77,flies:2,elapsed:0,label:"1 crossing"})');frog.advance(4000);
+ assert.match(frog.get('competition-detail').textContent,/77%/);
+ frog.run('competitionUpdate({score:1,distance:80,flies:0})');assert.match(frog.get('competition-call').textContent,/AHEAD ON DISTANCE/);
+ assert.ok(frog.get('frog-pond').drawCalls.some(c=>c.name==='fillText'&&String(c.args[0]).includes('77% BEST')),'Pond draws the opponent distance marker');
+ const golf=fixture();golf.start('golf');golf.run('finishTurn({score:9,elapsed:0,label:"9 strokes"})');golf.advance(4000);
+ assert.match(golf.get('competition-call').textContent,/9 STROKES/);assert.match(golf.get('competition-detail').textContent,/Lower score wins/);
+}
+// Every playable game gets a rivalry HUD; safe escaped roster names cannot inject markup.
+for(const g of data.GAMES.filter(g=>!g.comingSoon)){
+ const f=fixture(0,false,false,[[],['<img src=x>','Chloe']]);f.start(g.id,0,false);
+ assert.ok(f.get('competition-call'),g.id);assert.equal(f.get('game-stage').querySelector('img'),null);
+}
+console.log('PASS: competition targets, reverse starts, score ties, lead transitions, time/distance rules, frog marker, crown rematches, safe roster names and every game HUD.');
