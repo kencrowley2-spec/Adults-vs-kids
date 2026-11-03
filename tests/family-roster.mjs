@@ -1,0 +1,25 @@
+import assert from 'node:assert/strict';
+import vm from 'node:vm';
+import {readFileSync} from 'node:fs';
+import ts from 'typescript';
+import {cleanRoster} from '../lib/family-roster.ts';
+const owner='11111111-1111-4111-8111-111111111111';
+const valid={adults:[' Mom ','Dad'],kids:['A','B','C','D','E'],playingAdults:[0],playingKids:[1,4]};
+assert.equal(cleanRoster(valid).adults[0],'Mom');
+for(const patch of [{kids:['A','B','C','D','E','F']},{playingKids:[5]},{playingKids:[1,1]},{kids:['']},{adults:[42]},{playingAdults:[-1]}])assert.throws(()=>cleanRoster({...valid,...patch}));
+assert.deepEqual(cleanRoster({adults:[],kids:[]}),{adults:[],kids:[],playingAdults:[],playingKids:[]});
+let user={id:owner},failed=false,writes=0,filter=null,lastWrite=null;
+let row={adults:['Mom','Dad'],kids:['Kid One','<script>alert(1)</script>'],playing_adults:[0],playing_kids:[1]};
+const client={from:table=>{assert.equal(table,'family_rosters');return {select(){return this},eq(key,value){filter=[key,value];return this},maybeSingle:async()=>({data:row,error:failed?{message:'unavailable'}:null}),upsert:async value=>{writes++;lastWrite=value;return {data:null,error:failed?{message:'unavailable'}:null}}}}};
+const session={verifiedMember:async()=>({user,client:user?client:null,headers:new Headers({'Cache-Control':'private, no-store'})}),memberReply:(body,status,headers)=>new Response(typeof body==='string'?body:JSON.stringify(body),{status,headers}),memberRedirect:(path,headers)=>{headers.set('Location',path);return new Response(null,{status:303,headers})}};
+function compile(path){const exports={};const code=ts.transpileModule(readFileSync(new URL(path,import.meta.url),'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;vm.runInNewContext(code,{exports,require:name=>name.endsWith('/auth/session')?session:name.endsWith('/request-origin')?{requestOrigin:()=> 'https://adultsvskids.com'}:name.endsWith('/family-roster')?{cleanRoster}:name.endsWith('/data')?{checked:r=>{if(r.error)throw Error(r.error.message);return r.data}}:assert.fail(name),Headers,Response,Request,URL,Date,console});return exports;}
+const api=compile('../app/auth/family-roster/route.ts'),arcade=compile('../app/family/arcade/route.ts');
+const post=(body,headers={})=>api.POST(new Request('https://adultsvskids.com/auth/family-roster',{method:'POST',headers:{Origin:'https://adultsvskids.com','Content-Type':'application/json',...headers},body:JSON.stringify(body)}));
+user=null;assert.equal((await post(valid)).status,401);assert.equal((await api.GET(new Request('https://adultsvskids.com/auth/family-roster'))).status,401);user={id:owner};
+assert.equal((await post(valid,{Origin:'https://bad.test'})).status,403);assert.equal((await post(valid,{'Content-Type':'text/plain'})).status,415);
+assert.equal((await post({...valid,kids:Array(6).fill('Kid')})).status,400);assert.equal(writes,0);
+assert.equal((await post({...valid,user_id:'someone-else'})).status,200);assert.equal(lastWrite.user_id,owner);assert.equal(lastWrite.kids.length,5);assert.deepEqual([...lastWrite.playing_kids],[1,4]);
+let response=await api.GET(new Request('https://adultsvskids.com/auth/family-roster'));assert.equal(response.status,200);assert.deepEqual(filter,['user_id',owner]);assert.deepEqual((await response.json()).roster.playingKids,[1]);
+response=await arcade.GET(new Request('https://adultsvskids.com/family/arcade'));const html=await response.text();assert.equal(response.status,200);assert.ok(html.includes('data-adults="[&quot;Mom&quot;]"'));assert.ok(!html.includes('Mom · Dad'));assert.ok(html.includes('&lt;script&gt;alert(1)&lt;/script&gt;'));assert.ok(!html.includes('<script>alert(1)</script>'));
+failed=true;assert.equal((await post(valid)).status,503);assert.equal((await api.GET(new Request('https://adultsvskids.com/auth/family-roster'))).status,503);assert.equal((await arcade.GET(new Request('https://adultsvskids.com/family/arcade'))).status,200);
+console.log('PASS: five-kid limit, valid selections, authenticated ownership, origin checks, name escaping, selected Arcade lineup, and database-failure handling.');

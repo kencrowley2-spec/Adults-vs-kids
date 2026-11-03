@@ -37,10 +37,11 @@ class Element {
   }
   querySelector(s){return this.querySelectorAll(s)[0]??null;}
 }
-function fixture(firstTeam=0,withSpeech=false,withAudio=false){
+function fixture(firstTeam=0,withSpeech=false,withAudio=false,players=null){
   let selectedFirst=firstTeam;const testMath=Object.create(Math);testMath.random=()=>selectedFirst===0?.25:.75;
   let now=0,seq=0,scheduled=new Map();const saved=[],telemetry=[];const root=new Element();
   root.innerHTML=readFileSync(new URL('../app/family/arcade/route.ts',import.meta.url),'utf8').split('const html=`')[1].split('`;')[0];
+  if(players){const lineup=new Element();lineup.id='arcade-roster-lineup';lineup.setAttribute('data-adults',JSON.stringify(players[0]));lineup.setAttribute('data-kids',JSON.stringify(players[1]));root.appendChild(lineup);}
   const doc={hidden:false,getElementById:id=>root.querySelector('#'+id),createElement:tag=>new Element(tag),handlers:{},addEventListener(type,fn){this.handlers[type]=fn;}};
   const speech={spoken:[],cancels:0,getVoices:()=>[{lang:'en-US',localService:true}],cancel(){this.cancels++;},speak(utterance){this.spoken.push(utterance);utterance.onstart?.();}};
   const voiceWindow=withSpeech?{speechSynthesis:speech,SpeechSynthesisUtterance:class {constructor(text){this.text=text;}}}:{};
@@ -63,6 +64,12 @@ function fixture(firstTeam=0,withSpeech=false,withAudio=false){
   function start(id,first=0,wait=true){selectedFirst=first;const i=data.GAMES.findIndex(g=>g.id===id);get('arcade-grid').children[i].click();if(wait&&id!=='memory')advance(4000);}
 
   return {root,doc,get,buttons,click,advance,start,saved,telemetry,speech,audio,state:context.state,resolveGame:context.resolveGame,seriesWith:context.seriesWith};
+}
+// Registered roster names appear under their own teams inside a game.
+{
+ const f=fixture(0,false,false,[['Mom'],['Emma','Noah']]);f.start('trivia');
+ assert.match(f.get('arcade-team-0').textContent,/Mom/);
+ assert.match(f.get('arcade-team-1').textContent,/Emma · Noah/);
 }
 // Core scoring remains first to three, with no points for a tie.
 assert.equal(data.GAMES.length,14);

@@ -30,6 +30,11 @@ function saveCompleted(){
 }
 let timers=[], generation=0, timed=false, used={};
 const names=['Adults','Kids'];
+const selectedPlayers=[[],[]];
+const lineup=$('arcade-roster-lineup');
+if(lineup){for(const [team,key] of [[0,'data-adults'],[1,'data-kids']]){try{const list=JSON.parse(lineup.getAttribute(key)||'[]');if(Array.isArray(list)&&list.length<=10&&list.every(name=>typeof name==='string'&&name.length<=30))selectedPlayers[team]=list;}catch{}}}
+const escapePlayer=value=>value.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
 let soundOn=true, effectsOn=!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches, audioContext, feedbackSequence=0;
 // Speech uses the device's built-in voice; the slider controls narration,
 // while the device volume buttons still control speaker loudness.
@@ -207,7 +212,7 @@ function scoreboard(){
   $('arcade-reset').textContent=series?'Restart series ↻':'Restart match ↻';
   $('series-lineup').hidden=!series;
   if(series) $('series-lineup').innerHTML=series.games.map((g,i)=>`<div class="series-pick ${i===series.index?'active':''}"><small>GAME ${i+1}${series.winners[i]!==undefined?` · ${teamName(series.winners[i])} win`:''}</small><b>${g.icon} ${g.name}</b></div>`).join('');
-  $('arcade-score').innerHTML=names.map((name,i)=>`<div id="arcade-team-${i}" class="team-score ${turn===i&&champion<0?'current':''}" aria-current="${turn===i&&champion<0}" aria-label="${name}${turn===i&&champion<0?', current turn':''}"><span>${i===0?'★':'✦'} TEAM ${name.toUpperCase()}</span><strong>${game?.id==='basketball'&&!series?(game.basketballPoints?.[i]??0):game?.id==='code'&&champion<0?(game.safePoints?.[i]??0):wins[i]}</strong><div class="win-dots" aria-label="${wins[i]} ${series?'game':'round'} wins">${[0,1,2].map(n=>`<i class="${n<wins[i]?'won':''}"></i>`).join('')}</div></div>`).join('');
+  $('arcade-score').innerHTML=names.map((name,i)=>`<div id="arcade-team-${i}" class="team-score ${turn===i&&champion<0?'current':''}" aria-current="${turn===i&&champion<0}" aria-label="${name}${turn===i&&champion<0?', current turn':''}"><span>${i===0?'★':'✦'} TEAM ${name.toUpperCase()}</span>${selectedPlayers[i].length?`<small class="arcade-player-names">${selectedPlayers[i].map(escapePlayer).join(' · ')}</small>`:''}<strong>${game?.id==='basketball'&&!series?(game.basketballPoints?.[i]??0):game?.id==='code'&&champion<0?(game.safePoints?.[i]??0):wins[i]}</strong><div class="win-dots" aria-label="${wins[i]} ${series?'game':'round'} wins">${[0,1,2].map(n=>`<i class="${n<wins[i]?'won':''}"></i>`).join('')}</div></div>`).join('');
   $('round-label').textContent=game?.id==='basketball'&&!series?(champion>=0?'MATCH COMPLETE':'2 POINTS PER BASKET · MOST POINTS WINS'):series?`${champion>=0?'SERIES COMPLETE':`GAME ${series.index+1} OF 3${attempt?' · TIE REPLAY':''}`} · SERIES SCORE` : champion>=0?'MATCH COMPLETE':`ROUND ${round} OF 5${attempt?' · TIE REPLAY':''} · FIRST TO 3 WINS`;
 }
 function pick(key,source,n){
