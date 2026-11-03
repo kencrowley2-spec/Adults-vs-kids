@@ -1,6 +1,7 @@
+import {mountBlocks} from './arcade-blocks.js?v=1';
 import {mountBasketball} from './arcade-basketball.js?v=1';
-import {coverMarkup,recentGames} from './arcade-library.js?v=2';
-import {GAMES, ANIMALS, TRIVIA, WORDS, PICTURES, CHALLENGES} from './arcade-data.js?v=10';
+import {coverMarkup,recentGames} from './arcade-library.js?v=3';
+import {GAMES, ANIMALS, TRIVIA, WORDS, PICTURES, CHALLENGES} from './arcade-data.js?v=11';
 import {teamName, shuffle, roundWinner, awardRound, lineWinner} from './arcade-core.js';
 
 import {makeMaze, codeClues, rpsWinner, GOLF_COURSES, golfStep} from './arcade-new-core.js?v=5';
@@ -208,12 +209,12 @@ updateArenaHeight();
 function focusFirst(){ stage.querySelector('button,input')?.focus({preventScroll:true}); }
 function status(text){$('arcade-message').textContent=text;}
 function scoreboard(){
-  $('match-format').textContent=series?'3-GAME SERIES':game?.id==='basketball'?'30 SECONDS EACH':'BEST OF FIVE';
+  $('match-format').textContent=series?'3-GAME SERIES':game?.id==='blocks'?'60 SECONDS EACH · ONE ROUND':game?.id==='basketball'?'30 SECONDS EACH':'BEST OF FIVE';
   $('arcade-reset').textContent=series?'Restart series ↻':'Restart match ↻';
   $('series-lineup').hidden=!series;
   if(series) $('series-lineup').innerHTML=series.games.map((g,i)=>`<div class="series-pick ${i===series.index?'active':''}"><small>GAME ${i+1}${series.winners[i]!==undefined?` · ${teamName(series.winners[i])} win`:''}</small><b>${g.icon} ${g.name}</b></div>`).join('');
-  $('arcade-score').innerHTML=names.map((name,i)=>`<div id="arcade-team-${i}" class="team-score ${turn===i&&champion<0?'current':''}" aria-current="${turn===i&&champion<0}" aria-label="${name}${turn===i&&champion<0?', current turn':''}"><span>${i===0?'★':'✦'} TEAM ${name.toUpperCase()}</span>${selectedPlayers[i].length?`<small class="arcade-player-names">${selectedPlayers[i].map(escapePlayer).join(' · ')}</small>`:''}<strong>${game?.id==='basketball'&&!series?(game.basketballPoints?.[i]??0):game?.id==='code'&&champion<0?(game.safePoints?.[i]??0):wins[i]}</strong><div class="win-dots" aria-label="${wins[i]} ${series?'game':'round'} wins">${[0,1,2].map(n=>`<i class="${n<wins[i]?'won':''}"></i>`).join('')}</div></div>`).join('');
-  $('round-label').textContent=game?.id==='basketball'&&!series?(champion>=0?'MATCH COMPLETE':'2 POINTS PER BASKET · MOST POINTS WINS'):series?`${champion>=0?'SERIES COMPLETE':`GAME ${series.index+1} OF 3${attempt?' · TIE REPLAY':''}`} · SERIES SCORE` : champion>=0?'MATCH COMPLETE':`ROUND ${round} OF 5${attempt?' · TIE REPLAY':''} · FIRST TO 3 WINS`;
+  $('arcade-score').innerHTML=names.map((name,i)=>`<div id="arcade-team-${i}" class="team-score ${turn===i&&champion<0?'current':''}" aria-current="${turn===i&&champion<0}" aria-label="${name}${turn===i&&champion<0?', current turn':''}"><span>${i===0?'★':'✦'} TEAM ${name.toUpperCase()}</span>${selectedPlayers[i].length?`<small class="arcade-player-names">${selectedPlayers[i].map(escapePlayer).join(' · ')}</small>`:''}<strong>${game?.id==='blocks'&&!series?(game.blockPoints?.[i]??0):game?.id==='basketball'&&!series?(game.basketballPoints?.[i]??0):game?.id==='code'&&champion<0?(game.safePoints?.[i]??0):wins[i]}</strong><div class="win-dots" aria-label="${wins[i]} ${series?'game':'round'} wins">${[0,1,2].map(n=>`<i class="${n<wins[i]?'won':''}"></i>`).join('')}</div></div>`).join('');
+  $('round-label').textContent=game?.id==='blocks'&&!series?(results[0]&&results[1]?'MATCH COMPLETE':'1 PIECE = 1 POINT · MOST POINTS WINS'):game?.id==='basketball'&&!series?(champion>=0?'MATCH COMPLETE':'2 POINTS PER BASKET · MOST POINTS WINS'):series?`${champion>=0?'SERIES COMPLETE':`GAME ${series.index+1} OF 3${attempt?' · TIE REPLAY':''}`} · SERIES SCORE` : champion>=0?'MATCH COMPLETE':`ROUND ${round} OF 5${attempt?' · TIE REPLAY':''} · FIRST TO 3 WINS`;
 }
 function pick(key,source,n){
   if(!used[key] || used[key].length<n) used[key]=shuffle(source);
@@ -276,7 +277,7 @@ function handoff(team,detail,action){
   later(tick,1000);
 }
 function beginRound(){
-  results=[]; if(game.id==='basketball')game.basketballPoints=[0,0]; if(game.id==='code')game.safePoints=[0,0]; turn=starter; scoreboard(); status('');
+  results=[]; if(game.id==='blocks'){game.blockPoints=[0,0];game.blockSeed=1+Math.floor(Math.random()*2147483645);} if(game.id==='basketball')game.basketballPoints=[0,0]; if(game.id==='code')game.safePoints=[0,0]; turn=starter; scoreboard(); status('');
   if(game.id==='memory') return memory();
   if(game.id==='tic') return handoff(turn,`${teamName(turn)} makes the first move. Adults use X; kids use O.`,tic);
   if(game.id==='rps')return handoff(turn,'Keep your move secret. The other team should look away until you pass the device.',rockPaperScissors);
@@ -293,9 +294,10 @@ function beginRound(){
 function teamReady(team,previous=''){
   let detail=`Your turn starts after the countdown. ${game.description}`;
   if(game.id==='challenge') detail=`Pick ONE player per team. Same challenge, same 20 seconds. ${game.challenge[0]}: ${game.challenge[1]} The other team counts. You can play seated.`;
-  handoff(team,(previous?previous+' ':'')+detail,()=>({basketball,spot, trivia:quiz,word:quiz,tap:quickTap,picture:quiz,number:quiz,challenge,maze:mazeDash,code:codeBreaker,golf:miniGolf}[game.id])());
+  handoff(team,(previous?previous+' ':'')+detail,()=>({blocks,basketball,spot, trivia:quiz,word:quiz,tap:quickTap,picture:quiz,number:quiz,challenge,maze:mazeDash,code:codeBreaker,golf:miniGolf}[game.id])());
 }
 function finishRound(winner,detail){
+  if(game.id==='blocks'&&!series)return finishBlockMatch(winner,detail);
   if(game.id==='basketball'&&!series)return finishBasketballMatch(winner,detail);
   if(recording&&winner!==null&&!recording.complete)recording.roundWinners.push(winner);
   if(series)return finishSeriesGame(winner,detail);
@@ -338,6 +340,21 @@ function finishBasketballMatch(winner,detail){
  button('Return to Arcade',()=>$('arcade-return').click(),stage,'text-button');
  react(winner===null?'turn':'win',winner===null?'Even score!':`${teamName(winner)} win!`);
  status(winner===null?'Tie game. Share a high five and play again!':`${teamName(winner)} win the basketball showdown!`);focusFirst();
+}
+function finishBlockMatch(winner,detail){
+ if(winner!==null){wins[winner]=1;champion=winner;if(recording)recording.roundWinners.push(winner);saveCompleted();}
+ scoreboard();
+ screen(`<div class="result"><span class="giant-icon">${winner===null?'🤝':'🏆'}</span><p class="eyebrow">BLOCK SHOWDOWN · MATCH COMPLETE</p><h3>${winner===null?'It’s a tie!':`${teamName(winner)} win!`}</h3><p>${detail}</p><div class="final-score">${results[0].score} <span>–</span> ${results[1].score}</div><p>One round. 60 seconds each. Every placed piece earns one point.</p></div>`);
+ button('Rematch →',()=>openGame('blocks'));button('Return to Arcade',()=>$('arcade-return').click(),stage,'text-button');
+ react(winner===null?'turn':'win',winner===null?'Even score!':`${teamName(winner)} win!`);
+ status(winner===null?'Tie game! Share a high five.':`${teamName(winner)} win Block Showdown!`);focusFirst();
+}
+function blocks(){
+ screen('<div class="block-cabinet"><canvas id="block-board" tabindex="0" role="application" aria-label="Block puzzle. Drag pieces onto the grid. Or tap a piece then its top-left grid square. Keyboard: 1, 2, 3 select a piece; arrows move; Enter places it."></canvas><p class="block-help">Drag & drop · Green = fits · Full lines clear<br>Or tap a piece, then an empty square.</p></div>');
+ timed=true;
+ mountBlocks({canvas:$('block-board'),team:teamName(turn),later,sound:chime,onStatus:status,effects:effectsOn,seed:game.blockSeed,
+  onScore:points=>{game.blockPoints[turn]=points;scoreboard();},
+  onEnd:result=>{timed=false;chime('buzzer');finishTurn(result);}});
 }
 function basketball(){
  screen(`<div class="basketball-cabinet"><canvas id="basketball-court" tabindex="0" role="application" aria-label="Basketball court. Flick upward from the ball to shoot. Keyboard: arrows adjust aim and power, Space or Enter shoots."></canvas><div class="basketball-accessible" role="status" aria-live="polite"><span id="basketball-points">${teamName(turn)}: 0 points</span></div></div>`);
@@ -706,7 +723,7 @@ function rememberGame(id){
  renderRecent();
 }
 GAMES.forEach(g=>gameTile(g,$('arcade-grid')));
-['basketball','memory','maze','golf','tap','tic','trivia','rps'].forEach(id=>gameTile(GAMES.find(g=>g.id===id),$('arcade-favorites')));
+['blocks','basketball','memory','maze','golf','tap','tic','trivia','rps'].forEach(id=>gameTile(GAMES.find(g=>g.id===id),$('arcade-favorites')));
 renderRecent();
 for(const shelf of ['favorites','recent','all']){
  const track=$(shelf==='all'?'arcade-grid':`arcade-${shelf}`);

@@ -286,3 +286,6 @@ body::before{display:block;inset:0;background:linear-gradient(180deg,rgba(4,5,14
 
 /* Keep the arcade sign beside the brand at every screen size. */
 .arcade-header-brand{order:-1;margin-right:auto;display:flex;align-items:center;gap:12px;min-width:0}.arcade-header-brand .arcade-logo{order:0;margin-right:0;flex-shrink:0}.arcade-neon-sign{display:block;width:128px;height:auto;flex-shrink:0;border-radius:6px;object-fit:contain}@media(max-width:760px){.arcade-header-brand{gap:8px}.arcade-neon-sign{width:96px}}@media(max-width:359px){header{gap:8px;padding-inline:10px}.arcade-header-brand{gap:6px}.arcade-neon-sign{width:76px}.arcade-header-brand .arcade-logo img{width:80px}}
+
+/* Block Showdown fits the existing full-screen game viewport. */
+.block-cabinet{width:min(400px,100%,calc((var(--play-height,650px) - 35px)*.70175));margin:auto;touch-action:none}.block-cabinet canvas{display:block;width:100%;height:auto;aspect-ratio:400/570;background:#11141f;border:3px solid #ffd522;border-radius:12px;touch-action:none;user-select:none}.block-cabinet canvas:focus-visible{outline:3px solid #111;outline-offset:3px}#game-stage .block-help{font-size:10px;font-weight:800;line-height:1.4;text-align:center;color:#111;margin:5px 0 0}

@@ -53,6 +53,7 @@ function fixture(firstTeam=0,withSpeech=false,withAudio=false,players=null){
     createOscillator(){const node={frequency:{value:0,setValueAtTime(){},exponentialRampToValueAtTime(){}},stops:[],connect(){},disconnect(){this.disconnected=true;},start(){this.started=true;},stop(at){this.stops.push(at);}};audio.nodes.push(node);return node;}
   }
   const context=vm.createContext({...core,...data,...newCore,...library,Math:testMath,document:doc,crypto,CustomEvent:class{constructor(type,options){this.type=type;this.detail=options.detail;}},window:{dispatchEvent:e=>telemetry.push(e),addEventListener(){},...voiceWindow,...(withAudio?{AudioContext:AudioContextMock}:{})},createResultRecorder:()=>({drain:async()=>{},capture:result=>{saved.push(result);}}),performance:{now:()=>now},console,setTimeout:(fn,delay)=>{scheduled.set(++seq,{at:now+delay,fn});return seq;},clearTimeout:id=>scheduled.delete(id)});
+  vm.runInContext(readFileSync(new URL('../public/arcade-blocks.js',import.meta.url),'utf8').replace(/export /g,''),context);
   const basketballSource=readFileSync(new URL('../public/arcade-basketball.js',import.meta.url),'utf8').replace(/export /g,'');
   vm.runInContext(basketballSource,context);
   const source=readFileSync(new URL('../public/arcade.js',import.meta.url),'utf8').replace(/^import .*;\n/gm,'');
@@ -72,7 +73,7 @@ function fixture(firstTeam=0,withSpeech=false,withAudio=false,players=null){
  assert.match(f.get('arcade-team-1').textContent,/Emma · Noah/);
 }
 // Core scoring remains first to three, with no points for a tie.
-assert.equal(data.GAMES.length,14);
+assert.equal(data.GAMES.length,15);
 for(const outcomes of [[0,1,0,1,0],[1,0,1,0,1],[0,0,0]]){
  let wins=[0,0],champion=-1;for(const winner of outcomes)({wins,champion}=core.awardRound(wins,winner));
  assert.equal(champion,outcomes.at(-1));assert.equal(wins[champion],3);
@@ -437,7 +438,7 @@ assert.deepEqual(library.recentGames({getItem:()=>JSON.stringify(['memory','unkn
 {
  const f=fixture();f.start('memory');f.get('arcade-return').click();f.advance(6500);assert.equal(f.get('arcade-feature-title').textContent,data.GAMES[1].name);f.get('feature-pause').click();f.advance(20000);assert.equal(f.get('arcade-feature-title').textContent,data.GAMES[1].name);f.get('feature-next').click();f.get('arcade-featured-play').click();assert.ok(f.get('game-title').textContent.includes(data.GAMES[2].name));noNavigation(f);
 }
-console.log('All 14 Arcade games passed: automatic starters, countdown handoffs, automatic rounds/replays, reactions, golf holes, secret moves, scoring, celebrations, 3–2 matches, random series, cancellation, hidden-tab protection and rotating features.');
+console.log('All 15 Arcade games passed: automatic starters, countdown handoffs, automatic rounds/replays, reactions, golf holes, secret moves, scoring, celebrations, 3–2 matches, random series, cancellation, hidden-tab protection and rotating features.');
 
 // Basketball: each team has exactly 30 seconds; baskets are two points;
 // the shot already released at the buzzer resolves, then the device passes.
@@ -477,3 +478,25 @@ console.log('Basketball passed: 30 seconds per team, 2 points per basket, handof
  assert.match(f.get('basketball-points').textContent,/2 points/);
 }
 console.log('Basketball gestures passed: scaled touch coordinates, made shot, wide shot, short shot, canceled gesture.');
+
+// Block Showdown: a full minute each, one-round result, no speed tiebreak.
+for(const first of [0,1]){
+ const f=fixture();f.start('blocks',first);
+ const board=f.get('block-board');board.dispatch('keydown',{key:'1'});board.dispatch('keydown',{key:'Enter'});
+ assert.match(f.get('arcade-team-'+first).textContent,/1/);
+ f.advance(59999);assert.ok(f.get('block-board'));
+ f.advance(17);assert.ok(f.get('handoff-countdown'));
+ f.advance(4000);f.advance(60016);
+ assert.equal(f.state().champion,first);assert.equal(f.saved.length,1);
+ assert.deepEqual([...f.saved[0].roundWinners],[first]);assert.equal(f.saved[0].gameIds[0],'blocks');
+}
+{
+ const f=fixture();f.start('blocks');f.advance(60016);f.advance(4000);f.advance(60016);
+ assert.match(f.get('game-stage').textContent,/It’s a tie/);assert.equal(f.saved.length,0);
+ f.advance(10000);assert.match(f.get('game-stage').textContent,/MATCH COMPLETE/);
+}
+{
+ const f=fixture();f.start('blocks');f.doc.hidden=true;f.doc.handlers.visibilitychange();
+ f.advance(70000);assert.equal(f.saved.length,0);assert.match(f.get('game-stage').textContent,/interrupted/);
+}
+console.log('PASS: Block Showdown one-minute turns, both starting teams, one-round winner saving, draws and interruption handling.');
