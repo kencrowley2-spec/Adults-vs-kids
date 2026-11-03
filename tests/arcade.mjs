@@ -196,7 +196,8 @@ for(const id of ['number','trivia','word','picture','spot']){
  assert.match(f.speech.spoken.at(-1).text,/Turn your volume up/);
  f.advance(4000);
  const prompt=()=>f.get('quiz-body').querySelector('h3').textContent;
- assert.equal(f.speech.spoken.at(-1).text,prompt());
+ const narration=()=>`${prompt()} ${f.get('quiz-body').querySelectorAll('button').filter(b=>b.className==='answer').map((b,i)=>`Option ${i+1}: ${b.textContent}.`).join(' ')}`;
+ assert.equal(f.speech.spoken.at(-1).text,narration());
  assert.equal(f.get('trivia-audio').getAttribute('data-speaking'),'true');
  const first=f.speech.spoken.at(-1);
  f.get('trivia-volume').value='40';f.get('trivia-volume').dispatch('input');
@@ -204,17 +205,17 @@ for(const id of ['number','trivia','word','picture','spot']){
  assert.equal(f.get('trivia-volume-value').textContent,'40%');
  assert.equal(f.get('trivia-level').getAttribute('aria-valuenow'),'40');
  assert.equal(f.get('trivia-level').querySelectorAll('i').filter(i=>i.className==='filled').length,2);
- f.click('Hear question 🔊');assert.equal(f.speech.spoken.at(-1).text,prompt());
+ f.click('Hear question & answers 🔊');assert.equal(f.speech.spoken.at(-1).text,narration());
  f.click(data.TRIVIA.find(q=>q[0]===prompt())[1]);
  assert.equal(f.get('trivia-audio').getAttribute('data-speaking'),'false');
- f.advance(650);assert.equal(f.speech.spoken.at(-1).text,prompt());
+ f.advance(650);assert.equal(f.speech.spoken.at(-1).text,narration());
  first.onend();assert.equal(f.get('trivia-audio').getAttribute('data-speaking'),'true');
  const spoken=f.speech.spoken.length;
  f.get('arcade-sound').click();assert.match(f.get('trivia-voice-status').textContent,/muted/);
- f.click('Hear question 🔊');assert.equal(f.speech.spoken.length,spoken);
- f.get('arcade-sound').click();f.click('Hear question 🔊');assert.equal(f.speech.spoken.length,spoken+1);
- f.speech.spoken.at(-1).onerror();assert.match(f.get('trivia-voice-status').textContent,/Tap Hear question/);
- f.click('Hear question 🔊');f.get('arcade-reset').click();assert.equal(f.get('trivia-audio'),null);
+ f.click('Hear question & answers 🔊');assert.equal(f.speech.spoken.length,spoken);
+ f.get('arcade-sound').click();f.click('Hear question & answers 🔊');assert.equal(f.speech.spoken.length,spoken+1);
+ f.speech.spoken.at(-1).onerror();assert.match(f.get('trivia-voice-status').textContent,/Tap Hear question & answers/);
+ f.click('Hear question & answers 🔊');f.get('arcade-reset').click();assert.equal(f.get('trivia-audio'),null);
  f.advance(10000);assert.match(f.get('game-stage').textContent,/Start over/);
  f.get('arcade-return').click();f.start('trivia');f.doc.hidden=true;f.doc.handlers.visibilitychange();
  assert.match(f.get('game-stage').textContent,/interrupted/);
@@ -223,7 +224,7 @@ for(const id of ['number','trivia','word','picture','spot']){
 {
  const f=fixture();f.start('trivia');
  assert.match(f.get('trivia-voice-status').textContent,/unavailable/);
- assert.equal(f.buttons().find(b=>b.textContent==='Hear question 🔊').disabled,true);
+ assert.equal(f.buttons().find(b=>b.textContent==='Hear question & answers 🔊').disabled,true);
  assert.equal(f.get('quiz-body').querySelectorAll('button').filter(b=>b.className==='answer').length,4);
 }
 // Quick Tap immediately starts each trial and progresses from results itself.
