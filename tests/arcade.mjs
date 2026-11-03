@@ -39,7 +39,7 @@ class Element {
 }
 function fixture(firstTeam=0,withSpeech=false,withAudio=false){
   let selectedFirst=firstTeam;const testMath=Object.create(Math);testMath.random=()=>selectedFirst===0?.25:.75;
-  let now=0,seq=0,scheduled=new Map();const saved=[];const root=new Element();
+  let now=0,seq=0,scheduled=new Map();const saved=[],telemetry=[];const root=new Element();
   root.innerHTML=readFileSync(new URL('../app/family/arcade/route.ts',import.meta.url),'utf8').split('const html=`')[1].split('`;')[0];
   const doc={hidden:false,getElementById:id=>root.querySelector('#'+id),createElement:tag=>new Element(tag),handlers:{},addEventListener(type,fn){this.handlers[type]=fn;}};
   const speech={spoken:[],cancels:0,getVoices:()=>[{lang:'en-US',localService:true}],cancel(){this.cancels++;},speak(utterance){this.spoken.push(utterance);utterance.onstart?.();}};
@@ -51,7 +51,7 @@ function fixture(firstTeam=0,withSpeech=false,withAudio=false){
     createGain(){const gain={gain:{value:1,setValueAtTime(){},linearRampToValueAtTime(){},exponentialRampToValueAtTime(){}},connect(){},disconnect(){this.disconnected=true;}};audio.gains.push(gain);return gain;}
     createOscillator(){const node={frequency:{value:0,setValueAtTime(){},exponentialRampToValueAtTime(){}},stops:[],connect(){},disconnect(){this.disconnected=true;},start(){this.started=true;},stop(at){this.stops.push(at);}};audio.nodes.push(node);return node;}
   }
-  const context=vm.createContext({...core,...data,...newCore,...library,Math:testMath,document:doc,crypto,window:{addEventListener(){},...voiceWindow,...(withAudio?{AudioContext:AudioContextMock}:{})},createResultRecorder:()=>({drain:async()=>{},capture:result=>{saved.push(result);}}),performance:{now:()=>now},console,setTimeout:(fn,delay)=>{scheduled.set(++seq,{at:now+delay,fn});return seq;},clearTimeout:id=>scheduled.delete(id)});
+  const context=vm.createContext({...core,...data,...newCore,...library,Math:testMath,document:doc,crypto,CustomEvent:class{constructor(type,options){this.type=type;this.detail=options.detail;}},window:{dispatchEvent:e=>telemetry.push(e),addEventListener(){},...voiceWindow,...(withAudio?{AudioContext:AudioContextMock}:{})},createResultRecorder:()=>({drain:async()=>{},capture:result=>{saved.push(result);}}),performance:{now:()=>now},console,setTimeout:(fn,delay)=>{scheduled.set(++seq,{at:now+delay,fn});return seq;},clearTimeout:id=>scheduled.delete(id)});
   const basketballSource=readFileSync(new URL('../public/arcade-basketball.js',import.meta.url),'utf8').replace(/export /g,'');
   vm.runInContext(basketballSource,context);
   const source=readFileSync(new URL('../public/arcade.js',import.meta.url),'utf8').replace(/^import .*;\n/gm,'');
@@ -62,7 +62,7 @@ function fixture(firstTeam=0,withSpeech=false,withAudio=false){
   function advance(ms){const end=now+ms;let guard=0;while(true){const task=[...scheduled.entries()].filter(([,t])=>t.at<=end).sort((a,b)=>a[1].at-b[1].at)[0];if(!task)break;assert.ok(++guard<10000);scheduled.delete(task[0]);now=task[1].at;task[1].fn();}now=end;}
   function start(id,first=0,wait=true){selectedFirst=first;const i=data.GAMES.findIndex(g=>g.id===id);get('arcade-grid').children[i].click();if(wait&&id!=='memory')advance(4000);}
 
-  return {root,doc,get,buttons,click,advance,start,saved,speech,audio,state:context.state,resolveGame:context.resolveGame,seriesWith:context.seriesWith};
+  return {root,doc,get,buttons,click,advance,start,saved,telemetry,speech,audio,state:context.state,resolveGame:context.resolveGame,seriesWith:context.seriesWith};
 }
 // Core scoring remains first to three, with no points for a tie.
 assert.equal(data.GAMES.length,14);
@@ -80,7 +80,7 @@ function noNavigation(f){assert.ok(!f.buttons().some(b=>readyButton.test(b.textC
 // Every real game opens without a first-team choice. Both teams can be picked;
 // the four-second countdown protects handoffs before starting a timed turn.
 for(const game of data.GAMES)for(const first of [0,1]){
- const f=fixture();f.start(game.id,first,false);assert.equal(f.state().turn,first);noNavigation(f);
+ const f=fixture();f.start(game.id,first,false);assert.equal(f.telemetry[0].type,'avk:game-start');assert.equal(f.telemetry[0].detail.game,game.id);assert.equal(f.state().turn,first);noNavigation(f);
  if(game.id==='memory'){
   assert.ok(f.get('memory-cards'));assert.match(f.get('turn-strip').textContent,new RegExp(core.teamName(first)+' go first'));
   f.advance(4999);assert.ok(f.get('memory-cards').children.every(c=>c.disabled));f.advance(1);assert.ok(f.get('memory-cards').children.some(c=>!c.disabled));

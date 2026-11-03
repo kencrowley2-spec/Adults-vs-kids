@@ -217,6 +217,7 @@ function pick(key,source,n){
 function openGame(id){
   clearTimeout(featuredTimer);
   startRecording('single',[id]);
+  window.dispatchEvent(new CustomEvent('avk:game-start',{detail:{game:id,id:recording.id}}));
   series=null;
   game=GAMES.find(g=>g.id===id); rememberGame(id); lobby.hidden=true; arena.hidden=false;
   $('game-title').textContent=`${game.icon} ${game.name}`; used={}; wins=[0,0]; round=1; attempt=0; starter=0; turn=0; champion=-1; results=[];
@@ -232,7 +233,8 @@ function startSeries(){
   series.first=Math.random()<.5?0:1;startSeriesGame();
 }
 function startSeriesGame(){
-  clearTimers(); game=series.games[series.index]; round=series.index+1; attempt=0;
+  clearTimers(); game=series.games[series.index];
+  window.dispatchEvent(new CustomEvent('avk:game-start',{detail:{game:game.id,id:crypto.randomUUID()}})); round=series.index+1; attempt=0;
   starter=(series.first+series.index)%2; turn=starter;
   $('game-title').textContent=`${game.icon} ${game.name}`; beginRound();
 }

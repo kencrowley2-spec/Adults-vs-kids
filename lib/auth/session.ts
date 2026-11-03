@@ -1,3 +1,4 @@
+import {trackedHtml} from '../analytics';
 import { createServerClient, parseCookieHeader, serializeCookieHeader } from '@supabase/ssr';
 const env = process.env;
 import { isAdministrator } from './access';
@@ -10,5 +11,5 @@ export function memberClient(request:Request){
  return {client,headers};
 }
 export async function verifiedMember(request:Request){const auth=memberClient(request);if(!auth.client)return {...auth,user:null,isAdmin:false};const {data,error}=await auth.client.auth.getUser();const user=!error&&data.user?.email_confirmed_at?data.user:null;const isAdmin=isAdministrator(user,env.ADMIN_EMAIL);return {...auth,user,isAdmin};}
-export function memberReply(body:string|object,status:number,headers:Headers){headers.set('Content-Type',typeof body==='string'?'text/html; charset=utf-8':'application/json');return new Response(typeof body==='string'?body:JSON.stringify(body),{status,headers})}
+export function memberReply(body:string|object,status:number,headers:Headers){headers.set('Content-Type',typeof body==='string'?'text/html; charset=utf-8':'application/json');return new Response(typeof body==='string'?trackedHtml(body):JSON.stringify(body),{status,headers})}
 export function memberRedirect(path:string,headers:Headers){headers.set('Location',path);return new Response(null,{status:303,headers})}
