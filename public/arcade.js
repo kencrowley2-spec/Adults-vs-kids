@@ -47,7 +47,7 @@ function stopTriviaVoice(){
   if(triviaSpeech){try{window.speechSynthesis.cancel();}catch{}triviaSpeech=null;}
   triviaVoiceStatus(soundOn?'Ready to read aloud':'Voice muted');
 }
-function readTrivia(text){
+function readArcade(text,volume=triviaVolume){
   stopTriviaVoice();
   if(!canReadTrivia()){triviaVoiceStatus('Read-aloud unavailable on this browser. Read the question below.');return;}
   if(!soundOn){triviaVoiceStatus('Sound is off. Turn Sound on to hear questions.');return;}
@@ -55,7 +55,7 @@ function readTrivia(text){
   const token=triviaSpeechToken;
   try{
     const utterance=new window.SpeechSynthesisUtterance(text);triviaSpeech=utterance;
-    utterance.lang='en-US';utterance.rate=.95;utterance.volume=triviaVolume;
+    utterance.lang='en-US';utterance.rate=.95;utterance.volume=volume;
     const voices=window.speechSynthesis.getVoices();
     const voice=voices.find(v=>v.lang==='en-US'&&v.localService)||voices.find(v=>v.lang?.startsWith('en'));
     if(voice)utterance.voice=voice;
@@ -66,18 +66,25 @@ function readTrivia(text){
     window.speechSynthesis.speak(utterance);
   }catch{triviaSpeech=null;triviaVoiceStatus('Tap Hear question to try the voice again.');}
 }
+function ticStarterVoice(parent=stage,announce=true){
+  const announcement=`${teamName(starter)} are up first!`;
+  const replay=button('Hear starting team 🔊',()=>readArcade(announcement,1),parent,'text-button');
+  replay.setAttribute('aria-label',`Hear announcement: ${announcement}`);
+  replay.disabled=!canReadTrivia();
+  if(announce)readArcade(announcement,1);
+}
 function triviaAudioPanel(parent,text,starterReminder=false){
   const panel=document.createElement('div');panel.id='trivia-audio';panel.className='trivia-audio';
   panel.innerHTML=`<p class="trivia-volume-reminder"><span aria-hidden="true">🔊</span> ${starterReminder?'Turn your volume up for this one!':'Listen up! Questions are read aloud.'}</p><div class="trivia-voice-controls"><span id="trivia-level" class="trivia-level" role="meter" aria-label="Narration volume" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100"><i></i><i></i><i></i><i></i><i></i></span><label for="trivia-volume">Voice volume <span id="trivia-volume-value">${Math.round(triviaVolume*100)}%</span></label><input id="trivia-volume" type="range" min="0" max="100" step="10" value="${Math.round(triviaVolume*100)}" aria-label="Question voice volume"></div><small>Use your device’s volume buttons to turn the speaker up.</small><p id="trivia-voice-status" class="trivia-voice-status" role="status" aria-live="polite"></p>`;
   parent.appendChild(panel);
-  const replay=button(starterReminder?'Test voice 🔊':'Hear question 🔊',()=>readTrivia(text),panel,'text-button');
+  const replay=button(starterReminder?'Test voice 🔊':'Hear question 🔊',()=>readArcade(text),panel,'text-button');
   if(!canReadTrivia()){replay.disabled=true;triviaVoiceStatus('Read-aloud unavailable on this browser. You can still play.');}
   else triviaVoiceStatus(soundOn?'Ready to read aloud':'Sound is off. Turn Sound on to hear questions.');
   $('trivia-volume').addEventListener('input',()=>{
     triviaVolume=Number($('trivia-volume').value)/100;
     $('trivia-volume-value').textContent=`${Math.round(triviaVolume*100)}%`;
     // Replay at the new level; native speech volume is fixed when speaking begins.
-    readTrivia(text);
+    readArcade(text);
   });
 }
 window.addEventListener('pagehide',stopTriviaVoice);
@@ -249,7 +256,8 @@ function finishSeriesGame(winner,detail){
 function handoff(team,detail,action){
   turn=team;scoreboard();
   screen(`<div class="handoff"><span class="giant-icon" aria-hidden="true">${team===0?'🙌':'✌️'}</span><p class="eyebrow">PASS THE DEVICE · STARTING AUTOMATICALLY</p><h3>${teamName(team)}, you’re up!</h3><p>${detail}</p><p id="handoff-countdown" class="handoff-countdown" style="font-size:42px;font-weight:900;color:#111">4</p><small>Get ready. No button needed.</small></div>`);
-  if(game.id==='trivia'){triviaAudioPanel(stage,'Turn your volume up for this one! Trivia Showdown reads each question out loud.',true);readTrivia('Turn your volume up for this one!');}
+  if(game.id==='tic')ticStarterVoice();
+  if(game.id==='trivia'){triviaAudioPanel(stage,'Turn your volume up for this one! Trivia Showdown reads each question out loud.',true);readArcade('Turn your volume up for this one!');}
   status(`${teamName(team)} start in four seconds. Pass the device.`);
   let remaining=4;
   function tick(){
@@ -364,7 +372,7 @@ function tic(){
     if(winner!==null||board.every(v=>v!==null)){locked=true;draw();later(()=>finishRound(winner,winner===null?'Full board. Nobody connected three.':`${teamName(winner)} connected three!`),500);return;}
     locked=true;draw();react('tap','Nice move!');later(()=>{turn=1-turn;locked=false;scoreboard();draw();status(`${teamName(turn)}: choose a square.`);},300);status('Next team…');
   }
-  draw();status(`${teamName(turn)}: choose a square.`);
+  draw();ticStarterVoice($('tic-action'),false);status(`${teamName(turn)}: choose a square.`);
 }
 function quiz(){
   const count=game.id==='trivia'||game.id==='number'?5:3;
@@ -408,7 +416,7 @@ function quiz(){
     }else {const h=document.createElement('h3');h.className=game.id==='number'?'math-question':'';h.textContent=prompt;body.appendChild(h);}
     const options=document.createElement('div');options.className='answer-grid';body.appendChild(options);
     choices.forEach(value=>button(value,()=>choose(value===answer,answer),options,'answer'));
-    if(game.id==='trivia'){triviaAudioPanel(body,prompt);readTrivia(prompt);}
+    if(game.id==='trivia'){triviaAudioPanel(body,prompt);readArcade(prompt);}
   }
   function choose(correct,answer){
     if(settled||locked||performance.now()>=deadline)return;locked=true;stopTriviaVoice();

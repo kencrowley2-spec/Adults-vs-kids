@@ -136,6 +136,26 @@ for(const first of [0,1]){
  f.advance(500);assert.deepEqual([...f.state().wins],[1,0]);f.advance(2200);assert.equal(f.state().starter,1);assert.ok(f.get('handoff-countdown'));f.advance(4000);assert.ok(f.get('tic-board'));
 }
 
+// Tic-Tac-Toe speaks the actual automatically selected starter once during
+// the countdown, then offers replay without interrupting the first move.
+for(const first of [0,1]){
+ const f=fixture(0,true);f.start('tic',first,false);
+ assert.equal(f.speech.spoken.at(-1).text,`${core.teamName(first)} are up first!`);
+ assert.equal(f.speech.spoken.at(-1).volume,1);
+ assert.equal(f.speech.spoken.length,1);
+ f.advance(4000);assert.ok(f.get('tic-board'));assert.equal(f.speech.spoken.length,1);
+ f.click('Hear starting team 🔊');assert.equal(f.speech.spoken.at(-1).text,`${core.teamName(first)} are up first!`);
+ f.resolveGame(first,'Connected three');f.advance(2200);
+ assert.equal(f.speech.spoken.at(-1).text,`${core.teamName(1-first)} are up first!`);
+ f.get('arcade-sound').click();const count=f.speech.spoken.length;
+ f.click('Hear starting team 🔊');assert.equal(f.speech.spoken.length,count);
+ f.get('arcade-sound').click();f.click('Hear starting team 🔊');assert.equal(f.speech.spoken.length,count+1);
+ const cancels=f.speech.cancels;f.get('arcade-return').click();assert.equal(f.speech.cancels,cancels+1);
+}
+{
+ const f=fixture();f.start('tic');assert.ok(f.get('tic-board'));
+ assert.equal(f.buttons().find(b=>b.textContent==='Hear starting team 🔊').disabled,true);
+}
 // Timed games finish a team, pass automatically, and award a result. No Ready
 // buttons or extra result acknowledgements, even on timeout or ties.
 for(const id of ['spot','trivia','word','picture','number','challenge','maze','code']){
