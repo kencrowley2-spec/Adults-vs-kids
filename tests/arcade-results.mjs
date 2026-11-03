@@ -11,6 +11,8 @@ assert.throws(()=>completedResult({...single,gameIds:['basketball'],roundWinners
 assert.equal(completedResult({...single,gameIds:['blocks'],roundWinners:[0]}).roundWinners.length,1);
 assert.throws(()=>completedResult({...single,gameIds:['blocks'],roundWinners:[]}));
 assert.throws(()=>completedResult({...single,gameIds:['blocks'],roundWinners:[0,0,0]}));
+assert.equal(completedResult({...single,gameIds:['treasure'],roundWinners:[0]}).roundWinners.length,1);
+assert.throws(()=>completedResult({...single,gameIds:['treasure'],roundWinners:[0,0,0]}));
 assert.equal(completedResult(single).roundWinners.length,5);assert.equal(completedResult(series).mode,'series');
 for(const patch of [{roundWinners:[0,0]},{roundWinners:[0,0,0,1]},{roundWinners:[0,1,0,1]},{roundWinners:[0,1,null]},{roundWinners:[2,2,2]},{id:'bad'},{gameIds:['made-up']},{gameIds:['tic','tic']},{mode:'edited'}])assert.throws(()=>completedResult({...single,...patch}));
 for(const patch of [{roundWinners:[1,1]},{gameIds:['maze','maze','golf']},{gameIds:['maze','rps','bad']}])assert.throws(()=>completedResult({...series,...patch}));

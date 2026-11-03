@@ -5,6 +5,7 @@ import * as core from '../public/arcade-core.js';
 import * as data from '../public/arcade-data.js';
 import * as newCore from '../public/arcade-new-core.js';
 import * as library from '../public/arcade-library.js';
+import {treasurePlan} from '../public/arcade-treasure.js';
 
 // Small DOM/clock fixture executes the actual game controller without a browser
 // or real-time waits. Browser QA covers layout and native form behavior.
@@ -52,7 +53,8 @@ function fixture(firstTeam=0,withSpeech=false,withAudio=false,players=null){
     createGain(){const gain={gain:{value:1,setValueAtTime(){},linearRampToValueAtTime(){},exponentialRampToValueAtTime(){}},connect(){},disconnect(){this.disconnected=true;}};audio.gains.push(gain);return gain;}
     createOscillator(){const node={frequency:{value:0,setValueAtTime(){},exponentialRampToValueAtTime(){}},stops:[],connect(){},disconnect(){this.disconnected=true;},start(){this.started=true;},stop(at){this.stops.push(at);}};audio.nodes.push(node);return node;}
   }
-  const context=vm.createContext({...core,...data,...newCore,...library,Math:testMath,document:doc,crypto,CustomEvent:class{constructor(type,options){this.type=type;this.detail=options.detail;}},window:{dispatchEvent:e=>telemetry.push(e),addEventListener(){},...voiceWindow,...(withAudio?{AudioContext:AudioContextMock}:{})},createResultRecorder:()=>({drain:async()=>{},capture:result=>{saved.push(result);}}),performance:{now:()=>now},console,setTimeout:(fn,delay)=>{scheduled.set(++seq,{at:now+delay,fn});return seq;},clearTimeout:id=>scheduled.delete(id)});
+  const context=vm.createContext({treasurePlan,...core,...data,...newCore,...library,Math:testMath,document:doc,crypto,CustomEvent:class{constructor(type,options){this.type=type;this.detail=options.detail;}},window:{dispatchEvent:e=>telemetry.push(e),addEventListener(){},...voiceWindow,...(withAudio?{AudioContext:AudioContextMock}:{})},createResultRecorder:()=>({drain:async()=>{},capture:result=>{saved.push(result);}}),performance:{now:()=>now},console,setTimeout:(fn,delay)=>{scheduled.set(++seq,{at:now+delay,fn});return seq;},clearTimeout:id=>scheduled.delete(id)});
+  vm.runInContext(readFileSync(new URL('../public/arcade-treasure.js',import.meta.url),'utf8').replace(/export /g,''),context);
   vm.runInContext(readFileSync(new URL('../public/arcade-blocks.js',import.meta.url),'utf8').replace(/export /g,''),context);
   const basketballSource=readFileSync(new URL('../public/arcade-basketball.js',import.meta.url),'utf8').replace(/export /g,'');
   vm.runInContext(basketballSource,context);
@@ -269,19 +271,40 @@ for(const id of ['number','trivia','word','picture','spot']){
  assert.equal(f.buttons().find(b=>b.textContent==='Hear question & answers 🔊').disabled,true);
  assert.equal(f.get('quiz-body').querySelectorAll('button').filter(b=>b.className==='answer').length,4);
 }
-// Quick Tap immediately starts each trial and progresses from results itself.
+// Fresh random plans contain five trials and get progressively faster.
 {
- const f=fixture();f.start('tap');
- for(const team of [0,1]){
-  for(let i=0;i<3;i++){f.click('WAIT…');assert.match(f.get('tap-zone').textContent,/Too soon/);noNavigation(f);f.advance(1000);}
-  if(team===0){assert.ok(f.get('handoff-countdown'));f.advance(4000);}
+ const a=treasurePlan(),b=treasurePlan();assert.equal(a.length,5);assert.notDeepEqual(a,b);
+ for(let i=0;i<5;i++){
+  assert.ok(a[i].coin>=0&&a[i].coin<3);assert.equal(a[i].swaps.length,3+i);
+  if(i)assert.ok(a[i].duration<a[i-1].duration);
+  for(const pair of a[i].swaps){assert.equal(new Set(pair).size,2);assert.ok(pair.every(n=>Number.isInteger(n)&&n>=0&&n<=2));}
  }
- assert.deepEqual([...f.state().wins],[0,0]);assert.match(f.get('game-stage').textContent,/tie/);
+}
+// Treasure Shuffle: both sides get exactly five guesses, then one final result.
+for(const first of [0,1])for(const tie of [false,true]){
+ const f=fixture(first);f.start('treasure',first);
+ for(const side of [first,1-first]){
+  for(let trial=0;trial<5;trial++){
+   const cups=()=>f.get('treasure-table').querySelectorAll('button');
+   assert.equal(cups().every(c=>c.disabled),true);
+   // Fixture random always puts the coin in physical cup 0 (first=0) or 2.
+   const coin=first===0?0:2;
+   for(let step=0;step<200&&cups().every(c=>c.disabled);step++)f.advance(100);
+   assert.equal(cups().every(c=>!c.disabled),true);
+   const right=tie||side===0;const target=cups()[right?coin:(coin+1)%3];target.click();target.click();
+   assert.equal(cups().every(c=>c.disabled),true);
+   f.advance(1600);
+  }
+  if(side===first){assert.ok(f.get('handoff-countdown'));f.advance(4000);}
+ }
+ assert.match(f.get('game-stage').textContent,tie?/draw/:/Adults win the Showdown/);
+ assert.equal(f.saved.length,tie?0:1);
+ if(!tie){assert.deepEqual([...f.saved[0].roundWinners],[0]);assert.deepEqual([...f.saved[0].gameIds],['treasure']);}
+ f.advance(10000);assert.equal(f.saved.length,tie?0:1);
 }
 {
- const f=fixture();f.start('tap');
- for(let i=0;i<3;i++){for(let step=0;step<50&&f.get('tap-zone').querySelector('button')?.textContent==='WAIT…';step++)f.advance(100);f.click('GO! TAP!');f.advance(1000);}
- assert.ok(f.get('handoff-countdown'));assert.match(f.get('game-stage').textContent,/ms average/);
+ const f=fixture();f.start('treasure');f.advance(1700);f.doc.hidden=true;f.doc.handlers.visibilitychange();
+ f.advance(20000);assert.match(f.get('game-stage').textContent,/interrupted/);assert.equal(f.saved.length,0);
 }
 // Actual five-round match stops at 3–2 and records once; each round starts
 // automatically with the other team first, including score entry rounds.
@@ -444,7 +467,7 @@ for(const first of [0,1])for(const outcomes of [[0,1,0],[1,0,1],[0,0,0],[1,1,1]]
 }
 // Reset/exit during handoff, reveal, results or celebration cancel outstanding
 // callbacks and cannot start an old game or award a stale point.
-for(const id of ['maze','rps','code','golf','memory','tap']){
+for(const id of ['maze','rps','code','golf','memory','treasure']){
  const f=fixture();f.start(id,1,false);f.get('arcade-reset').click();f.advance(10000);assert.match(f.get('game-stage').textContent,/Start over/);assert.equal(f.saved.length,0);
  f.get('arcade-return').click();f.start('tic');f.advance(6000);assert.ok(f.get('tic-board'));assert.deepEqual([...f.state().wins],[0,0]);
 }

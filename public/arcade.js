@@ -1,7 +1,8 @@
+import {mountTreasure,treasurePlan} from './arcade-treasure.js?v=1';
 import {mountBlocks} from './arcade-blocks.js?v=1';
 import {mountBasketball} from './arcade-basketball.js?v=1';
-import {coverMarkup,recentGames} from './arcade-library.js?v=4';
-import {GAMES, ANIMALS, TRIVIA, WORDS, PICTURES, CHALLENGES} from './arcade-data.js?v=12';
+import {coverMarkup,recentGames} from './arcade-library.js?v=5';
+import {GAMES, ANIMALS, TRIVIA, WORDS, PICTURES, CHALLENGES} from './arcade-data.js?v=13';
 import {shuffle, roundWinner, awardRound, lineWinner} from './arcade-core.js';
 
 import {makeMaze, codeClues, rpsWinner, GOLF_COURSES, golfStep} from './arcade-new-core.js?v=5';
@@ -221,12 +222,12 @@ updateArenaHeight();
 function focusFirst(){ stage.querySelector('button,input')?.focus({preventScroll:true}); }
 function status(text){$('arcade-message').textContent=text;}
 function scoreboard(){
-  $('match-format').textContent=series?'3-GAME SERIES':game?.id==='blocks'?'60 SECONDS EACH · ONE ROUND':game?.id==='basketball'?'30 SECONDS EACH':'BEST OF FIVE';
+  $('match-format').textContent=series?'3-GAME SERIES':game?.id==='treasure'?'5 GUESSES EACH · ONE ROUND':game?.id==='blocks'?'60 SECONDS EACH · ONE ROUND':game?.id==='basketball'?'30 SECONDS EACH':'BEST OF FIVE';
   $('arcade-reset').textContent=series?'Restart series ↻':'Restart match ↻';
   $('series-lineup').hidden=!series;
   if(series) $('series-lineup').innerHTML=series.games.map((g,i)=>`<div class="series-pick ${i===series.index?'active':''}"><small>GAME ${i+1}${series.winners[i]!==undefined?` · ${teamLabel(series.winners[i])} win`:''}</small><b>${g.icon} ${g.name}</b></div>`).join('');
-  $('arcade-score').innerHTML=names.map((name,i)=>`<div id="arcade-team-${i}" class="team-score ${turn===i&&champion<0?'current':''}" aria-current="${turn===i&&champion<0}" aria-label="${escapePlayer(name)}${turn===i&&champion<0?', current turn':''}"><span>${i===0?'★':'✦'} ${kidsOnly?'':'TEAM '}${escapePlayer(name.toUpperCase())}</span>${!kidsOnly&&selectedPlayers[i].length?`<small class="arcade-player-names">${selectedPlayers[i].map(escapePlayer).join(' · ')}</small>`:''}<strong>${game?.id==='blocks'&&!series?(game.blockPoints?.[i]??0):game?.id==='basketball'&&!series?(game.basketballPoints?.[i]??0):game?.id==='code'&&champion<0?(game.safePoints?.[i]??0):wins[i]}</strong><div class="win-dots" aria-label="${wins[i]} ${series?'game':'round'} wins">${[0,1,2].map(n=>`<i class="${n<wins[i]?'won':''}"></i>`).join('')}</div></div>`).join('');
-  $('round-label').textContent=game?.id==='blocks'&&!series?(results[0]&&results[1]?'MATCH COMPLETE':'1 PIECE = 1 POINT · MOST POINTS WINS'):game?.id==='basketball'&&!series?(champion>=0?'MATCH COMPLETE':'2 POINTS PER BASKET · MOST POINTS WINS'):series?`${champion>=0?'SERIES COMPLETE':`GAME ${series.index+1} OF 3${attempt?' · TIE REPLAY':''}`} · SERIES SCORE` : champion>=0?'MATCH COMPLETE':`ROUND ${round} OF 5${attempt?' · TIE REPLAY':''} · FIRST TO 3 WINS`;
+  $('arcade-score').innerHTML=names.map((name,i)=>`<div id="arcade-team-${i}" class="team-score ${turn===i&&champion<0?'current':''}" aria-current="${turn===i&&champion<0}" aria-label="${escapePlayer(name)}${turn===i&&champion<0?', current turn':''}"><span>${i===0?'★':'✦'} ${kidsOnly?'':'TEAM '}${escapePlayer(name.toUpperCase())}</span>${!kidsOnly&&selectedPlayers[i].length?`<small class="arcade-player-names">${selectedPlayers[i].map(escapePlayer).join(' · ')}</small>`:''}<strong>${game?.id==='treasure'&&!series?(game.treasurePoints?.[i]??0):game?.id==='blocks'&&!series?(game.blockPoints?.[i]??0):game?.id==='basketball'&&!series?(game.basketballPoints?.[i]??0):game?.id==='code'&&champion<0?(game.safePoints?.[i]??0):wins[i]}</strong><div class="win-dots" ${game?.id==='treasure'&&!series?'hidden':''} aria-label="${wins[i]} ${series?'game':'round'} wins">${[0,1,2].map(n=>`<i class="${n<wins[i]?'won':''}"></i>`).join('')}</div></div>`).join('');
+  $('round-label').textContent=game?.id==='treasure'&&!series?(results[0]&&results[1]?'SHOWDOWN COMPLETE':'1 TREASURE = 1 POINT · MOST POINTS WINS'):game?.id==='blocks'&&!series?(results[0]&&results[1]?'MATCH COMPLETE':'1 PIECE = 1 POINT · MOST POINTS WINS'):game?.id==='basketball'&&!series?(champion>=0?'MATCH COMPLETE':'2 POINTS PER BASKET · MOST POINTS WINS'):series?`${champion>=0?'SERIES COMPLETE':`GAME ${series.index+1} OF 3${attempt?' · TIE REPLAY':''}`} · SERIES SCORE` : champion>=0?'MATCH COMPLETE':`ROUND ${round} OF 5${attempt?' · TIE REPLAY':''} · FIRST TO 3 WINS`;
 }
 function pick(key,source,n){
   if(!used[key] || used[key].length<n) used[key]=shuffle(source);
@@ -290,7 +291,7 @@ function handoff(team,detail,action){
   later(tick,1000);
 }
 function beginRound(){
-  results=[]; if(game.id==='blocks'){game.blockPoints=[0,0];game.blockSeed=1+Math.floor(Math.random()*2147483645);} if(game.id==='basketball')game.basketballPoints=[0,0]; if(game.id==='code')game.safePoints=[0,0]; turn=starter; scoreboard(); status('');
+  results=[]; if(game.id==='treasure'){game.treasurePoints=[0,0];game.treasurePlan=[treasurePlan(),treasurePlan()];} if(game.id==='blocks'){game.blockPoints=[0,0];game.blockSeed=1+Math.floor(Math.random()*2147483645);} if(game.id==='basketball')game.basketballPoints=[0,0]; if(game.id==='code')game.safePoints=[0,0]; turn=starter; scoreboard(); status('');
   if(game.id==='memory') return memory();
   if(game.id==='tic') return handoff(turn,`${teamName(turn)} makes the first move. ${teamName(0)} use X; ${teamName(1)} use O.`,tic);
   if(game.id==='rps')return handoff(turn,'Keep your move secret. The other team should look away until you pass the device.',rockPaperScissors);
@@ -307,9 +308,10 @@ function beginRound(){
 function teamReady(team,previous=''){
   let detail=`Your turn starts after the countdown. ${game.description}`;
   if(game.id==='challenge') detail=`Pick ONE player per team. Same challenge, same 20 seconds. ${game.challenge[0]}: ${game.challenge[1]} The other team counts. You can play seated.`;
-  handoff(team,(previous?previous+' ':'')+detail,()=>({blocks,basketball,spot, trivia:quiz,word:quiz,tap:quickTap,picture:quiz,number:quiz,challenge,maze:mazeDash,code:codeBreaker,golf:miniGolf}[game.id])());
+  handoff(team,(previous?previous+' ':'')+detail,()=>({blocks,basketball,spot, trivia:quiz,word:quiz,treasure:treasureShuffle,picture:quiz,number:quiz,challenge,maze:mazeDash,code:codeBreaker,golf:miniGolf}[game.id])());
 }
 function finishRound(winner,detail){
+  if(game.id==='treasure'&&!series)return finishTreasureMatch(winner,detail);
   if(game.id==='blocks'&&!series)return finishBlockMatch(winner,detail);
   if(game.id==='basketball'&&!series)return finishBasketballMatch(winner,detail);
   if(recording&&winner!==null&&!recording.complete)recording.roundWinners.push(winner);
@@ -339,7 +341,7 @@ function finishTurn(result){
     const previous=`${teamName(turn)}: ${result.label}.`;
     teamReady(1-turn,previous);
   }else{
-    const lower=['tap','golf'].includes(game.id); const timeBreak=['spot','word','picture','number','maze'].includes(game.id);
+    const lower=['golf'].includes(game.id); const timeBreak=['spot','word','picture','number','maze'].includes(game.id);
     const winner=roundWinner(results[0],results[1],lower,timeBreak);
     const detail=names.map((n,i)=>`${n}: ${results[i].label}`).join(' · ');
     finishRound(winner,detail);
@@ -529,26 +531,19 @@ function spot(){
   }
   puzzle();status('Find three differences. Wrong taps add one second to your result.');
 }
-function quickTap(){
-  let trial=0,values=[],phase='ready',signalAt=0;
-  screen('<div class="turn-strip"><span id="tap-progress"></span></div><div id="tap-zone"></div>');
-  function prepare(){
-    phase='ready';$('tap-progress').textContent=`${teamName(turn)} · Test ${trial+1} / 3`;
-    $('tap-zone').replaceChildren();wait();
-    status('Rest a finger near the pad. Wait for the yellow GO! signal, then tap.');
-  }
-  function wait(){
-    if(phase!=='ready')return;phase='waiting';$('tap-zone').replaceChildren();
-    button('WAIT…',()=>{if(phase==='waiting')record(1500,true);else if(phase==='green')record(Math.round(performance.now()-signalAt),false);},$('tap-zone'),'tap-pad waiting');
-    timed=true;later(()=>{if(phase!=='waiting')return;phase='green';signalAt=performance.now();const pad=$('tap-zone').querySelector('button');pad.className='tap-pad green';pad.textContent='GO! TAP!';later(()=>{if(phase==='green')record(1500,false);},1500);},1200+Math.random()*2200);
-  }
-  function record(ms,early){
-    if(phase!=='waiting'&&phase!=='green')return;phase='result';clearTimers();values.push(ms);trial++;
-    $('tap-zone').replaceChildren();const p=document.createElement('p');p.className='reaction-result';p.textContent=early?'Too soon! +1,500 ms':ms>=1500?'Time’s up! 1,500 ms':`${ms} ms`;$('tap-zone').appendChild(p);
-    later(()=>{if(trial===3){const avg=Math.round(values.reduce((a,b)=>a+b,0)/3);finishTurn({score:avg,elapsed:avg,label:`${avg} ms average`});}else prepare();},1000);
-    status('Lower is faster. Same three tests for each team.');
-  }
-  prepare();
+function finishTreasureMatch(winner,detail){
+ if(winner!==null){wins[winner]=1;champion=winner;if(recording)recording.roundWinners.push(winner);saveCompleted();}
+ scoreboard();
+ screen(`<div class="result"><span class="giant-icon">${winner===null?'🤝':'🏆'}</span><p class="eyebrow">TREASURE SHUFFLE · SHOWDOWN COMPLETE</p><h3>${winner===null?'It’s a draw!':`${teamLabel(winner)} win the Showdown!`}</h3><p>${escapePlayer(detail)}</p><div class="final-score">${results[0].score} <span>–</span> ${results[1].score}</div><p>Five guesses each. One point per treasure. High fives all around!</p></div>`);
+ button('Rematch →',()=>openGame('treasure'));button('Return to Arcade',()=>$('arcade-return').click(),stage,'text-button');
+ react(winner===null?'turn':'win',winner===null?'Equal treasure!':`${teamName(winner)} win!`);
+ status(winner===null?'Draw! Equal treasures found.':`${teamName(winner)} win Treasure Shuffle!`);focusFirst();
+}
+function treasureShuffle(){
+ screen('<div id="treasure-stage"></div>');timed=true;
+ mountTreasure({parent:$('treasure-stage'),plan:game.treasurePlan[turn],team:teamName(turn),later,sound:chime,onStatus:status,
+  onScore:points=>{game.treasurePoints[turn]=points;scoreboard();},
+  onEnd:result=>{timed=false;finishTurn(result);}});
 }
 function challenge(){
   let finished=false; screen(`<p class="eyebrow">${teamLabel(turn,true)} · REAL-WORLD ROUND</p><h3>${game.challenge[0]}</h3><p>${game.challenge[1]}</p><div id="game-clock" class="challenge-clock">20s</div><p>Other team: count complete repetitions out loud.</p>`);
@@ -752,7 +747,7 @@ function rememberGame(id){
  renderRecent();
 }
 GAMES.forEach(g=>gameTile(g,$('arcade-grid')));
-['blocks','basketball','memory','maze','golf','tap','tic','trivia','rps'].forEach(id=>gameTile(GAMES.find(g=>g.id===id),$('arcade-favorites')));
+['blocks','basketball','memory','maze','golf','treasure','tic','trivia','rps'].forEach(id=>gameTile(GAMES.find(g=>g.id===id),$('arcade-favorites')));
 renderRecent();
 for(const shelf of ['favorites','recent','all']){
  const track=$(shelf==='all'?'arcade-grid':`arcade-${shelf}`);
