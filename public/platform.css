@@ -88,3 +88,19 @@ body.platform{margin:0;background:#f5f4ef;color:#171c19;font-family:Arial,Helvet
 .platform .founder-thanks-dialog{position:fixed;inset:0;width:min(620px,calc(100% - 24px));max-height:90dvh;margin:auto;overflow:auto;padding:32px;border:2px solid #c9a348;border-radius:20px;background:linear-gradient(145deg,#1c1911,#080909 60%);color:#f4efdf;box-shadow:0 20px 80px #0008}.founder-thanks-dialog::backdrop{background:#000b}.founder-thanks-dialog h2{color:#f5d783;font-size:clamp(19px,3.5vw,25px);font-weight:900;line-height:1.4;letter-spacing:.4px;margin:9px 20px 25px 0}.founder-thanks-dialog .founder-thanks-close{position:absolute;right:11px;top:10px;margin:0}.founder-thanks-close button{border:0;background:transparent;color:#f5d783;font-size:22px;padding:8px;cursor:pointer}.founder-thanks-letter p{font-size:15px;line-height:1.75;margin:0 0 19px;color:#f4efdf}.founder-thanks-letter .founder-thanks-motto{font-size:14px;font-weight:900;letter-spacing:1px;color:#ffd522;margin-top:26px}.founder-thanks-letter .founder-thanks-signature{font-weight:800;color:#ffe59c}.founder-thanks-signature span{font-size:13px;font-weight:500;color:#d2c9ad}.founder-thanks-dialog form{margin:0}.founder-thanks-dialog .founder-thanks-done{width:100%;padding:13px 16px;border:0;border-radius:9px;background:#ffd522;color:#111;font-size:14px;font-weight:900;cursor:pointer}.founder-thanks-dialog button:focus-visible{outline:3px solid #fff;outline-offset:4px}@media(max-width:600px){.platform .founder-thanks-dialog{padding:24px 20px}.founder-thanks-dialog h2{margin-top:12px;font-size:19px}.founder-thanks-letter p{font-size:14px;line-height:1.65;margin-bottom:16px}}@media(prefers-reduced-motion:reduce){.platform .founding-member-recognition{transition:none}}
 
 .platform-footer{flex-wrap:wrap}.platform-footer .return-website{order:-1;flex-basis:100%;width:100%;padding:12px 0;font-size:20px;font-weight:900;line-height:1.4;letter-spacing:.1px;color:#111;text-align:left;text-decoration:underline;text-underline-offset:4px}.platform-footer .return-website:hover{color:#6c5600}
+
+/* Community game ideas use the same clean button style as book shopping. */
+.platform-stats .game-idea-card{padding:0;background:transparent;border:0;box-shadow:none;align-items:stretch}
+.platform .game-idea-card .paperback-buy-button{width:100%;justify-content:space-between;align-self:stretch;white-space:normal}
+.platform .game-idea-card .paperback-buy-copy{font-size:20px;line-height:1.2}
+.platform .game-idea-card .paperback-buy-copy small{letter-spacing:0;line-height:1.5;font-size:12px}
+.platform .game-idea-arrow{font-size:32px;line-height:1}
+.platform #memberDialog .game-idea-form{display:grid;gap:15px;margin-top:20px}
+.platform #memberDialog .game-idea-summary{margin-top:14px;line-height:1.65;font-size:15px}
+.platform #memberDialog .game-idea-form label{margin:0;font-weight:700}
+.platform #memberDialog .game-idea-form textarea{display:block;width:100%;min-height:170px;max-height:45dvh;resize:vertical;margin-top:9px;padding:14px;border:1px solid #c9cdbf;border-radius:10px;color:#111;background:#fff;font:inherit;line-height:1.5;box-sizing:border-box}
+.platform #memberDialog .game-idea-form textarea:focus-visible{outline:3px solid #ffd006;outline-offset:2px}
+.platform #memberDialog .game-idea-status{font-size:14px;line-height:1.5;overflow-wrap:anywhere}
+.platform #memberDialog .game-idea-form .primary{background:#ffd006;color:#111}
+.platform #memberDialog{max-height:calc(100dvh - 32px);overflow-y:auto}
+@media(max-width:760px){.platform .game-idea-card .paperback-buy-button{min-height:100px}.platform .game-idea-card .paperback-buy-copy{font-size:20px}}
