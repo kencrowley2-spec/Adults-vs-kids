@@ -36,12 +36,14 @@ class Element {
   }
   querySelector(s){return this.querySelectorAll(s)[0]??null;}
 }
-function fixture(firstTeam=0){
+function fixture(firstTeam=0,withSpeech=false){
   let selectedFirst=firstTeam;const testMath=Object.create(Math);testMath.random=()=>selectedFirst===0?.25:.75;
   let now=0,seq=0,scheduled=new Map();const saved=[];const root=new Element();
   root.innerHTML=readFileSync(new URL('../app/family/arcade/route.ts',import.meta.url),'utf8').split('const html=`')[1].split('`;')[0];
   const doc={hidden:false,getElementById:id=>root.querySelector('#'+id),createElement:tag=>new Element(tag),handlers:{},addEventListener(type,fn){this.handlers[type]=fn;}};
-  const context=vm.createContext({...core,...data,...newCore,...library,Math:testMath,document:doc,crypto,window:{addEventListener(){}},createResultRecorder:()=>({drain:async()=>{},capture:result=>{saved.push(result);}}),performance:{now:()=>now},console,setTimeout:(fn,delay)=>{scheduled.set(++seq,{at:now+delay,fn});return seq;},clearTimeout:id=>scheduled.delete(id)});
+  const speech={spoken:[],cancels:0,getVoices:()=>[{lang:'en-US',localService:true}],cancel(){this.cancels++;},speak(utterance){this.spoken.push(utterance);utterance.onstart?.();}};
+  const voiceWindow=withSpeech?{speechSynthesis:speech,SpeechSynthesisUtterance:class {constructor(text){this.text=text;}}}:{};
+  const context=vm.createContext({...core,...data,...newCore,...library,Math:testMath,document:doc,crypto,window:{addEventListener(){},...voiceWindow},createResultRecorder:()=>({drain:async()=>{},capture:result=>{saved.push(result);}}),performance:{now:()=>now},console,setTimeout:(fn,delay)=>{scheduled.set(++seq,{at:now+delay,fn});return seq;},clearTimeout:id=>scheduled.delete(id)});
   const source=readFileSync(new URL('../public/arcade.js',import.meta.url),'utf8').replace(/^import .*;\n/gm,'');
   vm.runInContext(source+'\nthis.state=()=>({wins:[...wins],round,champion,turn,starter,attempt,plans:game?{maze:game.maze,codes:game.codes,course:game.course}:null,series:series?{games:series.games.map(g=>g.id),index:series.index,winners:[...series.winners]}:null});this.resolveGame=finishRound;this.seriesWith=id=>{startSeries();clearTimers();series.games=[GAMES.find(g=>g.id===id),...GAMES.filter(g=>g.id!==id).slice(0,2)];startSeriesGame();};',context);
   const get=id=>doc.getElementById(id);
@@ -50,7 +52,7 @@ function fixture(firstTeam=0){
   function advance(ms){const end=now+ms;let guard=0;while(true){const task=[...scheduled.entries()].filter(([,t])=>t.at<=end).sort((a,b)=>a[1].at-b[1].at)[0];if(!task)break;assert.ok(++guard<10000);scheduled.delete(task[0]);now=task[1].at;task[1].fn();}now=end;}
   function start(id,first=0,wait=true){selectedFirst=first;const i=data.GAMES.findIndex(g=>g.id===id);get('arcade-grid').children[i].click();if(wait&&id!=='memory')advance(4000);}
 
-  return {root,doc,get,buttons,click,advance,start,saved,state:context.state,resolveGame:context.resolveGame,seriesWith:context.seriesWith};
+  return {root,doc,get,buttons,click,advance,start,saved,speech,state:context.state,resolveGame:context.resolveGame,seriesWith:context.seriesWith};
 }
 // Core scoring remains first to three, with no points for a tie.
 assert.equal(data.GAMES.length,13);
@@ -133,6 +135,44 @@ for(const id of ['number','trivia','word','picture','spot']){
   }
  }
  assert.match(f.get('game-stage').textContent,new RegExp(count+'/'+count));assert.equal(f.state().turn,1);assert.ok(f.get('handoff-countdown'));
+}
+// Trivia narration follows the current question, supports volume/replay/mute,
+// and never lets late native speech events overwrite a new screen.
+{
+ const f=fixture(0,true);f.start('trivia',0,false);
+ assert.match(f.get('trivia-audio').textContent,/Turn your volume up for this one/);
+ assert.match(f.speech.spoken.at(-1).text,/Turn your volume up/);
+ f.advance(4000);
+ const prompt=()=>f.get('quiz-body').querySelector('h3').textContent;
+ assert.equal(f.speech.spoken.at(-1).text,prompt());
+ assert.equal(f.get('trivia-audio').getAttribute('data-speaking'),'true');
+ const first=f.speech.spoken.at(-1);
+ f.get('trivia-volume').value='40';f.get('trivia-volume').dispatch('input');
+ assert.equal(f.speech.spoken.at(-1).volume,.4);
+ assert.equal(f.get('trivia-volume-value').textContent,'40%');
+ assert.equal(f.get('trivia-level').getAttribute('aria-valuenow'),'40');
+ assert.equal(f.get('trivia-level').querySelectorAll('i').filter(i=>i.className==='filled').length,2);
+ f.click('Hear question 🔊');assert.equal(f.speech.spoken.at(-1).text,prompt());
+ f.click(data.TRIVIA.find(q=>q[0]===prompt())[1]);
+ assert.equal(f.get('trivia-audio').getAttribute('data-speaking'),'false');
+ f.advance(650);assert.equal(f.speech.spoken.at(-1).text,prompt());
+ first.onend();assert.equal(f.get('trivia-audio').getAttribute('data-speaking'),'true');
+ const spoken=f.speech.spoken.length;
+ f.get('arcade-sound').click();assert.match(f.get('trivia-voice-status').textContent,/muted/);
+ f.click('Hear question 🔊');assert.equal(f.speech.spoken.length,spoken);
+ f.get('arcade-sound').click();f.click('Hear question 🔊');assert.equal(f.speech.spoken.length,spoken+1);
+ f.speech.spoken.at(-1).onerror();assert.match(f.get('trivia-voice-status').textContent,/Tap Hear question/);
+ f.click('Hear question 🔊');f.get('arcade-reset').click();assert.equal(f.get('trivia-audio'),null);
+ f.advance(10000);assert.match(f.get('game-stage').textContent,/Start over/);
+ f.get('arcade-return').click();f.start('trivia');f.doc.hidden=true;f.doc.handlers.visibilitychange();
+ assert.match(f.get('game-stage').textContent,/interrupted/);
+ assert.ok(f.speech.cancels>=7);
+}
+{
+ const f=fixture();f.start('trivia');
+ assert.match(f.get('trivia-voice-status').textContent,/unavailable/);
+ assert.equal(f.buttons().find(b=>b.textContent==='Hear question 🔊').disabled,true);
+ assert.equal(f.get('quiz-body').querySelectorAll('button').filter(b=>b.className==='answer').length,4);
 }
 // Quick Tap immediately starts each trial and progresses from results itself.
 {

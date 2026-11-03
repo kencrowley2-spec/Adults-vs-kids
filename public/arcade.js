@@ -30,6 +30,57 @@ function saveCompleted(){
 let timers=[], generation=0, timed=false, used={};
 const names=['Adults','Kids'];
 let soundOn=true, effectsOn=!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches, audioContext, feedbackSequence=0;
+// Speech uses the device's built-in voice; the slider controls narration,
+// while the device volume buttons still control speaker loudness.
+let triviaVolume=1, triviaSpeech=null, triviaSpeechToken=0;
+const canReadTrivia=()=>!!(window.speechSynthesis&&window.SpeechSynthesisUtterance);
+function triviaVoiceStatus(text,speaking=false){
+  const panel=$('trivia-audio');if(!panel)return;
+  panel.setAttribute('data-speaking',String(speaking));
+  $('trivia-voice-status').textContent=text;
+  const level=soundOn?Math.round(triviaVolume*100):0;
+  $('trivia-level').setAttribute('aria-valuenow',String(level));
+  $('trivia-level').querySelectorAll('i').forEach((bar,i)=>bar.setAttribute('class',i<Math.ceil(level/20)?'filled':''));
+}
+function stopTriviaVoice(){
+  triviaSpeechToken++;
+  if(triviaSpeech){try{window.speechSynthesis.cancel();}catch{}triviaSpeech=null;}
+  triviaVoiceStatus(soundOn?'Ready to read aloud':'Voice muted');
+}
+function readTrivia(text){
+  stopTriviaVoice();
+  if(!canReadTrivia()){triviaVoiceStatus('Read-aloud unavailable on this browser. Read the question below.');return;}
+  if(!soundOn){triviaVoiceStatus('Sound is off. Turn Sound on to hear questions.');return;}
+  if(document.hidden)return;
+  const token=triviaSpeechToken;
+  try{
+    const utterance=new window.SpeechSynthesisUtterance(text);triviaSpeech=utterance;
+    utterance.lang='en-US';utterance.rate=.95;utterance.volume=triviaVolume;
+    const voices=window.speechSynthesis.getVoices();
+    const voice=voices.find(v=>v.lang==='en-US'&&v.localService)||voices.find(v=>v.lang?.startsWith('en'));
+    if(voice)utterance.voice=voice;
+    triviaVoiceStatus('Voice ready · tap Hear question if needed');
+    utterance.onstart=()=>{if(token===triviaSpeechToken)triviaVoiceStatus('Reading aloud…',true);};
+    utterance.onend=()=>{if(token===triviaSpeechToken){triviaSpeech=null;triviaVoiceStatus('Ready · hear it again anytime');}};
+    utterance.onerror=()=>{if(token===triviaSpeechToken){triviaSpeech=null;triviaVoiceStatus('Tap Hear question to start the voice.');}};
+    window.speechSynthesis.speak(utterance);
+  }catch{triviaSpeech=null;triviaVoiceStatus('Tap Hear question to try the voice again.');}
+}
+function triviaAudioPanel(parent,text,starterReminder=false){
+  const panel=document.createElement('div');panel.id='trivia-audio';panel.className='trivia-audio';
+  panel.innerHTML=`<p class="trivia-volume-reminder"><span aria-hidden="true">🔊</span> ${starterReminder?'Turn your volume up for this one!':'Listen up! Questions are read aloud.'}</p><div class="trivia-voice-controls"><span id="trivia-level" class="trivia-level" role="meter" aria-label="Narration volume" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100"><i></i><i></i><i></i><i></i><i></i></span><label for="trivia-volume">Voice volume <span id="trivia-volume-value">${Math.round(triviaVolume*100)}%</span></label><input id="trivia-volume" type="range" min="0" max="100" step="10" value="${Math.round(triviaVolume*100)}" aria-label="Question voice volume"></div><small>Use your device’s volume buttons to turn the speaker up.</small><p id="trivia-voice-status" class="trivia-voice-status" role="status" aria-live="polite"></p>`;
+  parent.appendChild(panel);
+  const replay=button(starterReminder?'Test voice 🔊':'Hear question 🔊',()=>readTrivia(text),panel,'text-button');
+  if(!canReadTrivia()){replay.disabled=true;triviaVoiceStatus('Read-aloud unavailable on this browser. You can still play.');}
+  else triviaVoiceStatus(soundOn?'Ready to read aloud':'Sound is off. Turn Sound on to hear questions.');
+  $('trivia-volume').addEventListener('input',()=>{
+    triviaVolume=Number($('trivia-volume').value)/100;
+    $('trivia-volume-value').textContent=`${Math.round(triviaVolume*100)}%`;
+    // Replay at the new level; native speech volume is fixed when speaking begins.
+    readTrivia(text);
+  });
+}
+window.addEventListener('pagehide',stopTriviaVoice);
 function unlockAudio(){
   if(!soundOn)return;
   try{const Audio=window.AudioContext||window.webkitAudioContext;if(!Audio)return;audioContext??=new Audio();if(audioContext.state==='suspended')audioContext.resume().catch(()=>{});}catch{}
@@ -49,11 +100,11 @@ function react(kind,label){
   $('arcade-feedback').setAttribute('data-kind',effectsOn?kind:'quiet');
   later(()=>{if(sequence!==feedbackSequence)return;$('arcade-feedback').setAttribute('data-kind','');$('feedback-caption').textContent='';},650);
 }
-$('arcade-sound').addEventListener('click',()=>{soundOn=!soundOn;$('arcade-sound').textContent=`Sound: ${soundOn?'on':'off'}`;$('arcade-sound').setAttribute('aria-pressed',String(soundOn));if(soundOn)chime('match');});
+$('arcade-sound').addEventListener('click',()=>{soundOn=!soundOn;$('arcade-sound').textContent=`Sound: ${soundOn?'on':'off'}`;$('arcade-sound').setAttribute('aria-pressed',String(soundOn));stopTriviaVoice();if(soundOn)chime('match');});
 $('arcade-effects').setAttribute('aria-pressed',String(effectsOn));
 $('arcade-effects').textContent=`Lights: ${effectsOn?'on':'off'}`;
 $('arcade-effects').addEventListener('click',()=>{effectsOn=!effectsOn;$('arcade-effects').textContent=`Lights: ${effectsOn?'on':'off'}`;$('arcade-effects').setAttribute('aria-pressed',String(effectsOn));$('arcade-feedback').setAttribute('data-kind','');});
-function clearTimers(){ generation++; timers.forEach(clearTimeout); timers=[]; timed=false; }
+function clearTimers(){ stopTriviaVoice(); generation++; timers.forEach(clearTimeout); timers=[]; timed=false; }
 function later(fn,delay){ const token=generation; const timer=setTimeout(()=>{if(token===generation)fn();},delay); timers.push(timer); }
 function screen(html){ clearTimers(); $('arcade-feedback').setAttribute('data-kind','');$('feedback-caption').textContent='';stage.innerHTML=html; scheduleGameFit(); }
 function button(label,action,parent=stage,className='primary'){
@@ -144,6 +195,7 @@ function finishSeriesGame(winner,detail){
 function handoff(team,detail,action){
   turn=team;scoreboard();
   screen(`<div class="handoff"><span class="giant-icon" aria-hidden="true">${team===0?'🙌':'✌️'}</span><p class="eyebrow">PASS THE DEVICE · STARTING AUTOMATICALLY</p><h3>${teamName(team)}, you’re up!</h3><p>${detail}</p><p id="handoff-countdown" class="handoff-countdown" style="font-size:42px;font-weight:900;color:#111">4</p><small>Get ready. No button needed.</small></div>`);
+  if(game.id==='trivia'){triviaAudioPanel(stage,'Turn your volume up for this one! Trivia Showdown reads each question out loud.',true);readTrivia('Turn your volume up for this one!');}
   status(`${teamName(team)} start in four seconds. Pass the device.`);
   let remaining=4;
   function tick(){
@@ -268,7 +320,7 @@ function quiz(){
   function finish(){if(settled)return;settled=true;finishTurn({score:points,elapsed:(performance.now()-started)/1000,label:`${points}/${count} correct in ${((performance.now()-started)/1000).toFixed(1)}s`});}
   const deadline=startClock(seconds,finish);
   function nextQuestion(){
-    if(settled)return; locked=false;
+    if(settled)return; stopTriviaVoice(); locked=false;
     $('question-progress').textContent=`${teamName(turn)} · ${index+1} / ${count} · ${points} correct`;
     const body=$('quiz-body');body.replaceChildren(); const offset=turn===starter?0:count;
     let answer,choices,prompt;
@@ -301,9 +353,10 @@ function quiz(){
     }else {const h=document.createElement('h3');h.className=game.id==='number'?'math-question':'';h.textContent=prompt;body.appendChild(h);}
     const options=document.createElement('div');options.className='answer-grid';body.appendChild(options);
     choices.forEach(value=>button(value,()=>choose(value===answer,answer),options,'answer'));
+    if(game.id==='trivia'){triviaAudioPanel(body,prompt);readTrivia(prompt);}
   }
   function choose(correct,answer){
-    if(settled||locked||performance.now()>=deadline)return;locked=true;
+    if(settled||locked||performance.now()>=deadline)return;locked=true;stopTriviaVoice();
     if(correct)points++;stage.querySelectorAll('button,input').forEach(el=>el.disabled=true);
     const feedback=document.createElement('p');feedback.className=`answer-feedback ${correct?'correct':''}`;feedback.textContent=correct?'Correct! ✦':`Good try! Answer: ${answer}`;$('quiz-body').appendChild(feedback);
     react(correct?'match':'turn',correct?'Correct!':'Keep going!');status(correct?'Correct!':'Keep going!');
@@ -535,6 +588,6 @@ $('arcade-reset').addEventListener('click',()=>{
   button(wasSeries?'Restart series':'Restart match',()=>wasSeries?startSeries():openGame(saved));button('Return to Arcade',()=>{$('arcade-return').click();},stage,'text-button');status('Match paused. Choose restart or return to the Arcade.');
 });
 document.addEventListener('visibilitychange',()=>{
-  if(document.hidden)clearTimeout(featuredTimer);else scheduleFeatured();
+  if(document.hidden){clearTimeout(featuredTimer);stopTriviaVoice();}else scheduleFeatured();
   if(document.hidden&&timed&&game){clearTimers();screen('<div class="result"><h3>Let’s give both teams a fair turn.</h3><p>The timed game was interrupted. Replay this round with no round win awarded.</p></div>');button('Replay this round →',beginRound);status('Round interrupted. Match score is unchanged.');}
 });

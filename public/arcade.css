@@ -194,3 +194,20 @@ body::before{display:block;inset:0;background:linear-gradient(180deg,rgba(4,5,14
 .lobby-note{background:rgba(6,8,18,.85);border:1px solid #ffffff26;border-radius:10px}
 .lobby-note span{color:#d8deea}
 @media(max-width:760px){body::before{background-position:center center}.arcade-library-top,.shelf-heading{padding:12px}}
+
+/* Compact narration controls fit inside the same phone-sized game arena. */
+.trivia-audio{margin:10px auto 0;padding:10px 12px;max-width:540px;border:2px solid #d5ac00;border-radius:12px;background:#fff7c7;text-align:left;color:#171717}
+.trivia-audio .trivia-volume-reminder{margin:0 0 6px;font-size:14px;font-weight:800;line-height:1.3}
+.trivia-voice-controls{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.trivia-voice-controls label{font-size:12px;font-weight:700;white-space:nowrap}
+.trivia-voice-controls input{flex:1;min-width:90px;max-width:200px;min-height:32px;margin:0;accent-color:#171717;padding:0}
+.trivia-audio small{display:block;font-size:10px;line-height:1.4}
+.trivia-audio .trivia-voice-status{margin:4px 0 0;font-size:11px;line-height:1.3;min-height:15px}
+.trivia-audio .text-button{min-height:36px;padding:4px 0;font-size:12px;font-weight:800}
+.trivia-level{height:25px;display:inline-flex;align-items:flex-end;gap:3px}
+.trivia-level i{width:5px;height:7px;background:#171717;border-radius:2px;opacity:.35}
+.trivia-level i.filled{opacity:1}.trivia-level i:nth-child(2){height:11px}.trivia-level i:nth-child(3){height:15px}.trivia-level i:nth-child(4){height:20px}.trivia-level i:nth-child(5){height:25px}
+.trivia-audio[data-speaking="true"] .trivia-level i.filled{animation:trivia-speaking .6s ease-in-out infinite alternate}
+.trivia-audio[data-speaking="true"] .trivia-level i.filled:nth-child(2n){animation-delay:-.3s}
+@keyframes trivia-speaking{from{transform:scaleY(.4)}to{transform:scaleY(1)}}
+@media(prefers-reduced-motion:reduce){.trivia-audio[data-speaking="true"] .trivia-level i{animation:none}}
