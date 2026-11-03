@@ -11,7 +11,7 @@ import {treasurePlan} from '../public/arcade-treasure.js';
 // or real-time waits. Browser QA covers layout and native form behavior.
 class Element {
   constructor(tag='div'){this.tagName=tag;this.children=[];this.attrs={};this.handlers={};this.hidden=false;this.disabled=false;this.value='';this._text='';this.className='';this.classList={add:(s)=>{this.className+=' '+s;}};}
-  getContext(){return new Proxy({createRadialGradient:()=>({addColorStop(){}}),createLinearGradient:()=>({addColorStop(){}})}, {get:(target,key)=>target[key]??(()=>{})});}
+  getContext(){const calls=this.drawCalls??=[];const record=this.id==='frog-pond';return new Proxy({createRadialGradient:()=>({addColorStop(){}}),createLinearGradient:()=>({addColorStop(){}})}, {get:(target,key)=>target[key]??((...args)=>{if(record)calls.push({name:key,args});})});}
   appendChild(el){this.children.push(el);return el;}
   replaceChildren(...els){this.children=els;this._text='';}
   setAttribute(k,v){this.attrs[k]=v;if(k==='id')this.id=v;if(k==='class')this.className=v;}
@@ -608,3 +608,18 @@ for(const outcomes of [[0,1,0],[1,1]]){
  f.doc.hidden=true;f.doc.handlers.visibilitychange();f.advance(60000);assert.match(f.get('game-stage').textContent,/interrupted/);assert.equal(f.saved.length,0);
 }
 console.log('PASS: Frog Hop real moving-pad landings, three crossings/tries, misses, automatic passing, first-to-two rounds, audio, canceled input and hidden-tab cleanup.');
+
+// Frog controls provide no aiming guide, ambient audio croaks, and misses splash.
+{
+ const f=fixture(0,false,true);f.start('frog');f.advance(200);
+ assert.equal(f.get('frog-power'),null);
+ assert.match(f.get('frog-music').textContent,/Background ribbits/);
+ assert.ok(f.audio.nodes.length>=2);assert.ok(f.audio.nodes.every(n=>n.type==='sawtooth'));
+ const pond=f.get('frog-pond');pond.dispatch('pointerdown',{pointerId:2});f.advance(100);
+ assert.equal(pond.drawCalls.some(c=>c.name==='setLineDash'),false);
+ pond.dispatch('pointerup',{pointerId:2});f.advance(720);
+ assert.ok(pond.drawCalls.some(c=>c.name==='fillText'&&c.args[0]==='SPLASH!'));
+ assert.ok(pond.drawCalls.filter(c=>c.name==='arc').length>=12);
+ const calls=pond.drawCalls.length;f.get('arcade-return').click();f.advance(5000);assert.equal(pond.drawCalls.length,calls);
+}
+console.log('PASS: hidden jump distance, direct pond hold/release, background frog ribbits, animated splash droplets and cleanup.');

@@ -1,4 +1,4 @@
-import {mountFrog,frogCourses,frogRoundWinner} from './arcade-frog.js?v=1';
+import {mountFrog,frogCourses,frogRoundWinner} from './arcade-frog.js?v=2';
 import {mountTreasure,treasurePlan} from './arcade-treasure.js?v=1';
 import {mountBlocks} from './arcade-blocks.js?v=1';
 import {mountBasketball} from './arcade-basketball.js?v=1';
@@ -527,9 +527,9 @@ function spot(){
   puzzle();status('Find three differences. Wrong taps add one second to your result.');
 }
 function frogHop(){
- screen('<div class="frog-cabinet"><p id="frog-progress" class="frog-progress"></p><canvas id="frog-pond" role="img" aria-label="Frog crossing a pond with moving lily pads. Hold the jump button to charge; release to jump."></canvas><div class="frog-charge"><meter id="frog-power" min="0" max="100" value="0" aria-label="Jump power" aria-valuenow="0"></meter><button id="frog-jump" type="button">HOLD TO CHARGE · RELEASE TO HOP</button></div><div class="frog-audio"><button id="frog-music" type="button" aria-pressed="true">♫ Pond music: on</button><label for="frog-volume">Music volume</label><input id="frog-volume" type="range" min="0" max="100" value="30"></div><small>1 crossing = 1 point · 3 tries each · Distance breaks ties, then bonus flies.<br>Hold Space or Enter to charge on a keyboard. Turn your volume up for music and ribbits!</small></div>');
+ screen('<div class="frog-cabinet"><p id="frog-progress" class="frog-progress"></p><canvas id="frog-pond" tabindex="0" role="application" aria-label="Frog crossing a pond with moving lily pads. Hold the jump button to charge; release to jump."></canvas><div class="frog-charge"><button id="frog-jump" type="button">HOLD TO CHARGE · RELEASE TO HOP</button></div><div class="frog-audio"><button id="frog-music" type="button" aria-pressed="true">🐸 Background ribbits: on</button><label for="frog-volume">Ribbit volume</label><input id="frog-volume" type="range" min="0" max="100" value="30"></div><small>1 crossing = 1 point · 3 tries each · Distance breaks ties, then bonus flies.<br>Hold Space or Enter to charge on a keyboard. Hold the frog or the jump button. Turn your volume up for ribbits!</small></div>');
  timed=true;unlockAudio();
- stopFrog=mountFrog({canvas:$('frog-pond'),chargeButton:$('frog-jump'),musicButton:$('frog-music'),volumeInput:$('frog-volume'),progress:$('frog-progress'),meter:$('frog-power'),later,team:teamName(turn),courses:game.frogCourses,onStatus:status,onScore:points=>{game.frogPoints??=[0,0];game.frogPoints[turn]=points;},getAudioContext:()=>audioContext,isSoundOn:()=>soundOn,onEnd:result=>{timed=false;finishTurn(result);}});
+ stopFrog=mountFrog({canvas:$('frog-pond'),chargeButton:$('frog-jump'),musicButton:$('frog-music'),volumeInput:$('frog-volume'),progress:$('frog-progress'),later,team:teamName(turn),courses:game.frogCourses,onStatus:status,onScore:points=>{game.frogPoints??=[0,0];game.frogPoints[turn]=points;},getAudioContext:()=>audioContext,isSoundOn:()=>soundOn,onEnd:result=>{timed=false;finishTurn(result);}});
 }
 function finishTreasureMatch(winner,detail){
  if(winner!==null){wins[winner]=1;champion=winner;if(recording)recording.roundWinners.push(winner);saveCompleted();}
