@@ -72,6 +72,31 @@ function fixture(firstTeam=0,withSpeech=false,withAudio=false,players=null){
  assert.match(f.get('arcade-team-0').textContent,/Mom/);
  assert.match(f.get('arcade-team-1').textContent,/Emma · Noah/);
 }
+// Dashboard selections with no adults create named kid opponents in every game.
+for(const id of data.GAMES.filter(g=>!g.comingSoon).map(g=>g.id)){
+ const f=fixture(0,true,false,[[],['Harper','Chloe']]);f.start(id,0,false);
+ assert.match(f.get('arcade-team-0').textContent,/HARPER/);
+ assert.match(f.get('arcade-team-1').textContent,/CHLOE/);
+ assert.doesNotMatch(f.get('arcade-score').textContent,/TEAM ADULTS|TEAM KIDS/);
+ if(id==='tic')assert.match(f.speech.spoken.at(-1).text,/Harper are up first/);
+}
+{
+ const f=fixture(0,false,false,[[],['Harper','Chloe']]);f.start('trivia');
+ for(let i=0;i<3;i++){f.resolveGame(0,'Harper won');if(i<2)f.advance(2200);}
+ assert.equal(f.state().champion,0);assert.equal(f.saved.length,0);
+ assert.match(f.get('game-stage').textContent,/Harper win the match/);
+ f.seriesWith('trivia');for(let i=0;i<3;i++){f.resolveGame(1,'Chloe won');if(i<2)f.advance(2000);}
+ assert.match(f.get('game-stage').textContent,/Chloe win the series/);assert.equal(f.saved.length,0);
+}
+{
+ const f=fixture(0,false,false,[[],['Harper','Chloe','Emma']]);f.start('trivia');
+ assert.match(f.get('arcade-team-0').getAttribute('aria-label'),/Harper &amp; Emma/);
+ assert.match(f.get('arcade-team-1').textContent,/CHLOE/);
+ const safe=fixture(0,false,false,[[],['<img src=x>','Chloe']]);safe.start('tic',0,false);
+ assert.equal(safe.get('game-stage').querySelector('img'),null);
+ assert.equal(safe.get('arcade-score').querySelector('img'),null);
+}
+console.log('PASS: Kids vs. Kids across playable games, named turns and winners, series, balanced kid teams, escaped names, and no adult/kid lifetime-score writes.');
 // Core scoring remains first to three, with no points for a tie.
 assert.equal(data.GAMES.length,15);
 for(const outcomes of [[0,1,0,1,0],[1,0,1,0,1],[0,0,0]]){

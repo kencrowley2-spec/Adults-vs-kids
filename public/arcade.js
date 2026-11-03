@@ -2,7 +2,7 @@ import {mountBlocks} from './arcade-blocks.js?v=1';
 import {mountBasketball} from './arcade-basketball.js?v=1';
 import {coverMarkup,recentGames} from './arcade-library.js?v=4';
 import {GAMES, ANIMALS, TRIVIA, WORDS, PICTURES, CHALLENGES} from './arcade-data.js?v=12';
-import {teamName, shuffle, roundWinner, awardRound, lineWinner} from './arcade-core.js';
+import {shuffle, roundWinner, awardRound, lineWinner} from './arcade-core.js';
 
 import {makeMaze, codeClues, rpsWinner, GOLF_COURSES, golfStep} from './arcade-new-core.js?v=5';
 
@@ -12,12 +12,13 @@ const $ = id => document.getElementById(id);
 const lobby=$('arcade-lobby'), arena=$('arcade-game'), stage=$('game-stage');
 let game, wins=[0,0], round=1, attempt=0, starter=0, turn=0, results=[], champion=-1;
 let series=null,recording=null;
+let kidsOnly=false;
 const arcadeAccountId=$('arcade-game').getAttribute('data-account-id');
 const recorder=createResultRecorder({
  accountId:arcadeAccountId,
  storage:{getItem:key=>localStorage.getItem(key),setItem:(key,value)=>localStorage.setItem(key,value)},
  send:result=>fetch('/api/arcade/results',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({...result,accountId:arcadeAccountId})}),
- changed:({pending,storageFailed})=>{const el=$('arcade-save-status');if(el)el.textContent=pending?`A completed result is waiting to save. ${storageFailed?'Keep this page open and retry.':'It will retry when you’re connected.'}`:'Completed matches update your family’s lifetime score.';}
+ changed:({pending,storageFailed})=>{const el=$('arcade-save-status');if(el)el.textContent=pending?`A completed result is waiting to save. ${storageFailed?'Keep this page open and retry.':'It will retry when you’re connected.'}`:(kidsOnly?'Kids vs. Kids · scores count for this match.':'Completed matches update your family’s lifetime score.');}
 });
 recorder.drain();
 window.addEventListener('online',()=>recorder.drain());
@@ -26,6 +27,7 @@ function startRecording(mode,gameIds){recording={id:crypto.randomUUID(),mode,gam
 function saveCompleted(){
  if(!recording||recording.complete)return;
  recording.complete=true;
+ if(kidsOnly)return;
  const {id,mode,gameIds,roundWinners}=recording;
  recorder.capture({id,mode,gameIds:[...gameIds],roundWinners:[...roundWinners]});
 }
@@ -34,6 +36,16 @@ const names=['Adults','Kids'];
 const selectedPlayers=[[],[]];
 const lineup=$('arcade-roster-lineup');
 if(lineup){for(const [team,key] of [[0,'data-adults'],[1,'data-kids']]){try{const list=JSON.parse(lineup.getAttribute(key)||'[]');if(Array.isArray(list)&&list.length<=10&&list.every(name=>typeof name==='string'&&name.length<=30))selectedPlayers[team]=list;}catch{}}}
+kidsOnly=selectedPlayers[0].length===0&&selectedPlayers[1].length>=2;
+if(kidsOnly){
+ const kids=[...selectedPlayers[1]];
+ selectedPlayers[0]=kids.filter((_,i)=>i%2===0);
+ selectedPlayers[1]=kids.filter((_,i)=>i%2===1);
+ names[0]=selectedPlayers[0].join(' & ');names[1]=selectedPlayers[1].join(' & ');
+}
+function teamName(team){return names[team];}
+if(kidsOnly)$('arcade-save-status').textContent='Kids vs. Kids · scores count for this match.';
+function teamLabel(team,uppercase=false){return escapePlayer(uppercase?teamName(team).toUpperCase():teamName(team));}
 const escapePlayer=value=>value.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
 let soundOn=true, effectsOn=!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches, audioContext, feedbackSequence=0;
@@ -212,8 +224,8 @@ function scoreboard(){
   $('match-format').textContent=series?'3-GAME SERIES':game?.id==='blocks'?'60 SECONDS EACH · ONE ROUND':game?.id==='basketball'?'30 SECONDS EACH':'BEST OF FIVE';
   $('arcade-reset').textContent=series?'Restart series ↻':'Restart match ↻';
   $('series-lineup').hidden=!series;
-  if(series) $('series-lineup').innerHTML=series.games.map((g,i)=>`<div class="series-pick ${i===series.index?'active':''}"><small>GAME ${i+1}${series.winners[i]!==undefined?` · ${teamName(series.winners[i])} win`:''}</small><b>${g.icon} ${g.name}</b></div>`).join('');
-  $('arcade-score').innerHTML=names.map((name,i)=>`<div id="arcade-team-${i}" class="team-score ${turn===i&&champion<0?'current':''}" aria-current="${turn===i&&champion<0}" aria-label="${name}${turn===i&&champion<0?', current turn':''}"><span>${i===0?'★':'✦'} TEAM ${name.toUpperCase()}</span>${selectedPlayers[i].length?`<small class="arcade-player-names">${selectedPlayers[i].map(escapePlayer).join(' · ')}</small>`:''}<strong>${game?.id==='blocks'&&!series?(game.blockPoints?.[i]??0):game?.id==='basketball'&&!series?(game.basketballPoints?.[i]??0):game?.id==='code'&&champion<0?(game.safePoints?.[i]??0):wins[i]}</strong><div class="win-dots" aria-label="${wins[i]} ${series?'game':'round'} wins">${[0,1,2].map(n=>`<i class="${n<wins[i]?'won':''}"></i>`).join('')}</div></div>`).join('');
+  if(series) $('series-lineup').innerHTML=series.games.map((g,i)=>`<div class="series-pick ${i===series.index?'active':''}"><small>GAME ${i+1}${series.winners[i]!==undefined?` · ${teamLabel(series.winners[i])} win`:''}</small><b>${g.icon} ${g.name}</b></div>`).join('');
+  $('arcade-score').innerHTML=names.map((name,i)=>`<div id="arcade-team-${i}" class="team-score ${turn===i&&champion<0?'current':''}" aria-current="${turn===i&&champion<0}" aria-label="${escapePlayer(name)}${turn===i&&champion<0?', current turn':''}"><span>${i===0?'★':'✦'} ${kidsOnly?'':'TEAM '}${escapePlayer(name.toUpperCase())}</span>${!kidsOnly&&selectedPlayers[i].length?`<small class="arcade-player-names">${selectedPlayers[i].map(escapePlayer).join(' · ')}</small>`:''}<strong>${game?.id==='blocks'&&!series?(game.blockPoints?.[i]??0):game?.id==='basketball'&&!series?(game.basketballPoints?.[i]??0):game?.id==='code'&&champion<0?(game.safePoints?.[i]??0):wins[i]}</strong><div class="win-dots" aria-label="${wins[i]} ${series?'game':'round'} wins">${[0,1,2].map(n=>`<i class="${n<wins[i]?'won':''}"></i>`).join('')}</div></div>`).join('');
   $('round-label').textContent=game?.id==='blocks'&&!series?(results[0]&&results[1]?'MATCH COMPLETE':'1 PIECE = 1 POINT · MOST POINTS WINS'):game?.id==='basketball'&&!series?(champion>=0?'MATCH COMPLETE':'2 POINTS PER BASKET · MOST POINTS WINS'):series?`${champion>=0?'SERIES COMPLETE':`GAME ${series.index+1} OF 3${attempt?' · TIE REPLAY':''}`} · SERIES SCORE` : champion>=0?'MATCH COMPLETE':`ROUND ${round} OF 5${attempt?' · TIE REPLAY':''} · FIRST TO 3 WINS`;
 }
 function pick(key,source,n){
@@ -250,7 +262,7 @@ function finishSeriesGame(winner,detail){
   const complete=series.winners.length===3;
   champion=complete?(wins[0]>wins[1]?0:1):-1; scoreboard();
   if(complete)saveCompleted();
-  screen(`<div class="result"><span class="giant-icon">${winner===null?'🤝':complete?'🏆':'🎉'}</span><p class="eyebrow">${complete?'SERIES COMPLETE':winner===null?'TIE · SAME GAME':'GAME COMPLETE'}</p><h3>${complete?`${teamName(champion)} win the series!`:winner===null?'It’s a tie!':`${teamName(winner)} win game ${series.index+1}!`}</h3><p>${detail}</p><div class="final-score">${wins[0]} <span>–</span> ${wins[1]}</div><p>${complete?'Three games. One great time together. High fives all around.':winner===null?'No point awarded. Replay this game to settle it.':`Up next: ${series.games[series.index+1].icon} ${series.games[series.index+1].name}. Starting in <strong id="next-game-countdown">2</strong> seconds…`}</p></div>`);
+  screen(`<div class="result"><span class="giant-icon">${winner===null?'🤝':complete?'🏆':'🎉'}</span><p class="eyebrow">${complete?'SERIES COMPLETE':winner===null?'TIE · SAME GAME':'GAME COMPLETE'}</p><h3>${complete?`${teamLabel(champion)} win the series!`:winner===null?'It’s a tie!':`${teamLabel(winner)} win game ${series.index+1}!`}</h3><p>${escapePlayer(detail)}</p><div class="final-score">${wins[0]} <span>–</span> ${wins[1]}</div><p>${complete?'Three games. One great time together. High fives all around.':winner===null?'No point awarded. Replay this game to settle it.':`Up next: ${series.games[series.index+1].icon} ${series.games[series.index+1].name}. Starting in <strong id="next-game-countdown">2</strong> seconds…`}</p></div>`);
   if(complete){button('New random challenge →',startSeries);button('Return to Arcade',()=>{$('arcade-return').click();},stage,'text-button');}
   else if(winner===null){later(()=>{attempt++;starter=1-starter;beginRound();},2200);}
   else {
@@ -265,7 +277,7 @@ function finishSeriesGame(winner,detail){
 }
 function handoff(team,detail,action){
   turn=team;scoreboard();
-  screen(`<div class="handoff"><span class="giant-icon" aria-hidden="true">${team===0?'🙌':'✌️'}</span><p class="eyebrow">PASS THE DEVICE · STARTING AUTOMATICALLY</p><h3>${teamName(team)}, you’re up!</h3><p>${detail}</p><p id="handoff-countdown" class="handoff-countdown" style="font-size:42px;font-weight:900;color:#111">4</p><small>Get ready. No button needed.</small></div>`);
+  screen(`<div class="handoff"><span class="giant-icon" aria-hidden="true">${team===0?'🙌':'✌️'}</span><p class="eyebrow">PASS THE DEVICE · STARTING AUTOMATICALLY</p><h3>${teamLabel(team)}, you’re up!</h3><p>${escapePlayer(detail)}</p><p id="handoff-countdown" class="handoff-countdown" style="font-size:42px;font-weight:900;color:#111">4</p><small>Get ready. No button needed.</small></div>`);
   if(game.id==='tic')ticStarterVoice();
   if(game.id==='trivia'){triviaAudioPanel(stage,'Turn your volume up for this one! Trivia Showdown reads each question and all answer choices out loud.',true);readArcade('Turn your volume up for this one!');}
   status(`${teamName(team)} start in four seconds. Pass the device.`);
@@ -280,7 +292,7 @@ function handoff(team,detail,action){
 function beginRound(){
   results=[]; if(game.id==='blocks'){game.blockPoints=[0,0];game.blockSeed=1+Math.floor(Math.random()*2147483645);} if(game.id==='basketball')game.basketballPoints=[0,0]; if(game.id==='code')game.safePoints=[0,0]; turn=starter; scoreboard(); status('');
   if(game.id==='memory') return memory();
-  if(game.id==='tic') return handoff(turn,`${teamName(turn)} makes the first move. Adults use X; kids use O.`,tic);
+  if(game.id==='tic') return handoff(turn,`${teamName(turn)} makes the first move. ${teamName(0)} use X; ${teamName(1)} use O.`,tic);
   if(game.id==='rps')return handoff(turn,'Keep your move secret. The other team should look away until you pass the device.',rockPaperScissors);
   if(game.id==='basketball')return teamReady(starter);
   if(game.id==='maze')game.maze=makeMaze();
@@ -304,7 +316,7 @@ function finishRound(winner,detail){
   if(series)return finishSeriesGame(winner,detail);
   const awarded=awardRound(wins,winner); wins=awarded.wins; champion=awarded.champion; scoreboard();
   if(champion>=0)saveCompleted();
-  screen(`<div class="result"><span class="giant-icon">${winner===null?'🤝':champion>=0?'🏆':'🎉'}</span><p class="eyebrow">${champion>=0?'BRAGGING RIGHTS EARNED':winner===null?'EVEN STEVEN':'ROUND COMPLETE'}</p><h3>${winner===null?'It’s a tie!':`${teamName(winner)} ${champion>=0?'win the match!':'win this round!'}`}</h3><p>${detail}</p><div class="final-score">${wins[0]} <span>–</span> ${wins[1]}</div><p>${champion>=0?'High fives all around. The best win is playing together.':winner===null?'No round awarded. Let’s replay with a fresh challenge.':'Pass it back. The next round is waiting.'}</p></div>`);
+  screen(`<div class="result"><span class="giant-icon">${winner===null?'🤝':champion>=0?'🏆':'🎉'}</span><p class="eyebrow">${champion>=0?'BRAGGING RIGHTS EARNED':winner===null?'EVEN STEVEN':'ROUND COMPLETE'}</p><h3>${winner===null?'It’s a tie!':`${teamLabel(winner)} ${champion>=0?'win the match!':'win this round!'}`}</h3><p>${escapePlayer(detail)}</p><div class="final-score">${wins[0]} <span>–</span> ${wins[1]}</div><p>${champion>=0?'High fives all around. The best win is playing together.':winner===null?'No round awarded. Let’s replay with a fresh challenge.':'Pass it back. The next round is waiting.'}</p></div>`);
   let moved=false;
   const nextRound=()=>{
     if(moved)return;
@@ -336,7 +348,7 @@ function finishTurn(result){
 function finishBasketballMatch(winner,detail){
  if(winner!==null){wins[winner]=1;champion=winner;if(recording)recording.roundWinners.push(winner);saveCompleted();}
  scoreboard();
- screen(`<div class="result"><span class="giant-icon">${winner===null?'🤝':'🏆'}</span><p class="eyebrow">BASKETBALL SHOWDOWN</p><h3>${winner===null?'It’s a tie!':`${teamName(winner)} win!`}</h3><p>${detail}</p><div class="final-score">${results[0].score} <span>–</span> ${results[1].score}</div><p>30 seconds each. Every basket counts for two.</p></div>`);
+ screen(`<div class="result"><span class="giant-icon">${winner===null?'🤝':'🏆'}</span><p class="eyebrow">BASKETBALL SHOWDOWN</p><h3>${winner===null?'It’s a tie!':`${teamLabel(winner)} win!`}</h3><p>${escapePlayer(detail)}</p><div class="final-score">${results[0].score} <span>–</span> ${results[1].score}</div><p>30 seconds each. Every basket counts for two.</p></div>`);
  button(winner===null?'Play again →':'Rematch →',()=>openGame('basketball'));
  button('Return to Arcade',()=>$('arcade-return').click(),stage,'text-button');
  react(winner===null?'turn':'win',winner===null?'Even score!':`${teamName(winner)} win!`);
@@ -345,7 +357,7 @@ function finishBasketballMatch(winner,detail){
 function finishBlockMatch(winner,detail){
  if(winner!==null){wins[winner]=1;champion=winner;if(recording)recording.roundWinners.push(winner);saveCompleted();}
  scoreboard();
- screen(`<div class="result"><span class="giant-icon">${winner===null?'🤝':'🏆'}</span><p class="eyebrow">BLOCK SHOWDOWN · MATCH COMPLETE</p><h3>${winner===null?'It’s a tie!':`${teamName(winner)} win!`}</h3><p>${detail}</p><div class="final-score">${results[0].score} <span>–</span> ${results[1].score}</div><p>One round. 60 seconds each. Every placed piece earns one point.</p></div>`);
+ screen(`<div class="result"><span class="giant-icon">${winner===null?'🤝':'🏆'}</span><p class="eyebrow">BLOCK SHOWDOWN · MATCH COMPLETE</p><h3>${winner===null?'It’s a tie!':`${teamLabel(winner)} win!`}</h3><p>${escapePlayer(detail)}</p><div class="final-score">${results[0].score} <span>–</span> ${results[1].score}</div><p>One round. 60 seconds each. Every placed piece earns one point.</p></div>`);
  button('Rematch →',()=>openGame('blocks'));button('Return to Arcade',()=>$('arcade-return').click(),stage,'text-button');
  react(winner===null?'turn':'win',winner===null?'Even score!':`${teamName(winner)} win!`);
  status(winner===null?'Tie game! Share a high five.':`${teamName(winner)} win Block Showdown!`);focusFirst();
@@ -358,7 +370,7 @@ function blocks(){
   onEnd:result=>{timed=false;chime('buzzer');finishTurn(result);}});
 }
 function basketball(){
- screen(`<div class="basketball-cabinet"><canvas id="basketball-court" tabindex="0" role="application" aria-label="Basketball court. Flick upward from the ball to shoot. Keyboard: arrows adjust aim and power, Space or Enter shoots."></canvas><div class="basketball-accessible" role="status" aria-live="polite"><span id="basketball-points">${teamName(turn)}: 0 points</span></div></div>`);
+ screen(`<div class="basketball-cabinet"><canvas id="basketball-court" tabindex="0" role="application" aria-label="Basketball court. Flick upward from the ball to shoot. Keyboard: arrows adjust aim and power, Space or Enter shoots."></canvas><div class="basketball-accessible" role="status" aria-live="polite"><span id="basketball-points">${teamLabel(turn)}: 0 points</span></div></div>`);
  timed=true;
  mountBasketball({canvas:$('basketball-court'),team:teamName(turn),later,sound:chime,onStatus:status,
   onScore:points=>{game.basketballPoints[turn]=points;scoreboard();$('basketball-points').textContent=`${teamName(turn)}: ${points} points`;},
@@ -370,7 +382,7 @@ function startClock(seconds,onEnd){
 }
 function memory(){
   const deck=shuffle([...ANIMALS,...ANIMALS]); let revealed=[],matched=new Set(),points=[0,0],locked=true,preview=true;
-  screen('<div class="turn-strip memory-turn-strip" id="turn-strip"></div><div class="memory-round-score"><p>ROUND POINTS · 1 PAIR = 1 POINT</p><div role="status" aria-live="polite" aria-atomic="true"><span id="memory-team-0">ADULTS <strong id="memory-adult-points">0</strong><em id="memory-team-0-turn"></em></span><span id="memory-team-1">KIDS <strong id="memory-kid-points">0</strong><em id="memory-team-1-turn"></em></span></div><small>Most points wins this round. First to 3 round wins takes the match.</small></div><p id="memory-rules" class="memory-quick-rules">Match = 1 point + go again. Miss = switch teams. Yellow team plays.</p><div id="memory-cards" class="memory-grid"></div><div id="memory-action"></div>');
+  screen(`<div class="turn-strip memory-turn-strip" id="turn-strip"></div><div class="memory-round-score"><p>ROUND POINTS · 1 PAIR = 1 POINT</p><div role="status" aria-live="polite" aria-atomic="true"><span id="memory-team-0">${teamLabel(0,true)} <strong id="memory-adult-points">0</strong><em id="memory-team-0-turn"></em></span><span id="memory-team-1">${teamLabel(1,true)} <strong id="memory-kid-points">0</strong><em id="memory-team-1-turn"></em></span></div><small>Most points wins this round. First to 3 round wins takes the match.</small></div><p id="memory-rules" class="memory-quick-rules">Match = 1 point + go again. Miss = switch teams. Yellow team plays.</p><div id="memory-cards" class="memory-grid"></div><div id="memory-action"></div>`);
   function draw(){
     $('turn-strip').textContent=preview?`${teamName(turn)} go first! Look closely — cards hide in five seconds.`:`${teamName(turn)}’ TURN · Highlighted yellow · Match a pair to go again!`;
     $('memory-adult-points').textContent=String(points[0]);$('memory-kid-points').textContent=String(points[1]);
@@ -393,7 +405,7 @@ function memory(){
     if(revealed.length===2){
       locked=true; const match=deck[revealed[0]]===deck[revealed[1]];
       if(match){revealed.forEach(id=>matched.add(id));points[turn]++;}
-      if(matched.size===deck.length){draw();react('win',`${teamName(turn)} +1 POINT!`); later(()=>finishRound(roundWinner({score:points[0]},{score:points[1]}),`Round points — Adults ${points[0]} · Kids ${points[1]}. One matching pair = one point. Most points wins the round.`),800);return;}
+      if(matched.size===deck.length){draw();react('win',`${teamName(turn)} +1 POINT!`); later(()=>finishRound(roundWinner({score:points[0]},{score:points[1]}),`Round points — ${teamName(0)} ${points[0]} · ${teamName(1)} ${points[1]}. One matching pair = one point. Most points wins the round.`),800);return;}
       status(match?`${teamName(turn)} earn 1 point and go again!`:'No match. Remember those cards — next team coming up…');
       draw();
       react(match?'match':'turn',match?`${teamName(turn)} +1 POINT!`:'Next team…');
@@ -415,7 +427,7 @@ function tic(){
   function draw(){
     $('turn-strip').textContent=`${teamName(turn)} play ${turn===0?'X':'O'}`;
     const holder=$('tic-board');holder.replaceChildren();
-    board.forEach((v,i)=>{const b=button(v===null?'':v===0?'X':'O',()=>move(i),holder,`tic-cell ${v===1?'kids-mark':''}`);b.disabled=locked||v!==null;b.setAttribute('aria-label',`Square ${i+1}, ${v===null?'empty':v===0?'Adults X':'Kids O'}`);});
+    board.forEach((v,i)=>{const b=button(v===null?'':v===0?'X':'O',()=>move(i),holder,`tic-cell ${v===1?'kids-mark':''}`);b.disabled=locked||v!==null;b.setAttribute('aria-label',`Square ${i+1}, ${v===null?'empty':v===0?teamName(0)+' X':teamName(1)+' O'}`);});
   }
   function move(i){
     if(locked||board[i]!==null)return; board[i]=turn; const winner=lineWinner(board);
@@ -539,9 +551,9 @@ function quickTap(){
   prepare();
 }
 function challenge(){
-  let finished=false; screen(`<p class="eyebrow">${teamName(turn).toUpperCase()} · REAL-WORLD ROUND</p><h3>${game.challenge[0]}</h3><p>${game.challenge[1]}</p><div id="game-clock" class="challenge-clock">20s</div><p>Other team: count complete repetitions out loud.</p>`);
+  let finished=false; screen(`<p class="eyebrow">${teamLabel(turn,true)} · REAL-WORLD ROUND</p><h3>${game.challenge[0]}</h3><p>${game.challenge[1]}</p><div id="game-clock" class="challenge-clock">20s</div><p>Other team: count complete repetitions out loud.</p>`);
   startClock(20,()=>{
-    if(finished)return;finished=true;screen(`<div class="result"><span class="giant-icon">⏱</span><h3>Stop! How many?</h3><p>Other team: enter the repetitions you counted for ${teamName(turn)}.</p><form id="challenge-form"><label for="challenge-score">Repetitions completed</label><input id="challenge-score" type="number" min="0" max="999" step="1" inputmode="numeric" required><button class="primary" type="submit">Confirm score →</button></form><p class="clue">Scores are counted by your family. Be fair. Have fun.</p></div>`);
+    if(finished)return;finished=true;screen(`<div class="result"><span class="giant-icon">⏱</span><h3>Stop! How many?</h3><p>Other team: enter the repetitions you counted for ${teamLabel(turn)}.</p><form id="challenge-form"><label for="challenge-score">Repetitions completed</label><input id="challenge-score" type="number" min="0" max="999" step="1" inputmode="numeric" required><button class="primary" type="submit">Confirm score →</button></form><p class="clue">Scores are counted by your family. Be fair. Have fun.</p></div>`);
     $('challenge-form').addEventListener('submit',e=>{e.preventDefault();const value=Number($('challenge-score').value);if(Number.isInteger(value)&&value>=0&&value<=999)finishTurn({score:value,elapsed:20,label:`${value} repetitions`});});status('Time! Enter the score together.');focusFirst();
   });status('Go! Twenty seconds. Count each complete repetition.');
 }
@@ -552,19 +564,19 @@ function rockPaperScissors(){
   function reveal(){
     const winner=rpsWinner(choices);
     const rule=winner===null?'Same move — it’s a tie!':choices[winner]===0?'Rock beats scissors!':choices[winner]===1?'Paper covers rock!':'Scissors cut paper!';
-    screen(`<div class="rps-battle"><p class="eyebrow">BOTH MOVES ARE LOCKED IN</p><h3>SHOW YOUR HANDS!</h3><div class="rps-battle-board"><div class="rps-battle-team"><b>★ ADULTS</b><span class="rps-battle-hand" role="img" aria-label="${labels[choices[0]]}">${hands[choices[0]]}</span><strong>${labels[choices[0]]}</strong></div><span class="rps-battle-vs">VS.</span><div class="rps-battle-team kids"><b>✦ KIDS</b><span class="rps-battle-hand" role="img" aria-label="${labels[choices[1]]}">${hands[choices[1]]}</span><strong>${labels[choices[1]]}</strong></div></div><p id="rps-battle-call" role="status">Rock… Paper… Scissors… SHOWDOWN!</p></div>`);
+    screen(`<div class="rps-battle"><p class="eyebrow">BOTH MOVES ARE LOCKED IN</p><h3>SHOW YOUR HANDS!</h3><div class="rps-battle-board"><div class="rps-battle-team"><b>★ ${teamLabel(0,true)}</b><span class="rps-battle-hand" role="img" aria-label="${labels[choices[0]]}">${hands[choices[0]]}</span><strong>${labels[choices[0]]}</strong></div><span class="rps-battle-vs">VS.</span><div class="rps-battle-team kids"><b>✦ ${teamLabel(1,true)}</b><span class="rps-battle-hand" role="img" aria-label="${labels[choices[1]]}">${hands[choices[1]]}</span><strong>${labels[choices[1]]}</strong></div></div><p id="rps-battle-call" role="status">Rock… Paper… Scissors… SHOWDOWN!</p></div>`);
     react('tap','SHOWDOWN!');status('Both teams: watch the showdown!');
     later(()=>{$('rps-battle-call').textContent=rule;react(winner===null?'turn':'match',winner===null?'TIE!':`${teamName(winner)} take the round!`);},1100);
-    later(()=>finishRound(winner,`Adults: ${moves[choices[0]]} · Kids: ${moves[choices[1]]}. ${rule}`),2600);
+    later(()=>finishRound(winner,`${teamName(0)}: ${moves[choices[0]]} · ${teamName(1)}: ${moves[choices[1]]}. ${rule}`),2600);
   }
   function choose(){
-    screen(`<p class="eyebrow">${teamName(turn).toUpperCase()} · SECRET MOVE</p><h3>What’s your move?</h3><p>Other team: look away. Your choice stays hidden until both teams have picked.</p><div id="rps-options" class="rps-options"></div>`);
+    screen(`<p class="eyebrow">${teamLabel(turn,true)} · SECRET MOVE</p><h3>What’s your move?</h3><p>Other team: look away. Your choice stays hidden until both teams have picked.</p><div id="rps-options" class="rps-options"></div>`);
     moves.forEach((move,i)=>{
       const pick=button(move,()=>{
         if(choices[turn]!==null)return;choices[turn]=i;
         if(choices[1-turn]===null){
           turn=1-first;scoreboard();
-          screen(`<div class="handoff"><span class="giant-icon" aria-hidden="true">🙌</span><p class="eyebrow">PASS THE DEVICE</p><h3>${teamName(turn)}, you’re next!</h3><p>The first move is hidden. Pass the device without looking back.</p><p class="rps-pass-count" style="font-size:48px;font-weight:900;color:#111" id="rps-pass-count">4</p><small>Your choices appear automatically.</small></div>`);
+          screen(`<div class="handoff"><span class="giant-icon" aria-hidden="true">🙌</span><p class="eyebrow">PASS THE DEVICE</p><h3>${teamLabel(turn)}, you’re next!</h3><p>The first move is hidden. Pass the device without looking back.</p><p class="rps-pass-count" style="font-size:48px;font-weight:900;color:#111" id="rps-pass-count">4</p><small>Your choices appear automatically.</small></div>`);
           status(`Pass to ${teamName(turn)}. Their choices open in four seconds.`);
           let remaining=4;
           const tick=()=>{remaining--;if(remaining===0){choose();focusFirst();return;}$('rps-pass-count').textContent=remaining;later(tick,1000);};
@@ -587,8 +599,8 @@ function mazeDash(){
     const elapsed=escaped?(performance.now()-started)/1000:45;
     const result={score:escaped?1:0,elapsed,label:escaped?`Escaped in ${elapsed.toFixed(1)}s · ${steps} moves`:'No escape in 45 seconds'};
     if(escaped&&turn===1){
-      screen('<div class="result maze-celebration"><div class="maze-confetti" aria-hidden="true"><i>★</i><i>✦</i><i>★</i><i>✦</i><i>★</i><i>✦</i></div><span class="giant-icon" role="img" aria-label="Celebration">🎉</span><p class="eyebrow">MAZE COMPLETE!</p><h3>WAY TO GO, KIDS!</h3><p>You found the way out!</p><p>'+result.label+'</p></div>');
-      react('win','MAZE COMPLETE!');status('Way to go, Kids! You completed the maze!');
+      screen('<div class="result maze-celebration"><div class="maze-confetti" aria-hidden="true"><i>★</i><i>✦</i><i>★</i><i>✦</i><i>★</i><i>✦</i></div><span class="giant-icon" role="img" aria-label="Celebration">🎉</span><p class="eyebrow">MAZE COMPLETE!</p><h3>WAY TO GO, '+teamLabel(turn,true)+'!</h3><p>You found the way out!</p><p>'+result.label+'</p></div>');
+      react('win','MAZE COMPLETE!');status(`Way to go, ${teamName(turn)}! You completed the maze!`);
       later(()=>finishTurn(result),2000);
     }else finishTurn(result);
   }
@@ -609,7 +621,7 @@ function mazeDash(){
   draw();startClock(45,()=>finish(false));status('Find the flag. You can only move through open paths.');
 }
 function safeScoreMarkup(){
-  return `<div class="safe-point-score" aria-label="Safe points this round"><span>ADULTS <b>${game.safePoints[0]}</b></span><small>FIRST TO 3<br>1 SAFE = 1 POINT</small><span>KIDS <b>${game.safePoints[1]}</b></span></div>`;
+  return `<div class="safe-point-score" aria-label="Safe points this round"><span>${teamLabel(0,true)} <b>${game.safePoints[0]}</b></span><small>FIRST TO 3<br>1 SAFE = 1 POINT</small><span>${teamLabel(1,true)} <b>${game.safePoints[1]}</b></span></div>`;
 }
 function codeBreaker(){
   let guesses=0,settled=false,guess=[1,1,1],matched=[false,false,false];
@@ -620,7 +632,7 @@ function codeBreaker(){
     const scoringTeam=turn;
     function nextSafe(){
       if(game.safePoints[scoringTeam]>=3){
-        finishRound(scoringTeam,`Safe points: Adults ${game.safePoints[0]} · Kids ${game.safePoints[1]}. Each unlocked safe earned 1 point. First to 3 wins the round!`);
+        finishRound(scoringTeam,`Safe points: ${teamName(0)} ${game.safePoints[0]} · ${teamName(1)} ${game.safePoints[1]}. Each unlocked safe earned 1 point. First to 3 wins the round!`);
         return;
       }
       const next=1-scoringTeam;
@@ -639,7 +651,7 @@ function codeBreaker(){
       const prizes=[['💎','Rainbow Diamond','A sparkling treasure for an expert safe cracker!'],['🗝️','Golden Key','The key to your next family adventure!'],['🏆','Safe Cracker Trophy','A little treasure. A lot of bragging rights!'],['⭐','Lucky Star','A shining reward for your clever code cracking!'],['🥚','Dragon Egg','What could be waiting inside this mysterious treasure?']];
       const [icon,name,description]=prizes[Math.floor(Math.random()*prizes.length)];
       const won=game.safePoints[scoringTeam]>=3;
-      screen(`<div class="safe-prize-page"><p class="eyebrow">THE SAFE IS OPEN!</p><h3>CONGRATULATIONS, ${teamName(scoringTeam).toUpperCase()}!</h3><div class="safe-prize-vault" aria-hidden="true"><div class="safe-prize-rays"></div><span class="safe-prize-icon">${icon}</span><span class="safe-prize-door"></span></div><p class="safe-prize-found">YOUR SURPRISE TREASURE</p><h4>${name}</h4><p>${description}</p><strong class="safe-prize-point">+1 POINT</strong>${safeScoreMarkup()}<p class="safe-prize-note">Virtual treasure · just for fun!</p><p class="auto-note">${won?`${teamName(scoringTeam)} reached 3 points and win the round!`:`Pass to ${teamName(1-scoringTeam)}. Their safe is up next!`}</p></div>`);
+      screen(`<div class="safe-prize-page"><p class="eyebrow">THE SAFE IS OPEN!</p><h3>CONGRATULATIONS, ${teamLabel(scoringTeam,true)}!</h3><div class="safe-prize-vault" aria-hidden="true"><div class="safe-prize-rays"></div><span class="safe-prize-icon">${icon}</span><span class="safe-prize-door"></span></div><p class="safe-prize-found">YOUR SURPRISE TREASURE</p><h4>${name}</h4><p>${description}</p><strong class="safe-prize-point">+1 POINT</strong>${safeScoreMarkup()}<p class="safe-prize-note">Virtual treasure · just for fun!</p><p class="auto-note">${won?`${teamLabel(scoringTeam)} reached 3 points and win the round!`:`Pass to ${teamLabel(1-scoringTeam)}. Their safe is up next!`}</p></div>`);
       react('win',`${teamName(scoringTeam)} +1 POINT!`);
       readArcade(`Congratulations, ${teamName(scoringTeam)}! You found the ${name}! You earned one point. ${won?'Three points! You win the round!':`You have ${game.safePoints[scoringTeam]} ${game.safePoints[scoringTeam]===1?'point':'points'}. First to three wins the round!`}`,1);
       status(`${teamName(scoringTeam)} found the ${name}! +1 point. ${won?'Round won!':'Next team starts automatically.'}`);

@@ -20,7 +20,7 @@
    });
   }
   const a=roster.playingAdults.length,k=roster.playingKids.length;
-  $('roster-playing-status').textContent=loaded?(a+k?`PLAYING: ${a} ${a===1?'ADULT':'ADULTS'} · ${k} ${k===1?'KID':'KIDS'}`:'Select who’s playing, then open the Arcade.'):'Loading your family roster…';
+  $('roster-playing-status').textContent=loaded?(a+k?(a===0&&k>=2?'KIDS vs. KIDS · '+roster.playingKids.map(i=>roster.kids[i]).join(' · '):`PLAYING: ${a} ${a===1?'ADULT':'ADULTS'} · ${k} ${k===1?'KID':'KIDS'}`):'Select who’s playing, then open the Arcade.'):'Loading your family roster…';
  }
  async function save(value){
   const response=await fetch('/auth/family-roster',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify(value)});const result=await response.json();if(!response.ok)throw Error(result.error||'Could not save your roster.');return result.roster;
@@ -35,7 +35,7 @@
   try{await loadPromise;}finally{loadPromise=null;}
  }
  const dialog=document.createElement('dialog');dialog.className='roster-dialog';dialog.setAttribute('aria-labelledby','roster-dialog-title');
- dialog.innerHTML='<div class="roster-dialog-heading"><h2 id="roster-dialog-title">Manage Family Roster</h2><button type="button" id="roster-close" aria-label="Close roster editor">✕</button></div><p class="roster-dialog-intro">Names or nicknames are perfect. Add up to 5 kids. Tap names on your roster to choose who’s playing.</p><form id="roster-form"><div class="roster-editor-teams"><fieldset><legend>☆ TEAM ADULTS</legend><div id="roster-edit-adults"></div><button type="button" id="roster-add-adult">+ Add adult</button></fieldset><fieldset><legend>☆ TEAM KIDS <span id="roster-kid-count"></span></legend><div id="roster-edit-kids"></div><button type="button" id="roster-add-kid">+ Add kid</button></fieldset></div><button class="roster-save" type="submit">Save Roster →</button><p id="roster-editor-status" role="status"></p></form>';
+ dialog.innerHTML='<div class="roster-dialog-heading"><h2 id="roster-dialog-title">Manage Family Roster</h2><button type="button" id="roster-close" aria-label="Close roster editor">✕</button></div><p class="roster-dialog-intro">Names or nicknames are perfect. Add up to 5 kids. Tap names on your roster to choose who’s playing. Select two or more kids with no adults for Kids vs. Kids in the Arcade.</p><form id="roster-form"><div class="roster-editor-teams"><fieldset><legend>☆ TEAM ADULTS</legend><div id="roster-edit-adults"></div><button type="button" id="roster-add-adult">+ Add adult</button></fieldset><fieldset><legend>☆ TEAM KIDS <span id="roster-kid-count"></span></legend><div id="roster-edit-kids"></div><button type="button" id="roster-add-kid">+ Add kid</button></fieldset></div><button class="roster-save" type="submit">Save Roster →</button><p id="roster-editor-status" role="status"></p></form>';
  document.body.appendChild(dialog);$('roster-close').onclick=()=>dialog.close();
  function updateEditor(){
   $('roster-add-adult').disabled=$('roster-edit-adults').children.length>=10;$('roster-add-kid').disabled=$('roster-edit-kids').children.length>=5;$('roster-kid-count').textContent=`(${$('roster-edit-kids').children.length}/5)`;
