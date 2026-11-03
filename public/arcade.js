@@ -1,6 +1,6 @@
 import {mountBasketball} from './arcade-basketball.js?v=1';
 import {coverMarkup,recentGames} from './arcade-library.js?v=2';
-import {GAMES, ANIMALS, TRIVIA, WORDS, PICTURES, CHALLENGES} from './arcade-data.js?v=8';
+import {GAMES, ANIMALS, TRIVIA, WORDS, PICTURES, CHALLENGES} from './arcade-data.js?v=9';
 import {teamName, shuffle, roundWinner, awardRound, lineWinner} from './arcade-core.js';
 
 import {makeMaze, codeClues, rpsWinner, GOLF_COURSES, golfStep} from './arcade-new-core.js?v=5';
@@ -207,7 +207,7 @@ function scoreboard(){
   $('arcade-reset').textContent=series?'Restart series ↻':'Restart match ↻';
   $('series-lineup').hidden=!series;
   if(series) $('series-lineup').innerHTML=series.games.map((g,i)=>`<div class="series-pick ${i===series.index?'active':''}"><small>GAME ${i+1}${series.winners[i]!==undefined?` · ${teamName(series.winners[i])} win`:''}</small><b>${g.icon} ${g.name}</b></div>`).join('');
-  $('arcade-score').innerHTML=names.map((name,i)=>`<div class="team-score ${turn===i&&champion<0?'current':''}"><span>${i===0?'★':'✦'} TEAM ${name.toUpperCase()}</span><strong>${game?.id==='basketball'&&!series?(game.basketballPoints?.[i]??0):wins[i]}</strong><div class="win-dots" aria-label="${wins[i]} ${series?'game':'round'} wins">${[0,1,2].map(n=>`<i class="${n<wins[i]?'won':''}"></i>`).join('')}</div></div>`).join('');
+  $('arcade-score').innerHTML=names.map((name,i)=>`<div class="team-score ${turn===i&&champion<0?'current':''}"><span>${i===0?'★':'✦'} TEAM ${name.toUpperCase()}</span><strong>${game?.id==='basketball'&&!series?(game.basketballPoints?.[i]??0):game?.id==='code'&&champion<0?(game.safePoints?.[i]??0):wins[i]}</strong><div class="win-dots" aria-label="${wins[i]} ${series?'game':'round'} wins">${[0,1,2].map(n=>`<i class="${n<wins[i]?'won':''}"></i>`).join('')}</div></div>`).join('');
   $('round-label').textContent=game?.id==='basketball'&&!series?(champion>=0?'MATCH COMPLETE':'2 POINTS PER BASKET · MOST POINTS WINS'):series?`${champion>=0?'SERIES COMPLETE':`GAME ${series.index+1} OF 3${attempt?' · TIE REPLAY':''}`} · SERIES SCORE` : champion>=0?'MATCH COMPLETE':`ROUND ${round} OF 5${attempt?' · TIE REPLAY':''} · FIRST TO 3 WINS`;
 }
 function pick(key,source,n){
@@ -271,13 +271,13 @@ function handoff(team,detail,action){
   later(tick,1000);
 }
 function beginRound(){
-  results=[]; if(game.id==='basketball')game.basketballPoints=[0,0]; turn=starter; scoreboard(); status('');
+  results=[]; if(game.id==='basketball')game.basketballPoints=[0,0]; if(game.id==='code')game.safePoints=[0,0]; turn=starter; scoreboard(); status('');
   if(game.id==='memory') return memory();
   if(game.id==='tic') return handoff(turn,`${teamName(turn)} makes the first move. Adults use X; kids use O.`,tic);
   if(game.id==='rps')return handoff(turn,'Keep your move secret. The other team should look away until you pass the device.',rockPaperScissors);
   if(game.id==='basketball')return teamReady(starter);
   if(game.id==='maze')game.maze=makeMaze();
-  if(game.id==='code')game.codes=[0,1].map(()=>Array.from({length:3},()=>1+Math.floor(Math.random()*4)));
+  if(game.id==='code'){game.codes=[0,1].map(()=>Array.from({length:3},()=>1+Math.floor(Math.random()*4)));}
   if(game.id==='golf')game.course=shuffle(GOLF_COURSES).slice(0,3);
   if(game.id==='challenge') game.challenge=pick('challenge',CHALLENGES,1)[0];
   if(game.id==='trivia') game.questions=pick('trivia',TRIVIA,10);
@@ -563,21 +563,45 @@ function mazeDash(){
   mazeSoundbar();
   draw();startClock(45,()=>finish(false));status('Find the flag. You can only move through open paths.');
 }
+function safeScoreMarkup(){
+  return `<div class="safe-point-score" aria-label="Safe points this round"><span>ADULTS <b>${game.safePoints[0]}</b></span><small>FIRST TO 3<br>1 SAFE = 1 POINT</small><span>KIDS <b>${game.safePoints[1]}</b></span></div>`;
+}
 function codeBreaker(){
   let guesses=0,settled=false,guess=[1,1,1],matched=[false,false,false];
   const secret=game.codes[turn];
-  screen('<div class="turn-strip"><span id="code-progress"></span><strong id="game-clock"></strong></div><h3>Can you unlock the safe?</h3><p class="safe-instructions">Tap each number box to change it: <b>1 → 2 → 3 → 4 → 1</b>.<br>Then press <b>Unlock Safe</b>. Correct boxes glow green and stay locked in!</p><div class="code-safe" id="code-safe" data-open="false"><div class="safe-door"><span class="safe-hinge top" aria-hidden="true"></span><span class="safe-hinge bottom" aria-hidden="true"></span><div class="safe-brand">ADULTS vs. KIDS™ <span>FAMILY VAULT</span></div><div class="safe-lock-panel"><p class="safe-screen-label" id="safe-screen-label">PRESS NUMBER BOX TO CHANGE THE NUMBERS</p><div id="code-digits" class="code-digits" role="group" aria-label="Three safe code number boxes"></div><div class="safe-screen-feedback" id="safe-feedback" role="status" aria-live="polite">Set all 3 numbers, then try the lock.</div></div><div class="safe-handle" aria-hidden="true"><i></i><i></i><i></i></div><div id="code-action"></div><p class="safe-footnote">Numbers can repeat · 6 tries · 60 seconds</p></div></div>');
+  screen(safeScoreMarkup()+'<div class="turn-strip"><span id="code-progress"></span><strong id="game-clock"></strong></div><h3>Can you unlock the safe?</h3><p class="safe-instructions">Tap each number box to change it: <b>1 → 2 → 3 → 4 → 1</b>.<br>Then press <b>Unlock Safe</b>. Correct boxes glow green and stay locked in!</p><div class="code-safe" id="code-safe" data-open="false"><div class="safe-door"><span class="safe-hinge top" aria-hidden="true"></span><span class="safe-hinge bottom" aria-hidden="true"></span><div class="safe-brand">ADULTS vs. KIDS™ <span>FAMILY VAULT</span></div><div class="safe-lock-panel"><p class="safe-screen-label" id="safe-screen-label">PRESS NUMBER BOX TO CHANGE THE NUMBERS</p><div id="code-digits" class="code-digits" role="group" aria-label="Three safe code number boxes"></div><div class="safe-screen-feedback" id="safe-feedback" role="status" aria-live="polite">Set all 3 numbers, then try the lock.</div></div><div class="safe-handle" aria-hidden="true"><i></i><i></i><i></i></div><div id="code-action"></div><p class="safe-footnote">6 tries · 60 seconds · Unlock for 1 point</p></div></div>');
   function finish(solved){
     if(settled)return;settled=true;timed=false;
-    const result={score:solved?7-guesses:0,elapsed:0,label:solved?`Safe unlocked in ${guesses} ${guesses===1?'try':'tries'}`:`Safe stayed locked · ${guesses} tries`};
-    if(!solved)return finishTurn(result);
+    const scoringTeam=turn;
+    function nextSafe(){
+      if(game.safePoints[scoringTeam]>=3){
+        finishRound(scoringTeam,`Safe points: Adults ${game.safePoints[0]} · Kids ${game.safePoints[1]}. Each unlocked safe earned 1 point. First to 3 wins the round!`);
+        return;
+      }
+      const next=1-scoringTeam;
+      game.codes[next]=Array.from({length:3},()=>1+Math.floor(Math.random()*4));
+      teamReady(next,solved?`${teamName(scoringTeam)} earned 1 point!`:'The safe stayed locked. No point this turn.');
+    }
+    if(!solved){nextSafe();return;}
+    game.safePoints[scoringTeam]++;scoreboard();
     $('code-safe').setAttribute('data-open','true');
     $('safe-screen-label').textContent='ACCESS GRANTED';
-    $('safe-feedback').textContent='SAFE UNLOCKED!';
+    $('safe-feedback').textContent='SAFE UNLOCKED! +1 POINT';
     unlock.disabled=true;unlock.textContent='Safe Unlocked! ✓';
-    react('win','SAFE UNLOCKED!');status(`${teamName(turn)} unlocked the safe!`);
-    later(()=>finishTurn(result),1500);
+    replay.disabled=true;
+    react('win','SAFE UNLOCKED! +1 POINT');status(`${teamName(scoringTeam)} unlocked the safe and earned 1 point!`);
+    later(()=>{
+      const prizes=[['💎','Rainbow Diamond','A sparkling treasure for an expert safe cracker!'],['🗝️','Golden Key','The key to your next family adventure!'],['🏆','Safe Cracker Trophy','A little treasure. A lot of bragging rights!'],['⭐','Lucky Star','A shining reward for your clever code cracking!'],['🥚','Dragon Egg','What could be waiting inside this mysterious treasure?']];
+      const [icon,name,description]=prizes[Math.floor(Math.random()*prizes.length)];
+      const won=game.safePoints[scoringTeam]>=3;
+      screen(`<div class="safe-prize-page"><p class="eyebrow">THE SAFE IS OPEN!</p><h3>CONGRATULATIONS, ${teamName(scoringTeam).toUpperCase()}!</h3><div class="safe-prize-vault" aria-hidden="true"><div class="safe-prize-rays"></div><span class="safe-prize-icon">${icon}</span><span class="safe-prize-door"></span></div><p class="safe-prize-found">YOUR SURPRISE TREASURE</p><h4>${name}</h4><p>${description}</p><strong class="safe-prize-point">+1 POINT</strong>${safeScoreMarkup()}<p class="safe-prize-note">Virtual treasure · just for fun!</p><p class="auto-note">${won?`${teamName(scoringTeam)} reached 3 points and win the round!`:`Pass to ${teamName(1-scoringTeam)}. Their safe is up next!`}</p></div>`);
+      react('win',`${teamName(scoringTeam)} +1 POINT!`);
+      readArcade(`Congratulations, ${teamName(scoringTeam)}! You found the ${name}! You earned one point. ${won?'Three points! You win the round!':`You have ${game.safePoints[scoringTeam]} ${game.safePoints[scoringTeam]===1?'point':'points'}. First to three wins the round!`}`,1);
+      status(`${teamName(scoringTeam)} found the ${name}! +1 point. ${won?'Round won!':'Next team starts automatically.'}`);
+      later(nextSafe,4500);
+    },900);
   }
+
   function draw(){
     $('code-progress').textContent=`${teamName(turn)} · ${guesses} / 6 tries used`;
     $('code-digits').replaceChildren();
@@ -603,7 +627,7 @@ function codeBreaker(){
     const feedback=correct===0?'No green lights yet. Change the numbers and try again.':`${correct} of 3 boxes correct! Keep the green numbers. Change the others.`;
     $('safe-feedback').textContent=feedback;react('tap',`${correct} / 3 CORRECT`);status(feedback);
   },$('code-action'),'safe-unlock');
-  const instructions='Press number box to change the numbers. Tap each number button to change it, then press Unlock Safe. Correct numbers glow green and stay locked in.';
+  const instructions='Press number box to change the numbers. Tap each number button to change it, then press Unlock Safe. Correct numbers glow green and stay locked in. Each unlocked safe earns one point. First to three points wins the round.';
   const replay=button('Hear instructions 🔊',()=>readArcade(instructions,1),$('code-action'),'safe-voice');
   replay.disabled=!canReadTrivia();
   draw();startClock(60,()=>{if(!settled)finish(false);});status('Tap the number boxes, then press Unlock Safe. Green means the number is correct and locked in.');

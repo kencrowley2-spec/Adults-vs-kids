@@ -55,7 +55,7 @@ function fixture(firstTeam=0,withSpeech=false,withAudio=false){
   const basketballSource=readFileSync(new URL('../public/arcade-basketball.js',import.meta.url),'utf8').replace(/export /g,'');
   vm.runInContext(basketballSource,context);
   const source=readFileSync(new URL('../public/arcade.js',import.meta.url),'utf8').replace(/^import .*;\n/gm,'');
-  vm.runInContext(source+'\nthis.state=()=>({wins:[...wins],round,champion,turn,starter,attempt,plans:game?{maze:game.maze,codes:game.codes,course:game.course}:null,series:series?{games:series.games.map(g=>g.id),index:series.index,winners:[...series.winners]}:null});this.resolveGame=finishRound;this.seriesWith=id=>{startSeries();clearTimers();series.games=[GAMES.find(g=>g.id===id),...GAMES.filter(g=>g.id!==id).slice(0,2)];startSeriesGame();};',context);
+  vm.runInContext(source+'\nthis.state=()=>({wins:[...wins],round,champion,turn,starter,attempt,plans:game?{maze:game.maze,codes:game.codes,safePoints:game.safePoints,course:game.course}:null,series:series?{games:series.games.map(g=>g.id),index:series.index,winners:[...series.winners]}:null});this.resolveGame=finishRound;this.seriesWith=id=>{startSeries();clearTimers();series.games=[GAMES.find(g=>g.id===id),...GAMES.filter(g=>g.id!==id).slice(0,2)];startSeriesGame();};',context);
   const get=id=>doc.getElementById(id);
   const buttons=()=>get('game-stage').querySelectorAll('button');
   const click=text=>{const b=buttons().find(b=>b.textContent===text);assert.ok(b,`Missing button: ${text}`);b.click();};
@@ -161,7 +161,7 @@ for(const first of [0,1]){
 }
 // Timed games finish a team, pass automatically, and award a result. No Ready
 // buttons or extra result acknowledgements, even on timeout or ties.
-for(const id of ['spot','trivia','word','picture','number','challenge','maze','code']){
+for(const id of ['spot','trivia','word','picture','number','challenge','maze']){
  const f=fixture();f.start(id);const seconds={spot:30,trivia:45,word:45,picture:30,number:30,challenge:20,maze:45,code:60}[id];
  function finishTimed(value){f.advance(seconds*1000);if(id==='challenge'){f.get('challenge-score').value=value;f.get('challenge-form').dispatch('submit');}}
  finishTimed('12');assert.ok(f.get('handoff-countdown'));assert.equal(f.state().turn,1);noNavigation(f);
@@ -273,8 +273,28 @@ for(let i=0;i<30;i++)assert.ok(route(newCore.makeMaze()).length);
 }
 function enterCode(f,code){code.forEach((v,i)=>{const digit=()=>f.get('code-digits').children[i];while(Number(digit().textContent)!==v)digit().click();});f.click('Unlock Safe 🔓');}
 assert.deepEqual(newCore.codeClues([1,1,2],[1,2,1]),{exact:1,misplaced:2});
-{
- const f=fixture();f.start('code',1);enterCode(f,f.state().plans.codes[1]);assert.equal(f.get('code-safe').getAttribute('data-open'),'true');f.advance(1500);assert.ok(f.get('handoff-countdown'));f.advance(4000);f.advance(60000);assert.deepEqual([...f.state().wins],[0,1]);
+// Every unlock earns exactly one point, independently of guesses used.
+// Teams alternate, treasure appears before handoff, and 3–2 wins a round.
+for(const first of [0,1]){
+ const f=fixture();f.start('code',first);
+ for(let safe=0;safe<5;safe++){
+  const team=f.state().turn,pointsBefore=[...f.state().plans.safePoints];
+  enterCode(f,f.state().plans.codes[team]);
+  assert.equal(f.get('code-safe').getAttribute('data-open'),'true');
+  assert.equal(f.state().plans.safePoints[team],pointsBefore[team]+1);
+  f.buttons().find(b=>b.textContent==='Safe Unlocked! ✓').click();
+  assert.equal(f.state().plans.safePoints[team],pointsBefore[team]+1,'Cannot award twice');
+  f.advance(900);assert.match(f.get('game-stage').textContent,/CONGRATULATIONS/);
+  assert.match(f.get('game-stage').textContent,/SURPRISE TREASURE/);
+  assert.match(f.get('game-stage').textContent,/Virtual treasure/);
+  assert.match(f.get('game-stage').textContent,/\+1 POINT/);
+  f.advance(4500);
+  if(safe<4){assert.ok(f.get('handoff-countdown'));assert.equal(f.state().turn,1-team);f.advance(4000);}
+ }
+ assert.equal(f.state().wins[first],1);assert.equal(f.state().wins[1-first],0);
+ assert.deepEqual([...f.state().plans.safePoints],first===0?[3,2]:[2,3]);
+ assert.equal(f.saved.length,0,'Only a completed match is saved');
+ f.advance(2200);assert.deepEqual([...f.state().plans.safePoints],[0,0]);
 }
 // The safe prominently explains number buttons and speaks the same instruction.
 {
@@ -298,14 +318,37 @@ assert.deepEqual(newCore.codeClues([1,1,2],[1,2,1]),{exact:1,misplaced:2});
  assert.match(f.get('safe-feedback').textContent,/Press Unlock Safe/);
  enterCode(f,secret);assert.equal(f.get('code-safe').getAttribute('data-open'),'true');
  const unlock=f.buttons().find(b=>b.textContent==='Safe Unlocked! ✓');assert.equal(unlock.disabled,true);
- f.advance(1500);assert.ok(f.get('handoff-countdown'));f.advance(4000);
+ f.advance(5400);assert.ok(f.get('handoff-countdown'));f.advance(4000);
  assert.equal(f.get('code-safe').getAttribute('data-open'),'false');
  assert.ok(f.get('code-digits').children.every(b=>!b.disabled));
 }
 {
  const f=fixture();f.start('code');const wrong=f.state().plans.codes[0].map(v=>v%4+1);
  for(let i=0;i<6;i++)enterCode(f,wrong);
- assert.ok(f.get('handoff-countdown'),'Six wrong tries end the turn');
+ assert.ok(f.get('handoff-countdown'),'Six wrong tries end the turn');assert.deepEqual([...f.state().plans.safePoints],[0,0]);
+}
+// A timeout awards no safe point; leaving during a prize cancels progression.
+{
+ const f=fixture();f.start('code');f.advance(60000);
+ assert.ok(f.get('handoff-countdown'));assert.deepEqual([...f.state().plans.safePoints],[0,0]);
+ f.advance(4000);enterCode(f,f.state().plans.codes[f.state().turn]);f.advance(900);
+ f.get('arcade-return').click();f.advance(60000);assert.equal(f.get('arcade-game').hidden,true);
+ assert.equal(f.saved.length,0);
+}
+// Complete three rounds without recording intermediate safe points as rounds.
+{
+ const f=fixture();f.start('code');
+ for(let round=0;round<3;round++){
+  while(f.state().turn!==0){f.advance(60000);f.advance(4000);}
+  for(let point=0;point<3;point++){
+   enterCode(f,f.state().plans.codes[0]);f.advance(5400);
+   if(point<2){f.advance(4000);f.advance(60000);f.advance(4000);}
+  }
+  if(round<2){assert.equal(f.saved.length,0);f.advance(2200);f.advance(4000);}
+ }
+ assert.equal(f.state().champion,0);assert.equal(f.saved.length,1);
+ assert.deepEqual([...f.saved[0].roundWinners],[0,0,0]);
+ f.advance(60000);assert.equal(f.saved.length,1);
 }
 // Maze's soundtrack has independent music controls; movement effects follow
 // global Sound. Every transition stops the looping music and live notes.
