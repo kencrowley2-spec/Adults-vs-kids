@@ -15,6 +15,7 @@ try{
   assert(!/84\.6%|of parents experience guilt|Unverified figure/.test(html),path);
  }
  const home=pages.get('/');assert.match(home,/<title>Adults vs. Kids \| Free Family Games &amp; Fun Activities<\/title>/);assert.match(home,/<h1[^>]*>Fun Family Games That Bring Parents and Kids Together<\/h1>/);assert.equal((home.match(/<h1/g)||[]).length,1);assert.match(home,/<video autoplay muted playsinline/);
+ assert(!/Basketball|13 interactive games/.test(home),'Homepage uses current game promotions');
  const guide=pages.get('/family-games');assert.equal((guide.match(/class="game-guide"/g)||[]).length,14);assert(!/Spot the Difference|Mini Golf|Basketball Showdown|Word Scramble|Quick Tap/.test(guide));assert.match(guide,/href="\/family\/arcade"/);
  const broken=[];
  for(const [path,html] of pages){for(const m of html.matchAll(/(?:href|src)="(\/[^"?#]*)(?:\?[^"#]*)?(?:#([^"\s]*))?"/g)){

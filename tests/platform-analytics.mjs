@@ -25,9 +25,9 @@ assert.equal((await exports.POST(request({type:'game_start',detail:'memory'}))).
 role='family';assert.equal((await exports.POST(request({type:'game_start',detail:'memory'}))).status,204);assert.equal(writes.at(-1).row.user_id,'family-1');
 assert.equal((await exports.POST(request({type:'game_start',detail:'forged'}))).status,400);
 const day={day:'2026-11-02',visitors:2,visits:3,views:4,starts:5,matches:1,families:1,waitlist:1,quizzes:1,orders:1,revenue:299,sessions:1,seconds:60,tools:1,amazon:1,checkout_clicks:1,download_clicks:1};
-const fixture={metrics:{families:1},analytics:{daily:[day],periods:{7:{visitors:2,visits:3,active_families:1}},totals:{revenue:299},pages:[],games:[{game:'memory',starts:5,completed_games:1}],sources:[],devices:[]}};
+const fixture={search:{periods:{7:{organic_visits:2,ai_visits:1,new_family_profiles:1}},sources:[{channel:'Organic search',source:'www.google.com',visits:2}]},metrics:{families:1},analytics:{daily:[day],periods:{7:{visitors:2,visits:3,active_families:1}},totals:{revenue:299},pages:[],games:[{game:'memory',starts:5,completed_games:1}],sources:[],devices:[]}};
 const ui=readFileSync('public/admin-ui.js','utf8').split('async function loadSection(){')[0];
 const context=vm.createContext({document:{getElementById:()=>({})},fixture});
 vm.runInContext(ui+'summary=fixture;this.rendered=platformAnalytics();})();',context);
-assert.match(context.rendered,/Memory Match/);assert.match(context.rendered,/\$2\.99/);assert.match(context.rendered,/\$2\.60/);assert.match(context.rendered,/Indiana/);
+assert.match(context.rendered,/Memory Match/);assert.match(context.rendered,/\$2\.99/);assert.match(context.rendered,/\$2\.60/);assert.match(context.rendered,/Indiana/);assert.match(context.rendered,/Organic search visits/);assert.match(context.rendered,/AI referral visits/);assert.match(context.rendered,/www.google.com/);
 console.log('PASS: analytics origin and input validation, bot and founder exclusions, persistent visitor/session cookies, deduplication, authenticated game tracking, and populated dashboard rendering.');
