@@ -105,7 +105,8 @@ for(const id of data.GAMES.filter(g=>!g.comingSoon).map(g=>g.id)){
 }
 console.log('PASS: Kids vs. Kids across playable games, named turns and winners, series, balanced kid teams, escaped names, and no adult/kid lifetime-score writes.');
 // Core scoring remains first to three, with no points for a tie.
-assert.equal(data.GAMES.length,17);
+assert.equal(data.GAMES.length,14);
+assert.ok(!data.GAMES.some(g=>['spot','golf','basketball','word','tap'].includes(g.id)),'Removed games stay out of the active catalog');
 for(const outcomes of [[0,1,0,1,0],[1,0,1,0,1],[0,0,0]]){
  let wins=[0,0],champion=-1;for(const winner of outcomes)({wins,champion}=core.awardRound(wins,winner));
  assert.equal(champion,outcomes.at(-1));assert.equal(wins[champion],3);
@@ -210,7 +211,7 @@ for(const first of [0,1]){
 }
 // Timed games finish a team, pass automatically, and award a result. No Ready
 // buttons or extra result acknowledgements, even on timeout or ties.
-for(const id of ['spot','trivia','picture','number','challenge','maze']){
+for(const id of ['trivia','picture','number','challenge','maze']){
  const f=fixture();f.start(id);const seconds={spot:30,trivia:45,word:45,picture:30,number:30,challenge:20,maze:45,code:60}[id];
  function finishTimed(value){f.advance(seconds*1000);if(id==='challenge'){f.get('challenge-score').value=value;f.get('challenge-form').dispatch('submit');}}
  finishTimed('12');assert.ok(f.get('handoff-countdown'));assert.equal(f.state().turn,1);noNavigation(f);
@@ -219,7 +220,7 @@ for(const id of ['spot','trivia','picture','number','challenge','maze']){
  f.advance(2200);assert.equal(f.state().starter,1);assert.ok(f.get('handoff-countdown'));noNavigation(f);
 }
 // Every content mode accepts real answers, including duplicate-tap protection.
-for(const id of ['number','trivia','picture','spot']){
+for(const id of ['number','trivia','picture']){
  const f=fixture();f.start(id);
  const count=id==='spot'||id==='word'||id==='picture'?3:5;
  for(let n=0;n<count;n++){
@@ -451,17 +452,6 @@ for(const first of [0,1]){
  f.get('arcade-return').click();assert.ok(notes.every(n=>n.disconnected));
  const total=f.audio.nodes.length;f.advance(1000);assert.equal(f.audio.nodes.length,total);
 }
-// Golf has three holes per team and auto advances each hole and completed turn.
-function missGolfTurn(f){
- for(let hole=0;hole<3;hole++){
-  f.get('golf-angle').value='180';f.get('golf-power').value='10';
-  for(let shot=0;shot<4;shot++){f.click('Putt →');for(let frame=0;frame<250&&f.get('golf-action').querySelector('button').disabled&&!f.get('golf-controls').hidden;frame++)f.advance(16);}
-  noNavigation(f);f.advance(1200);
- }
-}
-{
- const f=fixture();f.start('golf');missGolfTurn(f);assert.ok(f.get('handoff-countdown'));f.advance(4000);missGolfTurn(f);assert.match(f.get('game-stage').textContent,/tie/);
-}
 // Three-game series still play three distinct games, resolve ties automatically,
 // alternate starters and save the final result only once.
 for(const first of [0,1])for(const outcomes of [[0,1,0],[1,0,1],[0,0,0],[1,1,1]]){
@@ -472,7 +462,7 @@ for(const first of [0,1])for(const outcomes of [[0,1,0],[1,0,1],[0,0,0],[1,1,1]]
 }
 // Reset/exit during handoff, reveal, results or celebration cancel outstanding
 // callbacks and cannot start an old game or award a stale point.
-for(const id of ['maze','rps','code','golf','memory','treasure']){
+for(const id of ['maze','rps','code','memory','treasure']){
  const f=fixture();f.start(id,1,false);f.get('arcade-reset').click();f.advance(10000);assert.match(f.get('game-stage').textContent,/Start over/);assert.equal(f.saved.length,0);
  f.get('arcade-return').click();f.start('tic');f.advance(6000);assert.ok(f.get('tic-board'));assert.deepEqual([...f.state().wins],[0,0]);
 }
@@ -491,46 +481,7 @@ assert.deepEqual(library.recentGames({getItem:()=>JSON.stringify(['memory','unkn
 {
  const f=fixture();f.start('memory');f.get('arcade-return').click();f.advance(6500);assert.equal(f.get('arcade-feature-title').textContent,data.GAMES[1].name);f.get('feature-pause').click();f.advance(20000);assert.equal(f.get('arcade-feature-title').textContent,data.GAMES[1].name);f.get('feature-next').click();f.get('arcade-featured-play').click();assert.ok(f.get('game-title').textContent.includes(data.GAMES[2].name));noNavigation(f);
 }
-console.log('All 17 Arcade games passed: automatic starters, countdown handoffs, automatic rounds/replays, reactions, golf holes, secret moves, scoring, celebrations, 3–2 matches, random series, cancellation, hidden-tab protection and rotating features.');
-
-// Basketball: each team has exactly 30 seconds; baskets are two points;
-// the shot already released at the buzzer resolves, then the device passes.
-{
- const f=fixture();f.start('basketball',1);
- const court=f.get('basketball-court');court.dispatch('keydown',{key:' '});f.advance(720);
- assert.equal(f.get('basketball-points').textContent,'Kids: 2 points');
- f.advance(29280);assert.ok(f.get('handoff-countdown'));assert.equal(f.state().turn,0);
- f.advance(4000);assert.ok(f.get('basketball-court'));f.advance(30000);
- assert.equal(f.state().champion,1);assert.equal(f.saved.length,1);assert.deepEqual([...f.saved[0].roundWinners],[1]);
- f.advance(30000);assert.equal(f.saved.length,1);
-}
-{
- const f=fixture();f.start('basketball');f.advance(29880);f.get('basketball-court').dispatch('keydown',{key:' '});
- f.advance(150);assert.ok(f.get('basketball-court'));f.advance(850);assert.ok(f.get('handoff-countdown'));
- f.advance(4000);f.get('basketball-court').dispatch('keydown',{key:' '});f.advance(30000);
- assert.match(f.get('game-stage').textContent,/It’s a tie/);assert.equal(f.saved.length,0);
-}
-{
- const f=fixture();f.start('basketball');f.doc.hidden=true;f.doc.handlers.visibilitychange();
- f.advance(60000);assert.equal(f.saved.length,0);assert.match(f.get('game-stage').textContent,/interrupted/);
-}
-console.log('Basketball passed: 30 seconds per team, 2 points per basket, handoff, buzzer shot, ties, one-time completion saving and interruption.');
-
-// Touch/mouse coordinates normalize to the same court at any display size.
-{
- const f=fixture();f.start('basketball');const c=f.get('basketball-court');
- c.getBoundingClientRect=()=>({left:10,top:20,width:200,height:380});c.setPointerCapture=()=>{};
- const event=(x,y)=>({pointerId:1,clientX:10+x/2,clientY:20+y/2});
- c.dispatch('pointerdown',event(200,650));c.dispatch('pointerup',event(200,498));f.advance(980);
- assert.match(f.get('basketball-points').textContent,/2 points/);
- c.dispatch('pointerdown',event(200,650));c.dispatch('pointerup',event(260,498));f.advance(980);
- assert.match(f.get('basketball-points').textContent,/2 points/);
- c.dispatch('pointerdown',event(200,650));c.dispatch('pointerup',event(200,620));f.advance(980);
- assert.match(f.get('basketball-points').textContent,/2 points/);
- c.dispatch('pointerdown',event(200,650));c.dispatch('pointercancel');c.dispatch('pointerup',event(200,498));f.advance(980);
- assert.match(f.get('basketball-points').textContent,/2 points/);
-}
-console.log('Basketball gestures passed: scaled touch coordinates, made shot, wide shot, short shot, canceled gesture.');
+console.log('All 14 Arcade games passed: automatic starters, countdown handoffs, automatic rounds/replays, reactions, secret moves, scoring, celebrations, 3–2 matches, random series, cancellation, hidden-tab protection and rotating features.');
 
 // Block Showdown: a full minute each, one-round result, no speed tiebreak.
 for(const first of [0,1]){
@@ -570,12 +521,7 @@ console.log('PASS: Block Showdown one-minute turns, both starting teams, one-rou
   choices[0].click();f.advance(650);
  }
 }
-{
- const f=fixture();const i=data.GAMES.findIndex(g=>g.id==='basketball');
- const tile=f.get('arcade-grid').children[i];assert.equal(tile.disabled,true);assert.match(tile.textContent,/COMING SOON/);
- tile.click();assert.equal(f.get('block-board'),null);assert.equal(f.get('basketball-court'),null);
-}
-console.log('PASS: numbered Trivia answer bubbles, tiny icons, exact speech/visual option agreement and coming-soon launch guard.');
+console.log('PASS: numbered Trivia answer bubbles, tiny icons, exact speech/visual option agreement.');
 
 // Frog Hop uses real hold/release controls, crossings and misses, then passes.
 {
@@ -737,14 +683,13 @@ for(const first of [0,1]){
 }
 // Time and distance tie breakers never claim an outright win prematurely.
 {
- const f=fixture();f.start('spot');f.run('finishTurn({score:3,elapsed:8.5,label:"3 found"})');f.advance(4000);
+ const f=fixture();f.start('picture');f.run('finishTurn({score:3,elapsed:8.5,label:"3 found"})');f.advance(4000);
  f.run('competitionUpdate({score:3})');assert.match(f.get('competition-call').textContent,/TIME DECIDES/);assert.match(f.get('competition-detail').textContent,/8.5s/);
  const frog=fixture();frog.start('frog');frog.run('finishTurn({score:1,distance:77,flies:2,elapsed:0,label:"1 crossing"})');frog.advance(4000);
  assert.match(frog.get('competition-detail').textContent,/77%/);
  frog.run('competitionUpdate({score:1,distance:80,flies:0})');assert.match(frog.get('competition-call').textContent,/AHEAD ON DISTANCE/);
  assert.ok(frog.get('frog-pond').drawCalls.some(c=>c.name==='fillText'&&String(c.args[0]).includes('77% BEST')),'Pond draws the opponent distance marker');
- const golf=fixture();golf.start('golf');golf.run('finishTurn({score:9,elapsed:0,label:"9 strokes"})');golf.advance(4000);
- assert.match(golf.get('competition-call').textContent,/9 STROKES/);assert.match(golf.get('competition-detail').textContent,/Lower score wins/);
+
 }
 // Every playable game gets a rivalry HUD; safe escaped roster names cannot inject markup.
 for(const g of data.GAMES.filter(g=>!g.comingSoon)){
@@ -754,7 +699,7 @@ for(const g of data.GAMES.filter(g=>!g.comingSoon)){
 console.log('PASS: competition targets, reverse starts, score ties, lead transitions, time/distance rules, frog marker, crown rematches, safe roster names and every game HUD.');
 
 // Successful timed turns save independently of match wins; partial turns do not.
-for(const [game,score] of [['maze',1],['spot',3],['picture',3],['number',5]]){
+for(const [game,score] of [['maze',1],['picture',3],['number',5]]){
  const f=fixture();f.start(game);
  f.run(`finishTurn({score:${score},elapsed:5.432,label:'Complete'})`);
  assert.equal(f.timedSaved.length,1);assert.equal(f.timedSaved[0].game,game);assert.equal(f.timedSaved[0].elapsedMs,5432);assert.equal(f.saved.length,0);

@@ -25,9 +25,9 @@ export async function GET(request:Request){
  return memberReply({rows,count:result.count||0,page,pageSize:25},200,auth.headers);
  }
  if(section==='overview'){
- const [base,platform]=await Promise.all([auth.client.rpc('admin_overview'),paymentAdmin().rpc('platform_analytics')]);
+ const [base,platform,searchResult]=await Promise.all([auth.client.rpc('admin_overview'),paymentAdmin().rpc('platform_analytics'),Promise.resolve(paymentAdmin().rpc('search_metrics')).then(result=>result.error?null:result.data).catch(()=>null)]);
  const metrics=checked(base),analytics=checked(platform);
- return memberReply({metrics,analytics,emailReady:process.env.AUTH_EMAIL_READY==='true',registrationOpen:process.env.AUTH_REGISTRATION_OPEN==='true',loadedAt:new Date().toISOString()},200,auth.headers);
+ return memberReply({metrics,analytics,search:searchResult,emailReady:process.env.AUTH_EMAIL_READY==='true',registrationOpen:process.env.AUTH_REGISTRATION_OPEN==='true',loadedAt:new Date().toISOString()},200,auth.headers);
  }
  if(!(section in sources))return memberReply({error:'Unknown section.'},400,auth.headers);
  const source=sources[section as keyof typeof sources];

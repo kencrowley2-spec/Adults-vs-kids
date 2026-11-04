@@ -1,4 +1,5 @@
+import {enrichPublicHtml,publicLinks,bookSchema} from '../../lib/seo';
 import {trackedHtml} from '../../lib/analytics';
 import {pdfPage} from '../../lib/pdf-pages';
 export const dynamic='force-dynamic';
-export function GET(){return new Response(trackedHtml(pdfPage()),{headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});}
+export function GET(){return new Response(trackedHtml(enrichPublicHtml(pdfPage().replace('</main>',publicLinks()+'</main>'),'/downloads',bookSchema())),{headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});}
