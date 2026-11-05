@@ -678,7 +678,7 @@ for(const first of [0,1]){
  const calls=f.speech.spoken.length;f.run('competitionUpdate({score:14})');assert.equal(f.speech.spoken.length,calls,'No repeated lead narration on every hit');
  f.run('finishTurn({score:14,elapsed:30,label:"14 hits"})');
  assert.match(f.get('game-stage').textContent,/HAS THE CROWN/);assert.equal(f.saved.length,0,'Kid-only results remain local');
- f.click('👑 Defend your crown · Rematch →');assert.match(f.get('game-stage').textContent,/DEFENDING CHAMPION/);
+ f.click('REMATCH!');assert.match(f.get('game-stage').textContent,/DEFENDING CHAMPION/);
  assert.deepEqual([...f.state().wins],[0,0]);assert.doesNotMatch(f.get('competition-detail').textContent,/BEAT.*14/);
 }
 // Time and distance tie breakers never claim an outright win prematurely.
@@ -707,3 +707,44 @@ for(const [game,score] of [['maze',1],['picture',3],['number',5]]){
 {const f=fixture();f.start('maze');f.run("finishTurn({score:0,elapsed:45,label:'No escape'})");assert.equal(f.timedSaved.length,0);}
 {const f=fixture();f.start('number');f.run("finishTurn({score:4,elapsed:12,label:'4/5'})");assert.equal(f.timedSaved.length,0);}
 console.log('PASS: timed records captured under the family account, partial/failed turns excluded, match ledger preserved.');
+
+// Weighted bonuses use identical opportunities and each mole is consumed once.
+for(const first of [0,1]){
+ const f=fixture();f.start('mole',first);const plan=molePlan(first===0?536870912:1610612734);
+ // Read the actual seeded schedule rather than assuming player order affects it.
+ const actual=f.run('game.molePlan');const gold=actual.find(e=>e.gold);
+ f.advance(gold.at+200);const board=f.get('mole-board');
+ board.dispatch('keydown',{key:String(gold.hole+1)});
+ assert.equal(f.run('game.molePoints[turn]'),3);
+ f.advance(200);board.dispatch('keydown',{key:String(gold.hole+1)});
+ assert.equal(f.run('game.molePoints[turn]'),3,'Gold cannot count twice');
+ const reference=JSON.stringify(actual);f.advance(30000-(f.clock()-4000));f.advance(4000);
+ assert.equal(JSON.stringify(f.run('game.molePlan')),reference,'Both players share all opportunities');
+ f.advance(gold.at+200);f.get('mole-board').dispatch('keydown',{key:String(gold.hole+1)});
+ assert.equal(f.run('game.molePoints[turn]'),3);f.advance(30000);
+ assert.match(f.get('game-stage').textContent,/It’s a tie/);assert.equal(f.saved.length,0);
+ f.click('Optional tiebreaker · 30 seconds each');f.advance(4000);
+ assert.deepEqual([...f.run('game.molePoints')],[0,0]);
+}
+for(let seed=1;seed<=100;seed++){
+ const plan=molePlan(seed);assert.equal(plan.filter(e=>e.gold).length,3);
+ assert.ok(plan.every(e=>e.at+e.life<=30000));
+ assert.equal(new Set(plan.map(e=>e.personality)).size,4);
+}
+{
+ const f=fixture(0,true,true);f.start('mole');f.advance(800);f.get('arcade-sound').click();
+ const count=f.speech.spoken.length;f.advance(1000);assert.equal(f.speech.spoken.length,count);
+ f.doc.hidden=true;f.doc.handlers.visibilitychange();f.advance(60000);assert.equal(f.saved.length,0);
+ assert.ok(f.audio.nodes.every(n=>n.stops.length));
+}
+console.log('PASS: gold +3 exactly once, equal bonus schedules in both orders, optional tiebreak reset, 100 seeds, mute and interruption cleanup.');
+
+{
+ const f=fixture(0,true);f.start('mole');const plan=f.run('game.molePlan');let elapsed=0;
+ for(const e of plan){const at=Math.max(e.at+180,elapsed+200);f.advance(at-elapsed);elapsed=at;f.get('mole-board').dispatch('keydown',{key:String(e.hole+1)});}
+ assert.equal(f.run('game.molePoints[0]'),plan.length+6,'Combos never add points');
+ assert.ok(f.speech.spoken.some(u=>/NICE|ON FIRE|MOLE MASTER/.test(u.text)));
+ f.advance(30000-elapsed);f.advance(4000);f.advance(30000);assert.equal(f.saved.length,1);
+ for(let n=0;n<3;n++){f.click('REMATCH!');f.advance(4000);assert.deepEqual([...f.run('game.molePoints')],[0,0]);f.advance(30000);f.advance(4000);f.advance(30000);assert.match(f.get('game-stage').textContent,/It’s a tie/);}
+}
+console.log('PASS: complete perfect turn, visual-only combos, exact score ceiling, three clean rematches.');

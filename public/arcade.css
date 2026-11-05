@@ -338,3 +338,17 @@ body::before{display:block;inset:0;background:linear-gradient(180deg,rgba(4,5,14
 @keyframes crown-pop{0%{transform:scale(.3) rotate(-15deg)}65%{transform:scale(1.25) rotate(10deg)}100%{transform:scale(1) rotate(0)}}@keyframes crown-sparks{0%{opacity:0;transform:translateY(35px)}30%{opacity:1}100%{opacity:0;transform:translateY(-15px)}}
 @media(max-height:500px) and (orientation:landscape){#arcade-score:before{display:none}.competition-hud{padding:5px}.competition-hud>strong{font-size:11px}.competition-hud>small{font-size:8px}.competition-matchup{margin:4px auto}.competitor-avatar{width:36px;height:36px;font-size:21px}.competition-victory .competition-crown{font-size:23px!important}}
 @media(prefers-reduced-motion:reduce){.competition-victory *,.competition-victory:after{animation:none!important}.competition-victory:after{display:none}}
+/* Whack-a-Mole 2.0: compact cabinet, persistent sound control, gentle celebration. */
+.mole-cabinet{background:linear-gradient(145deg,#483174,#162b46);border:4px solid #ffd522;box-shadow:0 5px 0 #17101e,0 0 20px #b673ff35;padding:5px;width:min(100%,540px)}
+.mole-volume-control{display:flex;align-items:center;justify-content:center;gap:10px;font-size:11px;color:#ffe49a;margin:2px 0}.mole-volume-control[hidden]{display:none}.mole-volume-control input{width:100px;accent-color:#ffd522;min-height:24px}
+.mole-victory{position:relative;background:radial-gradient(ellipse at top,#644297,#17283f);color:#fff!important;border:2px solid #ffdb60;border-radius:18px;padding:12px!important;overflow:hidden}.mole-victory h3,.mole-victory p{color:inherit!important}.mole-victory .final-score{color:#ffe38c}.mole-victory .mole-trophy{display:block;font-size:64px;animation:mole-trophy 1.4s ease-in-out 3}.mole-confetti{color:#ffdf72;font-size:25px;letter-spacing:8px;animation:mole-spark 1.8s ease-out 3}.mole-dancer{display:inline-block;font-size:32px;animation:mole-dance .65s ease-in-out 6}.mole-victory~button.primary{font-size:20px;min-height:48px;width:min(100%,390px)}
+@keyframes mole-trophy{50%{transform:translateY(-5px) rotate(5deg)}}@keyframes mole-dance{50%{transform:rotate(-10deg) translateX(8px)}}@keyframes mole-spark{50%{transform:scale(1.12);opacity:.75}}
+@media(prefers-reduced-motion:reduce){.mole-victory *{animation:none!important}}
+#arcade-game[data-effects="false"] .mole-victory *{animation:none!important}
+.mole-fireworks{pointer-events:none;position:absolute;inset:8px;background:repeating-conic-gradient(from 10deg at 20% 25%,#ffce64 0 3deg,transparent 3deg 28deg);mask-image:radial-gradient(circle at 20% 25%,transparent 18px,#000 19px 22px,transparent 23px);animation:mole-burst 1.8s ease-out 3}.mole-fireworks:after{content:'';position:absolute;inset:0;background:repeating-conic-gradient(at 80% 40%,#72e6e3 0 3deg,transparent 3deg 30deg)}
+@keyframes mole-burst{0%{transform:scale(.6);opacity:0}35%{opacity:1}100%{transform:scale(1.4);opacity:0}}
+.mole-volume-control{color:#34204f;font-weight:800}.mole-cabinet .mole-help{color:#fff2bf!important}
+
+#arcade-game .arcade-controls:has(#mole-volume-control:not([hidden])){display:grid;grid-template-columns:1fr 1fr;gap:2px 5px}
+#arcade-game .mole-volume-control{grid-column:1/-1;margin:0;font-size:9px;gap:5px;white-space:nowrap;justify-content:center}
+#arcade-game .mole-volume-control input{width:75px;height:24px;min-height:24px;padding:0;border:0;box-shadow:none;background:transparent}
