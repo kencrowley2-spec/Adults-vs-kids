@@ -44,7 +44,7 @@ function saveCompleted(){
  const {id,mode,gameIds,roundWinners}=recording;
  recorder.capture({id,mode,gameIds:[...gameIds],roundWinners:[...roundWinners]});
 }
-let stopFrog=null,stopMole=null,stopClaw=null,moleAudio=null,moleVolume=.65;
+let stopFrog=null,stopMole=null,stopClaw=null,moleAudio=null,moleVolume=.65,moleIntroDone=null;
 let timers=[], generation=0, timed=false, used={};
 const names=['Adults','Kids'];
 const selectedPlayers=[[],[]];
@@ -157,10 +157,10 @@ function readArcade(text,volume=triviaVolume,style={}){
     const voice=voices.find(v=>v.lang==='en-US'&&v.localService)||voices.find(v=>v.lang?.startsWith('en'));
     if(voice)utterance.voice=voice;
     triviaVoiceStatus('Voice ready · tap Hear question & answers if needed');
-    utterance.onstart=()=>{if(token===triviaSpeechToken)triviaVoiceStatus('Reading aloud…',true);};
-    utterance.onend=()=>{if(token===triviaSpeechToken){triviaSpeech=null;triviaVoiceStatus('Ready · hear it again anytime');}};
-    utterance.onerror=()=>{if(token===triviaSpeechToken){triviaSpeech=null;triviaVoiceStatus('Tap Hear question & answers to start the voice.');}};
-    window.speechSynthesis.speak(utterance);
+    utterance.onstart=()=>{if(token===triviaSpeechToken){triviaVoiceStatus('Reading aloud…',true);style.onStart?.();}};
+    utterance.onend=()=>{if(token===triviaSpeechToken){triviaSpeech=null;triviaVoiceStatus('Ready · hear it again anytime');style.onDone?.();}};
+    utterance.onerror=()=>{if(token===triviaSpeechToken){triviaSpeech=null;triviaVoiceStatus('Tap Hear question & answers to start the voice.');style.onDone?.();}};
+    window.speechSynthesis.speak(utterance);return utterance;
   }catch{triviaSpeech=null;triviaVoiceStatus('Tap Hear question & answers to try the voice again.');}
 }
 function ticStarterVoice(parent=stage,announce=true){
@@ -261,12 +261,12 @@ function react(kind,label){
   $('arcade-feedback').setAttribute('data-kind',effectsOn?kind:'quiet');
   later(()=>{if(sequence!==feedbackSequence)return;$('arcade-feedback').setAttribute('data-kind','');$('feedback-caption').textContent='';},650);
 }
-$('arcade-sound').addEventListener('click',()=>{soundOn=!soundOn;$('arcade-sound').textContent=`Sound: ${soundOn?'on':'off'}`;$('arcade-sound').setAttribute('aria-pressed',String(soundOn));stopTriviaVoice();if(soundOn){chime('match');if($('maze-soundbar'))startMazeMusic();}else {moleAudio?.silence();stopChimes();stopMazeMusic();}});
+$('arcade-sound').addEventListener('click',()=>{soundOn=!soundOn;$('arcade-sound').textContent=`Sound: ${soundOn?'on':'off'}`;$('arcade-sound').setAttribute('aria-pressed',String(soundOn));stopTriviaVoice();if(!soundOn)moleIntroDone?.();if(soundOn){chime('match');if($('maze-soundbar'))startMazeMusic();}else {moleAudio?.silence();stopChimes();stopMazeMusic();}});
 $('arcade-game').setAttribute('data-effects',String(effectsOn));
 $('arcade-effects').setAttribute('aria-pressed',String(effectsOn));
 $('arcade-effects').textContent=`Lights: ${effectsOn?'on':'off'}`;
 $('arcade-effects').addEventListener('click',()=>{effectsOn=!effectsOn;$('arcade-game').setAttribute('data-effects',String(effectsOn));$('arcade-effects').textContent=`Lights: ${effectsOn?'on':'off'}`;$('arcade-effects').setAttribute('aria-pressed',String(effectsOn));$('arcade-feedback').setAttribute('data-kind','');});
-function clearTimers(){ moleAudio?.stop();moleAudio=null;stopChimes(); stopClaw?.();stopClaw=null; stopMole?.();stopMole=null; stopFrog?.();stopFrog=null; stopMazeMusic(); stopTriviaVoice(); generation++; timers.forEach(clearTimeout); timers=[]; timed=false; }
+function clearTimers(){ moleIntroDone=null;moleAudio?.stop();moleAudio=null;stopChimes(); stopClaw?.();stopClaw=null; stopMole?.();stopMole=null; stopFrog?.();stopFrog=null; stopMazeMusic(); stopTriviaVoice(); generation++; timers.forEach(clearTimeout); timers=[]; timed=false; }
 function later(fn,delay){ const token=generation; const timer=setTimeout(()=>{if(token===generation)fn();},delay); timers.push(timer); }
 function screen(html){ clearTimers();competitionPhase=html.includes('class="handoff"')?'handoff':html.includes('class="result')?'result':'play'; $('arcade-feedback').setAttribute('data-kind','');$('feedback-caption').textContent='';stage.innerHTML=(champion>=0&&game?.id!=='mole'?competitionResult():'')+html;competitionUpdate();if(champion>=0&&game?.id!=='mole')readArcade(`${contender(champion)} takes the crown! ${contender(1-champion)}, time for a comeback!`,1); scheduleGameFit(); }
 function button(label,action,parent=stage,className='primary'){
@@ -359,10 +359,48 @@ function finishSeriesGame(winner,detail){
   react(winner===null?'turn':'win',winner===null?'Tie — rematch!':`${teamName(winner)} win!`);
   status(complete?`${teamName(champion)} win the series ${wins[champion]}–${wins[1-champion]}.`:winner===null?'Tie! Replay this game.':`${teamName(winner)} earn one series point.`);focusFirst();
 }
+// Finish the roster introduction before starting the gameplay countdown.
+function moleHandoff(team,detail,action){
+ turn=team;competitionPhase='handoff';scoreboard();
+ const spokenNames=i=>selectedPlayers[i].join(', ').replace(/, ([^,]+)$/, ' and $1');
+ const introduce=i=>kidsOnly?`Introducing ${spokenNames(i)}.`:`Introducing Team ${teamName(i)}${selectedPlayers[i].length?`: ${spokenNames(i)}`:''}.`;
+ const first=!results[1-team];
+ const introduction=first
+  ? `Ladies and gentlemen! Welcome to Whack-a-Mole! ${introduce(0)} ${introduce(1)} ${spokenNames(team)||teamName(team)}, you are playing first. Take the device. Your thirty-second turn begins after the countdown.`
+  : `Up next! ${introduce(team)} ${spokenNames(team)||teamName(team)}, take the device. Your score to beat is ${results[1-team].score} points. Your thirty-second turn begins after the countdown.`;
+ screen(`<div class="handoff">${matchupMarkup()}<p class="eyebrow">${first?'MEET THE PLAYERS':'PASS THE DEVICE'}</p><h3>${contenderLabel(team)}, you’re up!</h3><p id="mole-introduction">${escapePlayer(introduction)}</p><p id="handoff-countdown" class="handoff-countdown" style="font-size:24px;font-weight:900;color:#111">INTRODUCING…</p><small>The introduction finishes before 3–2–1. Get comfortable and pass the device.</small></div>`);
+ timed=true; // A hidden page interrupts this round rather than skipping an introduction.
+ const token=generation;let settled=false,started=false;
+ moleAudio=createMoleAudio({enabled:()=>soundOn,getContext:()=>{unlockAudio();return audioContext;},volume:()=>moleVolume,speak:(line,volume)=>readArcade(line,volume,{rate:.9,pitch:.9}),later});
+ if(!first)moleAudio.cue('buzzer');
+ status(`${contender(team)} is being introduced. The countdown starts afterward.`);
+ function countdown(number){
+  if(token!==generation||document.hidden)return;
+  if(number===0){action();chime('match');focusFirst();return;}
+  $('handoff-countdown').textContent=String(number);status(`${contender(team)} starts in ${number}.`);
+  moleAudio?.announce(String(number),true);moleAudio?.cue('tick');later(()=>countdown(number-1),1000);
+ }
+ function ready(){
+  if(settled||token!==generation)return;settled=true;moleIntroDone=null;
+  // Clear stalled or blocked speech before the countdown; normal speech has ended.
+  stopTriviaVoice();$('handoff-countdown').textContent='GET READY!';
+  later(()=>countdown(3),1000);
+ }
+ moleIntroDone=ready;
+ const utterance=soundOn&&moleVolume>0?readArcade(introduction,moleVolume,{rate:.9,pitch:.9,onStart:()=>{started=true;},onDone:ready}):null;
+ if(!utterance)later(ready,0);
+ else {
+  // Native speech can be blocked or omit completion events. Allow a generous
+  // full reading window once started; blocked audio falls back to visual play.
+  later(()=>{if(!started)ready();},6000);
+  later(ready,Math.max(20000,introduction.split(/\s+/).length*1000));
+ }
+}
 function handoff(team,detail,action){
+  if(game.id==='mole')return moleHandoff(team,detail,action);
   turn=team;competitionPhase='handoff';scoreboard();
   screen(`<div class="handoff">${matchupMarkup()}<span class="giant-icon" aria-hidden="true">${team===0?'🙌':'✌️'}</span><p class="eyebrow">PASS THE DEVICE · STARTING AUTOMATICALLY</p><h3>${teamLabel(team)}, you’re up!</h3><p>${escapePlayer(detail)}</p><p id="handoff-countdown" class="handoff-countdown" style="font-size:42px;font-weight:900;color:#111">4</p><small>Get ready. No button needed.</small></div>`);
-  if(game.id==='mole'){moleAudio=createMoleAudio({enabled:()=>soundOn,getContext:()=>{unlockAudio();return audioContext;},volume:()=>moleVolume,speak:(line,volume)=>readArcade(line,volume,{rate:1.08,pitch:.85}),later});if(results[1-team])moleAudio.cue('buzzer');moleAudio.announce(`${contender(team)}, you're up! ${['It’s mole time!','Welcome to the mole championship!','Mallets ready! Moles beware!','The mole kingdom awaits!'][game.molePlan[0].personality]}`,true);}
+
   if(!['tic','trivia','mole'].includes(game.id))readArcade(`${contender(team)}, you're up! ${results[1-team]?`Can you beat ${contender(1-team)}?`: `${contender(0)} versus ${contender(1)}. Who is taking the crown?`}`,1);
   if(game.id==='tic')ticStarterVoice();
   if(game.id==='trivia'){triviaAudioPanel(stage,'Turn your volume up for this one! Trivia Showdown reads each question and all answer choices out loud.',true);readArcade('Turn your volume up for this one!');}
@@ -371,7 +409,7 @@ function handoff(team,detail,action){
   function tick(){
     if(document.hidden){later(tick,250);return;}
     remaining--;if(remaining===0){action();chime('match');focusFirst();return;}
-    if(game.id==='mole')moleAudio?.announce(String(remaining),true);chime('tap');$('handoff-countdown').textContent=remaining;later(tick,1000);
+    chime('tap');$('handoff-countdown').textContent=remaining;later(tick,1000);
   }
   later(tick,1000);
 }
@@ -917,5 +955,5 @@ function finishClawMatch(winner,detail){
 const requestedGame=new URLSearchParams(location.search).get('game');
 if(GAMES.some(g=>g.id===requestedGame&&!g.comingSoon))openGame(requestedGame);
 
-$('mole-volume')?.addEventListener('input',()=>{moleVolume=Number($('mole-volume').value)/100;moleAudio?.silence();stopTriviaVoice();});
+$('mole-volume')?.addEventListener('input',()=>{moleVolume=Number($('mole-volume').value)/100;moleAudio?.silence();if(moleVolume===0){stopTriviaVoice();moleIntroDone?.();}else if(!moleIntroDone)stopTriviaVoice();});
 window.addEventListener('pagehide',()=>{if(game?.id==='mole')clearTimers();});
