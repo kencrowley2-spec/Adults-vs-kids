@@ -47,7 +47,7 @@ function fixture(firstTeam=0,withSpeech=false,withAudio=false,players=null,holdM
   if(players){const lineup=new Element();lineup.id='arcade-roster-lineup';lineup.setAttribute('data-adults',JSON.stringify(players[0]));lineup.setAttribute('data-kids',JSON.stringify(players[1]));root.appendChild(lineup);}
   root.querySelector('#arcade-game').hidden=true;
   const doc={hidden:false,getElementById:id=>root.querySelector('#'+id),createElement:tag=>new Element(tag),handlers:{},addEventListener(type,fn){this.handlers[type]=fn;}};
-  const speech={spoken:[],cancels:0,getVoices:()=>[{lang:'en-US',localService:true}],cancel(){this.cancels++;},speak(utterance){this.spoken.push(utterance);utterance.onstart?.();if(!holdMoleIntro&&utterance.text.includes('turn begins after the countdown'))scheduled.set(++seq,{at:now,fn:()=>utterance.onend?.()});}};
+  const speech={spoken:[],cancels:0,getVoices:()=>[{lang:'en-US',localService:true}],cancel(){this.cancels++;},speak(utterance){this.spoken.push(utterance);utterance.onstart?.();if(!holdMoleIntro&&(utterance.text.includes('Match starts in.')||utterance.text.includes(', match starts in.')))scheduled.set(++seq,{at:now+1000,fn:()=>utterance.onend?.()});}};
   const voiceWindow=withSpeech?{speechSynthesis:speech,SpeechSynthesisUtterance:class {constructor(text){this.text=text;}}}:{};
   const audio={nodes:[],gains:[]};
   class AudioContextMock {
@@ -128,7 +128,7 @@ for(const game of data.GAMES)for(const first of [0,1]){
   assert.ok(f.get('memory-cards'));assert.match(f.get('turn-strip').textContent,new RegExp(core.teamName(first)+' go first'));
   f.advance(4999);assert.ok(f.get('memory-cards').children.every(c=>c.disabled));f.advance(1);assert.ok(f.get('memory-cards').children.some(c=>!c.disabled));
  }else{
-  assert.equal(f.get('handoff-countdown').textContent,game.id==='mole'?'INTRODUCING…':'4');f.advance(3999);assert.ok(f.get('handoff-countdown'));f.advance(1);assert.equal(f.get('handoff-countdown'),null);noNavigation(f);
+  assert.equal(f.get('handoff-countdown').textContent,game.id==='mole'?'…':'4');f.advance(3999);assert.ok(f.get('handoff-countdown'));f.advance(1);assert.equal(f.get('handoff-countdown'),null);noNavigation(f);
  }
 }
 
@@ -717,22 +717,22 @@ for(const first of [0,1]){
 }
 console.log('PASS: identical 1-point opportunities for both teams, exact perfect-turn score, optional tiebreaker, mute cleanup and three clean rematches.');
 
-// Player introductions finish before any countdown speech or timed gameplay.
+// Concise roster matchup, followed immediately by 3–2–1 when speech ends.
 for(const first of [0,1]){
- const f=fixture(0,true,false,[['Ken'],['Harper','Chloe']],true);f.start('mole',first,false);
- const intro=f.speech.spoken.at(-1);assert.match(intro.text,/Introducing Team Adults: Ken/);assert.match(intro.text,/Introducing Team Kids: Harper and Chloe/);assert.equal(intro.rate,.9);
- assert.match(f.get('game-stage').textContent,new RegExp(first?'Harper &amp; Chloe, you’re up':'Ken, you’re up'));
- const cancels=f.speech.cancels;f.advance(10000);assert.equal(f.get('mole-board'),null);assert.equal(f.speech.cancels,cancels,'Countdown must not cut off an active introduction');assert.equal(f.speech.spoken.at(-1),intro);
- intro.onend();f.advance(999);assert.equal(f.get('mole-board'),null);f.advance(1);assert.equal(f.get('handoff-countdown').textContent,'3');f.advance(1000);assert.equal(f.get('handoff-countdown').textContent,'2');f.advance(1000);assert.equal(f.get('handoff-countdown').textContent,'1');f.advance(1000);assert.ok(f.get('mole-board'));
- f.advance(20000);const second=f.speech.spoken.at(-1);assert.match(second.text,/Up next!/);assert.match(second.text,/score to beat is 0 points/);f.advance(10000);assert.equal(f.get('mole-board'),null);second.onend();f.advance(4000);assert.ok(f.get('mole-board'));
+ const f=fixture(0,true,false,[['Daddy'],['Harper','Chloe']],true);f.start('mole',first,false);
+ const intro=f.speech.spoken.at(-1);assert.equal(intro.text,"Today's challenge is Daddy versus Harper and Chloe. Match starts in.");assert.equal(intro.rate,.9);
+ assert.doesNotMatch(f.get('game-stage').textContent,/pass the device|get comfortable|get ready|you’re up/i);
+ const cancels=f.speech.cancels;f.advance(10000);assert.equal(f.get('mole-board'),null);assert.equal(f.speech.cancels,cancels);assert.equal(f.speech.spoken.at(-1),intro);
+ intro.onend();assert.equal(f.get('handoff-countdown').textContent,'3');f.advance(1000);assert.equal(f.get('handoff-countdown').textContent,'2');f.advance(1000);assert.equal(f.get('handoff-countdown').textContent,'1');f.advance(999);assert.equal(f.get('mole-board'),null);f.advance(1);assert.ok(f.get('mole-board'));
+ f.advance(20000);const second=f.speech.spoken.at(-1);assert.equal(second.text,first===0?'Harper and Chloe, match starts in.':'Daddy, match starts in.');second.onend();f.advance(3000);assert.ok(f.get('mole-board'));
 }
 {
- const f=fixture(0,true,false,null,true);f.start('mole',0,false);f.advance(2000);f.get('arcade-sound').click();f.advance(4000);assert.ok(f.get('mole-board'),'Muting an introduction continues with a visual countdown');
+ const f=fixture(0,true,false,null,true);f.start('mole',0,false);f.advance(2000);f.get('arcade-sound').click();f.advance(3000);assert.ok(f.get('mole-board'),'Muting continues with a visual countdown');
 }
 {
  const f=fixture(0,true,false,null,true);f.start('mole',0,false);const old=f.speech.spoken.at(-1);f.doc.hidden=true;f.doc.handlers.visibilitychange();old.onend();f.advance(60000);assert.equal(f.get('mole-board'),null);assert.equal(f.saved.length,0);assert.match(f.get('game-stage').textContent,/interrupted/);
 }
-console.log('PASS: full named roster introductions at a slower pace, completion-driven countdown, both orders, second-turn score target, mute continuation and stale speech cancellation.');
+console.log('PASS: exact concise roster matchup, immediate 3–2–1, both starting orders, short second-turn cue, mute and interruption handling.');
 
 // Each team receives exactly 20 seconds after introductions and the countdown.
 for(const first of [0,1]){

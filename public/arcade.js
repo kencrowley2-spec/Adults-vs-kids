@@ -390,12 +390,11 @@ function finishSeriesGame(winner,detail){
 function moleHandoff(team,detail,action){
  turn=team;competitionPhase='handoff';scoreboard();
  const spokenNames=i=>selectedPlayers[i].join(', ').replace(/, ([^,]+)$/, ' and $1');
- const introduce=i=>kidsOnly?`Introducing ${spokenNames(i)}.`:`Introducing Team ${teamName(i)}${selectedPlayers[i].length?`: ${spokenNames(i)}`:''}.`;
  const first=!results[1-team];
  const introduction=first
-  ? `Ladies and gentlemen! Welcome to Whack-a-Mole! ${introduce(0)} ${introduce(1)} ${spokenNames(team)||teamName(team)}, you are playing first. Take the device. Your twenty-second turn begins after the countdown.`
-  : `Up next! ${introduce(team)} ${spokenNames(team)||teamName(team)}, take the device. Your score to beat is ${results[1-team].score} points. Your twenty-second turn begins after the countdown.`;
- screen(`<div class="handoff">${matchupMarkup()}<p class="eyebrow">${first?'MEET THE PLAYERS':'PASS THE DEVICE'}</p><h3>${contenderLabel(team)}, you’re up!</h3><p id="mole-introduction">${escapePlayer(introduction)}</p><p id="handoff-countdown" class="handoff-countdown" style="font-size:24px;font-weight:900;color:#111">INTRODUCING…</p><small>The introduction finishes before 3–2–1. Get comfortable and pass the device.</small></div>`);
+  ? `Today's challenge is ${spokenNames(0)||teamName(0)} versus ${spokenNames(1)||teamName(1)}. Match starts in.`
+  : `${spokenNames(team)||teamName(team)}, match starts in.`;
+ screen(`<div class="handoff">${matchupMarkup()}<h3>${contenderLabel(team)}</h3><p id="mole-introduction">${escapePlayer(introduction)}</p><p id="handoff-countdown" class="handoff-countdown" style="font-size:42px;font-weight:900;color:#111">…</p></div>`);
  timed=true; // A hidden page interrupts this round rather than skipping an introduction.
  const token=generation;let settled=false,started=false;
  moleAudio=createMoleAudio({enabled:()=>soundOn,getContext:()=>{unlockAudio();return audioContext;},volume:()=>moleVolume,speak:(line,volume)=>readArcade(line,volume,{rate:.9,pitch:.9}),later});
@@ -410,12 +409,11 @@ function moleHandoff(team,detail,action){
  function ready(){
   if(settled||token!==generation)return;settled=true;moleIntroDone=null;
   // Clear stalled or blocked speech before the countdown; normal speech has ended.
-  stopTriviaVoice();$('handoff-countdown').textContent='GET READY!';
-  later(()=>countdown(3),1000);
+  stopTriviaVoice();countdown(3);
  }
  moleIntroDone=ready;
  const utterance=soundOn&&moleVolume>0?readArcade(introduction,moleVolume,{rate:.9,pitch:.9,onStart:()=>{started=true;},onDone:ready}):null;
- if(!utterance)later(ready,0);
+ if(!utterance)later(ready,1000);
  else {
   // Native speech can be blocked or omit completion events. Allow a generous
   // full reading window once started; blocked audio falls back to visual play.
@@ -947,7 +945,7 @@ document.addEventListener('visibilitychange',()=>{
 function whackAMole(){
  screen('<section class="source-mole-game" aria-label="Whack-a-Mole"><h3>Whack-a-Mole</h3><div class="source-mole-hud"><span>Score: <b id="mole-score">0</b></span><span>Time: <b id="mole-time">20</b></span><span>Best: <b id="mole-best">0</b></span></div><div class="source-mole-grid" id="mole-board" role="group" aria-label="Nine mole holes. Tap a mole or use keys 1 through 9."></div><p class="source-mole-hint">Whack the moles before they hide. 20 seconds!<br>One hit = one point · Keyboard: 1–9</p></section>');
  timed=true;status(`${teamName(turn)}: 20 seconds. GO! One hit = one point.`);
- moleAudio=createMoleAudio({enabled:()=>soundOn,getContext:()=>{unlockAudio();return audioContext;},volume:()=>moleVolume,speak:(line,volume)=>readArcade(line,volume,{rate:1.08,pitch:.85}),later});moleAudio.music();moleAudio.announce('GO! LET’S BONK!',true);
+ moleAudio=createMoleAudio({enabled:()=>soundOn,getContext:()=>{unlockAudio();return audioContext;},volume:()=>moleVolume,speak:(line,volume)=>readArcade(line,volume,{rate:1.08,pitch:.85}),later});moleAudio.music();moleAudio.announce('GO!',true);
  stopMole=mountMole({root:$('mole-board'),accountId:arcadeAccountId,team:teamName(turn),plan:game.molePlan,later,sound:kind=>moleAudio?.cue(kind),onCue:line=>moleAudio?.announce(line),onStatus:status,
   onScore:points=>{game.molePoints[turn]=points;scoreboard();competitionUpdate({score:points});},
   onEnd:result=>{timed=false;chime('buzzer');finishTurn(result);}});
