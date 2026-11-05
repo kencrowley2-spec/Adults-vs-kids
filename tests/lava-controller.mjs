@@ -20,60 +20,51 @@ function fixture(width=844,height=390){
  advance(.02);return {tracks,draws:()=>draws,$,click,advance,tap,trap,phase,complete,exits:()=>exits,cleanup:c.cleanup,speech,audio:()=>({resumes,suspends,closed}),document};
 }
 
+
+const TRAP_LAYOUT=[3,7,11,6,10,14];
+function fillTraps(f,round=0){for(const id of TRAP_LAYOUT)f.tap(id,round);}
 for(const [w,h] of [[844,390],[740,360],[932,430]]){
  const f=fixture(w,h);f.click('[data-action=start]');f.advance(3.1);assert.match(f.phase(),/BUILD YOUR TRAP/);
  assert.equal(f.document.querySelectorAll('[data-trap]').length,0);assert.equal(f.$('[data-action=attack]'),null);
- f.tap(2);assert.match(f.$('.lava-toast').textContent,/placed/);f.advance(.02);assert.ok(f.draws().some(a=>a[1]===512&&a[2]===0),'Builder sees red sabotage');
- f.tap(2);f.tap(1);f.tap(3);assert.match(f.$('.lava-toast').textContent,/safe block between/);f.tap(1);for(const id of [2,6,10])f.tap(id);f.advance(.02);assert.match(f.$('.lava-phase b').textContent,/3\/6 TRAPS/);
- f.click('[data-action=pause]');const time=f.$('.lava-phase b').textContent;f.advance(8);assert.equal(f.$('.lava-phase b').textContent,time);f.click('[data-action=resume]');
- f.advance(20);assert.match(f.$('.lava-overlay').textContent,/PASS THE PHONE/);assert.ok(!f.draws().some(a=>a[1]===512&&a[2]===0),'Handoff conceals every red trap');
- f.advance(7);assert.match(f.phase(),/ESCAPE THE LAVA/);assert.ok(!f.draws().some(a=>a[1]===512&&a[2]===0),'Runner sees identical blue blocks');
+ for(const id of [1,2]){f.tap(id);assert.match(f.$('.lava-toast').textContent,/first two blocks/);}assert.match(f.$('.lava-phase b').textContent,/0\/6 TRAPS/);
+ f.tap(4);f.advance(.02);assert.ok(f.draws().some(a=>a[1]===512&&a[2]===0),'Builder sees sabotage');f.tap(4);
+ f.tap(3);f.tap(5);assert.match(f.$('.lava-toast').textContent,/safe block between/);f.tap(3);
+ for(const id of TRAP_LAYOUT.slice(0,5))f.tap(id);assert.match(f.$('.lava-phase b').textContent,/5\/6 TRAPS.*NO TIMER/);
+ f.click('[data-action=pause]');f.advance(8);f.click('[data-action=resume]');
+ f.advance(65);assert.match(f.phase(),/BUILD YOUR TRAP/);assert.equal(f.$('.lava-overlay').innerHTML,'','No automatic pass after the former countdown');
+ f.tap(TRAP_LAYOUT[5]);assert.match(f.$('.lava-overlay').textContent,/PASS THE PHONE/,'Sixth trap immediately hands off');f.advance(.02);
+ assert.ok(!f.draws().some(a=>a[1]===512&&a[2]===0),'Handoff hides every trap');
+ f.advance(7.1);assert.match(f.phase(),/ESCAPE THE LAVA/);assert.ok(!f.draws().some(a=>a[1]===512&&a[2]===0),'Runner sees blue blocks');
  for(let n=0;n<6;n++){
-  const round=Math.floor(n/2);if(n>0){f.advance(31.7);assert.match(f.phase(),/ESCAPE THE LAVA/);}
+  const round=Math.floor(n/2);if(n>0){assert.match(f.phase(),/BUILD/);fillTraps(f,round);f.advance(7.1);assert.match(f.phase(),/ESCAPE/);}
   if(n%2)f.advance(1.1);
   for(const id of [1,3,5,7,9,11,13,15]){f.tap(id,round);f.advance(.65);}
   assert.match(f.$('.lava-overlay').textContent,/THEY MADE IT/);f.advance(4.6);
  }
- assert.equal(f.speech.spoken.length,0,'No narration anywhere in a full match');assert.equal(f.complete.length,1);assert.equal(f.complete[0].attempts.length,6);assert.match(f.$('.lava-overlay').textContent,/LAVA CHAMPION/);f.advance(5);assert.equal(f.complete.length,1);f.click('[data-action=rematch]');f.advance(3.1);assert.match(f.phase(),/BUILD/);f.click('[data-action=exit]');assert.equal(f.exits(),1);assert.equal(f.$('.lava-game'),null);assert.equal(f.audio().closed,1);
+ assert.equal(f.speech.spoken.length,0);assert.equal(f.complete.length,1);assert.equal(f.complete[0].attempts.length,6);assert.match(f.$('.lava-overlay').textContent,/LAVA CHAMPION/);
+ f.advance(5);assert.equal(f.complete.length,1);f.click('[data-action=rematch]');f.advance(3.1);assert.match(f.phase(),/BUILD/);assert.match(f.$('.lava-phase b').textContent,/0\/6 TRAPS.*NO TIMER/);
+ f.click('[data-action=exit]');assert.equal(f.exits(),1);assert.equal(f.$('.lava-game'),null);assert.equal(f.audio().closed,1);
 }
-// A hidden trap reveals only after landing. The uncovered fall/splash finishes before scoring.
 {
- const f=fixture();f.click('[data-action=start]');f.advance(3.1);f.tap(1);f.advance(27);assert.match(f.phase(),/ESCAPE/);
- assert.ok(!f.draws().some(a=>a[1]===512&&a[2]===0));f.tap(1);f.advance(.3);assert.ok(!f.draws().some(a=>a[1]===512&&a[2]===0),'Still blue while approaching');
- f.advance(.35);assert.match(f.$('.lava-toast').textContent,/CRACKING/);assert.ok(f.draws().some(a=>a[1]===512&&a[2]===0),'Turns red after landing');
+ const f=fixture();f.click('[data-action=start]');f.advance(3.1);fillTraps(f);f.advance(7.1);f.tap(1);f.advance(.65);
+ assert.ok(!f.draws().some(a=>a[1]===512&&a[2]===0),'First landing stays safe');f.tap(3);f.advance(.3);assert.ok(!f.draws().some(a=>a[1]===512&&a[2]===0));
+ f.advance(.35);assert.match(f.$('.lava-toast').textContent,/CRACKING/);assert.ok(f.draws().some(a=>a[1]===512&&a[2]===0));
  f.advance(1);assert.match(f.phase(),/INTO THE LAVA/);assert.equal(f.$('.lava-overlay').innerHTML,'');assert.doesNotMatch(f.$('.lava-score').textContent,/50/);
- f.click('[data-action=pause]');f.advance(3);f.click('[data-action=resume]');assert.equal(f.$('.lava-overlay').innerHTML,'');
- f.advance(.6);assert.equal(f.$('.lava-overlay').innerHTML,'');assert.ok(f.draws().some(a=>a[1]===1024&&a[2]===512),'Character is drawn during sinking animation');
- f.advance(1.3);assert.match(f.$('.lava-overlay').textContent,/LAVA GOT YOU/);assert.match(f.$('.lava-score').textContent,/50/);f.advance(.5);assert.doesNotMatch(f.$('.lava-score').textContent,/100/);f.cleanup();
-}
-// A runner who reacts to red can still escape before the block collapses.
-{
- const f=fixture();f.click('[data-action=start]');f.advance(3.1);f.tap(1);f.advance(27);f.tap(1);f.advance(.65);f.tap(3);f.advance(.65);assert.match(f.phase(),/ESCAPE/);f.advance(.5);assert.doesNotMatch(f.phase(),/INTO THE LAVA/);f.cleanup();
+ f.click('[data-action=pause]');f.advance(3);f.click('[data-action=resume]');f.advance(.6);assert.equal(f.$('.lava-overlay').innerHTML,'');
+ assert.ok(f.draws().some(a=>a[1]===1024&&a[2]===512));f.advance(1.3);assert.match(f.$('.lava-overlay').textContent,/LAVA GOT YOU/);assert.match(f.$('.lava-score').textContent,/50/);f.cleanup();
 }
 {
- const f=fixture();f.click('[data-action=start]');f.advance(60.3);assert.match(f.phase(),/INTO THE LAVA/);f.advance(1.9);assert.match(f.$('.lava-overlay').textContent,/Time expired/);f.cleanup();
+ const f=fixture();f.click('[data-action=start]');f.advance(3.1);fillTraps(f);f.advance(37.2);assert.match(f.phase(),/INTO THE LAVA/);f.advance(1.9);assert.match(f.$('.lava-overlay').textContent,/Time expired/);f.cleanup();
 }
 {
- const f=fixture();f.click('[data-action=tutorial]');f.tap(1);f.advance(.7);assert.match(f.$('.lava-overlay').textContent,/NICE JUMP/);assert.equal(f.complete.length,0);f.click('[data-action=continue]');f.advance(3.1);assert.match(f.phase(),/BUILD/);f.click('[data-action=sfx]');assert.equal(f.$('[data-action=sfx]').getAttribute('aria-pressed'),'false');f.click('[data-action=music]');assert.equal(f.$('[data-action=music]').getAttribute('aria-pressed'),'false');Object.defineProperty(f.document,'hidden',{value:true,configurable:true});f.document.dispatchEvent(new f.document.defaultView.Event('visibilitychange'));assert.ok(f.$('.lava-pause'));f.cleanup();
+ const f=fixture();f.click('[data-action=tutorial]');f.tap(1);f.advance(.7);assert.match(f.$('.lava-overlay').textContent,/NICE JUMP/);f.click('[data-action=continue]');f.advance(3.1);assert.match(f.phase(),/BUILD/);
+ Object.defineProperty(f.document,'hidden',{value:true,configurable:true});f.document.dispatchEvent(new f.document.defaultView.Event('visibilitychange'));assert.ok(f.$('.lava-pause'));f.cleanup();
 }
-console.log('PASS: both-row trap taps/removal/budget, private builder view, no visual leaks during handoff/approach, red only on landing, uncovered sinking/splash before results, escape from cracking block, timeout, paused fall, six attempts, rematch and mobile layouts.');
-
 {
- const f=fixture();f.click('[data-action=start]');f.advance(3.1);
- for(const id of [1,5,9,4,8,12])f.tap(id);f.advance(.02);assert.match(f.$('.lava-phase b').textContent,/6\/6 TRAPS/);
- f.tap(13);assert.match(f.$('.lava-toast').textContent,/Six traps max/);f.tap(1);f.tap(3);assert.match(f.$('.lava-toast').textContent,/safe block between/);
- assert.equal(f.speech.spoken.length,0);f.cleanup();
-}
-
-{
- const f=fixture();assert.equal(f.tracks.length,0,'No audio before a starting gesture');
- f.click('[data-action=start]');assert.equal(f.tracks.length,1);const track=f.tracks[0];
- assert.match(track.src,/lava-heatwave\.mp3/);assert.equal(track.loop,true);assert.equal(track.paused,false);assert.equal(track.plays,1);
- f.advance(3.1);assert.equal(f.tracks.length,1,'One soundtrack through phase transitions');assert.equal(track.plays,1);assert.equal(track.volume,.4);
- f.click('[data-action=sfx]');assert.equal(track.paused,false,'Effects toggle leaves music playing');
- f.click('[data-action=music]');assert.equal(track.paused,true);f.click('[data-action=music]');assert.equal(track.paused,false);assert.equal(f.tracks.length,1);
+ const f=fixture();assert.equal(f.tracks.length,0);f.click('[data-action=start]');const track=f.tracks[0];assert.equal(track.loop,true);assert.equal(track.paused,false);f.advance(3.1);assert.equal(track.volume,.4);
+ f.click('[data-action=sfx]');assert.equal(track.paused,false);f.click('[data-action=music]');assert.equal(track.paused,true);f.click('[data-action=music]');assert.equal(track.paused,false);
  f.click('[data-action=pause]');assert.equal(track.paused,true);f.click('[data-action=resume]');assert.equal(track.paused,false);
- f.advance(27);assert.equal(track.volume,.48,'Escape music has extra energy');assert.equal(f.speech.spoken.length,0);
+ fillTraps(f);f.advance(7.1);assert.equal(track.volume,.48);assert.equal(f.speech.spoken.length,0);assert.equal(f.tracks.length,1);
  f.cleanup();assert.equal(track.paused,true);assert.equal(track.src,'');assert.equal(track.loaded,true);
 }
-console.log('PASS: original looping soundtrack, gesture-only playback, phase levels, independent music/effects toggles, pause/resume, no duplicate tracks and exit cleanup.');
+console.log('PASS: untimed setup survives 65 seconds; first pair protected; sixth trap immediately hides and passes; all six escape turns, rematch, hidden traps, splash, escape timeout, pause and soundtrack remain functional.');

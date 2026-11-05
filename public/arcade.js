@@ -1,4 +1,4 @@
-import {mountLava} from './arcade-lava.js?v=5';
+import {mountLava} from './arcade-lava.js?v=6';
 import {createLobbyMusic} from './arcade-lobby-music.js?v=1';
 import {mountClaw,clawPrizes,clawFireworks} from './arcade-claw.js?v=1';
 import {mountMole,molePlan,createMoleAudio} from './arcade-mole.js?v=4';
@@ -7,7 +7,7 @@ import {mountTreasure,treasurePlan} from './arcade-treasure.js?v=1';
 import {mountBlocks} from './arcade-blocks.js?v=1';
 import {mountBasketball} from './arcade-basketball.js?v=1';
 import {coverMarkup,recentGames} from './arcade-library.js?v=12';
-import {GAMES, ANIMALS, TRIVIA, PICTURES, CHALLENGES} from './arcade-data.js?v=25';
+import {GAMES, ANIMALS, TRIVIA, PICTURES, CHALLENGES} from './arcade-data.js?v=26';
 import {shuffle, roundWinner, awardRound, lineWinner} from './arcade-core.js';
 
 import {makeMaze, codeClues, rpsWinner, GOLF_COURSES, golfStep} from './arcade-new-core.js?v=5';

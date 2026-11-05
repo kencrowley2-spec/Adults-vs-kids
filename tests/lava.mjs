@@ -2,8 +2,8 @@ import assert from 'node:assert/strict';
 import {course,reachable,flight,danger,placeTrap,validateCourse,scoreAttempt,suddenWinner,LavaMatch,RULES,platformAppearance,TRAPS,trapSpacingValid} from '../public/arcade-lava-core.js';
 for(let round=0;round<3;round++){
  let tiles=course(round);assert.ok(validateCourse(tiles));
- for(const [id,type] of [[2,'crack'],[6,'crack'],[10,'crack']]){const p=placeTrap(tiles,id,type);assert.ok(p.ok);tiles=p.tiles;}
- assert.equal(placeTrap(tiles,14,'crack').ok,true);assert.equal(placeTrap(tiles,0,'crack').ok,false);assert.ok(validateCourse(tiles));
+ for(const [id,type] of [[4,'crack'],[8,'crack'],[12,'crack']]){const p=placeTrap(tiles,id,type);assert.ok(p.ok);tiles=p.tiles;}
+ assert.equal(placeTrap(tiles,14,'crack').ok,false);assert.equal(placeTrap(tiles,0,'crack').ok,false);assert.ok(validateCourse(tiles));
  let t=0,id=0;for(const to of [1,3,5,7,9,11,13,15]){assert.ok(reachable(tiles,id,to));t+=flight(tiles[id]);assert.equal(danger(tiles[to],t,t),null);id=to;}assert.ok(t<30);
 
 }
@@ -23,8 +23,8 @@ assert.equal(suddenWinner({success:false,elapsed:2},{success:false,elapsed:3}),n
 console.log('PASS Lava: 3 course layouts, actual-timing safe-route validation, impossible route rejection, trap budget/placement, breaking-block timing, jump range, scoring, six attempts, both starters, winner, tied/failed/equal sudden death.');
 
 for(let round=0;round<3;round++){
- for(let id=1;id<15;id++)for(const type of ['crack'])assert.ok(placeTrap(course(round),id,type).ok,`${type} can be placed on platform ${id}`);
- const lower=placeTrap(course(round),1,'crack');const both=placeTrap(lower.tiles,4,'crack');assert.ok(both.ok);assert.ok(validateCourse(both.tiles));
+ for(let id=3;id<15;id++)for(const type of ['crack'])assert.ok(placeTrap(course(round),id,type).ok,`${type} can be placed on platform ${id}`);
+ const lower=placeTrap(course(round),3,'crack');const both=placeTrap(lower.tiles,6,'crack');assert.ok(both.ok);assert.ok(validateCourse(both.tiles));
 }
 console.log('PASS: breaking traps on both rows, protected endpoints, and mixed-row course validation.');
 
@@ -35,13 +35,19 @@ assert.equal(danger({type:'crack',triggeredAt:1},1.94,1.9),null);assert.equal(da
 console.log('PASS: breaking traps only; hidden before landing; reveal on contact; collapse timer persists after leaving.');
 
 for(let round=0;round<3;round++){
- let tiles=course(round);for(const id of [1,5,9,4,8,12]){const p=placeTrap(tiles,id,'crack');assert.ok(p.ok,`six separated traps: ${id}`);tiles=p.tiles;}
+ let tiles=course(round);for(const id of [3,7,11,6,10,14]){const p=placeTrap(tiles,id,'crack');assert.ok(p.ok,`six separated traps: ${id}`);tiles=p.tiles;}
  assert.equal(tiles.filter(t=>t.type==='crack').length,6);assert.ok(validateCourse(tiles));
  assert.match(placeTrap(tiles,13,'crack').reason,/Six traps max/);
- let first=placeTrap(course(round),1,'crack').tiles;
- assert.match(placeTrap(first,3,'crack').reason,/safe block between/);
- assert.match(placeTrap(first,2,'crack').reason,/safe block between/);
- assert.ok(placeTrap(first,5,'crack').ok);
- first[3].type='crack';assert.equal(trapSpacingValid(first),false);assert.equal(validateCourse(first),false);
+ let first=placeTrap(course(round),3,'crack').tiles;
+ assert.match(placeTrap(first,5,'crack').reason,/safe block between/);
+ assert.match(placeTrap(first,4,'crack').reason,/safe block between/);
+ assert.ok(placeTrap(first,7,'crack').ok);
+ first[5].type='crack';assert.equal(trapSpacingValid(first),false);assert.equal(validateCourse(first),false);
 }
 console.log('PASS: six traps on both rows, seventh rejected, adjacent/across traps rejected, separated traps allowed, spacing and winnability validated.');
+
+for(let round=0;round<3;round++){
+ const tiles=course(round);for(const id of [0,1,2,15]){assert.ok(tiles[id].locked);assert.equal(placeTrap(tiles,id,'crack').ok,false);}
+ tiles[1].type='crack';assert.equal(validateCourse(tiles),false,'Protected first landing cannot be sabotaged');
+}
+console.log('PASS: first platform on each side is protected in all three layouts.');
