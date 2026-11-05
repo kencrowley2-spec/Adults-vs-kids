@@ -1,11 +1,12 @@
+const MOLE_TURN_MS=20000;
 // Two collision-free lanes. Reuse the complete plan for equal opportunities.
 export function molePlan(seed){
  const random=()=>{seed=seed*16807%2147483647;return (seed-1)/2147483646;};
  const events=[];
  for(let type=0;type<2;type++){
   let at=350+type*470;
-  while(at<29000){
-   const life=Math.min(30000-at,1050+Math.floor(random()*450));
+  while(at<MOLE_TURN_MS-1000){
+   const life=Math.min(MOLE_TURN_MS-at,1050+Math.floor(random()*450));
    const occupied=events.filter(e=>e.at<at+life&&e.at+e.life>at).map(e=>e.hole);
    const holes=Array.from({length:8},(_,i)=>i).filter(i=>!occupied.includes(i));
    events.push({at,life,hole:holes[Math.floor(random()*holes.length)],type});
@@ -14,12 +15,13 @@ export function molePlan(seed){
  }
  const sorted=events.sort((a,b)=>a.at-b.at);
  // Exactly three gold opportunities, separated across the full turn.
- return sorted.map((e,i)=>({...e,personality:Math.floor(random()*4),gold:[5,14,23].includes(i)}));
+ const goldIndices=new Set([.2,.5,.8].map(fraction=>Math.floor(sorted.length*fraction)));
+ return sorted.map((e,i)=>({...e,personality:Math.floor(random()*4),gold:goldIndices.has(i)}));
 }
 export function mountMole({canvas,team,plan,later,onScore,onEnd,sound,onStatus,effects=true,onCue=()=>{}}){
  const ctx=canvas.getContext('2d');if(!ctx){onStatus('This browser cannot display the game. Please try an updated browser.');return;}
  const ratio=Math.min(window.devicePixelRatio||1,2);canvas.width=440*ratio;canvas.height=410*ratio;ctx.scale(ratio,ratio);
- const started=performance.now(),deadline=started+30000;
+ const started=performance.now(),deadline=started+MOLE_TURN_MS;
  const holes=Array.from({length:8},(_,i)=>({x:61+(i%4)*106,y:226+Math.floor(i/4)*111}));
  const hit=new Set();let points=0,ended=false,lastStrike=-Infinity,pointer=null,mallet={x:365,y:340},flash=null,combo=0,best=0,lastSecond=31,seen=new Set(),missed=new Set(),banner=null,animationFrame=null;
  function ellipse(x,y,rx,ry,color){ctx.fillStyle=color;ctx.beginPath();ctx.ellipse(x,y,rx,ry,0,0,Math.PI*2);ctx.fill();}
@@ -95,7 +97,7 @@ export function mountMole({canvas,team,plan,later,onScore,onEnd,sound,onStatus,e
  const release=e=>{if(e.pointerId===pointer)pointer=null;};
  canvas.addEventListener('pointerup',release);canvas.addEventListener('pointercancel',release);canvas.addEventListener('lostpointercapture',release);
  canvas.addEventListener('keydown',e=>{if(!/^[1-8]$/.test(e.key)||e.repeat||pointer!==null)return;e.preventDefault();strike(Number(e.key)-1);});
- later(finish,30000);frame();return ()=>{ended=true;pointer=null;if(animationFrame!==null)window.cancelAnimationFrame?.(animationFrame);};
+ later(finish,MOLE_TURN_MS);frame();return ()=>{ended=true;pointer=null;if(animationFrame!==null)window.cancelAnimationFrame?.(animationFrame);};
 }
 
 // Original lightweight synthesizer: no downloads, tracking, or premium host.

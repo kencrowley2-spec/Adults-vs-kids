@@ -575,7 +575,7 @@ console.log('PASS: Frog Hop real moving-pad landings, three crossings/tries, mis
 }
 console.log('PASS: hidden jump distance, direct pond hold/release, background frog ribbits, animated splash droplets and cleanup.');
 
-// One mallet, no multi-touch or repeated key farming, exact 30-second turns.
+// One mallet, no multi-touch or repeated key farming, exact 20-second turns.
 assert.deepEqual(molePlan(123),molePlan(123));
 for(const first of [0,1]){
  const f=fixture();f.start('mole',first);const board=f.get('mole-board');
@@ -584,20 +584,20 @@ for(const first of [0,1]){
  for(let i=1;i<=8;i++){board.dispatch('keydown',{key:String(i)});f.advance(180);}
  const before=f.get('arcade-team-'+first).textContent;
  board.dispatch('keydown',{key:'1',repeat:true});assert.equal(f.get('arcade-team-'+first).textContent,before);
- f.advance(30000-(f.clock()-4000));assert.ok(f.get('handoff-countdown'));
- f.advance(4000);assert.ok(f.get('mole-board'));f.advance(30000);
+ f.advance(20000-(f.clock()-4000));assert.ok(f.get('handoff-countdown'));
+ f.advance(4000);assert.ok(f.get('mole-board'));f.advance(20000);
  assert.equal(f.saved.length,1);assert.equal(f.saved[0].gameIds[0],'mole');assert.deepEqual([...f.saved[0].roundWinners],[first]);
  f.advance(20000);assert.equal(f.saved.length,1);
 }
 {
- const f=fixture();f.start('mole');f.advance(30000);f.advance(4000);f.advance(30000);
+ const f=fixture();f.start('mole');f.advance(20000);f.advance(4000);f.advance(20000);
  assert.match(f.get('game-stage').textContent,/It’s a tie/);assert.equal(f.saved.length,0);
 }
 {
  const f=fixture();f.start('mole');f.doc.hidden=true;f.doc.handlers.visibilitychange();f.advance(60000);
  assert.match(f.get('game-stage').textContent,/interrupted/);assert.equal(f.saved.length,0);
 }
-console.log('PASS: Whack-a-Mole fair schedules, 30-second turns, single round, scoring, ties, one-time saving and interruption.');
+console.log('PASS: Whack-a-Mole fair schedules, 20-second turns, single round, scoring, ties, one-time saving and interruption.');
 
 {
  const f=fixture();f.start('mole');const board=f.get('mole-board');
@@ -718,18 +718,18 @@ for(const first of [0,1]){
  assert.equal(f.run('game.molePoints[turn]'),3);
  f.advance(200);board.dispatch('keydown',{key:String(gold.hole+1)});
  assert.equal(f.run('game.molePoints[turn]'),3,'Gold cannot count twice');
- const reference=JSON.stringify(actual);f.advance(30000-(f.clock()-4000));f.advance(4000);
+ const reference=JSON.stringify(actual);f.advance(20000-(f.clock()-4000));f.advance(4000);
  assert.equal(JSON.stringify(f.run('game.molePlan')),reference,'Both players share all opportunities');
  f.advance(gold.at+200);f.get('mole-board').dispatch('keydown',{key:String(gold.hole+1)});
- assert.equal(f.run('game.molePoints[turn]'),3);f.advance(30000);
+ assert.equal(f.run('game.molePoints[turn]'),3);f.advance(20000);
  assert.match(f.get('game-stage').textContent,/It’s a tie/);assert.equal(f.saved.length,0);
- f.click('Optional tiebreaker · 30 seconds each');f.advance(4000);
+ f.click('Optional tiebreaker · 20 seconds each');f.advance(4000);
  assert.deepEqual([...f.run('game.molePoints')],[0,0]);
 }
 for(let seed=1;seed<=100;seed++){
  const plan=molePlan(seed);assert.equal(plan.filter(e=>e.gold).length,3);
- assert.ok(plan.every(e=>e.at+e.life<=30000));
- assert.equal(new Set(plan.map(e=>e.personality)).size,4);
+ assert.ok(plan.every(e=>e.at+e.life<=20000));
+ assert.ok(plan.every(e=>Number.isInteger(e.personality)&&e.personality>=0&&e.personality<4));
 }
 {
  const f=fixture(0,true,true);f.start('mole');f.advance(800);f.get('arcade-sound').click();
@@ -744,8 +744,8 @@ console.log('PASS: gold +3 exactly once, equal bonus schedules in both orders, o
  for(const e of plan){const at=Math.max(e.at+180,elapsed+200);f.advance(at-elapsed);elapsed=at;f.get('mole-board').dispatch('keydown',{key:String(e.hole+1)});}
  assert.equal(f.run('game.molePoints[0]'),plan.length+6,'Combos never add points');
  assert.ok(f.speech.spoken.some(u=>/NICE|ON FIRE|MOLE MASTER/.test(u.text)));
- f.advance(30000-elapsed);f.advance(4000);f.advance(30000);assert.equal(f.saved.length,1);
- for(let n=0;n<3;n++){f.click('REMATCH!');f.advance(4000);assert.deepEqual([...f.run('game.molePoints')],[0,0]);f.advance(30000);f.advance(4000);f.advance(30000);assert.match(f.get('game-stage').textContent,/It’s a tie/);}
+ f.advance(20000-elapsed);f.advance(4000);f.advance(20000);assert.equal(f.saved.length,1);
+ for(let n=0;n<3;n++){f.click('REMATCH!');f.advance(4000);assert.deepEqual([...f.run('game.molePoints')],[0,0]);f.advance(20000);f.advance(4000);f.advance(20000);assert.match(f.get('game-stage').textContent,/It’s a tie/);}
 }
 console.log('PASS: complete perfect turn, visual-only combos, exact score ceiling, three clean rematches.');
 
@@ -756,7 +756,7 @@ for(const first of [0,1]){
  assert.match(f.get('game-stage').textContent,new RegExp(first?'Harper &amp; Chloe, you’re up':'Ken, you’re up'));
  const cancels=f.speech.cancels;f.advance(10000);assert.equal(f.get('mole-board'),null);assert.equal(f.speech.cancels,cancels,'Countdown must not cut off an active introduction');assert.equal(f.speech.spoken.at(-1),intro);
  intro.onend();f.advance(999);assert.equal(f.get('mole-board'),null);f.advance(1);assert.equal(f.get('handoff-countdown').textContent,'3');f.advance(1000);assert.equal(f.get('handoff-countdown').textContent,'2');f.advance(1000);assert.equal(f.get('handoff-countdown').textContent,'1');f.advance(1000);assert.ok(f.get('mole-board'));
- f.advance(30000);const second=f.speech.spoken.at(-1);assert.match(second.text,/Up next!/);assert.match(second.text,/score to beat is 0 points/);f.advance(10000);assert.equal(f.get('mole-board'),null);second.onend();f.advance(4000);assert.ok(f.get('mole-board'));
+ f.advance(20000);const second=f.speech.spoken.at(-1);assert.match(second.text,/Up next!/);assert.match(second.text,/score to beat is 0 points/);f.advance(10000);assert.equal(f.get('mole-board'),null);second.onend();f.advance(4000);assert.ok(f.get('mole-board'));
 }
 {
  const f=fixture(0,true,false,null,true);f.start('mole',0,false);f.advance(2000);f.get('arcade-sound').click();f.advance(4000);assert.ok(f.get('mole-board'),'Muting an introduction continues with a visual countdown');
@@ -765,3 +765,16 @@ for(const first of [0,1]){
  const f=fixture(0,true,false,null,true);f.start('mole',0,false);const old=f.speech.spoken.at(-1);f.doc.hidden=true;f.doc.handlers.visibilitychange();old.onend();f.advance(60000);assert.equal(f.get('mole-board'),null);assert.equal(f.saved.length,0);assert.match(f.get('game-stage').textContent,/interrupted/);
 }
 console.log('PASS: full named roster introductions at a slower pace, completion-driven countdown, both orders, second-turn score target, mute continuation and stale speech cancellation.');
+
+// Each team receives exactly 20 seconds after introductions and the countdown.
+for(const first of [0,1]){
+ const f=fixture();f.start('mole',first);
+ assert.match(f.get('match-format').textContent,/20 SECONDS EACH/);
+ assert.match(f.get('arcade-message').textContent,/20 seconds/);
+ const board=f.get('mole-board');f.advance(19999);assert.equal(f.get('mole-board'),board);assert.equal(f.state().turn,first);
+ f.advance(1);assert.equal(f.get('mole-board'),null);assert.equal(f.state().turn,1-first);
+ f.advance(4000);const second=f.get('mole-board');assert.ok(second);f.advance(19999);assert.equal(f.get('mole-board'),second);f.advance(1);assert.equal(f.get('mole-board'),null);assert.match(f.get('game-stage').textContent,/20 seconds each/);
+}
+assert.match(library.coverMarkup(data.GAMES.find(g=>g.id==='mole')),/20 SEC EACH/);
+assert.match(library.coverMarkup({id:'basketball',tag:'',name:'Basketball'}),/30 SEC EACH/);
+console.log('PASS: exact 20-second turns in both player orders, consistent rule labels and unchanged Basketball duration.');

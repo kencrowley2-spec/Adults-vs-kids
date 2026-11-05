@@ -1,11 +1,11 @@
 import {mountClaw,clawPrizes,clawFireworks} from './arcade-claw.js?v=1';
-import {mountMole,molePlan,createMoleAudio} from './arcade-mole.js?v=2';
+import {mountMole,molePlan,createMoleAudio} from './arcade-mole.js?v=3';
 import {mountFrog,frogCourses,frogRoundWinner} from './arcade-frog.js?v=3';
 import {mountTreasure,treasurePlan} from './arcade-treasure.js?v=1';
 import {mountBlocks} from './arcade-blocks.js?v=1';
 import {mountBasketball} from './arcade-basketball.js?v=1';
-import {coverMarkup,recentGames} from './arcade-library.js?v=8';
-import {GAMES, ANIMALS, TRIVIA, PICTURES, CHALLENGES} from './arcade-data.js?v=19';
+import {coverMarkup,recentGames} from './arcade-library.js?v=9';
+import {GAMES, ANIMALS, TRIVIA, PICTURES, CHALLENGES} from './arcade-data.js?v=20';
 import {shuffle, roundWinner, awardRound, lineWinner} from './arcade-core.js';
 
 import {makeMaze, codeClues, rpsWinner, GOLF_COURSES, golfStep} from './arcade-new-core.js?v=5';
@@ -304,7 +304,7 @@ function focusFirst(){ stage.querySelector('button,input')?.focus({preventScroll
 function status(text){$('arcade-message').textContent=text;}
 function scoreboard(){
  if($('mole-volume-control'))$('mole-volume-control').hidden=game?.id!=='mole';
-  $('match-format').textContent=series?'3-GAME SERIES':game?.id==='claw'?'3 GRABS EACH · ONE ROUND':game?.id==='mole'?'30 SECONDS EACH · ONE ROUND':game?.id==='frog'?'BEST OF THREE · 3 TRIES EACH':game?.id==='treasure'?'5 GUESSES EACH · ONE ROUND':game?.id==='blocks'?'60 SECONDS EACH · ONE ROUND':game?.id==='basketball'?'30 SECONDS EACH':'BEST OF FIVE';
+  $('match-format').textContent=series?'3-GAME SERIES':game?.id==='claw'?'3 GRABS EACH · ONE ROUND':game?.id==='mole'?'20 SECONDS EACH · ONE ROUND':game?.id==='frog'?'BEST OF THREE · 3 TRIES EACH':game?.id==='treasure'?'5 GUESSES EACH · ONE ROUND':game?.id==='blocks'?'60 SECONDS EACH · ONE ROUND':game?.id==='basketball'?'30 SECONDS EACH':'BEST OF FIVE';
   $('arcade-reset').textContent=series?'Restart series ↻':'Restart match ↻';
   $('series-lineup').hidden=!series;
   if(series) $('series-lineup').innerHTML=series.games.map((g,i)=>`<div class="series-pick ${i===series.index?'active':''}"><small>GAME ${i+1}${series.winners[i]!==undefined?` · ${teamLabel(series.winners[i])} win`:''}</small><b>${g.icon} ${g.name}</b></div>`).join('');
@@ -366,8 +366,8 @@ function moleHandoff(team,detail,action){
  const introduce=i=>kidsOnly?`Introducing ${spokenNames(i)}.`:`Introducing Team ${teamName(i)}${selectedPlayers[i].length?`: ${spokenNames(i)}`:''}.`;
  const first=!results[1-team];
  const introduction=first
-  ? `Ladies and gentlemen! Welcome to Whack-a-Mole! ${introduce(0)} ${introduce(1)} ${spokenNames(team)||teamName(team)}, you are playing first. Take the device. Your thirty-second turn begins after the countdown.`
-  : `Up next! ${introduce(team)} ${spokenNames(team)||teamName(team)}, take the device. Your score to beat is ${results[1-team].score} points. Your thirty-second turn begins after the countdown.`;
+  ? `Ladies and gentlemen! Welcome to Whack-a-Mole! ${introduce(0)} ${introduce(1)} ${spokenNames(team)||teamName(team)}, you are playing first. Take the device. Your twenty-second turn begins after the countdown.`
+  : `Up next! ${introduce(team)} ${spokenNames(team)||teamName(team)}, take the device. Your score to beat is ${results[1-team].score} points. Your twenty-second turn begins after the countdown.`;
  screen(`<div class="handoff">${matchupMarkup()}<p class="eyebrow">${first?'MEET THE PLAYERS':'PASS THE DEVICE'}</p><h3>${contenderLabel(team)}, you’re up!</h3><p id="mole-introduction">${escapePlayer(introduction)}</p><p id="handoff-countdown" class="handoff-countdown" style="font-size:24px;font-weight:900;color:#111">INTRODUCING…</p><small>The introduction finishes before 3–2–1. Get comfortable and pass the device.</small></div>`);
  timed=true; // A hidden page interrupts this round rather than skipping an introduction.
  const token=generation;let settled=false,started=false;
@@ -432,7 +432,7 @@ function beginRound(){
 function teamReady(team,previous=''){
   competitionCue='';
   let detail=`Your turn starts after the countdown. ${game.description}`;
-  if(game.id==='mole')detail='30 seconds. Regular moles +1. Golden moles +3. Same pattern for both teams. Pass the device now!';
+  if(game.id==='mole')detail='20 seconds. Regular moles +1. Golden moles +3. Same pattern for both teams. Pass the device now!';
   if(game.id==='challenge') detail=`Pick ONE player per team. Same challenge, same 20 seconds. ${game.challenge[0]}: ${game.challenge[1]} The other team counts. You can play seated.`;
   handoff(team,(previous?previous+' ':'')+detail,()=>({claw:clawMachine,mole:whackAMole,blocks,basketball,spot, trivia:quiz,frog:frogHop,treasure:treasureShuffle,picture:quiz,number:quiz,challenge,maze:mazeDash,code:codeBreaker,golf:miniGolf}[game.id])());
 }
@@ -919,7 +919,7 @@ document.addEventListener('visibilitychange',()=>{
 
 function whackAMole(){
  screen('<div class="mole-cabinet"><canvas id="mole-board" tabindex="0" role="application" aria-label="Whack-a-Mole. Eight holes, five funny mole characters, one mallet. Tap the moles or use keys 1 through 8. Regular moles earn one point. Golden moles earn three."></canvas><p class="mole-help">One mallet · Tap to whack · Keyboard: 1–8</p></div>');
- timed=true;status(`${teamName(turn)}: 30 seconds. GO! Regular +1, golden +3.`);
+ timed=true;status(`${teamName(turn)}: 20 seconds. GO! Regular +1, golden +3.`);
  moleAudio=createMoleAudio({enabled:()=>soundOn,getContext:()=>{unlockAudio();return audioContext;},volume:()=>moleVolume,speak:(line,volume)=>readArcade(line,volume,{rate:1.08,pitch:.85}),later});moleAudio.music();moleAudio.announce('GO! LET’S BONK!',true);
  stopMole=mountMole({canvas:$('mole-board'),team:teamName(turn),plan:game.molePlan,later,sound:kind=>moleAudio?.cue(kind),onCue:line=>moleAudio?.announce(line),onStatus:status,effects:()=>effectsOn,
   onScore:points=>{game.molePoints[turn]=points;scoreboard();competitionUpdate({score:points});},
@@ -929,8 +929,8 @@ function finishMoleMatch(winner,detail){
  if(winner!==null)defendingCrowns.set('mole',winner);
  if(winner!==null){wins[winner]=1;champion=winner;if(recording)recording.roundWinners.push(winner);saveCompleted();}
  scoreboard();
- screen(`<div class="result mole-victory"><span class="mole-fireworks" aria-hidden="true"></span><div class="mole-confetti" aria-hidden="true">✦ · ★ · ✧ · ★ · ✦</div><span class="giant-icon mole-trophy">${winner===null?'🤝':'🏆'}</span><p class="eyebrow">WHACK-A-MOLE 2.0 · SHOWDOWN COMPLETE</p><h3>${winner===null?'It’s a tie!':`${teamLabel(winner)} win!`}</h3><p>${winner===null?'HIGH FIVES ALL ROUND':`${contenderLabel(winner)} HAS THE CROWN!`}</p><p>${escapePlayer(detail)}</p><div class="final-score">${results[0].score} <span>–</span> ${results[1].score}</div><p>Regular +1 · Golden +3 · 30 seconds each.</p><p>${winner===null?'Two teams. Two legends. The mole kingdom belongs to everyone!':kidsOnly?`${contenderLabel(winner)} rules the mole kingdom! ${contenderLabel(1-winner)}, your comeback awaits!`:winner===1?'BREAKING NEWS! The Kids have taken over the mole kingdom! Adults, your comeback awaits!':'UNBELIEVABLE! Adults rule the mole kingdom! Kids, demand a rematch!'}</p><span class="mole-dancer" aria-hidden="true">${winner===null?'🐹 🐹':'🐹'}</span></div>`);
- button('REMATCH!',()=>openGame('mole'));if(winner===null)button('Optional tiebreaker · 30 seconds each',()=>openGame('mole'),stage,'text-button');button('Return to Arcade',()=>$('arcade-return').click(),stage,'text-button');
+ screen(`<div class="result mole-victory"><span class="mole-fireworks" aria-hidden="true"></span><div class="mole-confetti" aria-hidden="true">✦ · ★ · ✧ · ★ · ✦</div><span class="giant-icon mole-trophy">${winner===null?'🤝':'🏆'}</span><p class="eyebrow">WHACK-A-MOLE 2.0 · SHOWDOWN COMPLETE</p><h3>${winner===null?'It’s a tie!':`${teamLabel(winner)} win!`}</h3><p>${winner===null?'HIGH FIVES ALL ROUND':`${contenderLabel(winner)} HAS THE CROWN!`}</p><p>${escapePlayer(detail)}</p><div class="final-score">${results[0].score} <span>–</span> ${results[1].score}</div><p>Regular +1 · Golden +3 · 20 seconds each.</p><p>${winner===null?'Two teams. Two legends. The mole kingdom belongs to everyone!':kidsOnly?`${contenderLabel(winner)} rules the mole kingdom! ${contenderLabel(1-winner)}, your comeback awaits!`:winner===1?'BREAKING NEWS! The Kids have taken over the mole kingdom! Adults, your comeback awaits!':'UNBELIEVABLE! Adults rule the mole kingdom! Kids, demand a rematch!'}</p><span class="mole-dancer" aria-hidden="true">${winner===null?'🐹 🐹':'🐹'}</span></div>`);
+ button('REMATCH!',()=>openGame('mole'));if(winner===null)button('Optional tiebreaker · 20 seconds each',()=>openGame('mole'),stage,'text-button');button('Return to Arcade',()=>$('arcade-return').click(),stage,'text-button');
  react(winner===null?'turn':'win',winner===null?'Even score!':`${teamName(winner)} win!`);
  moleAudio=createMoleAudio({enabled:()=>soundOn,getContext:()=>{unlockAudio();return audioContext;},volume:()=>moleVolume,speak:(line,volume)=>readArcade(line,volume,{rate:1.08,pitch:.85}),later});moleAudio.cue('buzzer');later(()=>moleAudio?.cue('victory'),380);moleAudio.announce(winner===null?'Two teams! Two champions!':`${contender(winner)}! The new Whack-a-Mole champions! Ready for a rematch?`,true);
  status(winner===null?'Tie game! Share a high five.':`${teamName(winner)} win Whack-a-Mole!`);focusFirst();
