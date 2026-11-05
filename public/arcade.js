@@ -5,7 +5,7 @@ import {mountFrog,frogCourses,frogRoundWinner} from './arcade-frog.js?v=3';
 import {mountTreasure,treasurePlan} from './arcade-treasure.js?v=1';
 import {mountBlocks} from './arcade-blocks.js?v=1';
 import {mountBasketball} from './arcade-basketball.js?v=1';
-import {coverMarkup,recentGames} from './arcade-library.js?v=10';
+import {coverMarkup,recentGames} from './arcade-library.js?v=11';
 import {GAMES, ANIMALS, TRIVIA, PICTURES, CHALLENGES} from './arcade-data.js?v=21';
 import {shuffle, roundWinner, awardRound, lineWinner} from './arcade-core.js';
 
