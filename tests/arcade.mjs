@@ -577,15 +577,14 @@ console.log('PASS: Frog Hop real moving-pad landings, three crossings/tries, mis
 }
 console.log('PASS: hidden jump distance, direct pond hold/release, background frog ribbits, animated splash droplets and cleanup.');
 
-// One mallet, no multi-touch or repeated key farming, exact 20-second turns.
+// Supplied nine-hole game: single-use targets and exact 20-second turns.
 assert.deepEqual(molePlan(123),molePlan(123));
 for(const first of [0,1]){
  const f=fixture();f.start('mole',first);const board=f.get('mole-board');
- assert.ok(board);f.advance(400);board.dispatch('keydown',{key:String(molePlan(536870912).find(e=>e.at===350)?.hole+1)});
- // Find the live hole using real controls; only one can score at this instant.
- for(let i=1;i<=8;i++){board.dispatch('keydown',{key:String(i)});f.advance(180);}
- const before=f.get('arcade-team-'+first).textContent;
- board.dispatch('keydown',{key:'1',repeat:true});assert.equal(f.get('arcade-team-'+first).textContent,before);
+ assert.equal(board.children.length,9);const target=f.run('game.molePlan')[0];
+ f.advance(target.at+100);board.dispatch('keydown',{key:String(target.hole+1)});
+ assert.equal(f.run('game.molePoints[turn]'),1);assert.equal(f.get('mole-score').textContent,'1');
+ board.dispatch('keydown',{key:String(target.hole+1),repeat:true});board.children[target.hole].click();assert.equal(f.run('game.molePoints[turn]'),1);
  f.advance(20000-(f.clock()-4000));assert.ok(f.get('handoff-countdown'));
  f.advance(4000);assert.ok(f.get('mole-board'));f.advance(20000);
  assert.equal(f.saved.length,1);assert.equal(f.saved[0].gameIds[0],'mole');assert.deepEqual([...f.saved[0].roundWinners],[first]);
@@ -599,33 +598,21 @@ for(const first of [0,1]){
  const f=fixture();f.start('mole');f.doc.hidden=true;f.doc.handlers.visibilitychange();f.advance(60000);
  assert.match(f.get('game-stage').textContent,/interrupted/);assert.equal(f.saved.length,0);
 }
-console.log('PASS: Whack-a-Mole fair schedules, 20-second turns, single round, scoring, ties, one-time saving and interruption.');
-
 {
- const f=fixture();f.start('mole');const board=f.get('mole-board');
- board.getBoundingClientRect=()=>({left:10,top:20,width:220,height:205});board.setPointerCapture=()=>{};
- const first=molePlan(536870912)[0],second=molePlan(536870912).find(e=>e.type===1);
- const event=(hole,id=1,primary=true)=>({pointerId:id,isPrimary:primary,button:0,clientX:10+(61+hole%4*106)/2,clientY:20+(196+Math.floor(hole/4)*111-25)/2});
- f.advance(500);board.dispatch('pointerdown',event(first.hole));
- assert.match(f.get('arcade-team-0').textContent,/1/);
- board.dispatch('pointerup',{pointerId:1});f.advance(200);board.dispatch('pointerdown',event(first.hole));
- board.dispatch('pointerup',{pointerId:1});f.advance(250);
- const before=f.get('arcade-team-0').textContent;
- board.dispatch('pointerdown',event(second.hole,2,false));assert.equal(f.get('arcade-team-0').textContent,before);
- board.dispatch('pointerdown',event(second.hole));
- board.dispatch('pointerdown',event(second.hole,2));
- assert.match(f.get('arcade-team-0').textContent,/2/);
- board.dispatch('pointercancel',{pointerId:1});
- f.get('arcade-return').click();f.advance(60000);assert.equal(f.saved.length,0);
+ const f=fixture();f.start('mole');const board=f.get('mole-board'),plan=f.run('game.molePlan'),target=plan[0];
+ f.advance(target.at+100);board.children[target.hole].dispatch('click',{button:2});assert.equal(f.run('game.molePoints[0]'),0);
+ board.children[target.hole].dispatch('click',{isPrimary:false,detail:0});board.children[target.hole].click();assert.equal(f.run('game.molePoints[0]'),1);
+ assert.match(board.children[target.hole].className,/bonk/);f.advance(150);assert.doesNotMatch(board.children[target.hole].className,/bonk/);
+ // A consumed mole's old expiry must not erase a later appearance in that hole.
+ const repeated=plan.find(e=>e.at>target.at&&e.hole===target.hole);f.advance(repeated.at+100-(f.clock()-4000));
+ assert.match(board.children[target.hole].className,/up/);board.children[target.hole].click();assert.equal(f.run('game.molePoints[0]'),2);
+ f.get('arcade-return').click();const score=f.get('mole-score');f.advance(60000);board.children[target.hole].click();assert.equal(f.saved.length,0);assert.equal(score.textContent,'2');
 }
-for(const seed of [1,123,987654]){
- const plan=molePlan(seed);assert.equal(new Set(plan.map(e=>e.type)).size,2);
- assert.ok(plan.every(e=>e.hole>=0&&e.hole<8));
- for(let i=0;i<plan.length;i++)for(let j=i+1;j<plan.length;j++){
-  const a=plan[i],b=plan[j];if(b.at<a.at+a.life)assert.notEqual(a.hole,b.hole);
- }
+for(let seed=1;seed<=100;seed++){
+ const plan=molePlan(seed);assert.equal(plan.length,28);assert.ok(plan.every(e=>e.hole>=0&&e.hole<9&&e.life>=Math.min(600,20000-e.at)&&e.life<=1300&&e.at+e.life<=20000));
+ for(let i=0;i<plan.length;i++){assert.equal(plan[i].at,(i+1)*700);for(let j=i+1;j<plan.length;j++)if(plan[j].at<plan[i].at+plan[i].life)assert.notEqual(plan[i].hole,plan[j].hole);}
 }
-console.log('PASS: scaled touch hit targets, single-use moles, secondary finger blocking, cancel/exit cleanup and collision-free appearances.');
+console.log('PASS: nine DOM targets, purple/green hit states, source spawn cadence, 20-second turns, duplicate/alternate input, fair collision-free schedules, draws and interruption cleanup.');
 
 // Real claw controller: three attempts, positioning and timing, fair handoff.
 {
@@ -710,46 +697,25 @@ for(const [game,score] of [['maze',1],['picture',3],['number',5]]){
 {const f=fixture();f.start('number');f.run("finishTurn({score:4,elapsed:12,label:'4/5'})");assert.equal(f.timedSaved.length,0);}
 console.log('PASS: timed records captured under the family account, partial/failed turns excluded, match ledger preserved.');
 
-// Weighted bonuses use identical opportunities and each mole is consumed once.
+// Both teams receive the same supplied-game schedule; every mole is one point.
 for(const first of [0,1]){
- const f=fixture();f.start('mole',first);const plan=molePlan(first===0?536870912:1610612734);
- // Read the actual seeded schedule rather than assuming player order affects it.
- const actual=f.run('game.molePlan');const gold=actual.find(e=>e.gold);
- f.advance(gold.at+200);const board=f.get('mole-board');
- board.dispatch('keydown',{key:String(gold.hole+1)});
- assert.equal(f.run('game.molePoints[turn]'),3);
- f.advance(200);board.dispatch('keydown',{key:String(gold.hole+1)});
- assert.equal(f.run('game.molePoints[turn]'),3,'Gold cannot count twice');
- const reference=JSON.stringify(actual);f.advance(20000-(f.clock()-4000));f.advance(4000);
- assert.equal(JSON.stringify(f.run('game.molePlan')),reference,'Both players share all opportunities');
- f.advance(gold.at+200);f.get('mole-board').dispatch('keydown',{key:String(gold.hole+1)});
- assert.equal(f.run('game.molePoints[turn]'),3);f.advance(20000);
- assert.match(f.get('game-stage').textContent,/It’s a tie/);assert.equal(f.saved.length,0);
- f.click('Optional tiebreaker · 20 seconds each');f.advance(4000);
- assert.deepEqual([...f.run('game.molePoints')],[0,0]);
-}
-for(let seed=1;seed<=100;seed++){
- const plan=molePlan(seed);assert.equal(plan.filter(e=>e.gold).length,3);
- assert.ok(plan.every(e=>e.at+e.life<=20000));
- assert.ok(plan.every(e=>Number.isInteger(e.personality)&&e.personality>=0&&e.personality<4));
+ const f=fixture();f.start('mole',first);const plan=f.run('game.molePlan'),target=plan[0],reference=JSON.stringify(plan);
+ f.advance(target.at+100);f.get('mole-board').children[target.hole].click();assert.equal(f.run('game.molePoints[turn]'),1);
+ f.advance(20000-(f.clock()-4000));f.advance(4000);assert.equal(JSON.stringify(f.run('game.molePlan')),reference);
+ f.advance(target.at+100);f.get('mole-board').children[target.hole].click();assert.equal(f.run('game.molePoints[turn]'),1);f.advance(20000);
+ assert.match(f.get('game-stage').textContent,/It’s a tie/);assert.equal(f.saved.length,0);f.click('Optional tiebreaker · 20 seconds each');f.advance(4000);assert.deepEqual([...f.run('game.molePoints')],[0,0]);
 }
 {
- const f=fixture(0,true,true);f.start('mole');f.advance(800);f.get('arcade-sound').click();
- const count=f.speech.spoken.length;f.advance(1000);assert.equal(f.speech.spoken.length,count);
- f.doc.hidden=true;f.doc.handlers.visibilitychange();f.advance(60000);assert.equal(f.saved.length,0);
- assert.ok(f.audio.nodes.every(n=>n.stops.length));
+ const f=fixture(0,true,true);f.start('mole');f.advance(800);f.get('arcade-sound').click();const count=f.speech.spoken.length;f.advance(1000);assert.equal(f.speech.spoken.length,count);
+ f.doc.hidden=true;f.doc.handlers.visibilitychange();f.advance(60000);assert.equal(f.saved.length,0);assert.ok(f.audio.nodes.every(n=>n.stops.length));
 }
-console.log('PASS: gold +3 exactly once, equal bonus schedules in both orders, optional tiebreak reset, 100 seeds, mute and interruption cleanup.');
-
 {
  const f=fixture(0,true);f.start('mole');const plan=f.run('game.molePlan');let elapsed=0;
- for(const e of plan){const at=Math.max(e.at+180,elapsed+200);f.advance(at-elapsed);elapsed=at;f.get('mole-board').dispatch('keydown',{key:String(e.hole+1)});}
- assert.equal(f.run('game.molePoints[0]'),plan.length+6,'Combos never add points');
- assert.ok(f.speech.spoken.some(u=>/NICE|ON FIRE|MOLE MASTER/.test(u.text)));
- f.advance(20000-elapsed);f.advance(4000);f.advance(20000);assert.equal(f.saved.length,1);
+ for(const e of plan){const at=e.at+100;f.advance(at-elapsed);elapsed=at;f.get('mole-board').children[e.hole].click();}
+ assert.equal(f.run('game.molePoints[0]'),28);f.advance(20000-elapsed);f.advance(4000);f.advance(20000);assert.equal(f.saved.length,1);
  for(let n=0;n<3;n++){f.click('REMATCH!');f.advance(4000);assert.deepEqual([...f.run('game.molePoints')],[0,0]);f.advance(20000);f.advance(4000);f.advance(20000);assert.match(f.get('game-stage').textContent,/It’s a tie/);}
 }
-console.log('PASS: complete perfect turn, visual-only combos, exact score ceiling, three clean rematches.');
+console.log('PASS: identical 1-point opportunities for both teams, exact perfect-turn score, optional tiebreaker, mute cleanup and three clean rematches.');
 
 // Player introductions finish before any countdown speech or timed gameplay.
 for(const first of [0,1]){
@@ -795,3 +761,9 @@ console.log('PASS: exact 20-second turns in both player orders, consistent rule 
  const f=fixture();assert.equal(f.run('lobbyMusic.playing'),false);f.get('lobby-music-toggle').click();assert.equal(f.run('lobbyMusic.playing'),false,'Audio-unavailable browsers can browse normally');f.start('mole');assert.ok(f.get('mole-board'));
 }
 console.log('PASS: Arcade FM playback, volume, duplicate-start protection, user pause, single-game/series transitions, visibility cleanup and no-audio fallback.');
+
+{
+ const f=fixture();f.run('this.moleStored=new Map();this.localStorage={getItem:key=>moleStored.get(key)||null,setItem:(key,value)=>moleStored.set(key,value)}');f.start('mole');const target=f.run('game.molePlan')[0];f.advance(target.at+100);f.get('mole-board').children[target.hole].click();f.advance(20000-(f.clock()-4000));
+ assert.equal(f.run('[...moleStored.entries()].find(([key])=>key.startsWith("avk:mole:best:"))[1]'),'1');f.advance(4000);assert.equal(f.get('mole-best').textContent,'1');f.get('arcade-return').click();assert.equal(f.saved.length,0,'An interrupted second turn cannot record a match');
+}
+console.log('PASS: completed personal best persists under the family account while interrupted matches stay unrecorded.');

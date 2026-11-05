@@ -318,8 +318,6 @@ body::before{display:block;inset:0;background:linear-gradient(180deg,rgba(4,5,14
 
 /* Classic wood deck, eight holes and one shared mallet. */
 .mole-cabinet{width:min(100%,540px);margin:auto;padding:8px;background:#521c26;border:3px solid #ffd522;border-radius:18px;box-shadow:0 8px 0 #271017,0 12px 28px #0008}
-#mole-board{display:block;width:100%;height:auto;aspect-ratio:440/410;touch-action:none;cursor:none;border-radius:10px}
-#mole-board:focus-visible{outline:3px solid #fff;outline-offset:3px}
 .mole-help{text-align:center;font-size:11px;margin:8px 0 2px;color:#ffe3a4}
 
 .claw-cabinet{width:min(100%,510px);margin:auto;background:#261a46;padding:7px;border:3px solid #ffd522;border-radius:16px;box-shadow:0 7px 0 #190d2d}
@@ -358,3 +356,16 @@ body::before{display:block;inset:0;background:linear-gradient(180deg,rgba(4,5,14
 .lobby-fm-brand{display:flex;align-items:center;gap:10px}.lobby-fm-brand>span{display:grid;place-items:center;width:36px;height:36px;background:#ffd522;border-radius:9px;color:#111;font-size:27px}.lobby-fm-brand strong{display:block;letter-spacing:2px;font-size:13px;color:#ffd522}.lobby-fm-brand small{font-size:8px;letter-spacing:1px;color:#dfccf4}
 .lobby-soundbar p{font-size:11px;flex:1;min-width:140px;margin:0;line-height:1.5}.lobby-soundbar button{border:1px solid #ffdd52;border-radius:8px;background:#ffd522;color:#111;padding:9px 12px;min-height:44px;font-size:11px;font-weight:900;cursor:pointer}.lobby-soundbar label{font-size:10px;white-space:nowrap}.lobby-soundbar input{width:95px;height:28px;min-height:28px;accent-color:#ffd522;padding:0;border:0;box-shadow:none;background:transparent}.lobby-soundbar input:focus-visible,.lobby-soundbar button:focus-visible{outline-color:#fff}
 @media(max-width:600px){.lobby-soundbar{gap:8px;padding:10px 12px}.lobby-soundbar p{flex-basis:calc(100% - 150px);min-width:90px;font-size:10px}.lobby-soundbar button{margin-right:auto}.lobby-soundbar input{width:85px}}
+
+/* Supplied Whack-a-Mole design, scoped to protect the rest of the Arcade. */
+.source-mole-game{width:min(100%,390px);margin:auto;padding:14px;border:2px solid #ffd522;border-radius:16px;background:radial-gradient(800px 550px at 50% -10%,#1b2340 0%,#0d1120 55%,#090b14 100%);color:#e8ecf8;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;display:flex;flex-direction:column;align-items:center;gap:12px}
+#game-stage .source-mole-game h3{font-size:25px;margin:0;background:linear-gradient(90deg,#6ee7f9,#a78bfa);background-clip:text;-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.source-mole-hud{display:flex;gap:20px;font-size:15px;align-items:center;justify-content:center;font-variant-numeric:tabular-nums}.source-mole-hud b{color:#6ee7f9}
+.source-mole-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(8px,2vw,16px);width:min(100%,332px)}
+.source-mole-hole{display:block;width:100%;aspect-ratio:1;min-height:0;padding:0;border-radius:50%;background:radial-gradient(circle at 50% 80%,#0a0e1a 55%,#1a2240 100%);border:2px solid #ffffff14;position:relative;overflow:hidden;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+.source-mole-character{position:absolute;left:12%;bottom:-100%;width:76%;height:76%;border-radius:46% 46% 40% 40%;background:radial-gradient(circle at 40% 30%,#a78bfa,#6d28d9);transition:bottom .12s ease-out;display:flex;align-items:center;justify-content:center;pointer-events:none}
+.source-mole-hole.up .source-mole-character{bottom:8%}.source-mole-hole.bonk .source-mole-character{background:radial-gradient(circle at 40% 30%,#4ade80,#15803d)}
+.source-mole-character:before,.source-mole-character:after{content:'';position:absolute;top:30%;width:10px;height:10px;background:#0a0e1a;border-radius:50%}.source-mole-character:before{left:26%}.source-mole-character:after{right:26%}
+.source-mole-hole:focus-visible{outline:3px solid #6ee7f9;outline-offset:2px}#game-stage .source-mole-game .source-mole-hint{color:#9aa3bf;font-size:11px;line-height:1.4;text-align:center;margin:0}
+@media(prefers-reduced-motion:reduce){.source-mole-character{transition:none}}
+#arcade-game[data-effects="false"] .source-mole-character{transition:none}
