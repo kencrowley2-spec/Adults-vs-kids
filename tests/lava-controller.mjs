@@ -38,3 +38,17 @@ for(const [w,h] of [[844,390],[740,360],[932,430]]){
  const f=fixture();f.click('[data-action=tutorial]');f.tap(1);f.advance(.7);assert.match(f.$('.lava-overlay').textContent,/NICE JUMP/);assert.equal(f.complete.length,0);f.click('[data-action=continue]');f.advance(3.1);assert.match(f.phase(),/BUILD/);f.click('[data-action=sfx]');assert.equal(f.$('[data-action=sfx]').getAttribute('aria-pressed'),'false');f.click('[data-action=music]');assert.equal(f.$('[data-action=music]').getAttribute('aria-pressed'),'false');Object.defineProperty(f.document,'hidden',{value:true,configurable:true});f.document.dispatchEvent(new f.document.defaultView.Event('visibilitychange'));assert.ok(f.$('.lava-pause'));f.cleanup();
 }
 console.log('PASS Lava controller: Android/iPhone landscape sizes, touch taps/drag/remove/budget, all six live escapes, auto/live attack, failure/timeout, scores, role switching, final once-only result, pause clock, tutorial, audio toggles, rematch and cleanup.');
+
+// Click/keyboard activation selects a trap even without pointer events or capture support.
+{
+ const f=fixture();f.click('[data-action=start]');f.advance(3.1);
+ for(const [type,id] of [['spinner',1],['ghost',2],['spring',3]]){
+  f.click(`[data-trap=${type}]`);assert.equal(f.$(`[data-trap=${type}]`).getAttribute('aria-pressed'),'true');
+  assert.equal(f.document.querySelectorAll('[data-trap][aria-pressed="true"]').length,1);
+  f.tap(id);assert.match(f.$('.lava-toast').textContent,/placed/);f.advance(.02);
+ }
+ f.click('[data-trap=crack]');f.tap(1);assert.match(f.$('.lava-toast').textContent,/Cracking Floor placed/);f.advance(.02);assert.match(f.$('.lava-phase b').textContent,/3\/3 TRAPS/);
+ f.tap(1);assert.match(f.$('.lava-toast').textContent,/removed/);f.advance(.02);assert.match(f.$('.lava-phase b').textContent,/2\/3 TRAPS/);
+ f.tap(0);assert.match(f.$('.lava-toast').textContent,/Start and finish/);f.cleanup();
+}
+console.log('PASS: click-only trap selection, visible active state, both rows, replacement at full budget, removal and protected endpoints.');

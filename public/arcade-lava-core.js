@@ -5,7 +5,7 @@ export function course(round=0,easy=false){
  const tiles=[{id:0,x:65,y:230,type:'start',locked:true}];
  for(let c=1;c<=7;c++){
   const x=65+c*112;
-  tiles.push({id:tiles.length,x,y:easy?230:270+[0,-12,10][(c+round)%3],type:'safe',locked:true});
+  tiles.push({id:tiles.length,x,y:easy?230:270+[0,-12,10][(c+round)%3],type:'safe',locked:false});
   tiles.push({id:tiles.length,x,y:140+[0,18,-14][(c+round)%3],type:'safe',locked:false});
  }
  tiles.push({id:tiles.length,x:961,y:230,type:'finish',locked:true});return tiles;
@@ -37,7 +37,7 @@ export function validateCourse(tiles){
  return false;
 }
 export function placeTrap(tiles,id,type){
- if(!TRAPS.includes(type)||!tiles[id]||tiles[id].locked)return {ok:false,reason:'Blue route stays safe. Choose a purple socket.'};
+ if(!TRAPS.includes(type)||!tiles[id]||tiles[id].locked)return {ok:false,reason:'Start and finish stay safe. Choose any other platform.'};
  const next=tiles.map(t=>({...t}));next[id].type=type;
  if(next.filter(t=>TRAPS.includes(t.type)).length>RULES.maxTraps)return {ok:false,reason:'Three traps max. Tap a placed trap to remove it.'};
  if(!validateCourse(next))return {ok:false,reason:'That course has no safe escape route.'};

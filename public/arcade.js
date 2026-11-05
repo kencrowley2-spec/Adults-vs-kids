@@ -1,4 +1,4 @@
-import {mountLava} from './arcade-lava.js?v=1';
+import {mountLava} from './arcade-lava.js?v=2';
 import {createLobbyMusic} from './arcade-lobby-music.js?v=1';
 import {mountClaw,clawPrizes,clawFireworks} from './arcade-claw.js?v=1';
 import {mountMole,molePlan,createMoleAudio} from './arcade-mole.js?v=4';

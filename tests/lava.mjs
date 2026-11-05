@@ -3,7 +3,7 @@ import {course,reachable,flight,danger,placeTrap,validateCourse,scoreAttempt,sud
 for(let round=0;round<3;round++){
  let tiles=course(round);assert.ok(validateCourse(tiles));
  for(const [id,type] of [[2,'crack'],[6,'spinner'],[10,'ghost']]){const p=placeTrap(tiles,id,type);assert.ok(p.ok);tiles=p.tiles;}
- assert.equal(placeTrap(tiles,14,'spring').ok,false);assert.equal(placeTrap(tiles,1,'crack').ok,false);assert.ok(validateCourse(tiles));
+ assert.equal(placeTrap(tiles,14,'spring').ok,false);assert.equal(placeTrap(tiles,0,'crack').ok,false);assert.ok(validateCourse(tiles));
  let t=0,id=0;for(const to of [1,3,5,7,9,11,13,15]){assert.ok(reachable(tiles,id,to));t+=flight(tiles[id]);assert.equal(danger(tiles[to],t,t),null);id=to;}assert.ok(t<30);
  const attack={tile:5,at:3};assert.equal(danger(tiles[5],4,3,attack),null);assert.equal(danger(tiles[5],4.61,3,attack),'attack');assert.equal(danger(tiles[7],4.61,3,attack),null);assert.ok(flight(tiles[5])<RULES.attackWarning);
 }
@@ -24,3 +24,9 @@ for(const first of [0,1]){
 assert.equal(suddenWinner({success:false,elapsed:2},{success:true,elapsed:20}),1);
 assert.equal(suddenWinner({success:false,elapsed:2},{success:false,elapsed:3}),null);
 console.log('PASS Lava: 3 course layouts, actual-timing safe-route validation, impossible route rejection, trap budget/placement, 4 trap rules, attack warning/escape, jump range, scoring, six attempts, both starters, winner, tied/failed/equal sudden death.');
+
+for(let round=0;round<3;round++){
+ for(let id=1;id<15;id++)for(const type of ['crack','spinner','spring','ghost'])assert.ok(placeTrap(course(round),id,type).ok,`${type} can be placed on platform ${id}`);
+ const lower=placeTrap(course(round),1,'spinner');const both=placeTrap(lower.tiles,2,'ghost');assert.ok(both.ok);assert.ok(validateCourse(both.tiles));
+}
+console.log('PASS: all four traps on both rows, protected endpoints, and mixed-row course validation.');
