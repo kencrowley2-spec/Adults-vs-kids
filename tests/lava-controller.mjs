@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict';import vm from 'node:vm';import {readFileSync} from 'node:fs';import {JSDOM} from 'jsdom';import * as core from '../public/arcade-lava-core.js';
 function fixture(width=844,height=390){
- const dom=new JSDOM('<!doctype html><body></body>',{url:'https://adultsvskids.com'}),{window}=dom,{document}=window;let now=1,raf=null,complete=[],exits=0;
+ const dom=new JSDOM('<!doctype html><body></body>',{url:'https://adultsvskids.com',pretendToBeVisual:true}),{window}=dom,{document}=window;let now=1,raf=null,complete=[],exits=0;
  let draws=[];const context=new Proxy({clearRect(){draws=[];},drawImage(...args){draws.push(args);},createLinearGradient:()=>({addColorStop(){}}),createRadialGradient:()=>({addColorStop(){}})},{get:(o,k)=>o[k]??(()=>{})});
  window.HTMLCanvasElement.prototype.getContext=()=>context;window.HTMLCanvasElement.prototype.getBoundingClientRect=()=>({x:0,y:46,left:0,top:46,width,height:height-104});
  window.HTMLElement.prototype.setPointerCapture=()=>{};
+ const tracks=[];window.Audio=class{constructor(src){this.src=src;this.paused=true;this.plays=0;this.pauses=0;tracks.push(this);}play(){this.plays++;this.paused=false;return Promise.resolve();}pause(){this.pauses++;this.paused=true;}removeAttribute(name){if(name==='src')this.src='';}load(){this.loaded=true;}};
  const speech={spoken:[],cancel(){},speak(u){this.spoken.push(u.text);}};window.speechSynthesis=speech;
  let resumes=0,suspends=0,closed=0;class Audio{constructor(){this.state='running';this.sampleRate=8000;this.currentTime=0;this.destination={};}resume(){resumes++;this.state='running';return Promise.resolve();}suspend(){suspends++;this.state='suspended';return Promise.resolve();}close(){closed++;return Promise.resolve();}createOscillator(){return {frequency:{value:0,setValueAtTime(){},exponentialRampToValueAtTime(){}},connect(){},disconnect(){},start(){},stop(){}};}createGain(){return {gain:{value:0,setValueAtTime(){},exponentialRampToValueAtTime(){}},connect(){},disconnect(){}};}createBuffer(_,n){return {getChannelData:()=>new Float32Array(n)};}createBufferSource(){return {connect(){},start(){},disconnect(){}};}}
  window.AudioContext=Audio;
@@ -16,7 +17,7 @@ function fixture(width=844,height=390){
  function point(id,round=0){const t=core.course(round)[id],h=height-104,scale=Math.min(width/1030,h/360),ox=(width-1030*scale)/2,oy=(h-360*scale)/2;return {clientX:ox+t.x*scale,clientY:46+oy+t.y*scale};}
  function tap(id,round=0){const e=new window.MouseEvent('pointerdown',{bubbles:true,...point(id,round)});$('canvas').dispatchEvent(e);}
  function trap(type,id,round=0,drag=false){const b=$(`[data-trap=${type}]`);b.dispatchEvent(new window.MouseEvent('pointerdown',{bubbles:true,clientX:10,clientY:height-20}));host().dispatchEvent(new window.MouseEvent('pointerup',{bubbles:true,...(drag?point(id,round):{clientX:10,clientY:height-20})}));if(!drag)tap(id,round);}
- advance(.02);return {draws:()=>draws,$,click,advance,tap,trap,phase,complete,exits:()=>exits,cleanup:c.cleanup,speech,audio:()=>({resumes,suspends,closed}),document};
+ advance(.02);return {tracks,draws:()=>draws,$,click,advance,tap,trap,phase,complete,exits:()=>exits,cleanup:c.cleanup,speech,audio:()=>({resumes,suspends,closed}),document};
 }
 
 for(const [w,h] of [[844,390],[740,360],[932,430]]){
@@ -63,3 +64,16 @@ console.log('PASS: both-row trap taps/removal/budget, private builder view, no v
  f.tap(13);assert.match(f.$('.lava-toast').textContent,/Six traps max/);f.tap(1);f.tap(3);assert.match(f.$('.lava-toast').textContent,/safe block between/);
  assert.equal(f.speech.spoken.length,0);f.cleanup();
 }
+
+{
+ const f=fixture();assert.equal(f.tracks.length,0,'No audio before a starting gesture');
+ f.click('[data-action=start]');assert.equal(f.tracks.length,1);const track=f.tracks[0];
+ assert.match(track.src,/lava-heatwave\.mp3/);assert.equal(track.loop,true);assert.equal(track.paused,false);assert.equal(track.plays,1);
+ f.advance(3.1);assert.equal(f.tracks.length,1,'One soundtrack through phase transitions');assert.equal(track.plays,1);assert.equal(track.volume,.4);
+ f.click('[data-action=sfx]');assert.equal(track.paused,false,'Effects toggle leaves music playing');
+ f.click('[data-action=music]');assert.equal(track.paused,true);f.click('[data-action=music]');assert.equal(track.paused,false);assert.equal(f.tracks.length,1);
+ f.click('[data-action=pause]');assert.equal(track.paused,true);f.click('[data-action=resume]');assert.equal(track.paused,false);
+ f.advance(27);assert.equal(track.volume,.48,'Escape music has extra energy');assert.equal(f.speech.spoken.length,0);
+ f.cleanup();assert.equal(track.paused,true);assert.equal(track.src,'');assert.equal(track.loaded,true);
+}
+console.log('PASS: original looping soundtrack, gesture-only playback, phase levels, independent music/effects toggles, pause/resume, no duplicate tracks and exit cleanup.');
