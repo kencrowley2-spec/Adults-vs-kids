@@ -132,59 +132,58 @@ for(const game of data.GAMES)for(const first of [0,1]){
  }
 }
 
-// Memory: stable card elements, no duplicate taps, automatic passing, all seven
-// pairs, extra turns after matches, alternating starters and best-of-five scoring.
+// Supplied 16-card Memory board, stable flip controls and best-of-five scoring.
 {
  const f=fixture();f.start('memory');const layouts=[];
  for(let r=0;r<3;r++){
   const cards=[...f.get('memory-cards').children],symbols=cards.map(c=>c.textContent);layouts.push(symbols.join(''));
-  const pairs=[...new Set(symbols)].map(s=>symbols.flatMap((v,i)=>v===s?[i]:[]));
+  assert.equal(cards.length,16);const pairs=[...new Set(symbols)].map(s=>symbols.flatMap((v,i)=>v===s?[i]:[]));assert.equal(pairs.length,8);assert.ok(pairs.every(p=>p.length===2));
   f.advance(5000);const expected=[0,0];
-  assert.equal(f.get('memory-adult-points').textContent,'0');assert.equal(f.get('memory-kid-points').textContent,'0');
   for(let i=0;i<pairs.length;i++){
-   const [a,b]=pairs[i],team=f.state().turn;cards[a].click();cards[a].click();
-   assert.equal(Number(f.get(team===0?'memory-adult-points':'memory-kid-points').textContent),expected[team]);
-   cards[b].click();expected[team]++;cards[b].click();
+   const [a,b]=pairs[i],team=f.state().turn;cards[a].click();cards[a].click();assert.equal(Number(f.get('memory-moves').textContent),i);
+   cards[b].click();cards[b].click();assert.equal(Number(f.get('memory-moves').textContent),i+1);
+   f.advance(649);assert.equal(Number(f.get(team===0?'memory-adult-points':'memory-kid-points').textContent),expected[team]);f.advance(1);expected[team]++;
    assert.equal(Number(f.get('memory-adult-points').textContent),expected[0]);assert.equal(Number(f.get('memory-kid-points').textContent),expected[1]);
-   assert.ok(cards.every((card,index)=>card===f.get('memory-cards').children[index]));
-   if(i<6){const old=f.state().turn;f.advance(599);assert.equal(f.state().turn,old);f.advance(1);assert.equal(f.state().turn,old);assert.equal(f.get('memory-team-'+old).getAttribute('data-current'),'true');assert.match(f.get('arcade-team-'+old).className,/current/);}
+   assert.ok(cards.every((card,index)=>card===f.get('memory-cards').children[index]));assert.match(cards[a].className,/matched/);
+   if(i<7){assert.equal(f.state().turn,team);assert.equal(f.get('memory-team-'+team).getAttribute('data-current'),'true');}
   }
-  f.advance(800);assert.match(f.get('game-stage').textContent,new RegExp(`Round points — Adults ${expected[0]} · Kids ${expected[1]}`));noNavigation(f);if(r<2)f.advance(2200);
+  f.advance(800);assert.match(f.get('game-stage').textContent,/Cleared in 8 moves/);assert.match(f.get('game-stage').textContent,new RegExp(`Round points — Adults ${expected[0]} · Kids ${expected[1]}`));noNavigation(f);if(r<2)f.advance(2200);
  }
  assert.deepEqual([...f.state().wins],[2,1]);assert.equal(f.state().round,3);assert.ok(new Set(layouts).size>1);
 }
 {
- const f=fixture();f.start('memory');const symbols=f.get('memory-cards').children.map(c=>c.textContent),different=symbols.findIndex(s=>s!==symbols[0]);f.advance(5000);
- f.get('memory-cards').children[0].click();f.get('memory-cards').children[different].click();assert.equal(f.get('memory-adult-points').textContent,'0');assert.equal(f.get('memory-kid-points').textContent,'0');f.advance(899);assert.equal(f.state().turn,0);f.advance(1);assert.equal(f.state().turn,1);assert.equal(f.get('memory-team-1').getAttribute('data-current'),'true');assert.equal(f.get('memory-team-0').getAttribute('data-current'),'false');assert.match(f.get('arcade-team-1').className,/current/);
+ const f=fixture();f.start('memory');const cards=f.get('memory-cards').children,symbols=cards.map(c=>c.textContent),different=symbols.findIndex(s=>s!==symbols[0]);f.advance(5000);
+ cards[0].click();cards[different].click();cards.find((_,i)=>i!==0&&i!==different).click();assert.equal(f.get('memory-moves').textContent,'1');assert.equal(f.get('memory-adult-points').textContent,'0');f.advance(1099);assert.equal(f.state().turn,0);f.advance(1);assert.equal(f.state().turn,1);assert.equal(f.get('memory-team-1').getAttribute('data-current'),'true');assert.match(f.get('arcade-team-1').className,/current/);
  f.get('arcade-return').click();f.start('tic');f.advance(10000);assert.ok(f.get('tic-board'));
 }
-// The short rules are visible and spoken during the shared preview.
+// Preserve the exact preview and spoken intro while the play clock stays at zero.
 {
- const f=fixture(0,true);f.start('memory');
- assert.match(f.get('memory-rules').textContent,/go again/);
- assert.match(f.get('memory-rules').textContent,/Miss = switch teams/);
- assert.match(f.speech.spoken.at(-1).text,/Match a pair: one point, go again/);
- assert.equal(f.get('memory-team-0-turn').textContent,'YOUR TURN');
- assert.equal(f.get('memory-team-1-turn').textContent,'WAITING');
+ const f=fixture(0,true);f.start('memory');assert.match(f.get('memory-rules').textContent,/Miss = switch teams/);assert.equal(f.speech.spoken.at(-1).text,'Match a pair: one point, go again. Miss: switch teams. Yellow team plays.');assert.equal(f.get('memory-team-0-turn').textContent,'YOUR TURN');assert.equal(f.get('memory-team-1-turn').textContent,'WAITING');assert.equal(f.get('memory-time').textContent,'0:00');f.advance(5000);assert.equal(f.get('memory-time').textContent,'0:00');f.advance(2100);assert.equal(f.get('memory-time').textContent,'0:02');
+ f.doc.hidden=true;f.doc.handlers.visibilitychange();f.advance(10000);assert.equal(f.get('memory-time').textContent,'0:02');f.doc.hidden=false;f.doc.handlers.visibilitychange();f.advance(2000);assert.equal(f.get('memory-time').textContent,'0:04');
+ f.get('memory-restart').click();assert.equal(f.get('memory-time').textContent,'0:00');assert.equal(f.get('memory-moves').textContent,'0');f.advance(5000);assert.equal(f.get('memory-time').textContent,'0:00');
 }
-// Memory awards the round to the highest points total, not the starter or
-// the team finding the last pair. Misses and repeat taps never award points.
+// Most pairs wins even if the other team finds the final pair.
 for(const first of [0,1]){
- const f=fixture();f.start('memory',first);
- const cards=f.get('memory-cards').children,symbols=cards.map(c=>c.textContent);
- const pairs=[...new Set(symbols)].map(s=>symbols.flatMap((v,i)=>v===s?[i]:[]));
- f.advance(5000);
- const [missA]=pairs[0],[missB]=pairs[1];cards[missA].click();cards[missB].click();f.advance(900);
+ const f=fixture();f.start('memory',first);const cards=f.get('memory-cards').children,symbols=cards.map(c=>c.textContent),pairs=[...new Set(symbols)].map(s=>symbols.flatMap((v,i)=>v===s?[i]:[]));f.advance(5000);
+ cards[pairs[0][0]].click();cards[pairs[1][0]].click();f.advance(1100);
  for(let i=0;i<pairs.length;i++){
-  if(i===5){cards[pairs[5][0]].click();cards[pairs[6][0]].click();f.advance(900);}
-  for(const at of pairs[i])cards[at].click();
-  if(i<6)f.advance(600);
+  if(i===5){cards[pairs[5][0]].click();cards[pairs[6][0]].click();f.advance(1100);}
+  for(const at of pairs[i])cards[at].click();f.advance(650);
  }
- assert.equal(f.state().turn,first,'The final pair is found by the team with fewer points');
- assert.equal(f.get(first===0?'memory-kid-points':'memory-adult-points').textContent,'5');
- f.advance(800);assert.equal(f.state().wins[1-first],1);assert.equal(f.state().wins[first],0);
- assert.match(f.get('game-stage').textContent,new RegExp(core.teamName(1-first)+' win this round'));
+ assert.equal(f.state().turn,first);assert.equal(f.get(first===0?'memory-kid-points':'memory-adult-points').textContent,'5');f.advance(800);assert.equal(f.state().wins[1-first],1);assert.equal(f.state().wins[first],0);
 }
+// Eight pairs can tie; a 4–4 board awards neither team a round win.
+{
+ const f=fixture();f.start('memory');const cards=f.get('memory-cards').children,symbols=cards.map(c=>c.textContent),pairs=[...new Set(symbols)].map(s=>symbols.flatMap((v,i)=>v===s?[i]:[]));f.advance(5000);
+ for(let i=0;i<8;i++){if(i===4){cards[pairs[4][0]].click();cards[pairs[5][0]].click();f.advance(1100);}for(const at of pairs[i])cards[at].click();f.advance(650);}
+ f.advance(800);assert.deepEqual([...f.state().wins],[0,0]);assert.match(f.get('game-stage').textContent,/It’s a tie/);assert.equal(f.saved.length,0);f.advance(2200);assert.equal(f.get('memory-cards').children.length,16);assert.equal(f.state().attempt,1);
+}
+// Restarting during resolution cancels stale point awards and clears moves.
+{
+ const f=fixture();f.start('memory');const cards=f.get('memory-cards').children,symbols=cards.map(c=>c.textContent),b=symbols.findIndex((s,i)=>i>0&&s===symbols[0]);f.advance(5000);cards[0].click();cards[b].click();f.get('memory-restart').click();f.advance(1000);assert.equal(f.get('memory-adult-points').textContent,'0');assert.equal(f.get('memory-moves').textContent,'0');assert.equal(f.saved.length,0);
+}
+console.log('PASS: eight symbol pairs, exact intro, 650/1100ms resolution, move counts, stable card controls, team turns, 4–4 ties, paused time and restart cancellation.');
+
 // Tic-Tac-Toe has automatic turns and scoring.
 {
  const f=fixture();f.start('tic');for(const [i,move] of [0,3,1,4,2].entries()){f.get('tic-board').children[move].click();if(i<4)f.advance(300);}
@@ -767,3 +766,12 @@ console.log('PASS: Arcade FM playback, volume, duplicate-start protection, user 
  assert.equal(f.run('[...moleStored.entries()].find(([key])=>key.startsWith("avk:mole:best:"))[1]'),'1');f.advance(4000);assert.equal(f.get('mole-best').textContent,'1');f.get('arcade-return').click();assert.equal(f.saved.length,0,'An interrupted second turn cannot record a match');
 }
 console.log('PASS: completed personal best persists under the family account while interrupted matches stay unrecorded.');
+
+// Completed boards persist the best move total; hidden pending flips stay paused.
+{
+ const f=fixture();f.run('this.memoryStored=new Map();this.localStorage={getItem:key=>memoryStored.get(key)||null,setItem:(key,value)=>memoryStored.set(key,value)}');f.start('memory');const cards=f.get('memory-cards').children,symbols=cards.map(c=>c.textContent),pairs=[...new Set(symbols)].map(s=>symbols.flatMap((v,i)=>v===s?[i]:[]));f.advance(5000);
+ cards[pairs[0][0]].click();cards[pairs[0][1]].click();f.doc.hidden=true;f.doc.handlers.visibilitychange();f.advance(3000);assert.equal(f.get('memory-adult-points').textContent,'0');assert.equal(f.get('memory-time').textContent,'0:00');f.doc.hidden=false;f.doc.handlers.visibilitychange();f.advance(250);assert.equal(f.get('memory-adult-points').textContent,'1');
+ for(const pair of pairs.slice(1)){for(const i of pair)cards[i].click();f.advance(650);}assert.equal(f.get('memory-best').textContent,'8 moves');assert.equal(f.run('[...memoryStored.entries()].find(([key])=>key.startsWith("avk:memory:best:"))[1]'),'8');f.advance(800);f.advance(2200);assert.equal(f.get('memory-best').textContent,'8 moves');
+ f.get('arcade-return').click();const clock=f.get('memory-time').textContent;f.advance(60000);assert.equal(f.get('memory-time').textContent,clock);assert.equal(f.saved.length,0);
+}
+console.log('PASS: family-scoped best move record, pending-flip pause, replayed best display and clock cleanup.');
