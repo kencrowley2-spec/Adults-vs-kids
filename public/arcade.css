@@ -352,3 +352,9 @@ body::before{display:block;inset:0;background:linear-gradient(180deg,rgba(4,5,14
 #arcade-game .arcade-controls:has(#mole-volume-control:not([hidden])){display:grid;grid-template-columns:1fr 1fr;gap:2px 5px}
 #arcade-game .mole-volume-control{grid-column:1/-1;margin:0;font-size:9px;gap:5px;white-space:nowrap;justify-content:center}
 #arcade-game .mole-volume-control input{width:75px;height:24px;min-height:24px;padding:0;border:0;box-shadow:none;background:transparent}
+
+/* A compact radio strip for the Arcade lobby, independent of game sound. */
+.lobby-soundbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:linear-gradient(120deg,#12131f,#302042);color:#fff;border:2px solid #ffd522;border-radius:14px;padding:12px 16px;margin:18px 0 22px;box-shadow:0 3px 0 #111}
+.lobby-fm-brand{display:flex;align-items:center;gap:10px}.lobby-fm-brand>span{display:grid;place-items:center;width:36px;height:36px;background:#ffd522;border-radius:9px;color:#111;font-size:27px}.lobby-fm-brand strong{display:block;letter-spacing:2px;font-size:13px;color:#ffd522}.lobby-fm-brand small{font-size:8px;letter-spacing:1px;color:#dfccf4}
+.lobby-soundbar p{font-size:11px;flex:1;min-width:140px;margin:0;line-height:1.5}.lobby-soundbar button{border:1px solid #ffdd52;border-radius:8px;background:#ffd522;color:#111;padding:9px 12px;min-height:44px;font-size:11px;font-weight:900;cursor:pointer}.lobby-soundbar label{font-size:10px;white-space:nowrap}.lobby-soundbar input{width:95px;height:28px;min-height:28px;accent-color:#ffd522;padding:0;border:0;box-shadow:none;background:transparent}.lobby-soundbar input:focus-visible,.lobby-soundbar button:focus-visible{outline-color:#fff}
+@media(max-width:600px){.lobby-soundbar{gap:8px;padding:10px 12px}.lobby-soundbar p{flex-basis:calc(100% - 150px);min-width:90px;font-size:10px}.lobby-soundbar button{margin-right:auto}.lobby-soundbar input{width:85px}}

@@ -1,3 +1,4 @@
+import {createLobbyMusic} from './arcade-lobby-music.js?v=1';
 import {mountClaw,clawPrizes,clawFireworks} from './arcade-claw.js?v=1';
 import {mountMole,molePlan,createMoleAudio} from './arcade-mole.js?v=3';
 import {mountFrog,frogCourses,frogRoundWinner} from './arcade-frog.js?v=3';
@@ -201,6 +202,32 @@ function chime(kind){
     notes.forEach((frequency,i)=>{const oscillator=audioContext.createOscillator(),gain=audioContext.createGain(),at=audioContext.currentTime+i*.075;oscillator.type='sine';oscillator.frequency.value=frequency;gain.gain.setValueAtTime(0,at);gain.gain.linearRampToValueAtTime(.045,at+.008);gain.gain.exponentialRampToValueAtTime(.001,at+.12);oscillator.connect(gain);gain.connect(audioContext.destination);chimeNodes.add(oscillator);oscillator.onended=()=>{chimeNodes.delete(oscillator);oscillator.disconnect();gain.disconnect();};oscillator.start(at);oscillator.stop(at+.14);});
   }catch{}
 }
+// Arcade FM belongs only to browsing; games keep their own soundtracks.
+let lobbyMusicWanted=true,lobbyMusicVolume=.25;
+try{const preference=JSON.parse(localStorage.getItem('avk:arcade-fm')||'null');if(preference&&typeof preference.enabled==='boolean')lobbyMusicWanted=preference.enabled;if(Number.isFinite(preference?.volume))lobbyMusicVolume=Math.max(0,Math.min(1,preference.volume));}catch{}
+function saveLobbyMusic(){try{localStorage.setItem('avk:arcade-fm',JSON.stringify({enabled:lobbyMusicWanted,volume:lobbyMusicVolume}));}catch{}}
+const lobbyMusic=createLobbyMusic({
+ getContext:()=>{const Audio=window.AudioContext||window.webkitAudioContext;if(!Audio)return null;audioContext??=new Audio();return audioContext;},
+ allowed:()=>lobbyMusicWanted&&arena.hidden&&!lobby.hidden&&!document.hidden,
+ volume:lobbyMusicVolume,
+ onState:({playing,available,blocked})=>{
+  const toggle=$('lobby-music-toggle');if(!toggle)return;
+  toggle.textContent=playing?'Pause music':'Play music';toggle.setAttribute('aria-pressed',String(playing));
+  $('lobby-soundbar').setAttribute('data-playing',String(playing));
+  $('lobby-music-status').textContent=playing?'Now playing · Neon Family Nights':!lobbyMusicWanted?'Music paused':!available?'Tap Play music to start':blocked?'Tap Play music to start':'Music starts with your first tap';
+ }
+});
+$('lobby-music-volume').value=String(Math.round(lobbyMusicVolume*100));
+$('lobby-music-volume-value').textContent=`${Math.round(lobbyMusicVolume*100)}%`;
+$('lobby-music-toggle').addEventListener('click',()=>{
+ if(lobbyMusic.playing){lobbyMusicWanted=false;lobbyMusic.stop();}else {lobbyMusicWanted=true;lobbyMusic.start();}saveLobbyMusic();
+});
+$('lobby-music-volume').addEventListener('input',()=>{lobbyMusicVolume=Number($('lobby-music-volume').value)/100;lobbyMusic.setVolume(lobbyMusicVolume);$('lobby-music-volume-value').textContent=`${Math.round(lobbyMusicVolume*100)}%`;saveLobbyMusic();});
+function startLobbyOnGesture(event){if(!event.target?.closest?.('#lobby-soundbar'))lobbyMusic.start();}
+document.addEventListener('pointerdown',startLobbyOnGesture);
+document.addEventListener('keydown',startLobbyOnGesture);
+window.addEventListener('pagehide',()=>lobbyMusic.stop());
+window.addEventListener('pageshow',()=>lobbyMusic.start());
 // Original, looping arcade groove: melody, bass, kick and hi-hat at 120 BPM.
 let mazeMusicOn=true, mazeMusicVolume=.35, mazeMusicActive=false, mazeMusicTimer=null, mazeMusicBus=null;
 const mazeMusicNodes=new Set();
@@ -318,7 +345,7 @@ function pick(key,source,n){
 }
 function openGame(id){
   if(GAMES.find(g=>g.id===id)?.comingSoon)return;
-  clearTimeout(featuredTimer);
+  lobbyMusic.stop();clearTimeout(featuredTimer);
   startRecording('single',[id]);
   window.dispatchEvent(new CustomEvent('avk:game-start',{detail:{game:id,id:recording.id}}));
   series=null;
@@ -327,7 +354,7 @@ function openGame(id){
   starter=Math.random()<.5?0:1;turn=starter;beginRound();
 }
 function startSeries(){
-  clearTimeout(featuredTimer);
+  lobbyMusic.stop();clearTimeout(featuredTimer);
   clearTimers();
   series={games:shuffle(GAMES.filter(g=>!g.comingSoon)).slice(0,3),index:0,winners:[],first:0};
   startRecording('series',series.games.map(g=>g.id));
@@ -907,13 +934,13 @@ $('feature-pause').addEventListener('click',()=>{featuredPaused=!featuredPaused;
 renderFeatured();scheduleFeatured();
 
 $('arcade-random').addEventListener('click',startSeries);
-$('arcade-return').addEventListener('click',()=>{clearTimers();series=null;arena.hidden=true;lobby.hidden=false;game=null;scheduleFeatured();$('arcade-grid').querySelector('button')?.focus();});
+$('arcade-return').addEventListener('click',()=>{clearTimers();series=null;arena.hidden=true;lobby.hidden=false;game=null;scheduleFeatured();lobbyMusic.start();$('arcade-grid').querySelector('button')?.focus();});
 $('arcade-reset').addEventListener('click',()=>{
   if(!game)return;const saved=game.id;const wasSeries=!!series;screen('<div class="result"><h3>Start over?</h3><p>The current game and all points in this match or series will reset.</p></div>');
   button(wasSeries?'Restart series':'Restart match',()=>wasSeries?startSeries():openGame(saved));button('Return to Arcade',()=>{$('arcade-return').click();},stage,'text-button');status('Match paused. Choose restart or return to the Arcade.');
 });
 document.addEventListener('visibilitychange',()=>{
-  if(document.hidden){clearTimeout(featuredTimer);stopTriviaVoice();moleAudio?.stop();}else scheduleFeatured();
+  if(document.hidden){lobbyMusic.stop();clearTimeout(featuredTimer);stopTriviaVoice();moleAudio?.stop();}else {scheduleFeatured();lobbyMusic.start();}
   if(document.hidden&&timed&&game){clearTimers();screen('<div class="result"><h3>Let’s give both teams a fair turn.</h3><p>The timed game was interrupted. Replay this round with no round win awarded.</p></div>');button('Replay this round →',beginRound);status('Round interrupted. Match score is unchanged.');}
 });
 
@@ -957,3 +984,5 @@ if(GAMES.some(g=>g.id===requestedGame&&!g.comingSoon))openGame(requestedGame);
 
 $('mole-volume')?.addEventListener('input',()=>{moleVolume=Number($('mole-volume').value)/100;moleAudio?.silence();if(moleVolume===0){stopTriviaVoice();moleIntroDone?.();}else if(!moleIntroDone)stopTriviaVoice();});
 window.addEventListener('pagehide',()=>{if(game?.id==='mole')clearTimers();});
+
+lobbyMusic.stop();lobbyMusic.start();

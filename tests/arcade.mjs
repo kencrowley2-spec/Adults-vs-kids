@@ -45,6 +45,7 @@ function fixture(firstTeam=0,withSpeech=false,withAudio=false,players=null,holdM
   let now=0,seq=0,scheduled=new Map();const saved=[],timedSaved=[],telemetry=[];const root=new Element();
   root.innerHTML=readFileSync(new URL('../app/family/arcade/route.ts',import.meta.url),'utf8').split('const html=`')[1].split('`;')[0];
   if(players){const lineup=new Element();lineup.id='arcade-roster-lineup';lineup.setAttribute('data-adults',JSON.stringify(players[0]));lineup.setAttribute('data-kids',JSON.stringify(players[1]));root.appendChild(lineup);}
+  root.querySelector('#arcade-game').hidden=true;
   const doc={hidden:false,getElementById:id=>root.querySelector('#'+id),createElement:tag=>new Element(tag),handlers:{},addEventListener(type,fn){this.handlers[type]=fn;}};
   const speech={spoken:[],cancels:0,getVoices:()=>[{lang:'en-US',localService:true}],cancel(){this.cancels++;},speak(utterance){this.spoken.push(utterance);utterance.onstart?.();if(!holdMoleIntro&&utterance.text.includes('turn begins after the countdown'))scheduled.set(++seq,{at:now,fn:()=>utterance.onend?.()});}};
   const voiceWindow=withSpeech?{speechSynthesis:speech,SpeechSynthesisUtterance:class {constructor(text){this.text=text;}}}:{};
@@ -56,6 +57,7 @@ function fixture(firstTeam=0,withSpeech=false,withAudio=false,players=null,holdM
     createOscillator(){const node={frequency:{value:0,setValueAtTime(){},exponentialRampToValueAtTime(){}},stops:[],connect(){},disconnect(){this.disconnected=true;},start(){this.started=true;},stop(at){this.stops.push(at);if(Number.isFinite(at))scheduled.set(++seq,{at:at*1000,fn:()=>this.onended?.()});else this.onended?.();}};audio.nodes.push(node);return node;}
   }
   const context=vm.createContext({URLSearchParams,location:{search:''},clawPrizes,clawCatch,molePlan,treasurePlan,...core,...data,...newCore,...library,Math:testMath,document:doc,crypto,CustomEvent:class{constructor(type,options){this.type=type;this.detail=options.detail;}},window:{dispatchEvent:e=>telemetry.push(e),addEventListener(){},...voiceWindow,...(withAudio?{AudioContext:AudioContextMock}:{})},createResultRecorder:({namespace})=>({drain:async()=>{},capture:result=>{(namespace==='times'?timedSaved:saved).push(result);}}),performance:{now:()=>now},console,setTimeout:(fn,delay)=>{scheduled.set(++seq,{at:now+delay,fn});return seq;},clearTimeout:id=>scheduled.delete(id)});
+  vm.runInContext(readFileSync(new URL('../public/arcade-lobby-music.js',import.meta.url),'utf8').replace(/export /g,''),context);
   vm.runInContext(readFileSync(new URL('../public/arcade-claw.js',import.meta.url),'utf8').replace(/export /g,''),context);
   vm.runInContext(readFileSync(new URL('../public/arcade-mole.js',import.meta.url),'utf8').replace(/export /g,''),context);
   vm.runInContext(readFileSync(new URL('../public/arcade-frog.js',import.meta.url),'utf8').replace(/export /g,''),context);
@@ -450,7 +452,7 @@ for(const first of [0,1]){
 {
  const f=fixture(0,false,true);f.start('maze');const notes=[...f.audio.nodes];
  f.get('arcade-return').click();assert.ok(notes.every(n=>n.disconnected));
- const total=f.audio.nodes.length;f.advance(1000);assert.equal(f.audio.nodes.length,total);
+ assert.equal(f.run('lobbyMusic.playing'),true,'Maze music stops and browsing soundtrack resumes');
 }
 // Three-game series still play three distinct games, resolve ties automatically,
 // alternate starters and save the final result only once.
@@ -778,3 +780,18 @@ for(const first of [0,1]){
 assert.match(library.coverMarkup(data.GAMES.find(g=>g.id==='mole')),/20 SEC EACH/);
 assert.match(library.coverMarkup({id:'basketball',tag:'',name:'Basketball'}),/30 SEC EACH/);
 console.log('PASS: exact 20-second turns in both player orders, consistent rule labels and unchanged Basketball duration.');
+
+// Browsing music starts once, stops before every game and resumes only by preference.
+{
+ const f=fixture(0,false,true);assert.equal(f.run('lobbyMusic.playing'),true);f.advance(1000);assert.ok(f.audio.nodes.length>10);
+ const playing=f.audio.nodes.length;f.run('lobbyMusic.start();lobbyMusic.start()');assert.equal(f.audio.nodes.length,playing,'Repeated gestures do not stack music');
+ f.get('lobby-music-volume').value='40';f.get('lobby-music-volume').dispatch('input');assert.equal(f.run('lobbyMusicVolume'),.4);assert.ok(f.audio.gains.some(g=>g.gain.value===.4));
+ f.get('lobby-music-toggle').click();assert.equal(f.run('lobbyMusic.playing'),false);const paused=f.audio.nodes.length;f.advance(1000);assert.equal(f.audio.nodes.length,paused);f.doc.handlers.pointerdown({});assert.equal(f.run('lobbyMusic.playing'),false,'User pause survives further browsing');
+ f.get('lobby-music-toggle').click();assert.equal(f.run('lobbyMusic.playing'),true);const oldNodes=[...f.audio.nodes];f.start('mole',0,false);assert.equal(f.run('lobbyMusic.playing'),false);assert.ok(oldNodes.every(n=>n.disconnected),'No lobby audio survives entering a game');
+ f.get('arcade-return').click();assert.equal(f.run('lobbyMusic.playing'),true);f.doc.hidden=true;f.doc.handlers.visibilitychange();assert.equal(f.run('lobbyMusic.playing'),false);const hidden=f.audio.nodes.length;f.advance(2000);assert.equal(f.audio.nodes.length,hidden);f.doc.hidden=false;f.doc.handlers.visibilitychange();assert.equal(f.run('lobbyMusic.playing'),true);
+ f.get('arcade-random').click();assert.equal(f.run('lobbyMusic.playing'),false,'Random challenge also stops the lobby soundtrack');
+}
+{
+ const f=fixture();assert.equal(f.run('lobbyMusic.playing'),false);f.get('lobby-music-toggle').click();assert.equal(f.run('lobbyMusic.playing'),false,'Audio-unavailable browsers can browse normally');f.start('mole');assert.ok(f.get('mole-board'));
+}
+console.log('PASS: Arcade FM playback, volume, duplicate-start protection, user pause, single-game/series transitions, visibility cleanup and no-audio fallback.');
