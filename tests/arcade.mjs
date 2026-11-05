@@ -40,7 +40,8 @@ class Element {
   }
   querySelector(s){return this.querySelectorAll(s)[0]??null;}
 }
-function fixture(firstTeam=0,withSpeech=false,withAudio=false,players=null,holdMoleIntro=false){
+function fixture(firstTeam=0,withSpeech=false,withAudio=false,players=null,holdMoleIntro=false,archivedBlocks=false){
+  const fixtureGames=archivedBlocks?[...data.GAMES,{id:'blocks',icon:'🧩',name:'Block Showdown',tag:'ARCHIVED',color:'blue',description:'Archived Block Showdown regression fixture'}]:data.GAMES;
   let selectedFirst=firstTeam;const testMath=Object.create(Math);testMath.random=()=>selectedFirst===0?.25:.75;
   let now=0,seq=0,scheduled=new Map();const saved=[],timedSaved=[],telemetry=[];const root=new Element();
   root.innerHTML=readFileSync(new URL('../app/family/arcade/route.ts',import.meta.url),'utf8').split('const html=`')[1].split('`;')[0];
@@ -56,7 +57,7 @@ function fixture(firstTeam=0,withSpeech=false,withAudio=false,players=null,holdM
     createGain(){const gain={gain:{value:1,setValueAtTime(){},linearRampToValueAtTime(){},exponentialRampToValueAtTime(){}},connect(){},disconnect(){this.disconnected=true;}};audio.gains.push(gain);return gain;}
     createOscillator(){const node={frequency:{value:0,setValueAtTime(){},exponentialRampToValueAtTime(){}},stops:[],connect(){},disconnect(){this.disconnected=true;},start(){this.started=true;},stop(at){this.stops.push(at);if(Number.isFinite(at))scheduled.set(++seq,{at:at*1000,fn:()=>this.onended?.()});else this.onended?.();}};audio.nodes.push(node);return node;}
   }
-  const context=vm.createContext({mountLava:options=>{context.lavaOptions=options;return ()=>{};},URLSearchParams,location:{search:''},clawPrizes,clawCatch,molePlan,treasurePlan,...core,...data,...newCore,...library,Math:testMath,document:doc,crypto,CustomEvent:class{constructor(type,options){this.type=type;this.detail=options.detail;}},window:{dispatchEvent:e=>telemetry.push(e),addEventListener(){},...voiceWindow,...(withAudio?{AudioContext:AudioContextMock}:{})},createResultRecorder:({namespace})=>({drain:async()=>{},capture:result=>{(namespace==='times'?timedSaved:saved).push(result);}}),performance:{now:()=>now},console,setTimeout:(fn,delay)=>{scheduled.set(++seq,{at:now+delay,fn});return seq;},clearTimeout:id=>scheduled.delete(id)});
+  const context=vm.createContext({mountLava:options=>{context.lavaOptions=options;return ()=>{};},URLSearchParams,location:{search:''},clawPrizes,clawCatch,molePlan,treasurePlan,...core,...data,GAMES:fixtureGames,...newCore,...library,Math:testMath,document:doc,crypto,CustomEvent:class{constructor(type,options){this.type=type;this.detail=options.detail;}},window:{dispatchEvent:e=>telemetry.push(e),addEventListener(){},...voiceWindow,...(withAudio?{AudioContext:AudioContextMock}:{})},createResultRecorder:({namespace})=>({drain:async()=>{},capture:result=>{(namespace==='times'?timedSaved:saved).push(result);}}),performance:{now:()=>now},console,setTimeout:(fn,delay)=>{scheduled.set(++seq,{at:now+delay,fn});return seq;},clearTimeout:id=>scheduled.delete(id)});
   vm.runInContext(readFileSync(new URL('../public/arcade-lobby-music.js',import.meta.url),'utf8').replace(/export /g,''),context);
   vm.runInContext(readFileSync(new URL('../public/arcade-claw.js',import.meta.url),'utf8').replace(/export /g,''),context);
   vm.runInContext(readFileSync(new URL('../public/arcade-mole.js',import.meta.url),'utf8').replace(/export /g,''),context);
@@ -71,7 +72,7 @@ function fixture(firstTeam=0,withSpeech=false,withAudio=false,players=null,holdM
   const buttons=()=>get('game-stage').querySelectorAll('button');
   const click=text=>{const b=buttons().find(b=>b.textContent===text||b.getAttribute('data-answer')===text);assert.ok(b,`Missing button: ${text}`);b.click();};
   function advance(ms){const end=now+ms;let guard=0;while(true){const task=[...scheduled.entries()].filter(([,t])=>t.at<=end).sort((a,b)=>a[1].at-b[1].at)[0];if(!task)break;assert.ok(++guard<10000);scheduled.delete(task[0]);now=task[1].at;task[1].fn();}now=end;}
-  function start(id,first=0,wait=true){selectedFirst=first;const i=data.GAMES.findIndex(g=>g.id===id);if(data.GAMES[i].comingSoon){data.GAMES[i].comingSoon=false;try{vm.runInContext('openGame('+JSON.stringify(id)+')',context);}finally{data.GAMES[i].comingSoon=true;}}else get('arcade-grid').children[i].click();if(wait&&id!=='memory')advance(4000);}
+  function start(id,first=0,wait=true){selectedFirst=first;const i=fixtureGames.findIndex(g=>g.id===id);if(fixtureGames[i].comingSoon){fixtureGames[i].comingSoon=false;try{vm.runInContext('openGame('+JSON.stringify(id)+')',context);}finally{fixtureGames[i].comingSoon=true;}}else get('arcade-grid').children[i].click();if(wait&&id!=='memory')advance(4000);}
 
   return {run:source=>vm.runInContext(source,context),clock:()=>now,root,doc,get,buttons,click,advance,start,saved,timedSaved,telemetry,speech,audio,state:context.state,resolveGame:context.resolveGame,seriesWith:context.seriesWith};
 }
@@ -107,8 +108,8 @@ for(const id of data.GAMES.filter(g=>!g.comingSoon&&g.id!=='lava').map(g=>g.id))
 }
 console.log('PASS: Kids vs. Kids across playable games, named turns and winners, series, balanced kid teams, escaped names, and no adult/kid lifetime-score writes.');
 // Core scoring remains first to three, with no points for a tie.
-assert.equal(data.GAMES.length,15);
-assert.ok(!data.GAMES.some(g=>['spot','golf','basketball','word','tap'].includes(g.id)),'Removed games stay out of the active catalog');
+assert.equal(data.GAMES.length,14);
+assert.ok(!data.GAMES.some(g=>['blocks','spot','golf','basketball','word','tap'].includes(g.id)),'Removed games stay out of the active catalog');
 for(const outcomes of [[0,1,0,1,0],[1,0,1,0,1],[0,0,0]]){
  let wins=[0,0],champion=-1;for(const winner of outcomes)({wins,champion}=core.awardRound(wins,winner));
  assert.equal(champion,outcomes.at(-1));assert.equal(wins[champion],3);
@@ -486,7 +487,7 @@ console.log('All 14 Arcade games passed: automatic starters, countdown handoffs,
 
 // Block Showdown: a full minute each, one-round result, no speed tiebreak.
 for(const first of [0,1]){
- const f=fixture();f.start('blocks',first);
+ const f=fixture(0,false,false,null,false,true);f.start('blocks',first);
  const board=f.get('block-board');board.dispatch('keydown',{key:'1'});board.dispatch('keydown',{key:'Enter'});
  assert.match(f.get('arcade-team-'+first).textContent,/1/);
  f.advance(59999);assert.ok(f.get('block-board'));
@@ -496,12 +497,12 @@ for(const first of [0,1]){
  assert.deepEqual([...f.saved[0].roundWinners],[first]);assert.equal(f.saved[0].gameIds[0],'blocks');
 }
 {
- const f=fixture();f.start('blocks');f.advance(60016);f.advance(4000);f.advance(60016);
+ const f=fixture(0,false,false,null,false,true);f.start('blocks');f.advance(60016);f.advance(4000);f.advance(60016);
  assert.match(f.get('game-stage').textContent,/It’s a tie/);assert.equal(f.saved.length,0);
  f.advance(10000);assert.match(f.get('game-stage').textContent,/MATCH COMPLETE/);
 }
 {
- const f=fixture();f.start('blocks');f.doc.hidden=true;f.doc.handlers.visibilitychange();
+ const f=fixture(0,false,false,null,false,true);f.start('blocks');f.doc.hidden=true;f.doc.handlers.visibilitychange();
  f.advance(70000);assert.equal(f.saved.length,0);assert.match(f.get('game-stage').textContent,/interrupted/);
 }
 console.log('PASS: Block Showdown one-minute turns, both starting teams, one-round winner saving, draws and interruption handling.');
@@ -785,3 +786,12 @@ for(const [roster,expected,saves] of [[[['Dad'],['Harper']],['Dad','Harper'],tru
  if(saves){assert.deepEqual(Array.from(f.saved[0].gameIds),['lava']);assert.deepEqual(Array.from(f.saved[0].roundWinners),[1]);}
 }
 console.log('PASS: Lava catalog entry, roster integration, adult/kid result, kid/kid and adult/adult score isolation.');
+
+assert.deepEqual(library.recentGames({getItem:()=>JSON.stringify(['blocks','memory','blocks'])},'family',data.GAMES),['memory']);
+{
+ const f=fixture();assert.ok(!f.get('arcade-grid').children.some(el=>el.getAttribute('data-game')==='blocks'));
+ assert.ok(!f.get('arcade-favorites').children.some(el=>el.getAttribute('data-game')==='blocks'));
+ for(let n=0;n<data.GAMES.length;n++){assert.doesNotMatch(f.get('arcade-feature-title').textContent,/Block Showdown/);f.get('feature-next').click();}
+ f.run('startSeries()');assert.ok(!f.state().series.games.includes('blocks'));
+}
+console.log('PASS: Block Showdown absent from active catalog, favorites, recent games, featured rotation and random challenges.');
