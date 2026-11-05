@@ -23,3 +23,13 @@
 .lp-clock>.lp-clock-reminder{line-height:1.45;transform:none;padding-left:18px;text-wrap:balance}.lp-clock-reminder em{font-style:italic}@media(max-width:700px){.lp-clock>.lp-clock-reminder{padding:14px 0 0;max-width:32ch;margin:0 auto;line-height:1.5}}
 
 .lp-search-guides{padding:32px max(20px,4%);border-top:1px solid #333}.lp-search-guides h1{font-size:clamp(24px,3vw,34px);line-height:1.2;color:#ffd006}.lp-search-guides p{max-width:850px;margin:16px 0;line-height:1.6;color:#ddd}.lp-search-guides a{color:#ffd006;text-decoration:underline;text-underline-offset:4px}.lp-search-guides nav{display:flex;flex-wrap:wrap;gap:16px 24px;margin-top:20px;font-size:15px}
+
+/* The main Arcade entrance spans the center of the landing page. */
+.lp-actions{grid-template-columns:repeat(2,minmax(0,1fr));max-width:1200px;width:100%;margin-left:auto;margin-right:auto}
+.lp-arcade-entry{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;gap:clamp(16px,4vw,60px);width:100%;min-width:0;min-height:clamp(150px,20vw,260px);padding:clamp(20px,3vw,40px);background:#101216;color:#fff;border:2px solid var(--yellow);border-radius:clamp(18px,3vw,32px);text-decoration:none;transition:background .2s,box-shadow .2s}
+.lp-arcade-entry:hover{background:#181a1e;box-shadow:0 0 24px #ffd00633}
+.lp-arcade-prompt{flex:0 1 auto;font-size:clamp(22px,3.6vw,48px);font-weight:900;line-height:1.2;text-align:left}
+.lp-arcade-neon{flex:0 1 66%;display:block;position:relative;overflow:hidden;min-width:0;width:66%;aspect-ratio:3.1;background:#080909;border-radius:clamp(12px,2vw,22px);box-shadow:0 0 16px #ff263b44,0 0 28px #3b41ff33}
+.lp-arcade-neon img{display:block;position:absolute;width:114.2%;max-width:none;height:auto;left:-6.7%;top:-48%}
+@media(max-width:700px){.lp-actions{gap:14px}.lp-arcade-entry{gap:12px;min-height:130px;padding:18px 14px}.lp-arcade-prompt{font-size:clamp(18px,4.8vw,30px);flex-basis:34%}.lp-arcade-neon{flex-basis:66%}.lp-actions>.lp-button{grid-column:1/-1}}
+@media(prefers-reduced-motion:reduce){.lp-arcade-entry{transition:none}}
