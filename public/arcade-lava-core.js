@@ -1,12 +1,12 @@
 // All distances and timing are shared by rendering, play, and route validation.
-export const RULES=Object.freeze({build:20,escape:30,jump:.62,range:163,crack:.95,maxTraps:3});
+export const RULES=Object.freeze({build:20,escape:30,jump:.62,range:163,crack:.95,maxTraps:6});
 export const TRAPS=['crack'];
 export function course(round=0,easy=false){
  const tiles=[{id:0,x:65,y:230,type:'start',locked:true}];
  for(let c=1;c<=7;c++){
   const x=65+c*112;
-  tiles.push({id:tiles.length,x,y:easy?230:270+[0,-12,10][(c+round)%3],type:'safe',locked:false});
-  tiles.push({id:tiles.length,x,y:140+[0,18,-14][(c+round)%3],type:'safe',locked:false});
+  tiles.push({id:tiles.length,column:c,row:0,x,y:easy?230:270+[0,-12,10][(c+round)%3],type:'safe',locked:false});
+  tiles.push({id:tiles.length,column:c,row:1,x,y:140+[0,18,-14][(c+round)%3],type:'safe',locked:false});
  }
  tiles.push({id:tiles.length,x:961,y:230,type:'finish',locked:true});return tiles;
 }
@@ -21,8 +21,12 @@ export function danger(tile,t,landedAt=t){
 export function scoreAttempt(success,elapsed){return success?{escape:100+2*Math.floor(Math.max(0,RULES.escape-elapsed)),trap:0}:{escape:0,trap:50};}
 // Time-expanded search with the exact jump durations and trap danger predicates.
 // Waiting is allowed only when the platform remains safe throughout the wait.
+export function trapSpacingValid(tiles){
+ const traps=tiles.filter(t=>TRAPS.includes(t.type));
+ return traps.every((a,i)=>traps.slice(i+1).every(b=>Math.abs(a.column-b.column)+Math.abs(a.row-b.row)!==1));
+}
 export function validateCourse(tiles){
- if(tiles.filter(t=>TRAPS.includes(t.type)).length>RULES.maxTraps)return false;
+ if(tiles.filter(t=>TRAPS.includes(t.type)).length>RULES.maxTraps||!trapSpacingValid(tiles))return false;
  const step=.05,queue=[{id:0,t:0,landed:0}],seen=new Set();
  for(let q=0;q<queue.length;q++){
   const s=queue[q];if(tiles[s.id].type==='finish')return true;
@@ -38,7 +42,8 @@ export function validateCourse(tiles){
 export function placeTrap(tiles,id,type){
  if(!TRAPS.includes(type)||!tiles[id]||tiles[id].locked)return {ok:false,reason:'Start and finish stay safe. Choose any other platform.'};
  const next=tiles.map(t=>({...t}));next[id].type=type;
- if(next.filter(t=>TRAPS.includes(t.type)).length>RULES.maxTraps)return {ok:false,reason:'Three traps max. Tap a placed trap to remove it.'};
+ if(next.filter(t=>TRAPS.includes(t.type)).length>RULES.maxTraps)return {ok:false,reason:'Six traps max. Tap a placed trap to remove it.'};
+ if(!trapSpacingValid(next))return {ok:false,reason:'Leave a safe block between traps. No traps directly beside or across from each other.'};
  if(!validateCourse(next))return {ok:false,reason:'That course has no safe escape route.'};
  return {ok:true,tiles:next};
 }

@@ -1,9 +1,9 @@
 import assert from 'node:assert/strict';
-import {course,reachable,flight,danger,placeTrap,validateCourse,scoreAttempt,suddenWinner,LavaMatch,RULES,platformAppearance,TRAPS} from '../public/arcade-lava-core.js';
+import {course,reachable,flight,danger,placeTrap,validateCourse,scoreAttempt,suddenWinner,LavaMatch,RULES,platformAppearance,TRAPS,trapSpacingValid} from '../public/arcade-lava-core.js';
 for(let round=0;round<3;round++){
  let tiles=course(round);assert.ok(validateCourse(tiles));
  for(const [id,type] of [[2,'crack'],[6,'crack'],[10,'crack']]){const p=placeTrap(tiles,id,type);assert.ok(p.ok);tiles=p.tiles;}
- assert.equal(placeTrap(tiles,14,'crack').ok,false);assert.equal(placeTrap(tiles,0,'crack').ok,false);assert.ok(validateCourse(tiles));
+ assert.equal(placeTrap(tiles,14,'crack').ok,true);assert.equal(placeTrap(tiles,0,'crack').ok,false);assert.ok(validateCourse(tiles));
  let t=0,id=0;for(const to of [1,3,5,7,9,11,13,15]){assert.ok(reachable(tiles,id,to));t+=flight(tiles[id]);assert.equal(danger(tiles[to],t,t),null);id=to;}assert.ok(t<30);
 
 }
@@ -24,7 +24,7 @@ console.log('PASS Lava: 3 course layouts, actual-timing safe-route validation, i
 
 for(let round=0;round<3;round++){
  for(let id=1;id<15;id++)for(const type of ['crack'])assert.ok(placeTrap(course(round),id,type).ok,`${type} can be placed on platform ${id}`);
- const lower=placeTrap(course(round),1,'crack');const both=placeTrap(lower.tiles,2,'crack');assert.ok(both.ok);assert.ok(validateCourse(both.tiles));
+ const lower=placeTrap(course(round),1,'crack');const both=placeTrap(lower.tiles,4,'crack');assert.ok(both.ok);assert.ok(validateCourse(both.tiles));
 }
 console.log('PASS: breaking traps on both rows, protected endpoints, and mixed-row course validation.');
 
@@ -33,3 +33,15 @@ for(const phase of ['welcome','intro','handoff','countdown','escape'])assert.equ
 assert.equal(platformAppearance({type:'crack'},'build'),'crack');assert.equal(platformAppearance({type:'crack',revealed:true},'escape'),'crack');
 assert.equal(danger({type:'crack',triggeredAt:1},1.94,1.9),null);assert.equal(danger({type:'crack',triggeredAt:1},1.96,1.9),'crack');
 console.log('PASS: breaking traps only; hidden before landing; reveal on contact; collapse timer persists after leaving.');
+
+for(let round=0;round<3;round++){
+ let tiles=course(round);for(const id of [1,5,9,4,8,12]){const p=placeTrap(tiles,id,'crack');assert.ok(p.ok,`six separated traps: ${id}`);tiles=p.tiles;}
+ assert.equal(tiles.filter(t=>t.type==='crack').length,6);assert.ok(validateCourse(tiles));
+ assert.match(placeTrap(tiles,13,'crack').reason,/Six traps max/);
+ let first=placeTrap(course(round),1,'crack').tiles;
+ assert.match(placeTrap(first,3,'crack').reason,/safe block between/);
+ assert.match(placeTrap(first,2,'crack').reason,/safe block between/);
+ assert.ok(placeTrap(first,5,'crack').ok);
+ first[3].type='crack';assert.equal(trapSpacingValid(first),false);assert.equal(validateCourse(first),false);
+}
+console.log('PASS: six traps on both rows, seventh rejected, adjacent/across traps rejected, separated traps allowed, spacing and winnability validated.');

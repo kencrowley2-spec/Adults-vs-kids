@@ -23,7 +23,7 @@ for(const [w,h] of [[844,390],[740,360],[932,430]]){
  const f=fixture(w,h);f.click('[data-action=start]');f.advance(3.1);assert.match(f.phase(),/BUILD YOUR TRAP/);
  assert.equal(f.document.querySelectorAll('[data-trap]').length,0);assert.equal(f.$('[data-action=attack]'),null);
  f.tap(2);assert.match(f.$('.lava-toast').textContent,/placed/);f.advance(.02);assert.ok(f.draws().some(a=>a[1]===512&&a[2]===0),'Builder sees red sabotage');
- f.tap(2);f.tap(4);f.tap(6);f.tap(8);f.tap(10);assert.match(f.$('.lava-toast').textContent,/Three traps max/);
+ f.tap(2);f.tap(1);f.tap(3);assert.match(f.$('.lava-toast').textContent,/safe block between/);f.tap(1);for(const id of [2,6,10])f.tap(id);f.advance(.02);assert.match(f.$('.lava-phase b').textContent,/3\/6 TRAPS/);
  f.click('[data-action=pause]');const time=f.$('.lava-phase b').textContent;f.advance(8);assert.equal(f.$('.lava-phase b').textContent,time);f.click('[data-action=resume]');
  f.advance(20);assert.match(f.$('.lava-overlay').textContent,/PASS THE PHONE/);assert.ok(!f.draws().some(a=>a[1]===512&&a[2]===0),'Handoff conceals every red trap');
  f.advance(7);assert.match(f.phase(),/ESCAPE THE LAVA/);assert.ok(!f.draws().some(a=>a[1]===512&&a[2]===0),'Runner sees identical blue blocks');
@@ -33,7 +33,7 @@ for(const [w,h] of [[844,390],[740,360],[932,430]]){
   for(const id of [1,3,5,7,9,11,13,15]){f.tap(id,round);f.advance(.65);}
   assert.match(f.$('.lava-overlay').textContent,/THEY MADE IT/);f.advance(4.6);
  }
- assert.equal(f.complete.length,1);assert.equal(f.complete[0].attempts.length,6);assert.match(f.$('.lava-overlay').textContent,/LAVA CHAMPION/);f.advance(5);assert.equal(f.complete.length,1);f.click('[data-action=rematch]');f.advance(3.1);assert.match(f.phase(),/BUILD/);f.click('[data-action=exit]');assert.equal(f.exits(),1);assert.equal(f.$('.lava-game'),null);assert.equal(f.audio().closed,1);
+ assert.equal(f.speech.spoken.length,0,'No narration anywhere in a full match');assert.equal(f.complete.length,1);assert.equal(f.complete[0].attempts.length,6);assert.match(f.$('.lava-overlay').textContent,/LAVA CHAMPION/);f.advance(5);assert.equal(f.complete.length,1);f.click('[data-action=rematch]');f.advance(3.1);assert.match(f.phase(),/BUILD/);f.click('[data-action=exit]');assert.equal(f.exits(),1);assert.equal(f.$('.lava-game'),null);assert.equal(f.audio().closed,1);
 }
 // A hidden trap reveals only after landing. The uncovered fall/splash finishes before scoring.
 {
@@ -56,3 +56,10 @@ for(const [w,h] of [[844,390],[740,360],[932,430]]){
  const f=fixture();f.click('[data-action=tutorial]');f.tap(1);f.advance(.7);assert.match(f.$('.lava-overlay').textContent,/NICE JUMP/);assert.equal(f.complete.length,0);f.click('[data-action=continue]');f.advance(3.1);assert.match(f.phase(),/BUILD/);f.click('[data-action=sfx]');assert.equal(f.$('[data-action=sfx]').getAttribute('aria-pressed'),'false');f.click('[data-action=music]');assert.equal(f.$('[data-action=music]').getAttribute('aria-pressed'),'false');Object.defineProperty(f.document,'hidden',{value:true,configurable:true});f.document.dispatchEvent(new f.document.defaultView.Event('visibilitychange'));assert.ok(f.$('.lava-pause'));f.cleanup();
 }
 console.log('PASS: both-row trap taps/removal/budget, private builder view, no visual leaks during handoff/approach, red only on landing, uncovered sinking/splash before results, escape from cracking block, timeout, paused fall, six attempts, rematch and mobile layouts.');
+
+{
+ const f=fixture();f.click('[data-action=start]');f.advance(3.1);
+ for(const id of [1,5,9,4,8,12])f.tap(id);f.advance(.02);assert.match(f.$('.lava-phase b').textContent,/6\/6 TRAPS/);
+ f.tap(13);assert.match(f.$('.lava-toast').textContent,/Six traps max/);f.tap(1);f.tap(3);assert.match(f.$('.lava-toast').textContent,/safe block between/);
+ assert.equal(f.speech.spoken.length,0);f.cleanup();
+}
