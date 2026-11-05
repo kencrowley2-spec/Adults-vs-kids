@@ -1,6 +1,6 @@
 // All distances and timing are shared by rendering, play, and route validation.
-export const RULES=Object.freeze({build:20,escape:30,jump:.62,range:163,springRange:275,springJump:.85,crack:.95,attackWarning:1.6,maxTraps:3});
-export const TRAPS=['crack','spinner','spring','ghost'];
+export const RULES=Object.freeze({build:20,escape:30,jump:.62,range:163,crack:.95,maxTraps:3});
+export const TRAPS=['crack'];
 export function course(round=0,easy=false){
  const tiles=[{id:0,x:65,y:230,type:'start',locked:true}];
  for(let c=1;c<=7;c++){
@@ -10,13 +10,12 @@ export function course(round=0,easy=false){
  }
  tiles.push({id:tiles.length,x:961,y:230,type:'finish',locked:true});return tiles;
 }
-export function reachable(tiles,from,to){if(from===to)return false;const a=tiles[from],b=tiles[to];return !!a&&!!b&&Math.hypot(a.x-b.x,a.y-b.y)<=(a.type==='spring'?RULES.springRange:RULES.range);}
-export function flight(tile){return tile.type==='spring'?RULES.springJump:RULES.jump;}
-export function danger(tile,t,landedAt=t,attack=null){
- if(tile.type==='ghost'&&(t%3.6)>=2.3)return 'ghost';
- if(tile.type==='spinner'&&Math.sin(t*2.5+tile.id*1.7)>.82)return 'spinner';
- if(tile.type==='crack'&&t-landedAt>=RULES.crack)return 'crack';
- if(attack?.tile===tile.id&&t>=attack.at+RULES.attackWarning&&t<attack.at+RULES.attackWarning+2)return 'attack';
+export function reachable(tiles,from,to){if(from===to)return false;const a=tiles[from],b=tiles[to];return !!a&&!!b&&Math.hypot(a.x-b.x,a.y-b.y)<=RULES.range;}
+export function flight(tile){return RULES.jump;}
+// Only the builder sees sabotaged blocks before the runner lands on them.
+export function platformAppearance(tile,phase){return tile.type==='crack'&&phase!=='build'&&!tile.revealed?'safe':tile.type;}
+export function danger(tile,t,landedAt=t){
+ if(tile.type==='crack'&&t-(tile.triggeredAt??landedAt)>=RULES.crack)return 'crack';
  return null;
 }
 export function scoreAttempt(success,elapsed){return success?{escape:100+2*Math.floor(Math.max(0,RULES.escape-elapsed)),trap:0}:{escape:0,trap:50};}
