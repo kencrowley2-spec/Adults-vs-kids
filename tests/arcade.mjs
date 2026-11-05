@@ -56,7 +56,7 @@ function fixture(firstTeam=0,withSpeech=false,withAudio=false,players=null,holdM
     createGain(){const gain={gain:{value:1,setValueAtTime(){},linearRampToValueAtTime(){},exponentialRampToValueAtTime(){}},connect(){},disconnect(){this.disconnected=true;}};audio.gains.push(gain);return gain;}
     createOscillator(){const node={frequency:{value:0,setValueAtTime(){},exponentialRampToValueAtTime(){}},stops:[],connect(){},disconnect(){this.disconnected=true;},start(){this.started=true;},stop(at){this.stops.push(at);if(Number.isFinite(at))scheduled.set(++seq,{at:at*1000,fn:()=>this.onended?.()});else this.onended?.();}};audio.nodes.push(node);return node;}
   }
-  const context=vm.createContext({URLSearchParams,location:{search:''},clawPrizes,clawCatch,molePlan,treasurePlan,...core,...data,...newCore,...library,Math:testMath,document:doc,crypto,CustomEvent:class{constructor(type,options){this.type=type;this.detail=options.detail;}},window:{dispatchEvent:e=>telemetry.push(e),addEventListener(){},...voiceWindow,...(withAudio?{AudioContext:AudioContextMock}:{})},createResultRecorder:({namespace})=>({drain:async()=>{},capture:result=>{(namespace==='times'?timedSaved:saved).push(result);}}),performance:{now:()=>now},console,setTimeout:(fn,delay)=>{scheduled.set(++seq,{at:now+delay,fn});return seq;},clearTimeout:id=>scheduled.delete(id)});
+  const context=vm.createContext({mountLava:options=>{context.lavaOptions=options;return ()=>{};},URLSearchParams,location:{search:''},clawPrizes,clawCatch,molePlan,treasurePlan,...core,...data,...newCore,...library,Math:testMath,document:doc,crypto,CustomEvent:class{constructor(type,options){this.type=type;this.detail=options.detail;}},window:{dispatchEvent:e=>telemetry.push(e),addEventListener(){},...voiceWindow,...(withAudio?{AudioContext:AudioContextMock}:{})},createResultRecorder:({namespace})=>({drain:async()=>{},capture:result=>{(namespace==='times'?timedSaved:saved).push(result);}}),performance:{now:()=>now},console,setTimeout:(fn,delay)=>{scheduled.set(++seq,{at:now+delay,fn});return seq;},clearTimeout:id=>scheduled.delete(id)});
   vm.runInContext(readFileSync(new URL('../public/arcade-lobby-music.js',import.meta.url),'utf8').replace(/export /g,''),context);
   vm.runInContext(readFileSync(new URL('../public/arcade-claw.js',import.meta.url),'utf8').replace(/export /g,''),context);
   vm.runInContext(readFileSync(new URL('../public/arcade-mole.js',import.meta.url),'utf8').replace(/export /g,''),context);
@@ -82,7 +82,7 @@ function fixture(firstTeam=0,withSpeech=false,withAudio=false,players=null,holdM
  assert.match(f.get('arcade-team-1').textContent,/Emma · Noah/);
 }
 // Dashboard selections with no adults create named kid opponents in every game.
-for(const id of data.GAMES.filter(g=>!g.comingSoon).map(g=>g.id)){
+for(const id of data.GAMES.filter(g=>!g.comingSoon&&g.id!=='lava').map(g=>g.id)){
  const f=fixture(0,true,false,[[],['Harper','Chloe']]);f.start(id,0,false);
  assert.match(f.get('arcade-team-0').textContent,/HARPER/);
  assert.match(f.get('arcade-team-1').textContent,/CHLOE/);
@@ -107,7 +107,7 @@ for(const id of data.GAMES.filter(g=>!g.comingSoon).map(g=>g.id)){
 }
 console.log('PASS: Kids vs. Kids across playable games, named turns and winners, series, balanced kid teams, escaped names, and no adult/kid lifetime-score writes.');
 // Core scoring remains first to three, with no points for a tie.
-assert.equal(data.GAMES.length,14);
+assert.equal(data.GAMES.length,15);
 assert.ok(!data.GAMES.some(g=>['spot','golf','basketball','word','tap'].includes(g.id)),'Removed games stay out of the active catalog');
 for(const outcomes of [[0,1,0,1,0],[1,0,1,0,1],[0,0,0]]){
  let wins=[0,0],champion=-1;for(const winner of outcomes)({wins,champion}=core.awardRound(wins,winner));
@@ -122,7 +122,7 @@ function noNavigation(f){assert.ok(!f.buttons().some(b=>readyButton.test(b.textC
 
 // Every real game opens without a first-team choice. Both teams can be picked;
 // the four-second countdown protects handoffs before starting a timed turn.
-for(const game of data.GAMES)for(const first of [0,1]){
+for(const game of data.GAMES.filter(g=>g.id!=='lava'))for(const first of [0,1]){
  const f=fixture();f.start(game.id,first,false);assert.equal(f.telemetry[0].type,'avk:game-start');assert.equal(f.telemetry[0].detail.game,game.id);assert.equal(f.state().turn,first);noNavigation(f);
  if(game.id==='memory'){
   assert.ok(f.get('memory-cards'));assert.match(f.get('turn-strip').textContent,new RegExp(core.teamName(first)+' go first'));
@@ -680,7 +680,7 @@ for(const first of [0,1]){
 
 }
 // Every playable game gets a rivalry HUD; safe escaped roster names cannot inject markup.
-for(const g of data.GAMES.filter(g=>!g.comingSoon)){
+for(const g of data.GAMES.filter(g=>!g.comingSoon&&g.id!=='lava')){
  const f=fixture(0,false,false,[[],['<img src=x>','Chloe']]);f.start(g.id,0,false);
  assert.ok(f.get('competition-call'),g.id);assert.equal(f.get('game-stage').querySelector('img'),null);
 }
@@ -775,3 +775,13 @@ console.log('PASS: completed personal best persists under the family account whi
  f.get('arcade-return').click();const clock=f.get('memory-time').textContent;f.advance(60000);assert.equal(f.get('memory-time').textContent,clock);assert.equal(f.saved.length,0);
 }
 console.log('PASS: family-scoped best move record, pending-flip pause, replayed best display and clock cleanup.');
+
+// Lava uses the same roster; only adult/kid matches update the family rivalry.
+for(const [roster,expected,saves] of [[[['Dad'],['Harper']],['Dad','Harper'],true],[[[],['Harper','Chloe']],['Harper','Chloe'],false],[[['Dad','Mom'],[]],['Dad','Mom'],false]]){
+ const f=fixture(0,false,false,roster);f.start('lava',0,false);
+ assert.deepEqual(Array.from(f.run('lavaOptions.players')),expected);
+ f.run('lavaOptions.onComplete({winner:1,scores:[50,140]})');
+ assert.equal(f.saved.length,saves?1:0);
+ if(saves){assert.deepEqual(Array.from(f.saved[0].gameIds),['lava']);assert.deepEqual(Array.from(f.saved[0].roundWinners),[1]);}
+}
+console.log('PASS: Lava catalog entry, roster integration, adult/kid result, kid/kid and adult/adult score isolation.');

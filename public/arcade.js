@@ -1,3 +1,4 @@
+import {mountLava} from './arcade-lava.js?v=1';
 import {createLobbyMusic} from './arcade-lobby-music.js?v=1';
 import {mountClaw,clawPrizes,clawFireworks} from './arcade-claw.js?v=1';
 import {mountMole,molePlan,createMoleAudio} from './arcade-mole.js?v=4';
@@ -5,8 +6,8 @@ import {mountFrog,frogCourses,frogRoundWinner} from './arcade-frog.js?v=3';
 import {mountTreasure,treasurePlan} from './arcade-treasure.js?v=1';
 import {mountBlocks} from './arcade-blocks.js?v=1';
 import {mountBasketball} from './arcade-basketball.js?v=1';
-import {coverMarkup,recentGames} from './arcade-library.js?v=11';
-import {GAMES, ANIMALS, TRIVIA, PICTURES, CHALLENGES} from './arcade-data.js?v=22';
+import {coverMarkup,recentGames} from './arcade-library.js?v=12';
+import {GAMES, ANIMALS, TRIVIA, PICTURES, CHALLENGES} from './arcade-data.js?v=23';
 import {shuffle, roundWinner, awardRound, lineWinner} from './arcade-core.js';
 
 import {makeMaze, codeClues, rpsWinner, GOLF_COURSES, golfStep} from './arcade-new-core.js?v=5';
@@ -343,7 +344,23 @@ function pick(key,source,n){
   if(!used[key] || used[key].length<n) used[key]=shuffle(source);
   return used[key].splice(0,n);
 }
+let stopLava=null;
+function openLava(){
+ lobbyMusic.stop();clearTimeout(featuredTimer);clearTimers();stopLava?.();
+ const lineupPlayers=selectedPlayers.map(list=>list.join(' & '));
+ const adultsOnly=selectedPlayers[1].length===0&&selectedPlayers[0].length>=2;
+ const lavaNames=adultsOnly?[selectedPlayers[0].filter((_,i)=>i%2===0).join(' & '),selectedPlayers[0].filter((_,i)=>i%2===1).join(' & ')]:lineupPlayers.map((name,i)=>name||names[i]);
+ let matchId=crypto.randomUUID();
+ rememberGame('lava');arena.hidden=false;lobby.hidden=true;
+ window.dispatchEvent(new CustomEvent('avk:game-start',{detail:{game:'lava',id:matchId}}));
+ stopLava=mountLava({players:lavaNames,onExit:()=>{stopLava=null;arena.hidden=true;lobby.hidden=false;game=null;scheduleFeatured();lobbyMusic.start();document.querySelector('[data-game="lava"]')?.focus();},onComplete:result=>{
+  if(!kidsOnly&&!adultsOnly)recorder.capture({id:matchId,mode:'single',gameIds:['lava'],roundWinners:[result.winner]});
+  window.dispatchEvent(new CustomEvent('avk:game-complete',{detail:{game:'lava',winner:result.winner,scores:result.scores,id:matchId}}));
+  matchId=crypto.randomUUID();
+ }});
+}
 function openGame(id){
+  if(id==='lava')return openLava();
   if(GAMES.find(g=>g.id===id)?.comingSoon)return;
   lobbyMusic.stop();clearTimeout(featuredTimer);
   startRecording('single',[id]);
@@ -356,7 +373,7 @@ function openGame(id){
 function startSeries(){
   lobbyMusic.stop();clearTimeout(featuredTimer);
   clearTimers();
-  series={games:shuffle(GAMES.filter(g=>!g.comingSoon)).slice(0,3),index:0,winners:[],first:0};
+  series={games:shuffle(GAMES.filter(g=>!g.comingSoon&&g.id!=='lava')).slice(0,3),index:0,winners:[],first:0};
   startRecording('series',series.games.map(g=>g.id));
   wins=[0,0]; round=1; attempt=0; starter=0; turn=0; champion=-1; results=[]; used={};
   game=series.games[0]; lobby.hidden=true; arena.hidden=false;
@@ -906,7 +923,7 @@ function miniGolf(){
 
 const recentKey=`avk-arcade-recent:${arcadeAccountId}`;
 function gameTile(g,parent){
- const tile=button('',()=>openGame(g.id),parent,'game-tile cover-tile');
+ const tile=button('',()=>openGame(g.id),parent,'game-tile cover-tile'+(g.id==='lava'?' cover-lava':''));
  tile.setAttribute('data-game',g.id);tile.disabled=!!g.comingSoon;tile.setAttribute('data-coming-soon',String(!!g.comingSoon));tile.setAttribute('aria-label',g.comingSoon?`${g.name} — Coming Soon`:`Play ${g.name}`);tile.innerHTML=coverMarkup(g);return tile;
 }
 function renderRecent(){
@@ -919,7 +936,7 @@ function rememberGame(id){
  renderRecent();
 }
 GAMES.forEach(g=>gameTile(g,$('arcade-grid')));
-['blocks','memory','maze','treasure','tic','trivia','rps'].forEach(id=>gameTile(GAMES.find(g=>g.id===id),$('arcade-favorites')));
+['lava','blocks','memory','maze','treasure','tic','trivia','rps'].forEach(id=>gameTile(GAMES.find(g=>g.id===id),$('arcade-favorites')));
 renderRecent();
 for(const shelf of ['favorites','recent','all']){
  const track=$(shelf==='all'?'arcade-grid':`arcade-${shelf}`);

@@ -1,4 +1,4 @@
-export const ARCADE_GAMES=['memory','tic','spot','trivia','word','tap','picture','number','challenge','maze','rps','code','golf','basketball','blocks','treasure','frog','mole','claw'];
+export const ARCADE_GAMES=['memory','tic','spot','trivia','word','tap','picture','number','challenge','maze','rps','code','golf','basketball','blocks','treasure','frog','mole','claw','lava'];
 type CompletedResult={id:string;mode:'single'|'series';gameIds:string[];roundWinners:number[]};
 export function completedResult(raw:unknown):CompletedResult{
  if(!raw||typeof raw!=='object')throw new Error('Invalid result');
@@ -11,7 +11,7 @@ export function completedResult(raw:unknown):CompletedResult{
  if(!Array.isArray(d.roundWinners)||d.roundWinners.some(w=>w!==0&&w!==1))throw new Error('Invalid outcomes');
  const rounds=d.roundWinners as number[];
  if(d.mode==='series') {if(rounds.length!==3)throw new Error('Series is incomplete');}
- else if(['basketball','blocks','treasure','mole','claw'].includes(games[0])){if(rounds.length!==1)throw new Error('One-round match is incomplete');}
+ else if(['basketball','blocks','treasure','mole','claw','lava'].includes(games[0])){if(rounds.length!==1)throw new Error('One-round match is incomplete');}
  else {
   const target=games[0]==='frog'?2:3;
   if(rounds.length<target||rounds.length>target*2-1)throw new Error('Match is incomplete');

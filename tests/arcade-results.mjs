@@ -64,3 +64,6 @@ assert.throws(()=>completedResult({...single,gameIds:['mole'],roundWinners:[1,1,
 
 assert.equal(completedResult({...single,gameIds:['claw'],roundWinners:[0]}).roundWinners.length,1);
 assert.throws(()=>completedResult({...single,gameIds:['claw'],roundWinners:[0,0,0]}));
+
+assert.equal(completedResult({...single,gameIds:['lava'],roundWinners:[1]}).roundWinners.length,1);
+assert.throws(()=>completedResult({...single,gameIds:['lava'],roundWinners:[0,0,0]}));
