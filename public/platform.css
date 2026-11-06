@@ -137,3 +137,5 @@ body.platform{background-color:#14161a;background-image:radial-gradient(ellipse 
 .platform .platform-footer .return-website{color:#ffe16a}
 .platform .platform-footer .return-website:hover{color:#fff1ae}
 .platform .family-riddle button:focus-visible,.platform .family-riddle summary:focus-visible,.platform .platform-header a:focus-visible,.platform .platform-header button:focus-visible,.platform .platform-footer a:focus-visible{outline:3px solid #ffd522;outline-offset:4px}
+
+.platform .platform-account b{color:#f7f5ec}
