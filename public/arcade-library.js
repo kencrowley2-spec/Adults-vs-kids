@@ -3,7 +3,7 @@ const svg=(body)=>`<svg viewBox="0 0 240 180" aria-hidden="true" focusable="fals
 const emoji=(symbol,x=120,y=128,size=90)=>`<text x="${x}" y="${y}" font-size="${size}" text-anchor="middle">${symbol}</text>`;
 const card=(x,y,r,body)=>`<g transform="translate(${x} ${y}) rotate(${r} 35 48)"><rect width="70" height="96" rx="10" fill="white" stroke="#111827" stroke-width="4"/>${body}</g>`;
 const art={
- neighborhood:()=>`<image href="/assets/defend-neighborhood-cover.svg" width="240" height="180" preserveAspectRatio="xMidYMid slice"/>`,
+ neighborhood:()=>`<image href="/assets/defend-neighborhood-cover.png" width="240" height="180" preserveAspectRatio="xMidYMid meet"/>`,
 
  lava:()=>`<image href="/assets/lava-room.webp" width="240" height="180" preserveAspectRatio="xMidYMid slice"/><svg x="8" y="106" width="98" height="75" viewBox="0 0 512 512"><image href="/assets/lava-sprites.webp" width="1536" height="1024"/></svg><svg x="120" y="92" width="104" height="80" viewBox="512 0 512 512"><image href="/assets/lava-sprites.webp" width="1536" height="1024"/></svg><svg x="58" y="40" width="110" height="115" viewBox="1024 512 512 512"><image href="/assets/lava-sprites.webp" width="1536" height="1024"/></svg>`,
  claw:()=>`<rect x="28" y="8" width="184" height="166" rx="12" fill="#df4e86" stroke="#ffe18c" stroke-width="5"/><rect x="40" y="32" width="160" height="112" fill="#30486a"/><path d="M120 34v45m0 0-23 23 10 15m13-38 23 23-10 15" fill="none" stroke="#eef5ff" stroke-width="5"/>${emoji('🧸',75,136,46)}${emoji('🧸',158,135,58)}<rect x="95" y="153" width="50" height="12" rx="6" fill="#ffe18c"/>`,
