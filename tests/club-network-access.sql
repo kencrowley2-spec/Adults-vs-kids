@@ -51,15 +51,37 @@ do $$ begin
  begin perform public.club_network('accept_challenge',jsonb_build_object('id',(select challenge_id from network_test_ids)));raise exception 'Third family accepted invitation';exception when insufficient_privilege then null;end;
 end $$;
 select set_config('request.jwt.claim.sub',(select b::text from network_test_ids),true);
-do $$ declare r jsonb; begin
+do $$ declare r jsonb; chosen_challenge uuid; begin
  r:=public.club_network('accept_challenge',jsonb_build_object('id',(select challenge_id from network_test_ids)));
  if r->'challenges'->0->>'status'<>'accepted' then raise exception 'Challenge acceptance failed';end if;
+
+ perform public.club_network('message',jsonb_build_object('id',(select connection_id from network_test_ids),'body','Lobby test message'));
+ r:=public.club_network('ping',jsonb_build_object('id',(select connection_id from network_test_ids)));
+ if jsonb_array_length(r->'lobbyEvents')<>2 then raise exception 'Lobby delivery failed';end if;
+ begin perform public.club_network('ping',jsonb_build_object('id',(select connection_id from network_test_ids)));raise exception 'Duplicate ping allowed';exception when invalid_parameter_value then null;end;
+ begin perform public.club_network('message',jsonb_build_object('id',(select connection_id from network_test_ids),'body',repeat('x',501)));raise exception 'Oversize message allowed';exception when invalid_parameter_value then null;end;
+ begin perform * from club_private.lobby_messages;raise exception 'Direct message access allowed';exception when insufficient_privilege then null;end;
+
+ perform set_config('request.jwt.claim.sub',(select c::text from network_test_ids),true);
+ if jsonb_array_length(public.club_network('read')->'lobbyEvents')<>0 then raise exception 'Third family read messages';end if;
+ begin perform public.club_network('message',jsonb_build_object('id',(select connection_id from network_test_ids),'body','Intruder'));raise exception 'Third family messaged';exception when insufficient_privilege then null;end;
+ perform set_config('request.jwt.claim.sub',(select a::text from network_test_ids),true);
+ perform public.club_network('cancel_challenge',jsonb_build_object('id',(select challenge_id from network_test_ids)));
+ r:=public.club_network('challenge',jsonb_build_object('id',(select connection_id from network_test_ids),'game','dash','mode','friend','playerOne','Ken'));
+ select (x->>'id')::uuid into strict chosen_challenge from jsonb_array_elements(r->'challenges')x where x->>'status'='pending';
+ update network_test_ids set challenge_id=chosen_challenge;
+ perform set_config('request.jwt.claim.sub',(select b::text from network_test_ids),true);
+ begin perform public.club_network('accept_challenge',jsonb_build_object('id',(select challenge_id from network_test_ids)));raise exception 'Nameless player accepted';exception when invalid_parameter_value then null;end;
+ r:=public.club_network('accept_challenge',jsonb_build_object('id',(select challenge_id from network_test_ids),'playerTwo','Harper'));
+ if not exists(select 1 from jsonb_array_elements(r->'challenges')x where x->>'playerOne'='Ken' and x->>'playerTwo'='Harper' and x->>'mode'='friend' and x->>'status'='accepted') then raise exception 'Friend matchup names failed';end if;
  r:=public.club_network('block',jsonb_build_object('id',(select connection_id from network_test_ids)));
- if r->'challenges'->0->>'status'<>'cancelled' then raise exception 'Blocking failed to cancel challenge';end if;
+ if exists(select 1 from jsonb_array_elements(r->'challenges')x where x->>'status' in ('pending','accepted')) then raise exception 'Blocking failed to cancel challenge';end if;
 end $$;
 select set_config('request.jwt.claim.sub',(select a::text from network_test_ids),true);
 do $$ declare old_code text; r jsonb; begin
  if jsonb_array_length(public.club_network('read')->'connections')<>0 then raise exception 'Blocked family sees blocking control';end if;
+ if jsonb_array_length(public.club_network('read')->'lobbyEvents')<>0 then raise exception 'Blocked message access allowed';end if;
+ begin perform public.club_network('message',jsonb_build_object('id',(select connection_id from network_test_ids),'body','Blocked message'));raise exception 'Blocked sender messaged';exception when insufficient_privilege then null;end;
  begin perform public.club_network('unblock',jsonb_build_object('id',(select connection_id from network_test_ids)));raise exception 'Blocked family unblocked itself';exception when insufficient_privilege then null;end;
  begin perform public.club_network('request',jsonb_build_object('familyId',(select b from network_test_ids),'type','family'));raise exception 'Blocked family re-requested';exception when invalid_parameter_value then null;end;
  begin perform public.club_network('rotate_code');raise exception 'Legacy code action accepted';exception when invalid_parameter_value then null;end;

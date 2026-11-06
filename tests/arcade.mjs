@@ -40,7 +40,7 @@ class Element {
   }
   querySelector(s){return this.querySelectorAll(s)[0]??null;}
 }
-function fixture(firstTeam=0,withSpeech=false,withAudio=false,players=null,holdMoleIntro=false,archivedBlocks=false){
+function fixture(firstTeam=0,withSpeech=false,withAudio=false,players=null,holdMoleIntro=false,archivedBlocks=false,club=false){
   const fixtureGames=archivedBlocks?[...data.GAMES,{id:'blocks',icon:'🧩',name:'Block Showdown',tag:'ARCHIVED',color:'blue',description:'Archived Block Showdown regression fixture'}]:data.GAMES;
   let selectedFirst=firstTeam;const testMath=Object.create(Math);testMath.random=()=>selectedFirst===0?.25:.75;
   let now=0,seq=0,scheduled=new Map();const saved=[],timedSaved=[],telemetry=[];const root=new Element();
@@ -57,7 +57,7 @@ function fixture(firstTeam=0,withSpeech=false,withAudio=false,players=null,holdM
     createGain(){const gain={gain:{value:1,setValueAtTime(){},linearRampToValueAtTime(){},exponentialRampToValueAtTime(){}},connect(){},disconnect(){this.disconnected=true;}};audio.gains.push(gain);return gain;}
     createOscillator(){const node={frequency:{value:0,setValueAtTime(){},exponentialRampToValueAtTime(){}},stops:[],connect(){},disconnect(){this.disconnected=true;},start(){this.started=true;},stop(at){this.stops.push(at);if(Number.isFinite(at))scheduled.set(++seq,{at:at*1000,fn:()=>this.onended?.()});else this.onended?.();}};audio.nodes.push(node);return node;}
   }
-  const context=vm.createContext({mountFaces:options=>{context.facesOptions=options;return ()=>{};},mountDraw:options=>{context.drawOptions=options;return ()=>{};},mountLava:options=>{context.lavaOptions=options;return ()=>{};},URLSearchParams,location:{search:''},clawPrizes,clawCatch,molePlan,treasurePlan,...core,...data,GAMES:fixtureGames,...newCore,...library,Math:testMath,document:doc,crypto,CustomEvent:class{constructor(type,options){this.type=type;this.detail=options.detail;}},window:{dispatchEvent:e=>telemetry.push(e),addEventListener(){},...voiceWindow,...(withAudio?{AudioContext:AudioContextMock}:{})},createResultRecorder:({namespace})=>({drain:async()=>{},capture:result=>{(namespace==='times'?timedSaved:saved).push(result);}}),performance:{now:()=>now},console,setTimeout:(fn,delay)=>{scheduled.set(++seq,{at:now+delay,fn});return seq;},clearTimeout:id=>scheduled.delete(id)});
+  const context=vm.createContext({mountFaces:options=>{context.facesOptions=options;return ()=>{};},mountDraw:options=>{context.drawOptions=options;return ()=>{};},mountLava:options=>{context.lavaOptions=options;return ()=>{};},URLSearchParams,location:{search:club?'?source=club':''},clawPrizes,clawCatch,molePlan,treasurePlan,...core,...data,GAMES:fixtureGames,...newCore,...library,Math:testMath,document:doc,crypto,CustomEvent:class{constructor(type,options){this.type=type;this.detail=options.detail;}},window:{dispatchEvent:e=>telemetry.push(e),addEventListener(){},...voiceWindow,...(withAudio?{AudioContext:AudioContextMock}:{})},createResultRecorder:({namespace})=>({drain:async()=>{},capture:result=>{(namespace==='times'?timedSaved:saved).push(result);}}),performance:{now:()=>now},console,setTimeout:(fn,delay)=>{scheduled.set(++seq,{at:now+delay,fn});return seq;},clearTimeout:id=>scheduled.delete(id)});
   vm.runInContext(readFileSync(new URL('../public/arcade-lobby-music.js',import.meta.url),'utf8').replace(/export /g,''),context);
   vm.runInContext(readFileSync(new URL('../public/arcade-claw.js',import.meta.url),'utf8').replace(/export /g,''),context);
   vm.runInContext(readFileSync(new URL('../public/arcade-mole.js',import.meta.url),'utf8').replace(/export /g,''),context);
@@ -66,6 +66,7 @@ function fixture(firstTeam=0,withSpeech=false,withAudio=false,players=null,holdM
   vm.runInContext(readFileSync(new URL('../public/arcade-blocks.js',import.meta.url),'utf8').replace(/export /g,''),context);
   const basketballSource=readFileSync(new URL('../public/arcade-basketball.js',import.meta.url),'utf8').replace(/export /g,'');
   vm.runInContext(basketballSource,context);
+  if(club)vm.runInContext('window.avkChallengeIntro=options=>{this.introOptions=options;return new Promise(resolve=>{this.finishIntro=resolve})}',context);
   const source=readFileSync(new URL('../public/arcade.js',import.meta.url),'utf8').replace(/^import .*;\n/gm,'');
   vm.runInContext(source+'\nthis.state=()=>({wins:[...wins],round,champion,turn,starter,attempt,plans:game?{maze:game.maze,codes:game.codes,safePoints:game.safePoints,course:game.course,frog:game.frogCourses}:null,series:series?{games:series.games.map(g=>g.id),index:series.index,winners:[...series.winners]}:null});this.resolveGame=finishRound;this.seriesWith=id=>{startSeries();clearTimers();series.games=[GAMES.find(g=>g.id===id),...GAMES.filter(g=>g.id!==id).slice(0,2)];startSeriesGame();};',context);
   const get=id=>doc.getElementById(id);
@@ -832,3 +833,22 @@ for(const [roster,expected,saves] of [[[['Dad'],['Harper']],['Dad','Harper'],tru
 }
 
 for(const [roster,expected] of [[null,['Adults','Kids']],[[[],['Harper','Chloe']],['Harper','Chloe']],[[['Ken','Chelsea'],[]],['Ken','Chelsea']]]){const f=fixture(0,false,false,roster);f.start('faces',0,false);assert.deepEqual(Array.from(f.run('facesOptions.players')),expected);f.run('startSeries()');assert.ok(!f.state().series.games.includes('faces'));}
+
+// A club launch waits for the reveal; no game clock or special-game mount starts behind it.
+for(const id of ['trivia','faces','draw','lava']){
+ const f=fixture(0,false,false,[['Ken'],['Harper']],false,false,true);
+ f.start(id,0,false);
+ assert.deepEqual(Array.from(f.run('introOptions.players')),['Ken','Harper']);
+ assert.equal(f.telemetry.filter(e=>e.type==='avk:game-start').length,0);
+ if(id!=='trivia')assert.equal(f.run('typeof '+({faces:'facesOptions',draw:'drawOptions',lava:'lavaOptions'}[id])),'undefined');
+ f.run('finishIntro()');await new Promise(r=>setTimeout(r,0));
+ if(id==='trivia')assert.match(f.get('game-title').textContent,/Trivia/);
+ else assert.deepEqual(Array.from(f.run(({faces:'facesOptions',draw:'drawOptions',lava:'lavaOptions'}[id])+'.players')),['Ken','Harper']);
+}
+{
+ const f=fixture(0,false,false,[['Ken'],['Harper']],false,false,true);f.run('startSeries()');
+ assert.equal(f.telemetry.filter(e=>e.type==='avk:game-start').length,0);
+ f.run('finishIntro()');await new Promise(r=>setTimeout(r,0));
+ assert.equal(f.telemetry.filter(e=>e.type==='avk:game-start').length,1);
+}
+console.log('PASS: club standard, special-game and series launches wait for named matchup introduction before starting gameplay.');

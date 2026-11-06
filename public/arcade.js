@@ -391,7 +391,20 @@ function openDraw(){
   matchId=crypto.randomUUID();
  }});
 }
-function openGame(id){
+let clubIntroPending=false;
+const clubEntry=new URLSearchParams(location.search).get('source')==='club';
+async function clubReveal(title){
+ if(!clubEntry||!window.avkChallengeIntro)return;
+ const adultsOnly=selectedPlayers[1].length===0&&selectedPlayers[0].length>=2;
+ const players=adultsOnly?[selectedPlayers[0].filter((_,i)=>i%2===0).join(' & '),selectedPlayers[0].filter((_,i)=>i%2===1).join(' & ')]:selectedPlayers.map((list,i)=>list.join(' & ')||names[i]);
+ lobbyMusic.stop();clearTimeout(featuredTimer);
+ await window.avkChallengeIntro({players,game:title});
+}
+async function openGame(id){
+  if(clubIntroPending)return;
+  const chosen=GAMES.find(g=>g.id===id);if(!chosen||chosen.comingSoon)return;
+  if(clubEntry){clubIntroPending=true;try{await clubReveal(chosen.name)}finally{clubIntroPending=false}}
+
   if(id==='faces')return openFaces();
   if(id==='draw')return openDraw();
   if(id==='lava')return openLava();
@@ -404,7 +417,8 @@ function openGame(id){
   $('game-title').textContent=`${game.icon} ${game.name}`; used={}; wins=[0,0]; round=1; attempt=0; starter=0; turn=0; champion=-1; results=[];
   starter=Math.random()<.5?0:1;turn=starter;beginRound();
 }
-function startSeries(){
+async function startSeries(){
+  if(clubIntroPending)return;
   lobbyMusic.stop();clearTimeout(featuredTimer);
   clearTimers();
   series={games:shuffle(GAMES.filter(g=>!g.comingSoon&&!g.premium&&g.id!=='lava'&&g.id!=='draw'&&g.id!=='faces')).slice(0,3),index:0,winners:[],first:0};
@@ -413,8 +427,10 @@ function startSeries(){
   game=series.games[0]; lobby.hidden=true; arena.hidden=false;
   series.first=Math.random()<.5?0:1;startSeriesGame();
 }
-function startSeriesGame(){
+async function startSeriesGame(){
+  if(clubIntroPending)return;
   clearTimers(); game=series.games[series.index];
+  if(clubEntry){clubIntroPending=true;try{await clubReveal(game.name)}finally{clubIntroPending=false}}
   window.dispatchEvent(new CustomEvent('avk:game-start',{detail:{game:game.id,id:crypto.randomUUID()}})); round=series.index+1; attempt=0;
   starter=(series.first+series.index)%2; turn=starter;
   $('game-title').textContent=`${game.icon} ${game.name}`; beginRound();
