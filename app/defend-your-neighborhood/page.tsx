@@ -1,6 +1,7 @@
 "use client";
 import {useEffect,useState} from "react";
 import Link from "next/link";
+import IndianaMap from "./indiana-map";
 type Territory={name:string;lat:number;lon:number;radius:number;points:number;updated:number};
 const KEY="avk-territory-preview-v1";
 const DAY=86400000;
@@ -26,6 +27,7 @@ export default function NeighborhoodGame(){
  <p style={{color:"#facc15",fontWeight:800,letterSpacing:3,marginTop:30}}>👑 PREMIUM ARCADE</p>
  <h1 style={{fontSize:"clamp(30px,6vw,56px)",margin:"8px 0"}}>DEFEND YOUR NEIGHBORHOOD™</h1>
  <p style={{fontSize:18,color:"#e5e7eb"}}>Claim your spot. Play games together. Earn points and defend your family's crown!</p>
+ <IndianaMap name={territory?.name||name} lat={territory?.lat??lat} lon={territory?.lon??lon} claimed={!!territory}/>
  <div style={{background:"#18181b",border:"1px solid #b98b27",borderRadius:20,padding:20,marginTop:22}}>
  <h2 style={{marginTop:0}}>1. Choose your territory</h2>
  <div style={{display:"flex",gap:8,flexWrap:"wrap"}}><input aria-label="Search location" value={place} onChange={e=>setPlace(e.target.value)} style={{flex:"1 1 220px",padding:12,borderRadius:10,color:"#111"}}/><button onClick={search} disabled={busy} style={btn}>{busy?"Searching…":"Search map"}</button><button onClick={locate} style={btn}>📍 Near me</button></div>
