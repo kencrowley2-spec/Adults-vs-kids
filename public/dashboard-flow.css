@@ -1,5 +1,5 @@
 /* A connected family space with fewer stacked frames and nested buttons. */
-body.platform{background-image:radial-gradient(ellipse 1000px 760px at 10% 0%,#ffd52212,transparent 72%),radial-gradient(ellipse 850px 1200px at 100% 35%,#3b4bff0b,transparent 75%),linear-gradient(#111318b0,#111318b0),url('/assets/dashboard-brick.svg')}
+body.platform{background-image:radial-gradient(ellipse 1000px 760px at 10% 0%,#ffd52220,transparent 72%),radial-gradient(ellipse 850px 1200px at 100% 35%,#3b4bff0b,transparent 75%),linear-gradient(#171a20a3,#171a20a3),url('/assets/dashboard-brick.svg')}
 body.platform .platform-main{padding-top:32px}
 body.platform .family-riddle{padding-bottom:28px}
 body.platform .platform-welcome{padding:12px 0 24px;background:transparent;border-radius:0;box-shadow:none;border-bottom:1px solid #ffffff18;color:#f6f2e6}
@@ -56,3 +56,9 @@ body.platform .dashboard-social{background:transparent;border:0;border-top:1px s
 body.platform .dashboard-social h2{color:#f6f2e6;font-size:26px;margin-bottom:24px}
 body.platform .dashboard-social p{color:#b8bbc1}
 @media(max-width:760px){body.platform .platform-main{padding-top:32px}body.platform .family-riddle{padding-bottom:24px}body.platform .dashboard-arcade-entry{margin-bottom:12px}body.platform .dashboard-arcade-neon{width:min(100%,420px)}body.platform .family-roster-card header p{font-size:8px}body.platform .platform-stats .roster-team .roster-player{padding:10px 9px;font-size:16px;gap:6px}body.platform .platform-bottom{gap:8px}body.platform .library-badge{padding:20px 16px;gap:10px}}
+
+/* Warm, steady bulbs keep the arcade cozy without flashing or washing it out. */
+body.platform .dashboard-warm-lights{height:78px;margin:-24px -8px 8px;overflow:hidden;pointer-events:none;user-select:none}
+body.platform .dashboard-warm-lights img{display:block;width:100%;height:100%;object-fit:cover;object-position:center top;max-width:none}
+body.platform .family-riddle>small{color:#bcb38f}
+@media(max-width:760px){body.platform .dashboard-warm-lights{height:66px;margin:-24px -12px 12px}body.platform .dashboard-warm-lights img{width:900px;max-width:none;position:relative;left:50%;transform:translateX(-50%)}}
