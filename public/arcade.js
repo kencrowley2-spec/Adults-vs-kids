@@ -1,7 +1,7 @@
 import {mountFaces} from './arcade-faces.js?v=1';
 import {mountDraw} from './arcade-draw.js?v=1';
 import {mountLava} from './arcade-lava.js?v=7';
-import {createLobbyMusic} from './arcade-lobby-music.js?v=1';
+import {createLobbyMusic} from './arcade-lobby-music.js?v=2';
 import {mountClaw,clawPrizes,clawFireworks} from './arcade-claw.js?v=1';
 import {mountMole,molePlan,createMoleAudio} from './arcade-mole.js?v=4';
 import {mountFrog,frogCourses,frogRoundWinner} from './arcade-frog.js?v=3';
@@ -269,7 +269,7 @@ const lobbyMusic=createLobbyMusic({
   const toggle=$('lobby-music-toggle');if(!toggle)return;
   toggle.textContent=playing?'Pause music':'Play music';toggle.setAttribute('aria-pressed',String(playing));
   $('lobby-soundbar').setAttribute('data-playing',String(playing));
-  $('lobby-music-status').textContent=playing?'Now playing · Neon Family Nights':!lobbyMusicWanted?'Music paused':!available?'Tap Play music to start':blocked?'Tap Play music to start':'Music starts with your first tap';
+  $('lobby-music-status').textContent=playing?'Now playing · Family Night Groove':!lobbyMusicWanted?'Music paused':!available?'Tap Play music to start':blocked?'Tap Play music to start':'Music starts with your first tap';
  }
 });
 $('lobby-music-volume').value=String(Math.round(lobbyMusicVolume*100));

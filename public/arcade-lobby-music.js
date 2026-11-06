@@ -1,8 +1,9 @@
-// Original instrumental: 112 BPM synth bass, analog pads, power chords and drums.
+// Original instrumental: Family Night Groove — 104 BPM, swung electric piano,
+// round finger-style bass, mellow mallets and light pocket drums.
 // All audio is synthesized locally; there are no external streams or downloads.
 export function createLobbyMusic({getContext,allowed,onState=()=>{},volume=.25}){
  let audio=null,bus=null,timer=null,playing=false,pending=false,epoch=0,next=0,step=0,noiseBuffer=null;
- const nodes=new Set(),connections=new Set(),sixteenth=60/112/4;
+ const nodes=new Set(),connections=new Set(),sixteenth=60/104/4;
  const report=(extra={})=>onState({playing,pending,available:!!audio,...extra});
  function release(node,gain){nodes.delete(node);try{node.disconnect();gain.disconnect();}catch{}}
  function route(source,gain,filterType,frequency){
@@ -10,7 +11,7 @@ export function createLobbyMusic({getContext,allowed,onState=()=>{},volume=.25})
   if(filterType&&audio.createBiquadFilter){const filter=audio.createBiquadFilter();filter.type=filterType;filter.frequency.value=frequency;gain.connect(filter);filter.connect(bus);connections.add(filter);return filter;}
   gain.connect(bus);return null;
  }
- function note(midi,at,duration,level,type='sawtooth',detune=0,fall=false){
+ function note(midi,at,duration,level,type='sine',detune=0,fall=false){
   const osc=audio.createOscillator(),gain=audio.createGain(),hz=440*2**((midi-69)/12);
   osc.type=type;osc.frequency.setValueAtTime(hz,at);if(osc.detune)osc.detune.value=detune;
   if(fall)osc.frequency.exponentialRampToValueAtTime(42,at+duration);
@@ -25,23 +26,47 @@ export function createLobbyMusic({getContext,allowed,onState=()=>{},volume=.25})
   gain.gain.setValueAtTime(level,at);gain.gain.exponentialRampToValueAtTime(.0001,at+duration);
   const filter=route(source,gain,'highpass',frequency);nodes.add(source);source.onended=()=>{release(source,gain);if(filter){filter.disconnect();connections.delete(filter);}};source.start(at);source.stop(at+duration+.01);
  }
+ function piano(midi,at,duration,level){
+  // A rounded tine tone: a warm fundamental with a short, quiet bell overtone.
+  note(midi,at,duration,level,'sine');
+  note(midi+12,at,duration*.45,level*.19,'sine');
+  note(midi+19,at,.09,level*.055,'sine');
+ }
  function arrange(at){
-  const beat=step%16,bar=Math.floor(step/16)%4,section=Math.floor(step/64)%4,root=[40,36,43,38][bar];
-  // Driving eighth-note bass and a quiet offbeat octave.
-  if(beat%2===0)note(root+(beat===10?12:0),at,.19,.11,'sawtooth');
-  if(beat===7||beat===15)note(root+12,at,.08,.04,'triangle');
-  if(beat===0){
-   const third=bar===0?3:4;
-   for(const interval of [0,third,7]){note(root+12+interval,at,1.9,.014,'sawtooth',-7);note(root+12+interval,at,1.9,.014,'sawtooth',7);}
+  const beat=step%16,bar=Math.floor(step/16)%8,section=Math.floor(step/128)%4;
+  const root=[36,36,45,45,41,41,43,43][bar];
+  const chords=[[60,64,67,71],[60,64,67,69],[57,60,64,67],[57,60,64,71],
+   [57,60,64,67],[57,60,65,69],[55,59,62,69],[55,59,64,67]];
+  // Delay every other sixteenth slightly for a relaxed human swing.
+  at+=beat%2?sixteenth*.16:0;
+  const bass={0:0,3:12,6:7,8:0,11:7,14:bar%2?11:12};
+  if(bass[beat]!==undefined){
+   const midi=root+bass[beat];
+   note(midi,at,beat===0?.32:.19,.16,'sine');
+   note(midi+12,at,.12,.022,'sine');
   }
-  if(section!==0&&[0,6,8,14].includes(beat))for(const interval of [0,7,12])note(root+12+interval,at,.16,.018,'sawtooth',4);
-  const hook=[12,null,19,24,null,22,19,null,15,null,17,19,null,12,7,null];
-  if(section!==2&&hook[beat]!==null){note(root+hook[beat]+12,at,.2,.035,'triangle');note(root+hook[beat]+12,at+.16,.15,.012,'triangle');}
-  if([0,8].includes(beat)||section===3&&beat===14)note(51,at,.18,.24,'sine',0,true);
-  if(beat===4||beat===12){noise(at,.19,.12,1300);note(49,at,.1,.08,'triangle');}
-  if(beat%2===0)noise(at,.035,.04,6500);
-  if(beat===15&&section===3)noise(at,.08,.035,5200);
-  step=(step+1)%256;
+  if([0,6,10].includes(beat)&&!(section===2&&beat===10)){
+   chords[bar].forEach((midi,i)=>piano(midi,at+i*.009,beat===0?.8:.38,.025));
+  }
+  // An eight-bar call and response, with space between phrases.
+  const phrases=[
+   {2:76,5:79,7:81,10:79,14:76}, {3:74,6:72,10:71},
+   {2:76,5:79,8:83,11:81,14:79}, {2:76,6:74,10:72},
+   {3:69,6:72,9:76,14:79}, {2:76,5:74,10:72},
+   {2:71,5:74,8:79,11:81}, {2:79,6:76,10:74,14:71}
+  ];
+  const melody=phrases[bar][beat];
+  if(section!==2&&melody!==undefined){
+   piano(melody+(section===3&&bar>5?12:0),at,.36,.036);
+   note(melody,at+.22,.25,.006,'sine');
+  }
+  // A short breakdown and small fills keep the loop from becoming a siren.
+  if([0,8].includes(beat)||(section!==2&&beat===11&&bar%2))note(48,at,.16,.21,'sine',0,true);
+  if(beat===4||beat===12){noise(at,.085,.052,1800);note(50,at,.07,.025,'triangle');}
+  if(beat%2===0)noise(at,.027,beat%4===2?.018:.010,7200);
+  if(section!==2&&beat===15&&bar%2)noise(at,.055,.013,6000);
+  if(section===3&&bar===7&&[13,14,15].includes(beat))piano(67+(beat-13)*2,at,.12,.018);
+  step=(step+1)%512;
  }
  function schedule(){
   if(!playing)return;
