@@ -39,3 +39,10 @@
 .lp-slide.charlie-launch-slide img{flex:1;min-height:0;height:calc(100% - 42px);object-fit:contain}
 .lp-slide-launch{flex:none;position:relative;display:block;padding:8px 18px;border-radius:99px;background:#ffd006;color:#111;font-size:14px;font-weight:900;line-height:1.2;text-align:center;box-shadow:0 3px 12px #0003}
 @media(max-width:700px){.lp-slide.charlie-launch-slide{gap:8px;padding:8px 8px 12px}.lp-slide-launch{font-size:12px;padding:7px 14px}}
+
+/* A little game-night warmth between the photo deck and the welcome. */
+.lp-warm-lights{width:100%;height:82px;flex:none;position:relative;margin:-12px 0 8px;overflow:hidden;pointer-events:none;user-select:none;background:radial-gradient(ellipse 55% 85% at 50% 35%,#ffcf580c,transparent 85%)}
+.lp-warm-lights img{display:block;width:100%;height:100%;object-fit:cover;object-position:center top;max-width:none}
+.lp-hero-copy{position:relative;isolation:isolate}
+.lp-hero-copy:before{content:'';position:absolute;inset:-35px -15px -25px;z-index:-1;pointer-events:none;background:radial-gradient(ellipse at 50% 0%,#ffcf580c,transparent 70%)}
+@media(max-width:700px){.lp-warm-lights{height:66px;margin:-12px 0 8px}.lp-warm-lights img{width:900px;max-width:none;position:relative;left:50%;transform:translateX(-50%)}}
