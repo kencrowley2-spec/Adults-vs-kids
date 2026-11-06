@@ -1069,3 +1069,7 @@ $('mole-volume')?.addEventListener('input',()=>{moleVolume=Number($('mole-volume
 window.addEventListener('pagehide',()=>{if(game?.id==='mole')clearTimers();});
 
 lobbyMusic.stop();lobbyMusic.start();
+
+// Public game links enter the selected catalog game after account verification.
+const linkedGame=new URLSearchParams(location.search).get('game');
+if(GAMES.some(g=>g.id===linkedGame&&!g.comingSoon))openGame(linkedGame);
