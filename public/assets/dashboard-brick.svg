@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="112" viewBox="0 0 240 112">
+ <defs><linearGradient id="brick" x2="0" y2="1"><stop stop-color="#212328"/><stop offset="1" stop-color="#17191d"/></linearGradient></defs>
+ <path fill="#101215" d="M0 0h240v112H0z"/>
+ <g fill="url(#brick)" stroke="#292b30" stroke-opacity=".45">
+  <rect x="3" y="3" width="114" height="50" rx="4"/><rect x="123" y="3" width="114" height="50" rx="4"/>
+  <rect x="-57" y="59" width="114" height="50" rx="4"/><rect x="63" y="59" width="114" height="50" rx="4"/><rect x="183" y="59" width="114" height="50" rx="4"/>
+ </g>
+</svg>

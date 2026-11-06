@@ -117,3 +117,23 @@ body.platform{margin:0;background:#f5f4ef;color:#171c19;font-family:Arial,Helvet
 .platform .platform-welcome .platform-eyebrow{margin-bottom:8px}
 .platform .platform-welcome .founding-member-recognition{margin:12px 0 0}
 @media(max-width:600px){.platform .platform-welcome{padding:16px 20px}}
+
+/* Game-room backdrop: quiet brickwork with warm light behind the play cards. */
+body.platform{background-color:#14161a;background-image:radial-gradient(ellipse 1000px 760px at 10% 0%,#ffd52213,transparent 72%),radial-gradient(ellipse 850px 1200px at 100% 35%,#3b4bff0b,transparent 75%),linear-gradient(#11131855,#11131855),url('/assets/dashboard-brick.svg');background-size:auto,auto,auto,240px 112px}
+.platform .platform-header{background:#101215;border-bottom:1px solid #ffd52238;color:#f7f5ec;box-shadow:0 5px 24px #0003}
+.platform .platform-brand small,.platform .platform-account small{color:#bfc2c7}
+.platform .platform-mobile-menu{background:#25282c;color:#ffd522;border:1px solid #ffd52240}
+.platform .platform-sidebar{background:#101215;border:1px solid #ffffff13;box-shadow:0 12px 28px #0003}
+.platform .family-riddle>small{color:#dfca79}
+.platform .family-riddle blockquote p{color:#f6f2e6;text-shadow:0 2px 8px #0005}
+.platform .family-riddle-controls summary,.platform .family-riddle-controls button{color:#ffe16a}
+.platform .family-riddle-controls details p{color:#f1ead5}
+.platform .family-riddle-controls summary:hover,.platform .family-riddle-controls button:hover{color:#fff1ae}
+.platform .platform-welcome{box-shadow:0 10px 30px #0004}
+.platform .paperback-shopping{box-shadow:0 8px 24px #0002}
+.platform .dashboard-arcade-button{box-shadow:0 6px 26px #0004,0 0 20px #ffd52208}
+.platform .platform-footer{color:#b8bcc1;border-top-color:#ffffff26}
+.platform .platform-footer b{color:#ece9df}
+.platform .platform-footer .return-website{color:#ffe16a}
+.platform .platform-footer .return-website:hover{color:#fff1ae}
+.platform .family-riddle button:focus-visible,.platform .family-riddle summary:focus-visible,.platform .platform-header a:focus-visible,.platform .platform-header button:focus-visible,.platform .platform-footer a:focus-visible{outline:3px solid #ffd522;outline-offset:4px}
