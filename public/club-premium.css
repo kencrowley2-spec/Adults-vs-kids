@@ -46,3 +46,51 @@ dialog.player-profile-dialog{background:#f9faf6;color:#2c3e38;border:1px solid #
 .club-first-screen .club-website-link{min-height:0;font-size:6px;letter-spacing:.12em}
 @media(min-width:600px){.club-first-screen .player-hero{padding-left:26px;padding-right:26px}.club-first-screen .player-greeting h1{font-size:26px}.club-first-screen .player-clock time{font-size:22px}.club-first-screen .club-key-icon{width:36px;height:36px}.club-first-screen .club-key>span:last-of-type{font-size:12px}}
 @media(max-height:650px){.club-first-screen{grid-template-rows:120px 42px minmax(0,1fr) 23px}.club-first-screen .club-key{gap:5px;padding:4px}.club-first-screen .club-key-icon{width:27px;height:27px}.club-first-screen .club-key-icon svg{width:19px;height:19px}.club-first-screen .club-key>span:last-of-type{font-size:9px}.club-first-screen .club-key small{font-size:4px}}
+
+/* The Clubhouse: white porcelain, brushed gold, and a personal beach view. */
+:root{--gold:#a17b25;--line:#d8c795;--gold-fill:linear-gradient(110deg,#b68b30,#f3de96 48%,#b68b30)}
+body{background:#eeeae2;color:#171715}
+.club-home .app-shell,.club-home main{background:#fff}
+.club-home .preview-bar{background:#fff;color:#716544;letter-spacing:.04em}
+.club-first-screen{height:calc(100svh - 96px - env(safe-area-inset-bottom));min-height:0;grid-template-rows:154px 80px minmax(0,1fr) 25px;background:#fff}
+.club-first-screen .player-hero{padding:10px 18px 0;background-position:center 55%;border-bottom:1px solid #e5dcc4}
+.player-hero[data-scene=coast],.profile-scene[data-scene=coast]{background-image:url('/assets/club-scenes/crystal-beach.webp')}
+.club-first-screen .player-hero:before{background:linear-gradient(180deg,#042f4c24 0%,#ffffff00 30%,#ffffffeb 45%,#fff 62%)}
+.club-first-screen .headshot-button{width:44px;height:44px;border:2px solid #fff;box-shadow:0 2px 9px #6f572e33;background:#e2cf97}
+.club-first-screen .avatar-edit{color:#937023}
+.club-first-screen .player-wordmark{color:#fff;text-shadow:0 1px 4px #15354a99}
+.club-first-screen .player-header-details{padding:5px 0 3px;gap:10px;color:#181818}
+.club-first-screen .player-greeting h1{color:#151515;font-size:25px;font-weight:750}
+.club-first-screen .player-greeting>.profile-eyebrow{color:#987521;font-size:6px;letter-spacing:.06em;margin-bottom:3px}
+.club-first-screen .player-clock{color:#191919}.club-first-screen .player-clock time{font-size:23px;font-weight:700}
+.club-first-screen .player-clock>span{color:#615b4e;font-size:8px}
+.club-first-screen .profile-text-button{color:#5d523a}
+.club-first-screen .profile-bottomline{border:0;min-height:24px;margin-bottom:5px;gap:5px}
+.club-first-screen .profile-bottomline>span{background:var(--gold-fill);color:#30250d;padding:5px 10px;border-radius:20px;font-size:7px;letter-spacing:.04em;font-weight:750}
+.club-first-screen .profile-bottomline button{color:#856b30;font-size:6px}
+.club-first-screen .club-news-strip{display:flex;flex-direction:column;justify-content:center;gap:2px;padding:7px 18px 5px;background:#fff;border:0}
+.clubhouse-sign{display:block;width:min(100%,420px);height:49px;object-fit:fill}
+.club-first-screen .club-news-strip p{margin:0;color:#665839;font-size:10px;line-height:1.2;text-align:center}
+.club-first-screen .club-keypad{background:#fff;gap:7px;padding:4px 12px 8px}
+.club-first-screen .club-key{background:linear-gradient(145deg,#fff,#fdfcf8);border:1px solid #c8b16f;border-radius:7px;box-shadow:0 1px 2px #9d7a2512;color:#171715;gap:7px;padding:6px 3px}
+.club-first-screen .club-key:hover{background:#fcf3dc;border-color:#967025}
+.club-first-screen .club-key-icon{border:0;border-radius:0;color:#a08135;width:32px;height:32px}
+.club-first-screen .club-key-icon svg{width:29px;height:29px}
+.club-first-screen .club-key>span:last-of-type{font-size:10px;font-weight:750}
+.club-first-screen .club-key small{color:#947a3c;font-size:5px}
+.club-first-screen .club-website-link{margin:0 12px;border:0;border-radius:5px;background:var(--gold-fill);color:#30250d;font-size:8px;font-weight:750;letter-spacing:.035em}
+.bottom-nav{background:#fffefb;border-color:#d8c795}.bottom-nav a,.bottom-nav a>span{color:#292722}.bottom-nav a[aria-current],.bottom-nav a[aria-current]>span{color:#9b7723}
+.club-home .bottom-nav{height:calc(72px + env(safe-area-inset-bottom));padding:5px 6px calc(5px + env(safe-area-inset-bottom))}
+.club-home .bottom-nav a{min-height:0;font-size:8px;gap:5px;padding:5px 0}
+.club-home .bottom-nav a[aria-current]:before{background:#c29b38;top:-5px}
+.club-home-arcade,.profile-load-status{background:#fffdf7}.club-home .club-home-arcade h2{color:#352b18}
+.gold-button,.navy-button{border-color:#c8b16f}.gold-banner,.winter-banner{background:#faf4e4;border-color:#d8c795}.tabs .active{background:#8b6b29;border-color:#8b6b29}.pill{background:#f2e5bd;color:#705621}
+@media(min-width:600px){.club-first-screen{grid-template-rows:164px 86px minmax(0,1fr) 27px}.club-first-screen .club-keypad{gap:9px;padding-left:20px;padding-right:20px}.club-first-screen .club-key>span:last-of-type{font-size:12px}.clubhouse-sign{height:54px}}
+@media(max-height:690px){.club-first-screen{grid-template-rows:130px 64px minmax(0,1fr) 23px}.club-first-screen .player-hero{padding-top:7px}.club-first-screen .headshot-button{width:35px;height:35px}.club-first-screen .player-greeting h1{font-size:21px}.club-first-screen .player-clock time{font-size:19px}.clubhouse-sign{height:39px}.club-first-screen .club-news-strip p{font-size:8px}.club-first-screen .club-keypad{gap:5px}.club-first-screen .club-key{gap:4px;padding:3px}.club-first-screen .club-key-icon{width:25px;height:25px}.club-first-screen .club-key-icon svg{width:23px;height:23px}.club-first-screen .club-key>span:last-of-type{font-size:9px}}
+@media(max-height:520px){.club-first-screen{height:auto;min-height:450px;grid-template-rows:130px 64px 230px 23px}}
+
+.club-first-screen{grid-template-rows:154px 90px minmax(0,1fr) 25px}
+.clubhouse-sign-frame{position:relative;width:min(100%,360px);aspect-ratio:5.3;overflow:hidden;flex:none}
+.clubhouse-sign-frame .clubhouse-sign{position:absolute;width:100%;height:auto;max-width:none;top:50%;transform:translateY(-48%);object-fit:contain}
+@media(max-height:690px){.club-first-screen{grid-template-rows:130px 70px minmax(0,1fr) 23px}.clubhouse-sign-frame{width:min(100%,275px)}}
+@media(max-height:520px){.club-first-screen{height:auto;min-height:460px;grid-template-rows:130px 70px 230px 23px}}

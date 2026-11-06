@@ -6,7 +6,7 @@
  try{active=sessionStorage.getItem('avk-club-player')||'account'}catch{}
  const player=key=>snapshot?.players.find(p=>p.key===key);
  const validImage=value=>typeof value==='string'&&/^data:image\/jpeg;base64,[A-Za-z0-9+/]+={0,2}$/.test(value);
- const saved=key=>{const p=player(key),v=snapshot?.profiles.find(p=>p.profile_key===key);return {key,name:v?.display_name||p?.name||'Family Captain',scene:['alpine','coast','dusk'].includes(v?.scene)?v.scene:'alpine',headshot:validImage(v?.headshot)?v.headshot:'',backdrop:validImage(v?.backdrop)?v.backdrop:''}};
+ const saved=key=>{const p=player(key),v=snapshot?.profiles.find(p=>p.profile_key===key);return {key,name:v?.display_name||p?.name||'Family Captain',scene:['alpine','coast','dusk'].includes(v?.scene)?v.scene:'coast',headshot:validImage(v?.headshot)?v.headshot:'',backdrop:validImage(v?.backdrop)?v.backdrop:''}};
  function paintPhoto(target,src,name){target.replaceChildren();if(src){const img=document.createElement('img');img.src=src;img.alt=name+' profile photo';target.appendChild(img)}else target.innerHTML=avatarMarkup;}
  function notice(text,error=false){$('profileFormStatus').textContent=text;$('profileFormStatus').classList.toggle('error',error)}
  function controls(){const unavailable=!snapshot||busy;form.querySelectorAll('input,select,button').forEach(e=>e.disabled=unavailable);$('savePlayerProfile').disabled=unavailable||processing>0;$('savePlayerProfile').textContent=busy?'SAVING…':processing?'PREPARING PHOTO…':'SAVE MY PROFILE →';}
