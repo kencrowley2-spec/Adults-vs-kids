@@ -1,3 +1,4 @@
+import {addSocialLinks,socialProfiles} from './social-links';
 import {pdfProducts} from '../config/pdfs';
 import {guides} from './activity-content';
 export const ORIGIN='https://adultsvskids.com';
@@ -25,7 +26,7 @@ export function enrichPublicHtml(html:string,path:string,extra:object[]=[]){
  const canonicalPath=path==='/website'?'/':path;
  const page=publicPages[canonicalPath];if(!page)return html;
  const url=ORIGIN+(canonicalPath==='/'?'/':canonicalPath);
- const graph:object[]=[{'@type':'Organization','@id':ORIGIN+'/#organization',name:'ADULTS vs. KIDS',url:ORIGIN,logo:ORIGIN+'/assets/brand-logo.jpg',slogan:'Less Supervising. More Playing.'},{'@type':'WebSite','@id':ORIGIN+'/#website',url:ORIGIN+'/',name:'Adults vs. Kids',publisher:{'@id':ORIGIN+'/#organization'},inLanguage:'en'},{'@type':guides.some(g=>'/'+g.slug===path)?'Article':'WebPage','@id':url+'#page',url,name:page.title,headline:page.title,description:page.description,inLanguage:'en',isPartOf:{'@id':ORIGIN+'/#website'},publisher:{'@id':ORIGIN+'/#organization'},...(guides.some(g=>'/'+g.slug===path)?{author:{'@id':ORIGIN+'/#organization'}}:{})},...extra];
+ const graph:object[]=[{'@type':'Organization','@id':ORIGIN+'/#organization',name:'ADULTS vs. KIDS',url:ORIGIN,logo:ORIGIN+'/assets/brand-logo.jpg',slogan:'Less Supervising. More Playing.',sameAs:socialProfiles.map(profile=>profile.url)},{'@type':'WebSite','@id':ORIGIN+'/#website',url:ORIGIN+'/',name:'Adults vs. Kids',publisher:{'@id':ORIGIN+'/#organization'},inLanguage:'en'},{'@type':guides.some(g=>'/'+g.slug===path)?'Article':'WebPage','@id':url+'#page',url,name:page.title,headline:page.title,description:page.description,inLanguage:'en',isPartOf:{'@id':ORIGIN+'/#website'},publisher:{'@id':ORIGIN+'/#organization'},...(guides.some(g=>'/'+g.slug===path)?{author:{'@id':ORIGIN+'/#organization'}}:{})},...extra];
  if(canonicalPath!=='/')graph.push({'@type':'BreadcrumbList',itemListElement:[{'@type':'ListItem',position:1,name:'Home',item:ORIGIN+'/'},{'@type':'ListItem',position:2,name:page.title,item:url}]});
  html=html.replace(/<title>[\s\S]*?<\/title>/i,'').replace(/<meta\s+name="(?:description|robots)"[^>]*>/gi,'').replace(/<link\s+rel="canonical"[^>]*>/gi,'');
  const verification=[['google-site-verification',process.env.GOOGLE_SITE_VERIFICATION],['msvalidate.01',process.env.BING_SITE_VERIFICATION]].filter((x):x is [string,string]=>!!x[1]).map(([n,v])=>`<meta name="${n}" content="${escapeHtml(v)}">`).join('');
@@ -33,6 +34,6 @@ export function enrichPublicHtml(html:string,path:string,extra:object[]=[]){
  for(const name of ['coloring-cover-final.jpg','family-cover-final.png','make-play-cover-final.jpg','young-adult-cover-final.png','young-adult-official-cover.jpg'])html=html.replaceAll('src="/assets/'+name+'"','src="/assets/web-'+name.replace(/\.[^.]+$/,'.webp')+'"');
  const sizes:Record<string,[number,number]>={'web-coloring-cover-final.webp':[680,1018],'web-family-cover-final.webp':[680,1046],'web-make-play-cover-final.webp':[680,1123],'web-young-adult-cover-final.webp':[680,1052],'web-young-adult-official-cover.webp':[680,961],'landing-family-personal.webp':[1942,809],'landing-sisters-book.webp':[1536,588],'landing-marker-fun.webp':[679,662],'landing-family-invite.webp':[1536,643]};
  html=html.replace(/<img\b[^>]*>/g,tag=>{const name=tag.match(/src="\/assets\/([^"]+)"/)?.[1];if(!name||!sizes[name]||/\bwidth=/.test(tag))return tag;const [w,h]=sizes[name];return tag.replace('<img','<img width="'+w+'" height="'+h+'"');});
- return html.replace('</head>',head+'</head>');
+ return addSocialLinks(html.replace('</head>',head+'</head>'));
 }
 export function publicLinks(){return `<nav class="seo-links" style="padding:24px;line-height:2" aria-label="Family play guides"><a href="/family-games">Free family games</a> · <a href="/family-game-night-ideas">Family game night ideas</a> · <a href="/games-to-play-with-kids-in-the-car">Car games</a> · <a href="/paperback-books">Paperback books</a> · <a href="/quality-time-with-children">Quality time together</a></nav>`;}
