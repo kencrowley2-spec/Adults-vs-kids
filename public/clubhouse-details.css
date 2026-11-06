@@ -98,3 +98,26 @@ dialog .dialog-head .dark-pill{background:#f3e7c2;color:#6d531b}
 .club-legacy-units{font-size:5px;letter-spacing:.03em;color:#c7b988;line-height:1.2;text-align:right;max-width:75px}
 @media(min-width:600px){.club-legacy-label{font-size:8px;max-width:none}.club-legacy-units{font-size:7px;max-width:none}.club-legacy-digits{font-size:23px}}
 @media(max-width:350px){.club-first-screen .club-legacy-strip{gap:4px;padding:0 6px}.club-legacy-digits{font-size:20px}.club-legacy-label{font-size:5px;max-width:60px}.club-legacy-units{font-size:4px;max-width:60px}}
+
+/* Family Roster shares the account's Arcade lineup and opens above Home. */
+dialog.club-roster-dialog{width:min(560px,calc(100vw - 24px));max-height:90svh;padding:22px;overflow:auto}
+.club-roster-dialog .dialog-head{display:flex;align-items:center;justify-content:space-between;gap:15px;margin-bottom:14px}
+.club-roster-dialog h2{font-size:27px;margin-top:5px}.club-roster-dialog .dialog-head button{width:38px;height:38px;flex:none}
+.club-roster-subtitle,.roster-select-hint{text-align:center;font-size:11px;line-height:1.5}.club-roster-subtitle{font-weight:700;letter-spacing:.05em;color:#927025}.roster-select-hint{margin:9px 0 18px}
+.club-roster-dialog .family-roster-teams{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.club-roster-dialog .roster-team{padding:16px 10px;background:#fff;border:1px solid #d2bb7b;border-radius:9px;min-width:0}
+.club-roster-dialog .roster-team h3{display:flex;align-items:center;justify-content:center;gap:7px;color:#8d6920;font-size:14px;line-height:1.3;margin-bottom:18px}.club-roster-dialog .roster-team h3 svg{width:20px;height:20px;flex:none}
+.club-roster-dialog .roster-team ul{list-style:none;padding:0;margin:0;display:grid;gap:9px}
+.roster-player{display:flex;align-items:center;gap:7px;padding:10px 9px;width:100%;min-height:45px;background:#fff;color:#665637;border:1px solid #d9cba7;border-radius:25px;font-size:14px;text-align:left}
+.roster-player b{flex:1;overflow-wrap:anywhere;min-width:0}.roster-player-star{color:#aa842b;font-size:21px;line-height:1}.roster-player-check{color:#9a7420;font-size:17px;min-width:14px}
+.roster-player[aria-pressed=true]{background:#f8edcd;border-color:#b99339;color:#624715}
+.roster-empty{font-size:12px;color:#8a7b5e;text-align:center;padding:14px 0;line-height:1.5}
+.roster-playing-status{text-align:center;color:#8a6720;font-size:12px;font-weight:750;margin:18px 0;line-height:1.5}
+.club-roster-actions{display:flex;justify-content:center;flex-wrap:wrap;gap:9px}.club-roster-actions .gold-button{font-size:12px;min-height:44px;padding:10px 15px}.club-roster-actions button{background:#fffefa}
+.roster-load-status,.club-roster-note{font-size:11px;text-align:center;line-height:1.5;margin-top:12px}.club-roster-note{color:#8a7b60;font-size:10px}
+dialog.roster-dialog{width:min(560px,calc(100vw - 24px));padding:22px;max-height:90svh;overflow:auto}.roster-dialog-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}.roster-dialog-heading h2{font-size:24px}.roster-dialog-heading button{border:1px solid #d8c795;background:#fffaf0;color:#826324;border-radius:6px;min-width:38px;min-height:38px}
+.roster-dialog-intro{font-size:12px;line-height:1.6;margin:16px 0}.roster-editor-teams{display:grid;grid-template-columns:1fr 1fr;gap:14px}.roster-editor-teams fieldset{border:1px solid #d8c795;border-radius:8px;padding:12px 9px;min-width:0}.roster-editor-teams legend{color:#8e6b23;font-size:12px;font-weight:700;padding:0 4px}
+.roster-editor-row{display:flex;align-items:center;gap:5px;margin:9px 0}.roster-editor-row input{width:100%;min-width:0;padding:10px 7px;font-size:13px;min-height:42px}.roster-editor-row button{flex:none;width:27px;min-height:38px;background:#fffaf0;color:#8e6b23;border:1px solid #d8c795;border-radius:5px}
+.roster-editor-teams fieldset>button{padding:10px 5px;background:transparent;color:#8d6920;border:0;font-size:12px;min-height:42px}.roster-save{display:block;width:100%;margin:18px 0 8px;min-height:46px;background:var(--gold-fill);color:#30250d;border:1px solid #bc993f;border-radius:6px;font-weight:750}
+#roster-editor-status{font-size:12px;line-height:1.5}.roster-dialog :focus-visible,.club-roster-dialog :focus-visible{outline:2px solid #a17b25;outline-offset:3px}
+@media(max-width:350px){dialog.club-roster-dialog,dialog.roster-dialog{padding:16px}.club-roster-dialog .family-roster-teams{gap:8px}.club-roster-dialog .roster-team{padding:13px 7px}.club-roster-dialog .roster-team h3{font-size:12px}.roster-player{font-size:12px;padding:9px 6px}.roster-editor-teams{grid-template-columns:1fr}}
