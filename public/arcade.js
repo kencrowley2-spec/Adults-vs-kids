@@ -1,3 +1,4 @@
+import {mountFaces} from './arcade-faces.js?v=1';
 import {mountDraw} from './arcade-draw.js?v=1';
 import {mountLava} from './arcade-lava.js?v=7';
 import {createLobbyMusic} from './arcade-lobby-music.js?v=1';
@@ -7,8 +8,8 @@ import {mountFrog,frogCourses,frogRoundWinner} from './arcade-frog.js?v=3';
 import {mountTreasure,treasurePlan} from './arcade-treasure.js?v=1';
 import {mountBlocks} from './arcade-blocks.js?v=1';
 import {mountBasketball} from './arcade-basketball.js?v=1';
-import {coverMarkup,recentGames} from './arcade-library.js?v=13';
-import {GAMES, ANIMALS, TRIVIA, PICTURES, CHALLENGES} from './arcade-data.js?v=30';
+import {coverMarkup,recentGames} from './arcade-library.js?v=14';
+import {GAMES, ANIMALS, TRIVIA, PICTURES, CHALLENGES} from './arcade-data.js?v=31';
 import {shuffle, roundWinner, awardRound, lineWinner} from './arcade-core.js';
 
 import {makeMaze, codeClues, rpsWinner, GOLF_COURSES, golfStep} from './arcade-new-core.js?v=5';
@@ -371,6 +372,15 @@ function openLava(){
   matchId=crypto.randomUUID();
  }});
 }
+function openFaces(){
+ lobbyMusic.stop();clearTimeout(featuredTimer);clearTimers();
+ rememberGame('faces');arena.hidden=true;lobby.hidden=true;
+ const adultsOnly=selectedPlayers[1].length===0&&selectedPlayers[0].length>=2;
+ const faceNames=adultsOnly?[selectedPlayers[0].filter((_,i)=>i%2===0).join(' & '),selectedPlayers[0].filter((_,i)=>i%2===1).join(' & ')]:selectedPlayers.map((list,i)=>list.join(' & ')||names[i]);
+ mountFaces({players:faceNames,onExit:()=>{arena.hidden=true;lobby.hidden=false;game=null;scheduleFeatured();lobbyMusic.start();document.querySelector('[data-game="faces"]')?.focus();},onComplete:result=>{
+  window.dispatchEvent(new CustomEvent('avk:game-complete',{detail:{game:'faces',winner:result.winner}}));
+ }});
+}
 function openDraw(){
  lobbyMusic.stop();clearTimeout(featuredTimer);clearTimers();
  let matchId=crypto.randomUUID();rememberGame('draw');arena.hidden=true;lobby.hidden=true;
@@ -382,6 +392,7 @@ function openDraw(){
  }});
 }
 function openGame(id){
+  if(id==='faces')return openFaces();
   if(id==='draw')return openDraw();
   if(id==='lava')return openLava();
   if(GAMES.find(g=>g.id===id)?.comingSoon)return;
@@ -396,7 +407,7 @@ function openGame(id){
 function startSeries(){
   lobbyMusic.stop();clearTimeout(featuredTimer);
   clearTimers();
-  series={games:shuffle(GAMES.filter(g=>!g.comingSoon&&!g.premium&&g.id!=='lava'&&g.id!=='draw')).slice(0,3),index:0,winners:[],first:0};
+  series={games:shuffle(GAMES.filter(g=>!g.comingSoon&&!g.premium&&g.id!=='lava'&&g.id!=='draw'&&g.id!=='faces')).slice(0,3),index:0,winners:[],first:0};
   startRecording('series',series.games.map(g=>g.id));
   wins=[0,0]; round=1; attempt=0; starter=0; turn=0; champion=-1; results=[]; used={};
   game=series.games[0]; lobby.hidden=true; arena.hidden=false;
