@@ -90,3 +90,11 @@ dialog .dialog-head .dark-pill{background:#f3e7c2;color:#6d531b}
 .club-first-screen .profile-notifications{margin-left:auto;margin-right:0;align-self:flex-start}
 .clubhouse-interior-brand{padding-top:6px;padding-bottom:6px;padding-right:8px;margin-bottom:22px;gap:0}
 .clubhouse-interior-top{min-height:44px}
+
+/* Same persisted Family Legacy Clock, fitted to the existing slim dashboard bar. */
+.club-first-screen .club-legacy-strip{display:flex;justify-content:space-between;gap:7px;padding:0 10px;background:#201e18;border:1px solid #bda05a;color:#d9b953;letter-spacing:0;overflow:hidden}
+.club-legacy-label{font-size:6px;font-weight:700;letter-spacing:.06em;max-width:75px;line-height:1.2}
+.club-legacy-digits{color:#e3c46d;font-size:22px;line-height:1;font-weight:750;font-variant-numeric:tabular-nums;white-space:nowrap;letter-spacing:.03em}
+.club-legacy-units{font-size:5px;letter-spacing:.03em;color:#c7b988;line-height:1.2;text-align:right;max-width:75px}
+@media(min-width:600px){.club-legacy-label{font-size:8px;max-width:none}.club-legacy-units{font-size:7px;max-width:none}.club-legacy-digits{font-size:23px}}
+@media(max-width:350px){.club-first-screen .club-legacy-strip{gap:4px;padding:0 6px}.club-legacy-digits{font-size:20px}.club-legacy-label{font-size:5px;max-width:60px}.club-legacy-units{font-size:4px;max-width:60px}}
