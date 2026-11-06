@@ -82,3 +82,11 @@ dialog .dialog-head .dark-pill{background:#f3e7c2;color:#6d531b}
 :is(#networkChallengeError,#networkNeighborhoodError,#lobbyChallengeError,#lobbyAcceptError){color:#a34331}
 .player-profile-dialog .profile-privacy,.player-profile-dialog #profileFormStatus{color:#79694c}
 @media print{.club-detail .printable pre{background:white;color:black;border:0}}
+
+/* Keep the signature plaque on Home and the website logo small at the right edge. */
+.clubhouse-website-logo,.club-first-screen .player-wordmark.clubhouse-website-logo{width:78px;min-height:44px;padding:2px;margin-left:4px}
+.clubhouse-website-logo img{max-height:32px}
+.club-first-screen .player-topline{margin-right:-10px;gap:8px}
+.club-first-screen .profile-notifications{margin-left:auto;margin-right:0;align-self:flex-start}
+.clubhouse-interior-brand{padding-top:6px;padding-bottom:6px;padding-right:8px;margin-bottom:22px;gap:0}
+.clubhouse-interior-top{min-height:44px}
