@@ -33,3 +33,9 @@
 .lp-arcade-neon img{display:block;position:absolute;width:114.2%;max-width:none;height:auto;left:-6.7%;top:-48%}
 @media(max-width:700px){.lp-actions{gap:14px}.lp-arcade-entry{gap:12px;min-height:130px;padding:18px 14px}.lp-arcade-prompt{font-size:clamp(18px,4.8vw,30px);flex-basis:34%}.lp-arcade-neon{flex-basis:66%}.lp-actions>.lp-button{grid-column:1/-1}}
 @media(prefers-reduced-motion:reduce){.lp-arcade-entry{transition:none}}
+
+/* Keep the launch date readable while preserving the full Charlie artwork. */
+.lp-slide.charlie-launch-slide{flex-direction:column;gap:10px;padding:12px 12px 16px}
+.lp-slide.charlie-launch-slide img{flex:1;min-height:0;height:calc(100% - 42px);object-fit:contain}
+.lp-slide-launch{flex:none;position:relative;display:block;padding:8px 18px;border-radius:99px;background:#ffd006;color:#111;font-size:14px;font-weight:900;line-height:1.2;text-align:center;box-shadow:0 3px 12px #0003}
+@media(max-width:700px){.lp-slide.charlie-launch-slide{gap:8px;padding:8px 8px 12px}.lp-slide-launch{font-size:12px;padding:7px 14px}}
