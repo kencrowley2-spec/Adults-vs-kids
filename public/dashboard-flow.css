@@ -1,0 +1,58 @@
+/* A connected family space with fewer stacked frames and nested buttons. */
+body.platform{background-image:radial-gradient(ellipse 1000px 760px at 10% 0%,#ffd52212,transparent 72%),radial-gradient(ellipse 850px 1200px at 100% 35%,#3b4bff0b,transparent 75%),linear-gradient(#111318b0,#111318b0),url('/assets/dashboard-brick.svg')}
+body.platform .platform-main{padding-top:32px}
+body.platform .family-riddle{padding-bottom:28px}
+body.platform .platform-welcome{padding:12px 0 24px;background:transparent;border-radius:0;box-shadow:none;border-bottom:1px solid #ffffff18;color:#f6f2e6}
+body.platform .platform-welcome .platform-eyebrow{color:#e6cd70;font-size:9px;letter-spacing:1.6px}
+body.platform .platform-welcome h1{font-size:clamp(27px,3vw,39px);line-height:1.2;letter-spacing:-1px}
+body.platform .platform-welcome .founding-member-recognition{padding:0;margin-top:16px;border:0;border-radius:0;background:transparent;box-shadow:none;gap:12px}
+body.platform .founding-member-recognition img{width:56px;height:56px;border-radius:50%}
+body.platform .founding-member-recognition strong{font-size:12px}
+body.platform .founding-member-recognition span{font-size:10px}
+body.platform .founding-member-recognition .founding-member-copy small{font-size:10px;margin-top:3px}
+body.platform .founding-member-recognition:hover .founding-member-copy small{text-decoration:underline;text-underline-offset:3px}
+body.platform .platform-welcome .founding-member-recognition:focus-visible{outline-color:#ffd522}
+body.platform .paperback-shopping{display:block;grid-template-columns:none;margin:18px 0 0;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none}
+body.platform .paperback-buy-button{display:flex;align-items:center;gap:13px;width:100%;max-width:100%;min-height:64px;padding:14px 0;border:0;border-radius:0;background:transparent;color:#f5f1e7;box-shadow:none;font-size:16px}
+body.platform .paperback-buy-button:hover{background:transparent;box-shadow:none;color:#ffe16a}
+body.platform .paperback-buy-button:focus-visible{outline-color:#ffd522}
+body.platform .paperback-buy-copy small{color:#b9bdc3;font-weight:400;font-size:12px;margin-top:4px}
+body.platform .book-link-icon{width:26px;height:26px;color:#ffd522;flex-shrink:0}
+body.platform .book-link-arrow{margin-left:auto;color:#ffd522;font-size:24px}
+body.platform .dashboard-arcade-entry{margin:4px 0 30px}
+body.platform .dashboard-arcade-button{flex-direction:column;justify-content:center;gap:14px;min-height:0;padding:25px 0 30px;border:0;border-radius:0;background:transparent;box-shadow:none}
+body.platform .dashboard-arcade-button:hover{background:transparent;box-shadow:none}
+body.platform .dashboard-arcade-prompt{flex:initial;font-size:13px;font-weight:600;letter-spacing:1.3px;color:#dadde0}
+body.platform .dashboard-arcade-neon{flex:initial;width:min(100%,490px);min-width:0;border-radius:24px;box-shadow:0 0 24px #ff263b20,0 0 40px #3b41ff15}
+body.platform .platform-stats.roster-stats{gap:30px;margin-top:0;margin-bottom:38px}
+body.platform .platform-stats .family-roster-card{padding:26px 0 0;border:0;border-top:1px solid #ffffff20;border-radius:0;background:transparent;box-shadow:none;overflow:visible}
+body.platform .family-roster-card header h2{text-shadow:none;font-size:clamp(24px,3vw,30px);letter-spacing:-.7px}
+body.platform .family-roster-card header p{font-weight:600;letter-spacing:.7px;color:#b8bbc1}
+body.platform .family-roster-card .roster-select-hint{color:#b8bbc1;margin-top:12px;margin-bottom:22px}
+body.platform .family-roster-teams .roster-team{background:#ffffff05;border-radius:20px;border-top:2px solid #ffd52266;overflow:hidden}
+body.platform .family-roster-teams .roster-kids{background:#ffffff05;border-top-color:#ffffff66}
+body.platform .roster-team h3{background:transparent;padding:16px 8px 4px;color:#ffe16a;border:0;font-size:16px}
+body.platform .roster-kids h3{background:transparent;color:#f2f3f5;border:0}
+body.platform .roster-team ul{padding:14px 12px 18px;gap:10px;min-height:90px}
+body.platform .platform-stats .roster-team .roster-player{min-height:48px;padding:11px 13px;border-radius:28px;font-size:18px;background:#ffffff0b;color:#f5f5f5;border:1px solid #ffffff1c;box-shadow:none}
+body.platform .platform-stats .roster-team .roster-player[aria-pressed="true"]{background:#ffd5221a;color:#ffe16a;border-color:#ffd52299;box-shadow:none}
+body.platform .platform-stats .roster-kids .roster-player[aria-pressed="true"]{background:#ffffff15;color:#fff;border-color:#ffffff99;box-shadow:none}
+body.platform .roster-kids .roster-player-star,body.platform .roster-kids .roster-player-check{color:#f1f1ee}
+body.platform .roster-empty{color:#b8bbc1}
+body.platform .platform-stats .family-roster-card .manage-roster-button{background:transparent;color:#ffe16a;box-shadow:none;border:1px solid #ffd52255;border-radius:30px;padding:13px 24px;font-size:14px;margin-top:8px}
+body.platform .platform-stats .family-clock-card{grid-column:1/-1;padding:24px 0;border:0;border-top:1px solid #ffffff20;border-radius:0;background:transparent;box-shadow:none}
+body.platform .family-clock-card>div{max-width:520px;margin:auto}
+body.platform .lifetime-score{padding:28px 0;margin:0 0 38px;border:0;border-top:1px solid #ffffff20;border-radius:0;background:transparent;box-shadow:none}
+body.platform .showdown-library{border:0;border-radius:24px;box-shadow:none}
+body.platform .library-badge{padding:22px;gap:18px}
+body.platform .library-badge-icon{background:transparent;box-shadow:none;color:#111;width:40px;height:48px;font-size:36px}
+body.platform .platform-bottom{gap:28px;margin:34px 0}
+body.platform .platform-bottom article{padding:28px 0;border:0!important;border-top:1px solid #ffffff20!important;border-radius:0;background:transparent!important}
+body.platform .platform-bottom .platform-button{border-radius:30px;box-shadow:none;white-space:normal;line-height:1.4}
+body.platform .host-feature-icon,body.platform .tools-feature .feature-clock{display:none}
+body.platform .dashboard-game-ideas{margin-top:0;padding-top:12px;border-top:1px solid #ffffff20}
+body.platform .dashboard-game-ideas .paperback-click-cue{border:0;padding-left:0;color:#ffd522}
+body.platform .dashboard-social{background:transparent;border:0;border-top:1px solid #ffffff20;border-radius:0;padding:28px 0 0;margin-top:26px}
+body.platform .dashboard-social h2{color:#f6f2e6;font-size:26px;margin-bottom:24px}
+body.platform .dashboard-social p{color:#b8bbc1}
+@media(max-width:760px){body.platform .platform-main{padding-top:32px}body.platform .family-riddle{padding-bottom:24px}body.platform .dashboard-arcade-entry{margin-bottom:12px}body.platform .dashboard-arcade-neon{width:min(100%,420px)}body.platform .family-roster-card header p{font-size:8px}body.platform .platform-stats .roster-team .roster-player{padding:10px 9px;font-size:16px;gap:6px}body.platform .platform-bottom{gap:8px}body.platform .library-badge{padding:20px 16px;gap:10px}}
