@@ -1,0 +1,15 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {JSDOM} from 'jsdom';
+import {clubPage} from '../lib/club-app.ts';
+const source=readFileSync('public/club-network.js','utf8');
+const fixture={profile:{name:'Our <Family>',code:'A'.repeat(32),role:'family_admin'},connections:[{id:'11111111-1111-1111-1111-111111111111',name:'<img src=x onerror=alert(1)>',type:'friend',status:'accepted',incoming:false},{id:'22222222-2222-2222-2222-222222222222',name:'Another Family',type:'family',status:'pending',incoming:true}],challenges:[],onlinePlayReady:false};
+const dom=new JSDOM(clubPage('network'),{url:'https://adultsvskids.com/admin/app/network',runScripts:'outside-only'}),w=dom.window,d=w.document,calls=[];
+w.HTMLDialogElement.prototype.showModal=function(){this.open=true};w.HTMLDialogElement.prototype.close=function(){this.open=false};w.confirm=()=>true;
+w.fetch=async(url,opts)=>{calls.push({url,opts});return{ok:true,json:async()=>structuredClone(fixture)}};w.eval(source);await new Promise(r=>setTimeout(r,0));
+assert.equal(d.getElementById('networkApproved').textContent,'1');assert.equal(d.getElementById('networkPending').textContent,'1');assert.equal(d.querySelector('#networkCircle img'),null);assert.match(d.getElementById('networkCircle').textContent,/<img src=x/);assert.equal(d.querySelector('#networkNameForm input').value,'Our <Family>');
+d.querySelector('[data-network-action="approve"]').click();await new Promise(r=>setTimeout(r,0));assert.deepEqual(JSON.parse(calls.at(-1).opts.body),{action:'approve',data:{id:'22222222-2222-2222-2222-222222222222'}});
+d.querySelector('[data-network-action="open_challenge"]').click();assert.equal(d.getElementById('networkChallengeDialog').open,true);d.getElementById('networkChallengeForm').dispatchEvent(new w.Event('submit',{bubbles:true,cancelable:true}));await new Promise(r=>setTimeout(r,0));assert.deepEqual(JSON.parse(calls.at(-1).opts.body),{action:'challenge',data:{id:'11111111-1111-1111-1111-111111111111',game:'balloons'}});assert.equal(d.getElementById('networkChallengeDialog').open,false);assert.match(d.getElementById('networkNotice').textContent,/invitation sent/);w.close();
+const empty=new JSDOM(clubPage('network'),{url:'https://adultsvskids.com/admin/app/network',runScripts:'outside-only'});empty.window.fetch=async()=>({ok:true,json:async()=>({profile:null,connections:[],challenges:[]})});empty.window.eval(source);await new Promise(r=>setTimeout(r,0));assert.ok(empty.window.document.getElementById('setupNetwork'));assert.equal(empty.window.document.querySelector('#networkRequestForm button').disabled,true);empty.window.close();
+assert.match(clubPage('home'),/href="\/admin\/app\/network"/);
+console.log('PASS: dashboard link, network totals, escaped family aliases, approval action, challenge dialog and invitation payload, uninitialized-family protection.');
