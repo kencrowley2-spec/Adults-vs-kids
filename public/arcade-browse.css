@@ -112,3 +112,7 @@ body:has(#arcade-lobby[hidden]) .arcade-tabs{display:none}
 }
 @media(max-width:360px){.arcade-tabs a,.arcade-tabs button{font-size:9px}.arcade-tabs-inner{gap:0}body:has(#arcade-lobby:not([hidden])) .feature-poster{right:0;width:105px}}
 @media(prefers-reduced-motion:reduce){html:has(.arcade-tabs){scroll-behavior:auto}.game-track .game-tile:hover{transform:none!important}}
+/* Let the shelves share one quiet backdrop instead of separate boxed headings. */
+body:has(#arcade-lobby:not([hidden]))::before{display:none}
+body:has(#arcade-lobby:not([hidden])) .arcade-library-top,
+body:has(#arcade-lobby:not([hidden])) .shelf-heading{background:none;border:0;border-radius:0;padding:0;box-shadow:none}
