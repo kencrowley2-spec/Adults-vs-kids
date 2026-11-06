@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 const elements=new Map(),listeners=new Map(),intervals=new Map();let tickId=0,now=0;
 function element(id){if(!elements.has(id)){const classes=new Set();elements.set(id,{value:'',checked:true,disabled:false,innerHTML:'',textContent:'',dataset:{},classList:{add:c=>classes.add(c),remove:c=>classes.delete(c),contains:c=>classes.has(c),toggle:(c,on)=>on?classes.add(c):classes.delete(c)},setAttribute(){},removeAttribute(){},addEventListener:(n,f)=>listeners.set(id+':'+n,f),showModal(){this.open=true},close(){this.open=false;listeners.get(id+':close')?.()},querySelectorAll:()=>scoreButtons})}return elements.get(id)}
 const scoreButtons=[0,1].flatMap(i=>[-1,1].map(delta=>({dataset:{showdownTeam:String(i),delta:String(delta)}})));
-const context={document:{getElementById:element,addEventListener:(n,f)=>listeners.set(n,f)},window:{addEventListener:(n,f)=>listeners.set(n,f)},performance:{now:()=>now},setInterval:(f,ms)=>{const id=++tickId;intervals.set(id,{f,ms});return id},clearInterval:id=>intervals.delete(id),console};
+const context={URLSearchParams,location:{search:''},document:{getElementById:element,addEventListener:(n,f)=>listeners.set(n,f)},window:{addEventListener:(n,f)=>listeners.set(n,f)},performance:{now:()=>now},setInterval:(f,ms)=>{const id=++tickId;intervals.set(id,{f,ms});return id},clearInterval:id=>intervals.delete(id),console};
 vm.runInNewContext(fs.readFileSync('public/family-tools.js','utf8'),context);
 const click=id=>element(id).onclick(),round=()=>element('showdownRound').textContent;
 context.window.openFamilyTools();assert.equal(round(),'ROUND 1 OF 12');assert.equal(element('showdownPrev').disabled,true);
