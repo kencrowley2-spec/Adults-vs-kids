@@ -62,3 +62,84 @@ body.platform .dashboard-warm-lights{height:78px;margin:-24px -8px 8px;overflow:
 body.platform .dashboard-warm-lights img{display:block;width:100%;height:100%;object-fit:cover;object-position:center top;max-width:none}
 body.platform .family-riddle>small{color:#bcb38f}
 @media(max-width:760px){body.platform .dashboard-warm-lights{height:66px;margin:-24px -12px 12px}body.platform .dashboard-warm-lights img{width:900px;max-width:none;position:relative;left:50%;transform:translateX(-50%)}}
+
+/* Boxed home dashboard: two compact welcome cards, one featured Arcade,
+   a central live clock, and paired shortcuts on every screen size. */
+body.platform .platform-main{padding-top:20px}
+body.platform .dashboard-warm-lights{height:46px;margin:-12px -8px 14px}
+body.platform .dashboard-top-grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:14px;align-items:stretch}
+body.platform .platform-welcome{min-height:160px;padding:22px;border:1px solid #ffffff24;border-radius:18px;background:linear-gradient(135deg,#34301d,#1b1e24 80%);box-shadow:0 8px 24px #0002}
+body.platform .platform-welcome h1{font-size:clamp(23px,2.8vw,36px);margin:8px 0 0;letter-spacing:-.8px}
+body.platform .platform-welcome .platform-eyebrow{font-size:9px;line-height:1.5;letter-spacing:1.1px}
+body.platform .dashboard-top-grid .paperback-shopping{display:flex;margin:0;min-width:0}
+body.platform .dashboard-top-grid .paperback-buy-button{flex-direction:column;align-items:flex-start;justify-content:center;position:relative;height:100%;gap:13px;padding:22px;border:1px solid #ffd52255;border-radius:18px;background:linear-gradient(140deg,#302c1d,#1c2026);box-shadow:0 8px 24px #0002;font-size:20px}
+body.platform .dashboard-top-grid .book-link-icon{width:32px;height:32px}
+body.platform .dashboard-top-grid .book-link-arrow{position:absolute;top:20px;right:18px;width:18px;height:18px}
+body.platform .platform-welcome .founding-member-recognition{gap:9px;margin-top:14px;text-align:left;max-width:100%}
+body.platform .platform-welcome .founding-member-recognition img{width:40px;height:40px;flex-shrink:0}
+body.platform .platform-welcome .founding-member-copy{min-width:0}
+body.platform .platform-welcome .founding-member-copy strong{font-size:10px}
+body.platform .platform-welcome .founding-member-copy>span{font-size:10px}
+body.platform .platform-welcome .founding-member-copy small{font-size:9px;line-height:1.4}
+body.platform .dashboard-arcade-entry{margin:14px 0}
+body.platform .dashboard-arcade-button{gap:18px;min-height:230px;padding:26px;border:1px solid #ffd52275;border-radius:20px;background:radial-gradient(ellipse at 50% 100%,#28359450,transparent 65%),linear-gradient(135deg,#211d1b,#13151d);box-shadow:0 10px 28px #0003}
+body.platform .dashboard-arcade-prompt{font-size:12px;font-weight:800;letter-spacing:2px;color:#ffe16a;text-transform:uppercase}
+body.platform .dashboard-arcade-neon{width:min(85%,620px);border-radius:16px}
+body.platform .dashboard-arcade-button:hover{background-color:#242631;box-shadow:0 0 24px #ffd52218}
+body.platform .platform-stats.dashboard-clock-row{display:block;margin:0 0 14px}
+body.platform .platform-stats.dashboard-clock-row .family-clock-card{padding:18px 24px;border:1px solid #ffd52250;border-radius:18px;background:#111419eF;box-shadow:0 6px 20px #0002;text-align:center}
+body.platform .dashboard-clock-row .family-clock-card>div{max-width:520px}
+body.platform .dashboard-clock-row .family-clock-card small{font-size:10px;letter-spacing:1.5px}
+body.platform .dashboard-clock-row .family-clock-card .family-legacy-clock{display:block;width:100%;font-size:clamp(30px,5.5vw,48px);margin:10px auto 6px;padding:8px 12px;letter-spacing:3px}
+body.platform .dashboard-clock-row .family-clock-card .family-clock-caption{display:block;font-size:8px}
+body.platform .dashboard-clock-row .family-clock-card .family-clock-note{font-size:11px;margin-top:10px}
+body.platform .dashboard-action-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:0 0 14px}
+body.platform .dashboard-action-grid>a,body.platform .dashboard-action-grid>button{position:relative;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:9px;min-width:0;min-height:142px;padding:22px;border:1px solid #ffffff26;border-radius:18px;background:linear-gradient(145deg,#292c32,#1b1e24);box-shadow:0 6px 20px #0002;color:#f6f2e6;text-decoration:none;text-align:left;cursor:pointer}
+body.platform .dashboard-action-grid strong{font-size:17px;line-height:1.3;overflow-wrap:anywhere;max-width:100%}
+body.platform .dashboard-action-grid small{color:#bdc1c9;font-size:12px;line-height:1.5}
+body.platform .dashboard-tile-icon{color:#ffd522;font-size:28px;line-height:1}
+body.platform .dashboard-tile-arrow{position:absolute;right:18px;top:18px;color:#ffd522;font-size:20px}
+body.platform .dashboard-action-grid>a:hover,body.platform .dashboard-action-grid>button:hover,body.platform .dashboard-top-grid .paperback-buy-button:hover{border-color:#ffd522;background-color:#30323a}
+body.platform .dashboard-action-grid>:focus-visible,body.platform .dashboard-top-grid a:focus-visible{outline:3px solid #ffd522;outline-offset:3px}
+body.platform .family-riddle{max-width:none;width:100%;margin:0 0 14px;padding:22px;border:1px solid #ffffff24;border-radius:18px;background:#1b1e24ed}
+body.platform .family-riddle blockquote p{font-size:clamp(19px,2.3vw,25px)}
+body.platform .platform-stats.roster-stats{display:block;margin:0 0 14px}
+body.platform .platform-stats .family-roster-card{padding:24px;border:1px solid #ffffff26;border-radius:18px;background:#1b1e24ed;overflow:hidden}
+body.platform .lifetime-score{margin:0 0 14px;padding:24px;border:1px solid #ffffff26;border-radius:18px;background:#1b1e24ed}
+body.platform .showdown-library{margin:0 0 14px;border:1px solid #ffd52255;border-radius:18px;overflow:hidden}
+body.platform .platform-bottom{grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:0 0 14px}
+body.platform .platform-bottom article{min-width:0;padding:22px;border:1px solid #ffffff26!important;border-radius:18px;background:#1b1e24ed!important}
+body.platform .platform-bottom h2{font-size:25px}
+body.platform .platform-bottom .platform-button{width:100%;padding:12px;border-radius:10px;font-size:12px}
+body.platform .dashboard-game-ideas{margin:0 0 14px;padding:0;border:0}
+body.platform .dashboard-game-ideas .paperback-buy-button{padding:22px;border:1px solid #ffffff26;border-radius:18px;background:#1b1e24ed}
+body.platform .dashboard-game-ideas .paperback-click-cue{margin-left:auto}
+body.platform .dashboard-social{margin:0 0 20px;padding:24px;border:1px solid #ffffff26;border-radius:18px;background:#1b1e24ed}
+@media(max-width:760px){
+ body.platform .platform-main{padding:16px}
+ body.platform .dashboard-top-grid,body.platform .dashboard-action-grid,body.platform .platform-bottom{gap:10px}
+ body.platform .platform-welcome{min-height:148px;padding:16px}
+ body.platform .platform-welcome h1{font-size:23px;letter-spacing:-.5px}
+ body.platform .platform-welcome .platform-eyebrow{font-size:8px;letter-spacing:.7px}
+ body.platform .dashboard-top-grid .paperback-buy-button{padding:16px;gap:12px;font-size:18px}
+ body.platform .paperback-buy-copy small{font-size:11px;line-height:1.4}
+ body.platform .dashboard-arcade-entry{margin:10px 0}
+ body.platform .dashboard-arcade-button{min-height:190px;padding:22px 16px;gap:22px}
+ body.platform .dashboard-arcade-neon{width:94%}
+ body.platform .platform-stats.dashboard-clock-row{margin-bottom:10px}
+ body.platform .platform-stats.dashboard-clock-row .family-clock-card{padding:16px}
+ body.platform .dashboard-action-grid{margin-bottom:10px}
+ body.platform .dashboard-action-grid>a,body.platform .dashboard-action-grid>button{min-height:145px;padding:17px 15px}
+ body.platform .dashboard-action-grid strong{font-size:15px}
+ body.platform .dashboard-action-grid small{font-size:11px}
+ body.platform .dashboard-tile-arrow{right:13px;top:13px}
+ body.platform .family-riddle{padding:20px 14px}
+ body.platform .platform-stats .family-roster-card,body.platform .lifetime-score{padding:20px 14px}
+ body.platform .platform-bottom article{padding:18px 14px}
+ body.platform .platform-bottom h2{font-size:22px;overflow-wrap:anywhere}
+ body.platform .platform-bottom p{font-size:12px}
+ body.platform .dashboard-game-ideas .paperback-buy-button{padding:20px 16px}
+ body.platform .dashboard-game-ideas .paperback-click-cue{font-size:0}
+ body.platform .dashboard-game-ideas .game-idea-arrow{font-size:22px}
+}
+@media(max-width:360px){body.platform .platform-main{padding:12px}body.platform .platform-welcome,body.platform .dashboard-top-grid .paperback-buy-button{padding:13px}body.platform .platform-welcome h1{font-size:21px}body.platform .platform-welcome .founding-member-recognition img{width:30px;height:30px}}
