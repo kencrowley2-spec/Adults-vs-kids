@@ -48,7 +48,7 @@ function fixture(firstTeam=0,withSpeech=false,withAudio=false,players=null,holdM
   if(players){const lineup=new Element();lineup.id='arcade-roster-lineup';lineup.setAttribute('data-adults',JSON.stringify(players[0]));lineup.setAttribute('data-kids',JSON.stringify(players[1]));root.appendChild(lineup);}
   root.querySelector('#arcade-game').hidden=true;
   const doc={hidden:false,getElementById:id=>root.querySelector('#'+id),createElement:tag=>new Element(tag),handlers:{},addEventListener(type,fn){this.handlers[type]=fn;}};
-  const speech={spoken:[],cancels:0,getVoices:()=>[{lang:'en-US',localService:true}],cancel(){this.cancels++;},speak(utterance){this.spoken.push(utterance);utterance.onstart?.();if(!holdMoleIntro&&(utterance.text.includes('Match starts in.')||utterance.text.includes(', match starts in.')))scheduled.set(++seq,{at:now+1000,fn:()=>utterance.onend?.()});}};
+  const speech={spoken:[],cancels:0,getVoices:()=>[{name:'Microsoft David',lang:'en-US',localService:true}],cancel(){this.cancels++;},speak(utterance){this.spoken.push(utterance);utterance.onstart?.();if(!holdMoleIntro&&(utterance.text.includes('Match starts in.')||utterance.text.includes(', match starts in.')))scheduled.set(++seq,{at:now+1000,fn:()=>utterance.onend?.()});}};
   const voiceWindow=withSpeech?{speechSynthesis:speech,SpeechSynthesisUtterance:class {constructor(text){this.text=text;}}}:{};
   const audio={nodes:[],gains:[]};
   class AudioContextMock {
@@ -862,16 +862,20 @@ console.log('PASS: club standard, special-game and series launches wait for name
  f.speech.getVoices=()=>[female,male];
  f.run("readArcade('Ready for bragging rights!')");
  assert.equal(f.speech.spoken.at(-1).voice,male);
- assert.equal(f.speech.spoken.at(-1).pitch,1.05);
+ assert.equal(f.speech.spoken.at(-1).pitch,1.02);
  f.run("announcerChoice='Microsoft Zira';readArcade('Preview')");
- assert.equal(f.speech.spoken.at(-1).voice,female);
+ assert.equal(f.speech.spoken.at(-1).voice,male);
+ const before=f.speech.spoken.length;
+ f.speech.getVoices=()=>[female,{name:'Daniel',lang:'en-GB'}];
+ f.run("readArcade('No American male yet')");
+ assert.equal(f.speech.spoken.length,before);
  f.speech.getVoices=()=>[];
  f.run("readArcade('Waiting for voices')");
- assert.equal(f.speech.spoken.at(-1).pitch,1.2);
+ assert.equal(f.speech.spoken.length,before);
  f.speech.getVoices=()=>[male];
  f.run("readArcade('Voices arrived')");
  assert.equal(f.speech.spoken.at(-1).voice,male);
  f.get('arcade-sound').click();const count=f.speech.spoken.length;
  f.run("readArcade('Muted')");assert.equal(f.speech.spoken.length,count);
 }
-console.log('PASS: friendly voice preference, saved choice, delayed voice loading, bouncy fallback and mute.');
+console.log('PASS: American male voice only, excluded British/female voices, delayed voice loading and mute.');

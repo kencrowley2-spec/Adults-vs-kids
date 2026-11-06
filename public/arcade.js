@@ -158,14 +158,14 @@ function stopTriviaVoice(){
   if(triviaSpeech){try{window.speechSynthesis.cancel();}catch{}triviaSpeech=null;}
   triviaVoiceStatus(soundOn?'Ready to read aloud':'Voice muted');
 }
-const announcerKey='avk-arcade-announcer-v1';
+const announcerKey='avk-arcade-american-male-v2';
 let announcerChoice='auto';
 try{announcerChoice=localStorage.getItem(announcerKey)||'auto';}catch{}
-function announcerVoices(){return (window.speechSynthesis?.getVoices()||[]).filter(v=>/^en(?:[-_]|$)/i.test(v.lang||''));}
+function announcerVoices(){return (window.speechSynthesis?.getVoices()||[]).filter(v=>/^en[-_]US$/i.test(v.lang||'')&&announcerScore(v)>=1000);}
 function announcerScore(v){
  const name=v.name||'';
  // Names only: native speech does not expose a gender field.
- const warm=/\b(Guy|Christopher|Eric|Davis|Tony|Ryan|Roger|Andrew|Brian|David|Mark|James|Daniel|Alex|Aaron|Fred|Oliver|George)\b|Google UK English Male|en-us-x-iom/i.test(name)&&!/female/i.test(name);
+ const warm=/\b(Guy|Christopher|Eric|Davis|Tony|Ryan|Roger|Andrew|Brian|David|Mark|James|Daniel|Alex|Aaron|Fred|Oliver|George)\b|en-us-x-(?:iom|iol|isom)/i.test(name)&&!/female/i.test(name);
  return (warm?1000:0)+(/natural|neural|enhanced|premium/i.test(name)?100:0)+(v.lang==='en-US'?10:0);
 }
 function announcerVoice(){
@@ -176,18 +176,18 @@ function announcerSettings(){
  const controls=document.querySelector('.arcade-controls');if(!controls)return;
  const open=document.createElement('button');open.type='button';open.textContent='🎙 Voice';controls.appendChild(open);
  const dialog=document.createElement('dialog');dialog.className='arcade-more';dialog.setAttribute('aria-label','Arcade announcer');
- dialog.innerHTML='<div class="arcade-dialog-head"><h2>Pick your funny announcer</h2><form method="dialog"><button aria-label="Close voice settings">×</button></form></div><div style="padding:18px;display:grid;gap:14px"><label for="arcade-announcer">Announcer voice</label><select id="arcade-announcer" style="width:100%;min-height:44px;font:inherit"></select><button type="button" id="arcade-announcer-preview" style="min-height:44px;font:inherit">🔊 Hear a sample</button><p style="margin:0;font-size:13px">Voices depend on your phone or browser. Your choice is saved on this device.</p><p id="arcade-announcer-status" role="status" style="margin:0"></p></div>';
+ dialog.innerHTML='<div class="arcade-dialog-head"><h2>Your upbeat American announcer</h2><form method="dialog"><button aria-label="Close voice settings">×</button></form></div><div style="padding:18px;display:grid;gap:14px"><label for="arcade-announcer">Announcer voice</label><select id="arcade-announcer" style="width:100%;min-height:44px;font:inherit"></select><button type="button" id="arcade-announcer-preview" style="min-height:44px;font:inherit">🔊 Hear a sample</button><p style="margin:0;font-size:13px">American male voices available on this device. Your choice is saved here.</p><p id="arcade-announcer-status" role="status" style="margin:0"></p></div>';
  document.body.appendChild(dialog);
  const select=dialog.querySelector('select'),status=dialog.querySelector('#arcade-announcer-status');
  function refresh(){
   select.replaceChildren();
-  const auto=document.createElement('option');auto.value='auto';auto.textContent='Funny announcer · automatic';select.appendChild(auto);
+  const auto=document.createElement('option');auto.value='auto';auto.textContent='Upbeat American male · automatic';select.appendChild(auto);
   for(const voice of announcerVoices().sort((a,b)=>announcerScore(b)-announcerScore(a))){const option=document.createElement('option');option.value=voice.voiceURI||voice.name;option.textContent=voice.name;select.appendChild(option);}
   select.value=announcerChoice;if(!select.value)select.value='auto';
  }
  function preview(){
   if(!soundOn||triviaVolume<=0){status.textContent='Turn Sound on and voice volume up to hear your sample.';return;}
-  status.textContent=canReadTrivia()?'Here comes your announcer!':'Voice is unavailable in this browser.';
+  status.textContent=!canReadTrivia()?'Voice is unavailable in this browser.':!announcerVoice()?'No American male voice is available on this device yet. Gameplay and sound effects still work.':'Here comes your American announcer!';
   readArcade('Welcome to the family showdown! Stretch those thumbs. Warm up those victory dances. Bragging rights are on the line!',triviaVolume,{rate:1.06});
  }
  select.addEventListener('change',()=>{announcerChoice=select.value;try{localStorage.setItem(announcerKey,announcerChoice);}catch{}preview();});
@@ -204,12 +204,13 @@ function readArcade(text,volume=triviaVolume,style={}){
   if(!soundOn){triviaVoiceStatus('Sound is off. Turn Sound on to hear questions and answers.');return;}
   if(document.hidden)return;
   const token=triviaSpeechToken;
+  const voice=announcerVoice();
+  if(!voice){triviaVoiceStatus('An American male voice is unavailable on this device. You can still read and play.');return;}
   try{
     const utterance=new window.SpeechSynthesisUtterance(text);triviaSpeech=utterance;
-    const voice=announcerVoice();
-    // A light, bouncy fallback instead of slowing/deepening the default voice.
-    utterance.lang=voice?.lang||'en-US';utterance.rate=style.rate??1.06;
-    utterance.pitch=voice&&announcerScore(voice)>=1000?1.05:1.2;utterance.volume=volume;
+    // Keep an American male voice at a natural pitch with an upbeat pace.
+    utterance.lang='en-US';utterance.rate=style.rate??1.08;
+    utterance.pitch=1.02;utterance.volume=volume;
     if(voice)utterance.voice=voice;
     triviaVoiceStatus('Voice ready · tap Hear question & answers if needed');
     utterance.onstart=()=>{if(token===triviaSpeechToken){triviaVoiceStatus('Reading aloud…',true);style.onStart?.();}};
