@@ -1,3 +1,4 @@
+import {mountDraw} from './arcade-draw.js?v=1';
 import {mountLava} from './arcade-lava.js?v=7';
 import {createLobbyMusic} from './arcade-lobby-music.js?v=1';
 import {mountClaw,clawPrizes,clawFireworks} from './arcade-claw.js?v=1';
@@ -6,8 +7,8 @@ import {mountFrog,frogCourses,frogRoundWinner} from './arcade-frog.js?v=3';
 import {mountTreasure,treasurePlan} from './arcade-treasure.js?v=1';
 import {mountBlocks} from './arcade-blocks.js?v=1';
 import {mountBasketball} from './arcade-basketball.js?v=1';
-import {coverMarkup,recentGames} from './arcade-library.js?v=12';
-import {GAMES, ANIMALS, TRIVIA, PICTURES, CHALLENGES} from './arcade-data.js?v=29';
+import {coverMarkup,recentGames} from './arcade-library.js?v=13';
+import {GAMES, ANIMALS, TRIVIA, PICTURES, CHALLENGES} from './arcade-data.js?v=30';
 import {shuffle, roundWinner, awardRound, lineWinner} from './arcade-core.js';
 
 import {makeMaze, codeClues, rpsWinner, GOLF_COURSES, golfStep} from './arcade-new-core.js?v=5';
@@ -360,7 +361,18 @@ function openLava(){
   matchId=crypto.randomUUID();
  }});
 }
+function openDraw(){
+ lobbyMusic.stop();clearTimeout(featuredTimer);clearTimers();
+ let matchId=crypto.randomUUID();rememberGame('draw');arena.hidden=true;lobby.hidden=true;
+ window.dispatchEvent(new CustomEvent('avk:game-start',{detail:{game:'draw',id:matchId}}));
+ mountDraw({players:selectedPlayers.map((list,i)=>list.join(' & ')||names[i]),onExit:()=>{arena.hidden=true;lobby.hidden=false;game=null;scheduleFeatured();lobbyMusic.start();document.querySelector('[data-game="draw"]')?.focus();},onComplete:result=>{
+  if(!kidsOnly&&result.winner!==null)recorder.capture({id:matchId,mode:'single',gameIds:['draw'],roundWinners:[result.winner]});
+  window.dispatchEvent(new CustomEvent('avk:game-complete',{detail:{game:'draw',winner:result.winner,scores:result.scores,id:matchId}}));
+  matchId=crypto.randomUUID();
+ }});
+}
 function openGame(id){
+  if(id==='draw')return openDraw();
   if(id==='lava')return openLava();
   if(GAMES.find(g=>g.id===id)?.comingSoon)return;
   lobbyMusic.stop();clearTimeout(featuredTimer);
@@ -374,7 +386,7 @@ function openGame(id){
 function startSeries(){
   lobbyMusic.stop();clearTimeout(featuredTimer);
   clearTimers();
-  series={games:shuffle(GAMES.filter(g=>!g.comingSoon&&!g.premium&&g.id!=='lava')).slice(0,3),index:0,winners:[],first:0};
+  series={games:shuffle(GAMES.filter(g=>!g.comingSoon&&!g.premium&&g.id!=='lava'&&g.id!=='draw')).slice(0,3),index:0,winners:[],first:0};
   startRecording('series',series.games.map(g=>g.id));
   wins=[0,0]; round=1; attempt=0; starter=0; turn=0; champion=-1; results=[]; used={};
   game=series.games[0]; lobby.hidden=true; arena.hidden=false;
