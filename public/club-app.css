@@ -72,3 +72,14 @@
 #networkChallengeForm label{margin:20px 0}#networkChallengeForm>.gold-button{margin-top:20px}#networkChallengeForm p{font-size:14px}#networkChallengeError{color:#ffb2bf}button:disabled{opacity:.5;cursor:wait}
 #networkCircle,#networkRequests,#networkChallenges{scroll-margin-top:70px}
 @media(max-width:400px){.network-card-heading{gap:9px}.network-card-heading h3{font-size:18px}.network-card-heading h2{font-size:19px}.network-avatar{width:43px;height:43px;font-size:26px}.network-code{padding:10px;gap:7px}.network-code code{font-size:12px}.network-status{font-size:9px}.network-entry small{font-size:10px}.network-metrics span{font-size:10px}}
+
+/* Profile action sheet inspired by familiar console friend menus. */
+.network-profile-dialog{padding:0;max-width:420px;overflow:hidden;background:#0c1929}
+.network-profile-dialog .dialog-head{padding:16px 18px;margin:0}
+.network-profile-hero{background:radial-gradient(ellipse at top,#3d4650,#10253b 75%);padding:8px 24px 25px;text-align:center;border-bottom:1px solid #f2d37c50}
+.network-profile-avatar{display:grid;place-items:center;width:84px;height:84px;margin:0 auto 14px;border-radius:50%;border:2px solid var(--gold);background:var(--gold-fill);color:#102033;font-size:50px;box-shadow:0 0 30px #f2d37c22}
+.network-profile-hero h2{color:var(--gold);font-size:26px;overflow-wrap:anywhere}.network-profile-hero p{font-size:12px;color:var(--muted)}
+.network-profile-menu{display:flex;flex-direction:column;padding:7px 0}
+.network-profile-menu button,.network-menu-pending{display:flex;justify-content:space-between;align-items:center;min-height:52px;width:100%;border:0;border-bottom:1px solid #ffffff16;border-radius:0;padding:14px 23px;color:#fff;background:transparent;text-align:left;font-size:16px;font-weight:500;box-shadow:none}
+.network-profile-menu button:after{content:'›';color:var(--gold);font-size:22px}.network-profile-menu button:first-child.gold-button{background:var(--gold-fill);color:#0b1726;font-weight:900}.network-profile-menu button:first-child.gold-button:after{color:#0b1726}.network-profile-menu button:hover{background:#293f55}.network-profile-menu button:first-child.gold-button:hover{background:var(--gold-fill);filter:brightness(1.05)}
+.network-menu-pending{color:var(--muted);font-size:14px}.network-public-profile{padding:12px 23px;background:#14273b;max-height:180px;overflow:auto}.network-public-profile p{font-size:13px;overflow-wrap:anywhere}.network-public-profile strong{color:var(--gold)}.network-profile-privacy{padding:12px 23px 20px;font-size:11px;color:var(--muted);margin:0}
