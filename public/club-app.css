@@ -43,3 +43,8 @@
 .club-home .app-footer p{font-size:10px;margin:0}
 @media(min-width:900px){.club-home .app-shell{max-width:700px}.club-home main{padding:22px 30px 8px}}
 @media(max-width:400px){.club-home main{padding:15px 14px 8px}.club-home .brand{font-size:27px}.club-home .welcome h1{font-size:22px}.club-home .gold-banner{padding:13px 126px 13px 13px;min-height:90px}.club-home .gold-banner h2{font-size:20px}.club-home .gold-banner .eyebrow{font-size:9px!important}.club-home .navy-button{right:11px;padding:9px 12px;font-size:12px}.club-home .section-heading h2{font-size:18px}.club-home .game-grid .game-card h3{font-size:15px}.club-home .game-grid .game-card .pill{font-size:7px}.club-home .game-grid .gold-button{font-size:10px;padding:7px 9px}.club-home .game-grid .gold-button span{display:none}.club-home .print-card h3{font-size:12px}.club-home .print-card>span{font-size:24px}.club-home .wide-link{font-size:11px}}
+
+/* Six persistent app destinations, including the club leaderboard. */
+.bottom-nav{grid-template-columns:repeat(6,minmax(0,1fr));gap:3px;padding-left:7px;padding-right:7px}
+.bottom-nav a{min-width:0}
+@media(max-width:480px){.bottom-nav a{font-size:9px;padding-left:0;padding-right:0}.bottom-nav a>span{font-size:26px}}
