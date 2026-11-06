@@ -66,7 +66,8 @@ body.platform .family-riddle>small{color:#bcb38f}
 /* Boxed home dashboard: two compact welcome cards, one featured Arcade,
    a central live clock, and paired shortcuts on every screen size. */
 body.platform .platform-main{padding-top:20px}
-body.platform .dashboard-warm-lights{height:46px;margin:-12px -8px 14px}
+body.platform .dashboard-warm-lights{height:78px;margin:-20px -8px 14px;position:relative;z-index:1}
+body.platform .dashboard-warm-lights img{object-fit:contain}
 body.platform .dashboard-top-grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:14px;align-items:stretch}
 body.platform .platform-welcome{min-height:160px;padding:22px;border:1px solid #ffffff24;border-radius:18px;background:linear-gradient(135deg,#34301d,#1b1e24 80%);box-shadow:0 8px 24px #0002}
 body.platform .platform-welcome h1{font-size:clamp(23px,2.8vw,36px);margin:8px 0 0;letter-spacing:-.8px}
