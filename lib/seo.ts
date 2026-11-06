@@ -21,6 +21,7 @@ export const publicPages:Record<string,{title:string;description:string}>={
 };
 export function bookSchema(){return pdfProducts.filter(p=>p.id!=='bundle').map(p=>({'@type':'Book','@id':ORIGIN+'/paperback-books#'+p.id,name:p.title,url:ORIGIN+'/paperback-books#'+p.id,image:ORIGIN+'/assets/'+p.cover,author:{'@type':'Person',name:'Kenneth W. Crowley'},publisher:{'@id':ORIGIN+'/#organization'},inLanguage:'en',description:'A family activity book from Adults vs. Kids for parents and children to play together.'}));}
 export function enrichPublicHtml(html:string,path:string,extra:object[]=[]){
+ html=html.replaceAll('href="#app-waitlist"','href="/explore#app-features"');
  const canonicalPath=path==='/website'?'/':path;
  const page=publicPages[canonicalPath];if(!page)return html;
  const url=ORIGIN+(canonicalPath==='/'?'/':canonicalPath);

@@ -10,7 +10,7 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "test": "node --experimental-strip-types tests/member-access.mjs",
+    "test": "node --experimental-strip-types tests/member-access.mjs && node tests/public-pages.mjs",
     "test:arcade": "node tests/arcade.mjs",
     "test:lava": "node tests/lava.mjs && node tests/lava-controller.mjs",
     "test:faces": "node tests/faces.mjs",
