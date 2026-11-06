@@ -9,3 +9,40 @@ dialog.player-profile-dialog{background:#f9faf6;color:#2c3e38;border:1px solid #
 @media(max-width:350px){.player-hero{padding:20px 17px 0;min-height:235px}.player-clock time{font-size:19px}.player-greeting h1{font-size:23px}.player-greeting>.profile-eyebrow{font-size:5.5px}.club-key{gap:12px}.club-key>span:last-of-type{font-size:9px}.club-news-strip{padding:13px 15px;gap:10px}.club-news-strip h2{font-size:12px}.club-key-icon{width:32px;height:32px}.club-key-icon svg{width:22px;height:22px}}
 @media(prefers-reduced-motion:reduce){.club-key{transition:none}}
 @media print{.club-home .player-hero,.club-keypad,.club-news-strip,.club-website-link{display:none}.app-shell{box-shadow:none}}
+
+/* Fit the complete home keypad above the bottom navigation on arrival. */
+.club-home .preview-bar{height:24px;min-height:24px;padding:0 12px;align-items:center}
+.club-first-screen{height:calc(100vh - 84px - max(9px,env(safe-area-inset-bottom)));height:calc(100svh - 84px - max(9px,env(safe-area-inset-bottom)));min-height:430px;display:grid;grid-template-rows:clamp(120px,21svh,170px) 46px minmax(0,1fr) 25px}
+.club-first-screen .player-hero{height:auto;min-height:0;max-height:none;aspect-ratio:auto;padding:12px 18px 0;background-position:center 52%}
+.club-first-screen .player-topline{align-items:flex-start;gap:10px}
+.club-first-screen .headshot-button{width:40px;height:40px}
+.club-first-screen .headshot-button svg{width:23px;height:23px}
+.club-first-screen .avatar-edit{width:16px;height:16px}
+.club-first-screen .avatar-edit svg{width:9px;height:9px}
+.club-first-screen .player-wordmark{font-size:12px;padding-top:3px}
+.club-first-screen .player-wordmark small{font-size:6px;margin-top:4px}
+.club-first-screen .profile-notifications{padding-top:1px;height:25px}
+.club-first-screen .profile-notifications svg{width:21px;height:21px}
+.club-first-screen .player-header-details{padding:6px 0 7px;gap:10px;align-items:center}
+.club-first-screen .player-greeting>.profile-eyebrow{font-size:5.5px;margin-bottom:5px;letter-spacing:.1em}
+.club-first-screen .player-greeting h1{font-size:22px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.15}
+.club-first-screen .profile-text-button{font-size:9px;padding:4px 0}
+.club-first-screen .player-clock{padding:0}
+.club-first-screen .player-clock time{font-size:18px}
+.club-first-screen .player-clock>span{font-size:7px;margin-top:4px}
+.club-first-screen .profile-bottomline{min-height:23px}
+.club-first-screen .profile-bottomline>span,.club-first-screen .profile-bottomline button{font-size:6px}
+.club-first-screen .club-news-strip{min-height:0;padding:6px 16px;gap:11px}
+.club-first-screen .news-line-icon{width:20px;height:20px}
+.club-first-screen .club-news-strip .profile-eyebrow{font-size:6px}
+.club-first-screen .club-news-strip h2{font-size:11px;line-height:1.25;margin-top:2px;max-width:none}
+.club-first-screen .club-news-strip>a{width:20px;height:20px}
+.club-first-screen .club-keypad{min-height:0;grid-template-rows:repeat(4,minmax(0,1fr))}
+.club-first-screen .club-key{aspect-ratio:auto;min-height:0;gap:8px;padding:6px 4px}
+.club-first-screen .club-key-icon{width:32px;height:32px;flex-shrink:0}
+.club-first-screen .club-key-icon svg{width:22px;height:22px}
+.club-first-screen .club-key>span:last-of-type{font-size:10px;line-height:1.2}
+.club-first-screen .club-key small{position:static;font-size:5px;line-height:1;margin-top:-3px}
+.club-first-screen .club-website-link{min-height:0;font-size:6px;letter-spacing:.12em}
+@media(min-width:600px){.club-first-screen .player-hero{padding-left:26px;padding-right:26px}.club-first-screen .player-greeting h1{font-size:26px}.club-first-screen .player-clock time{font-size:22px}.club-first-screen .club-key-icon{width:36px;height:36px}.club-first-screen .club-key>span:last-of-type{font-size:12px}}
+@media(max-height:650px){.club-first-screen{grid-template-rows:120px 42px minmax(0,1fr) 23px}.club-first-screen .club-key{gap:5px;padding:4px}.club-first-screen .club-key-icon{width:27px;height:27px}.club-first-screen .club-key-icon svg{width:19px;height:19px}.club-first-screen .club-key>span:last-of-type{font-size:9px}.club-first-screen .club-key small{font-size:4px}}
