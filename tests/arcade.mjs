@@ -67,6 +67,7 @@ function fixture(firstTeam=0,withSpeech=false,withAudio=false,players=null,holdM
   const basketballSource=readFileSync(new URL('../public/arcade-basketball.js',import.meta.url),'utf8').replace(/export /g,'');
   vm.runInContext(basketballSource,context);
   if(club)vm.runInContext('window.avkChallengeIntro=options=>{this.introOptions=options;return new Promise(resolve=>{this.finishIntro=resolve})}',context);
+  doc.querySelector=()=>null;
   const source=readFileSync(new URL('../public/arcade.js',import.meta.url),'utf8').replace(/^import .*;\n/gm,'');
   vm.runInContext(source+'\nthis.state=()=>({wins:[...wins],round,champion,turn,starter,attempt,plans:game?{maze:game.maze,codes:game.codes,safePoints:game.safePoints,course:game.course,frog:game.frogCourses}:null,series:series?{games:series.games.map(g=>g.id),index:series.index,winners:[...series.winners]}:null});this.resolveGame=finishRound;this.seriesWith=id=>{startSeries();clearTimers();series.games=[GAMES.find(g=>g.id===id),...GAMES.filter(g=>g.id!==id).slice(0,2)];startSeriesGame();};',context);
   const get=id=>doc.getElementById(id);
@@ -721,7 +722,7 @@ console.log('PASS: identical 1-point opportunities for both teams, exact perfect
 // Concise roster matchup, followed immediately by 3–2–1 when speech ends.
 for(const first of [0,1]){
  const f=fixture(0,true,false,[['Daddy'],['Harper','Chloe']],true);f.start('mole',first,false);
- const intro=f.speech.spoken.at(-1);assert.equal(intro.text,"Today's challenge is Daddy versus Harper and Chloe. Match starts in.");assert.equal(intro.rate,.9);
+ const intro=f.speech.spoken.at(-1);assert.equal(intro.text,"Today's challenge is Daddy versus Harper and Chloe. Match starts in.");assert.equal(intro.rate,1.06);
  assert.doesNotMatch(f.get('game-stage').textContent,/pass the device|get comfortable|get ready|you’re up/i);
  const cancels=f.speech.cancels;f.advance(10000);assert.equal(f.get('mole-board'),null);assert.equal(f.speech.cancels,cancels);assert.equal(f.speech.spoken.at(-1),intro);
  intro.onend();assert.equal(f.get('handoff-countdown').textContent,'3');f.advance(1000);assert.equal(f.get('handoff-countdown').textContent,'2');f.advance(1000);assert.equal(f.get('handoff-countdown').textContent,'1');f.advance(999);assert.equal(f.get('mole-board'),null);f.advance(1);assert.ok(f.get('mole-board'));
@@ -852,3 +853,25 @@ for(const id of ['trivia','faces','draw','lava']){
  assert.equal(f.telemetry.filter(e=>e.type==='avk:game-start').length,1);
 }
 console.log('PASS: club standard, special-game and series launches wait for named matchup introduction before starting gameplay.');
+
+// Selection must not silently revert to the first local female/default voice.
+{
+ const f=fixture(0,true);
+ const female={name:'Microsoft Zira',lang:'en-US',localService:true};
+ const male={name:'Microsoft Guy Online (Natural)',lang:'en-US',voiceURI:'guy'};
+ f.speech.getVoices=()=>[female,male];
+ f.run("readArcade('Ready for bragging rights!')");
+ assert.equal(f.speech.spoken.at(-1).voice,male);
+ assert.equal(f.speech.spoken.at(-1).pitch,1.05);
+ f.run("announcerChoice='Microsoft Zira';readArcade('Preview')");
+ assert.equal(f.speech.spoken.at(-1).voice,female);
+ f.speech.getVoices=()=>[];
+ f.run("readArcade('Waiting for voices')");
+ assert.equal(f.speech.spoken.at(-1).pitch,1.2);
+ f.speech.getVoices=()=>[male];
+ f.run("readArcade('Voices arrived')");
+ assert.equal(f.speech.spoken.at(-1).voice,male);
+ f.get('arcade-sound').click();const count=f.speech.spoken.length;
+ f.run("readArcade('Muted')");assert.equal(f.speech.spoken.length,count);
+}
+console.log('PASS: friendly voice preference, saved choice, delayed voice loading, bouncy fallback and mute.');

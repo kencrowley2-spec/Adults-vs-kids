@@ -141,8 +141,8 @@ function competitionResult(){
 }
 
 let soundOn=true, effectsOn=!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches, audioContext, feedbackSequence=0;
-// Speech uses the device's built-in voice; the slider controls narration,
-// while the device volume buttons still control speaker loudness.
+// Prefer a friendly announcer, never the first arbitrary local voice.
+// Voice availability varies by device; families can preview and save a choice.
 let triviaVolume=1, triviaSpeech=null, triviaSpeechToken=0;
 const canReadTrivia=()=>!!(window.speechSynthesis&&window.SpeechSynthesisUtterance);
 function triviaVoiceStatus(text,speaking=false){
@@ -158,6 +158,46 @@ function stopTriviaVoice(){
   if(triviaSpeech){try{window.speechSynthesis.cancel();}catch{}triviaSpeech=null;}
   triviaVoiceStatus(soundOn?'Ready to read aloud':'Voice muted');
 }
+const announcerKey='avk-arcade-announcer-v1';
+let announcerChoice='auto';
+try{announcerChoice=localStorage.getItem(announcerKey)||'auto';}catch{}
+function announcerVoices(){return (window.speechSynthesis?.getVoices()||[]).filter(v=>/^en(?:[-_]|$)/i.test(v.lang||''));}
+function announcerScore(v){
+ const name=v.name||'';
+ // Names only: native speech does not expose a gender field.
+ const warm=/\b(Guy|Christopher|Eric|Davis|Tony|Ryan|Roger|Andrew|Brian|David|Mark|James|Daniel|Alex|Aaron|Fred|Oliver|George)\b|Google UK English Male|en-us-x-iom/i.test(name)&&!/female/i.test(name);
+ return (warm?1000:0)+(/natural|neural|enhanced|premium/i.test(name)?100:0)+(v.lang==='en-US'?10:0);
+}
+function announcerVoice(){
+ const voices=announcerVoices();
+ return voices.find(v=>(v.voiceURI||v.name)===announcerChoice)||voices.sort((a,b)=>announcerScore(b)-announcerScore(a))[0];
+}
+function announcerSettings(){
+ const controls=document.querySelector('.arcade-controls');if(!controls)return;
+ const open=document.createElement('button');open.type='button';open.textContent='🎙 Voice';controls.appendChild(open);
+ const dialog=document.createElement('dialog');dialog.className='arcade-more';dialog.setAttribute('aria-label','Arcade announcer');
+ dialog.innerHTML='<div class="arcade-dialog-head"><h2>Pick your funny announcer</h2><form method="dialog"><button aria-label="Close voice settings">×</button></form></div><div style="padding:18px;display:grid;gap:14px"><label for="arcade-announcer">Announcer voice</label><select id="arcade-announcer" style="width:100%;min-height:44px;font:inherit"></select><button type="button" id="arcade-announcer-preview" style="min-height:44px;font:inherit">🔊 Hear a sample</button><p style="margin:0;font-size:13px">Voices depend on your phone or browser. Your choice is saved on this device.</p><p id="arcade-announcer-status" role="status" style="margin:0"></p></div>';
+ document.body.appendChild(dialog);
+ const select=dialog.querySelector('select'),status=dialog.querySelector('#arcade-announcer-status');
+ function refresh(){
+  select.replaceChildren();
+  const auto=document.createElement('option');auto.value='auto';auto.textContent='Funny announcer · automatic';select.appendChild(auto);
+  for(const voice of announcerVoices().sort((a,b)=>announcerScore(b)-announcerScore(a))){const option=document.createElement('option');option.value=voice.voiceURI||voice.name;option.textContent=voice.name;select.appendChild(option);}
+  select.value=announcerChoice;if(!select.value)select.value='auto';
+ }
+ function preview(){
+  if(!soundOn||triviaVolume<=0){status.textContent='Turn Sound on and voice volume up to hear your sample.';return;}
+  status.textContent=canReadTrivia()?'Here comes your announcer!':'Voice is unavailable in this browser.';
+  readArcade('Welcome to the family showdown! Stretch those thumbs. Warm up those victory dances. Bragging rights are on the line!',triviaVolume,{rate:1.06});
+ }
+ select.addEventListener('change',()=>{announcerChoice=select.value;try{localStorage.setItem(announcerKey,announcerChoice);}catch{}preview();});
+ dialog.querySelector('#arcade-announcer-preview').addEventListener('click',preview);
+ open.addEventListener('click',()=>{refresh();status.textContent='';dialog.showModal();});
+ dialog.addEventListener('close',stopTriviaVoice);
+ window.speechSynthesis?.addEventListener?.('voiceschanged',refresh);
+ refresh();
+}
+announcerSettings();
 function readArcade(text,volume=triviaVolume,style={}){
   stopTriviaVoice();
   if(!canReadTrivia()){triviaVoiceStatus('Read-aloud unavailable on this browser. Read the question below.');return;}
@@ -166,9 +206,10 @@ function readArcade(text,volume=triviaVolume,style={}){
   const token=triviaSpeechToken;
   try{
     const utterance=new window.SpeechSynthesisUtterance(text);triviaSpeech=utterance;
-    utterance.lang='en-US';utterance.rate=style.rate??.95;utterance.pitch=style.pitch??1;utterance.volume=volume;
-    const voices=window.speechSynthesis.getVoices();
-    const voice=voices.find(v=>v.lang==='en-US'&&v.localService)||voices.find(v=>v.lang?.startsWith('en'));
+    const voice=announcerVoice();
+    // A light, bouncy fallback instead of slowing/deepening the default voice.
+    utterance.lang=voice?.lang||'en-US';utterance.rate=style.rate??1.06;
+    utterance.pitch=voice&&announcerScore(voice)>=1000?1.05:1.2;utterance.volume=volume;
     if(voice)utterance.voice=voice;
     triviaVoiceStatus('Voice ready · tap Hear question & answers if needed');
     utterance.onstart=()=>{if(token===triviaSpeechToken){triviaVoiceStatus('Reading aloud…',true);style.onStart?.();}};
@@ -308,7 +349,7 @@ $('arcade-effects').textContent=`Lights: ${effectsOn?'on':'off'}`;
 $('arcade-effects').addEventListener('click',()=>{effectsOn=!effectsOn;$('arcade-game').setAttribute('data-effects',String(effectsOn));$('arcade-effects').textContent=`Lights: ${effectsOn?'on':'off'}`;$('arcade-effects').setAttribute('aria-pressed',String(effectsOn));$('arcade-feedback').setAttribute('data-kind','');});
 function clearTimers(){ memoryLayoutObserver?.disconnect();memoryLayoutObserver=null;memoryClock?.stop();memoryClock=null;moleIntroDone=null;moleAudio?.stop();moleAudio=null;stopChimes(); stopClaw?.();stopClaw=null; stopMole?.();stopMole=null; stopFrog?.();stopFrog=null; stopMazeMusic(); stopTriviaVoice(); generation++; timers.forEach(clearTimeout); timers=[]; timed=false; }
 function later(fn,delay){ const token=generation; const timer=setTimeout(()=>{if(token===generation)fn();},delay); timers.push(timer); }
-function screen(html){ clearTimers();arena.setAttribute('data-game-id',game?.id||'');arena.setAttribute('data-memory-board',String(game?.id==='memory'&&html.includes('id="memory-game"')));competitionPhase=html.includes('class="handoff"')?'handoff':html.includes('class="result')?'result':'play'; $('arcade-feedback').setAttribute('data-kind','');$('feedback-caption').textContent='';stage.innerHTML=(champion>=0&&game?.id!=='mole'?competitionResult():'')+html;competitionUpdate();if(champion>=0&&game?.id!=='mole')readArcade(`${contender(champion)} takes the crown! ${contender(1-champion)}, time for a comeback!`,1); scheduleGameFit(); }
+function screen(html){ clearTimers();arena.setAttribute('data-game-id',game?.id||'');arena.setAttribute('data-memory-board',String(game?.id==='memory'&&html.includes('id="memory-game"')));competitionPhase=html.includes('class="handoff"')?'handoff':html.includes('class="result')?'result':'play'; $('arcade-feedback').setAttribute('data-kind','');$('feedback-caption').textContent='';stage.innerHTML=(champion>=0&&game?.id!=='mole'?competitionResult():'')+html;competitionUpdate();if(champion>=0&&game?.id!=='mole')readArcade(`${contender(champion)} takes the crown! ${contender(1-champion)}, your victory dance is still loading! Rematch?`,1); scheduleGameFit(); }
 function button(label,action,parent=stage,className='primary'){
   const b=document.createElement('button'); b.type='button'; b.className=className; b.textContent=champion>=0&&/^(Rematch|New random)/.test(label)?'👑 Defend your crown · Rematch →':label; b.addEventListener('click',action); parent.appendChild(b); return b;
 }
@@ -464,7 +505,7 @@ function moleHandoff(team,detail,action){
  screen(`<div class="handoff">${matchupMarkup()}<h3>${contenderLabel(team)}</h3><p id="mole-introduction">${escapePlayer(introduction)}</p><p id="handoff-countdown" class="handoff-countdown" style="font-size:42px;font-weight:900;color:#111">…</p></div>`);
  timed=true; // A hidden page interrupts this round rather than skipping an introduction.
  const token=generation;let settled=false,started=false;
- moleAudio=createMoleAudio({enabled:()=>soundOn,getContext:()=>{unlockAudio();return audioContext;},volume:()=>moleVolume,speak:(line,volume)=>readArcade(line,volume,{rate:.9,pitch:.9}),later});
+ moleAudio=createMoleAudio({enabled:()=>soundOn,getContext:()=>{unlockAudio();return audioContext;},volume:()=>moleVolume,speak:(line,volume)=>readArcade(line,volume,{rate:1.06}),later});
  if(!first)moleAudio.cue('buzzer');
  status(`${contender(team)} is being introduced. The countdown starts afterward.`);
  function countdown(number){
@@ -479,7 +520,7 @@ function moleHandoff(team,detail,action){
   stopTriviaVoice();countdown(3);
  }
  moleIntroDone=ready;
- const utterance=soundOn&&moleVolume>0?readArcade(introduction,moleVolume,{rate:.9,pitch:.9,onStart:()=>{started=true;},onDone:ready}):null;
+ const utterance=soundOn&&moleVolume>0?readArcade(introduction,moleVolume,{rate:1.06,onStart:()=>{started=true;},onDone:ready}):null;
  if(!utterance)later(ready,1000);
  else {
   // Native speech can be blocked or omit completion events. Allow a generous
@@ -493,7 +534,7 @@ function handoff(team,detail,action){
   turn=team;competitionPhase='handoff';scoreboard();
   screen(`<div class="handoff">${matchupMarkup()}<span class="giant-icon" aria-hidden="true">${team===0?'🙌':'✌️'}</span><p class="eyebrow">PASS THE DEVICE · STARTING AUTOMATICALLY</p><h3>${teamLabel(team)}, you’re up!</h3><p>${escapePlayer(detail)}</p><p id="handoff-countdown" class="handoff-countdown" style="font-size:42px;font-weight:900;color:#111">4</p><small>Get ready. No button needed.</small></div>`);
 
-  if(!['tic','trivia','mole'].includes(game.id))readArcade(`${contender(team)}, you're up! ${results[1-team]?`Can you beat ${contender(1-team)}?`: `${contender(0)} versus ${contender(1)}. Who is taking the crown?`}`,1);
+  if(!['tic','trivia','mole'].includes(game.id))readArcade(`${contender(team)}, you're up! ${results[1-team]?`Can you beat ${contender(1-team)}?`: `${contender(0)} versus ${contender(1)}. Who packed their victory dance?`}`,1);
   if(game.id==='tic')ticStarterVoice();
   if(game.id==='trivia'){triviaAudioPanel(stage,'Turn your volume up for this one! Trivia Showdown reads each question and all answer choices out loud.',true);readArcade('Turn your volume up for this one!');}
   status(`${teamName(team)} start in four seconds. Pass the device.`);
@@ -1048,7 +1089,7 @@ document.addEventListener('visibilitychange',()=>{
 function whackAMole(){
  screen('<section class="source-mole-game" aria-label="Whack-a-Mole"><h3>Whack-a-Mole</h3><div class="source-mole-hud"><span>Score: <b id="mole-score">0</b></span><span>Time: <b id="mole-time">20</b></span><span>Best: <b id="mole-best">0</b></span></div><div class="source-mole-grid" id="mole-board" role="group" aria-label="Nine mole holes. Tap a mole or use keys 1 through 9."></div><p class="source-mole-hint">Whack the moles before they hide. 20 seconds!<br>One hit = one point · Keyboard: 1–9</p></section>');
  timed=true;status(`${teamName(turn)}: 20 seconds. GO! One hit = one point.`);
- moleAudio=createMoleAudio({enabled:()=>soundOn,getContext:()=>{unlockAudio();return audioContext;},volume:()=>moleVolume,speak:(line,volume)=>readArcade(line,volume,{rate:1.08,pitch:.85}),later});moleAudio.music();moleAudio.announce('GO!',true);
+ moleAudio=createMoleAudio({enabled:()=>soundOn,getContext:()=>{unlockAudio();return audioContext;},volume:()=>moleVolume,speak:(line,volume)=>readArcade(line,volume,{rate:1.08}),later});moleAudio.music();moleAudio.announce('GO!',true);
  stopMole=mountMole({root:$('mole-board'),accountId:arcadeAccountId,team:teamName(turn),plan:game.molePlan,later,sound:kind=>moleAudio?.cue(kind),onCue:line=>moleAudio?.announce(line),onStatus:status,
   onScore:points=>{game.molePoints[turn]=points;scoreboard();competitionUpdate({score:points});},
   onEnd:result=>{timed=false;chime('buzzer');finishTurn(result);}});
@@ -1060,7 +1101,7 @@ function finishMoleMatch(winner,detail){
  screen(`<div class="result mole-victory"><span class="mole-fireworks" aria-hidden="true"></span><div class="mole-confetti" aria-hidden="true">✦ · ★ · ✧ · ★ · ✦</div><span class="giant-icon mole-trophy">${winner===null?'🤝':'🏆'}</span><p class="eyebrow">WHACK-A-MOLE · SHOWDOWN COMPLETE</p><h3>${winner===null?'It’s a tie!':`${teamLabel(winner)} win!`}</h3><p>${winner===null?'HIGH FIVES ALL ROUND':`${contenderLabel(winner)} HAS THE CROWN!`}</p><p>${escapePlayer(detail)}</p><div class="final-score">${results[0].score} <span>–</span> ${results[1].score}</div><p>One hit = one point · 20 seconds each.</p><p>${winner===null?'Two teams. Two legends. The mole kingdom belongs to everyone!':kidsOnly?`${contenderLabel(winner)} rules the mole kingdom! ${contenderLabel(1-winner)}, your comeback awaits!`:winner===1?'BREAKING NEWS! The Kids have taken over the mole kingdom! Adults, your comeback awaits!':'UNBELIEVABLE! Adults rule the mole kingdom! Kids, demand a rematch!'}</p><span class="mole-dancer" aria-hidden="true">${winner===null?'🐹 🐹':'🐹'}</span></div>`);
  button('REMATCH!',()=>openGame('mole'));if(winner===null)button('Optional tiebreaker · 20 seconds each',()=>openGame('mole'),stage,'text-button');button('Return to Arcade',()=>$('arcade-return').click(),stage,'text-button');
  react(winner===null?'turn':'win',winner===null?'Even score!':`${teamName(winner)} win!`);
- moleAudio=createMoleAudio({enabled:()=>soundOn,getContext:()=>{unlockAudio();return audioContext;},volume:()=>moleVolume,speak:(line,volume)=>readArcade(line,volume,{rate:1.08,pitch:.85}),later});moleAudio.cue('buzzer');later(()=>moleAudio?.cue('victory'),380);moleAudio.announce(winner===null?'Two teams! Two champions!':`${contender(winner)}! The new Whack-a-Mole champions! Ready for a rematch?`,true);
+ moleAudio=createMoleAudio({enabled:()=>soundOn,getContext:()=>{unlockAudio();return audioContext;},volume:()=>moleVolume,speak:(line,volume)=>readArcade(line,volume,{rate:1.08}),later});moleAudio.cue('buzzer');later(()=>moleAudio?.cue('victory'),380);moleAudio.announce(winner===null?'Two teams! Two champions!':`${contender(winner)}! The new Whack-a-Mole champions! Ready for a rematch?`,true);
  status(winner===null?'Tie game! Share a high five.':`${teamName(winner)} win Whack-a-Mole!`);focusFirst();
 }
 
