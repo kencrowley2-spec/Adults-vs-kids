@@ -1,0 +1,22 @@
+/* Keep the last dashboard content above the pinned tabs and phone safe area. */
+body.platform{padding-bottom:calc(88px + env(safe-area-inset-bottom,0px))}
+html:has(.dashboard-tabs){scroll-padding-bottom:calc(110px + env(safe-area-inset-bottom,0px))}
+.platform .dashboard-tabs{position:fixed;inset:auto 0 0;z-index:100;background:#0c0e10;color:#c2c5c7;border-top:1px solid #ffd52266;box-shadow:0 -6px 24px #0002;padding:0 max(8px,env(safe-area-inset-left,0px)) env(safe-area-inset-bottom,0px) max(8px,env(safe-area-inset-right,0px))}
+.platform .dashboard-tabs-inner{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));max-width:760px;margin:auto;gap:4px}
+.platform .dashboard-tabs a,.platform .dashboard-tabs button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;position:relative;min-width:0;min-height:76px;padding:10px 2px;background:none;border:0;border-radius:8px;color:#c2c5c7;font:700 12px/1.2 Arial,Helvetica,sans-serif;text-decoration:none;cursor:pointer;white-space:nowrap;-webkit-tap-highlight-color:transparent}
+.platform .dashboard-tabs svg{width:26px;height:26px;flex-shrink:0}
+.platform .dashboard-tabs [aria-current=page],.platform .dashboard-tabs [aria-expanded=true]{color:#ffd522}
+.platform .dashboard-tabs [aria-current=page]:before{content:'';position:absolute;top:0;height:3px;width:32px;background:#ffd522;border-radius:0 0 3px 3px}
+.platform .dashboard-tabs a:hover,.platform .dashboard-tabs button:hover{background:#ffffff0d;color:#ffd522}
+.platform .dashboard-tabs a:focus-visible,.platform .dashboard-tabs button:focus-visible{outline:2px solid #ffd522;outline-offset:-4px}
+.platform .dashboard-more{width:min(460px,calc(100% - 24px));max-height:calc(100dvh - 130px);padding:24px;border:1px solid #ffd52277;border-radius:22px;background:#111416;color:#fff;box-shadow:0 18px 70px #0005}
+.platform .dashboard-more::backdrop{background:#0009}
+.platform .dashboard-more>header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:20px}
+.platform .dashboard-more h2{font-size:23px;margin:0;letter-spacing:-.5px;color:#ffd522}
+.platform .dashboard-more form{margin:0}
+.platform .dashboard-more header button{width:44px;height:44px;border:1px solid #ffffff30;border-radius:50%;background:transparent;color:white;cursor:pointer}
+.platform .dashboard-more nav{display:grid;gap:8px}
+.platform .dashboard-more nav a,.platform .dashboard-more nav button{display:flex;align-items:center;justify-content:space-between;gap:16px;width:100%;min-height:52px;padding:14px 16px;text-align:left;text-decoration:none;background:#ffffff09;border:1px solid #ffffff15;border-radius:12px;color:#fff;font-size:15px;font-weight:700;cursor:pointer}
+.platform .dashboard-more nav span{color:#ffd522}
+.platform .dashboard-more nav a:hover,.platform .dashboard-more nav button:hover{background:#ffd52219;border-color:#ffd52288}
+@media(max-width:360px){.platform .dashboard-tabs a,.platform .dashboard-tabs button{font-size:10px}.platform .dashboard-tabs-inner{gap:0}}
