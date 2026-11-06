@@ -39,7 +39,7 @@ document.addEventListener('click',async e=>{const b=e.target.closest('[data-netw
  if(action==='open_profile'){openProfile(b.dataset.id);return}
  if(action==='accept_challenge'){location.href='/admin/app/lobby';return}
  if(action==='view_profile'){$('networkPublicProfile').hidden=!$('networkPublicProfile').hidden;return}
- if(action==='open_challenge'){if($('networkProfileDialog').open)$('networkProfileDialog').close();challengeId=b.dataset.id;$('networkChallengeName').textContent='Challenge '+b.dataset.name;$('networkChallengeError').textContent='';$('networkChallengeDialog').showModal();return}
+ if(action==='open_challenge'){if($('networkProfileDialog').open)$('networkProfileDialog').close();window.avkOpenChallenge?.({friendId:b.dataset.id,mode:'family'});return}
  if(action==='choose_group'){selectedGroup=b.dataset.id;renderSearch();$('networkSearchSection').scrollIntoView({behavior:'smooth',block:'start'});$('networkSearchForm').elements.query.focus();return}
  if(action==='open_neighbor_invite'){openNeighborInvite(b.dataset.id,b.dataset.name);return}
  if(action==='send_friend'){await mutate('request',{familyId:b.dataset.id,type:'friend'},'Friend request sent. Their family administrator approves it.');return}
