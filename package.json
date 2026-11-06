@@ -11,7 +11,7 @@
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "test": "node --experimental-strip-types tests/member-access.mjs && node tests/public-pages.mjs",
-    "test:arcade": "node tests/arcade.mjs",
+    "test:arcade": "node tests/arcade.mjs && node tests/arcade-navigation.mjs",
     "test:lava": "node tests/lava.mjs && node tests/lava-controller.mjs",
     "test:faces": "node tests/faces.mjs",
     "test:draw": "node --experimental-strip-types tests/draw-it.mjs && node --experimental-strip-types tests/draw-it-api.mjs"

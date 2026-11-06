@@ -988,7 +988,9 @@ GAMES.filter(g=>!g.premium).forEach(g=>gameTile(g,$('arcade-grid')));
 GAMES.filter(g=>g.premium).forEach(g=>gameTile(g,$('arcade-premium')));
 ['memory','maze','treasure','tic','trivia','rps'].forEach(id=>gameTile(GAMES.find(g=>g.id===id),$('arcade-favorites')));
 renderRecent();
-for(const shelf of ['premium','favorites','recent','all']){
+const browseShelves={quick:['rps','tic','treasure','code','number'],creative:['draw','faces','picture','trivia','challenge'],action:['maze','frog','mole','claw']};
+for(const [shelf,ids] of Object.entries(browseShelves))ids.forEach(id=>{const entry=GAMES.find(g=>g.id===id);if(entry)gameTile(entry,$('arcade-'+shelf));});
+for(const shelf of ['premium','favorites','recent','all',...Object.keys(browseShelves)]){
  const track=$(shelf==='all'?'arcade-grid':`arcade-${shelf}`);
  for(const [direction,sign] of [['prev',-1],['next',1]])$(`shelf-${shelf}-${direction}`).addEventListener('click',()=>track.scrollBy({left:sign*track.clientWidth*.8,behavior:window.matchMedia?.('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'}));
 }
@@ -1006,7 +1008,7 @@ function renderFeatured(){
 }
 function scheduleFeatured(){
  clearTimeout(featuredTimer);
- if(featuredPaused||!arena.hidden||document.hidden)return;
+ if(featuredPaused||!arena.hidden||document.hidden||$('memberDialog')?.open||$('arcade-more')?.open)return;
  featuredTimer=setTimeout(()=>{featuredIndex=(featuredIndex+1)%featuredGames.length;renderFeatured();scheduleFeatured();},6500);
 }
 $('arcade-featured-play').addEventListener('click',()=>openGame(featuredGames[featuredIndex].id));
@@ -1073,3 +1075,6 @@ lobbyMusic.stop();lobbyMusic.start();
 // Public game links enter the selected catalog game after account verification.
 const linkedGame=new URLSearchParams(location.search).get('game');
 if(GAMES.some(g=>g.id===linkedGame&&!g.comingSoon))openGame(linkedGame);
+
+window.addEventListener('arcade-overlay-open',()=>{lobbyMusic.stop();clearTimeout(featuredTimer)});
+window.addEventListener('arcade-overlay-close',()=>{scheduleFeatured();lobbyMusic.start()});
