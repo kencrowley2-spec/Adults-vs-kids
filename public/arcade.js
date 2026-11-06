@@ -27,6 +27,16 @@ const recorder=createResultRecorder({
  send:result=>fetch('/api/arcade/results',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({...result,accountId:arcadeAccountId})}),
  changed:({pending,storageFailed})=>{const el=$('arcade-save-status');if(el)el.textContent=pending?`A completed result is waiting to save. ${storageFailed?'Keep this page open and retry.':'It will retry when you’re connected.'}`:(kidsOnly?'Kids vs. Kids · scores count for this match.':'Completed matches update your family’s lifetime score.');}
 });
+// Keep pending DRAW IT results independent while its database rollout is pending.
+const drawRecorder=createResultRecorder({
+ accountId:arcadeAccountId,namespace:'draw-results',
+ storage:{getItem:key=>localStorage.getItem(key),setItem:(key,value)=>localStorage.setItem(key,value)},
+ send:result=>fetch('/api/arcade/results',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({...result,accountId:arcadeAccountId})}),
+ changed:({pending,storageFailed})=>{const el=$('draw-save-status');if(el){el.hidden=!pending;el.textContent=pending?`Your DRAW IT result is waiting to save. ${storageFailed?'Keep this page open.':'You can keep playing other games.'} Retry saving later.`:'';}}
+});
+drawRecorder.drain();
+window.addEventListener('online',()=>drawRecorder.drain());
+$('arcade-save-retry').addEventListener('click',()=>drawRecorder.drain());
 const timeRecorder=createResultRecorder({
  accountId:arcadeAccountId,namespace:'times',
  storage:{getItem:key=>localStorage.getItem(key),setItem:(key,value)=>localStorage.setItem(key,value)},
@@ -366,7 +376,7 @@ function openDraw(){
  let matchId=crypto.randomUUID();rememberGame('draw');arena.hidden=true;lobby.hidden=true;
  window.dispatchEvent(new CustomEvent('avk:game-start',{detail:{game:'draw',id:matchId}}));
  mountDraw({players:selectedPlayers.map((list,i)=>list.join(' & ')||names[i]),onExit:()=>{arena.hidden=true;lobby.hidden=false;game=null;scheduleFeatured();lobbyMusic.start();document.querySelector('[data-game="draw"]')?.focus();},onComplete:result=>{
-  if(!kidsOnly&&result.winner!==null)recorder.capture({id:matchId,mode:'single',gameIds:['draw'],roundWinners:[result.winner]});
+  if(!kidsOnly&&result.winner!==null)drawRecorder.capture({id:matchId,mode:'single',gameIds:['draw'],roundWinners:[result.winner]});
   window.dispatchEvent(new CustomEvent('avk:game-complete',{detail:{game:'draw',winner:result.winner,scores:result.scores,id:matchId}}));
   matchId=crypto.randomUUID();
  }});
