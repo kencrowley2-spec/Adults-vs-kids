@@ -1,5 +1,5 @@
 // All distances and timing are shared by rendering, play, and route validation.
-export const RULES=Object.freeze({escape:30,jump:.62,range:163,crack:.95,maxTraps:6});
+export const RULES=Object.freeze({escape:30,jump:.62,range:163,crack:.95,maxTraps:5});
 export const TRAPS=['crack'];
 export function course(round=0,easy=false){
  const tiles=[{id:0,x:65,y:230,type:'start',locked:true}];
@@ -42,7 +42,7 @@ export function validateCourse(tiles){
 export function placeTrap(tiles,id,type){
  if(!TRAPS.includes(type)||!tiles[id]||tiles[id].locked)return {ok:false,reason:'The first two blocks, start and finish stay safe. Choose a later block.'};
  const next=tiles.map(t=>({...t}));next[id].type=type;
- if(next.filter(t=>TRAPS.includes(t.type)).length>RULES.maxTraps)return {ok:false,reason:'Six traps max. Tap a placed trap to remove it.'};
+ if(next.filter(t=>TRAPS.includes(t.type)).length>RULES.maxTraps)return {ok:false,reason:'Five traps max. Tap a placed trap to remove it.'};
  if(!trapSpacingValid(next))return {ok:false,reason:'Leave a safe block between traps. No traps directly beside or across from each other.'};
  if(!validateCourse(next))return {ok:false,reason:'That course has no safe escape route.'};
  return {ok:true,tiles:next};

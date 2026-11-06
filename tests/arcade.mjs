@@ -72,7 +72,7 @@ function fixture(firstTeam=0,withSpeech=false,withAudio=false,players=null,holdM
   const buttons=()=>get('game-stage').querySelectorAll('button');
   const click=text=>{const b=buttons().find(b=>b.textContent===text||b.getAttribute('data-answer')===text);assert.ok(b,`Missing button: ${text}`);b.click();};
   function advance(ms){const end=now+ms;let guard=0;while(true){const task=[...scheduled.entries()].filter(([,t])=>t.at<=end).sort((a,b)=>a[1].at-b[1].at)[0];if(!task)break;assert.ok(++guard<10000);scheduled.delete(task[0]);now=task[1].at;task[1].fn();}now=end;}
-  function start(id,first=0,wait=true){selectedFirst=first;const i=fixtureGames.findIndex(g=>g.id===id);if(fixtureGames[i].comingSoon){fixtureGames[i].comingSoon=false;try{vm.runInContext('openGame('+JSON.stringify(id)+')',context);}finally{fixtureGames[i].comingSoon=true;}}else get('arcade-grid').children[i].click();if(wait&&id!=='memory')advance(4000);}
+  function start(id,first=0,wait=true){selectedFirst=first;const i=fixtureGames.findIndex(g=>g.id===id);if(fixtureGames[i].comingSoon){fixtureGames[i].comingSoon=false;try{vm.runInContext('openGame('+JSON.stringify(id)+')',context);}finally{fixtureGames[i].comingSoon=true;}}else {const tile=[...get('arcade-grid').children,...get('arcade-premium').children].find(tile=>tile.getAttribute('data-game')===id);assert.ok(tile,'Game has a selection card: '+id);tile.click();}if(wait&&id!=='memory')advance(4000);}
 
   return {run:source=>vm.runInContext(source,context),clock:()=>now,root,doc,get,buttons,click,advance,start,saved,timedSaved,telemetry,speech,audio,state:context.state,resolveGame:context.resolveGame,seriesWith:context.seriesWith};
 }
@@ -481,7 +481,7 @@ for(const g of data.GAMES)assert.ok(library.coverMarkup(g).includes(g.name));
 assert.deepEqual(library.recentGames({getItem:()=>'{bad'},'family',data.GAMES),[]);
 assert.deepEqual(library.recentGames({getItem:()=>JSON.stringify(['memory','unknown','memory','maze'])},'family',data.GAMES),['memory','maze']);
 {
- const f=fixture();f.start('memory');f.get('arcade-return').click();f.advance(6500);assert.equal(f.get('arcade-feature-title').textContent,data.GAMES[1].name);f.get('feature-pause').click();f.advance(20000);assert.equal(f.get('arcade-feature-title').textContent,data.GAMES[1].name);f.get('feature-next').click();f.get('arcade-featured-play').click();assert.ok(f.get('game-title').textContent.includes(data.GAMES[2].name));noNavigation(f);
+ const f=fixture();f.start('memory');f.get('arcade-return').click();f.advance(6500);assert.equal(f.get('arcade-feature-title').textContent,data.GAMES.filter(g=>!g.premium)[1].name);f.get('feature-pause').click();f.advance(20000);assert.equal(f.get('arcade-feature-title').textContent,data.GAMES.filter(g=>!g.premium)[1].name);f.get('feature-next').click();f.get('arcade-featured-play').click();assert.ok(f.get('game-title').textContent.includes(data.GAMES.filter(g=>!g.premium)[2].name));noNavigation(f);
 }
 console.log('All 14 Arcade games passed: automatic starters, countdown handoffs, automatic rounds/replays, reactions, secret moves, scoring, celebrations, 3–2 matches, random series, cancellation, hidden-tab protection and rotating features.');
 
@@ -809,3 +809,14 @@ console.log('PASS: Block Showdown absent from active catalog, favorites, recent 
  assert.equal(f.get('arcade-game').getAttribute('data-memory-board'),'true');f.get('arcade-return').click();f.start('tic',0,false);assert.equal(f.get('arcade-game').getAttribute('data-memory-board'),'false');
 }
 console.log('PASS: 24 illustrated cards, 12 exact pairs, wide six-row phone layout, responsive landscape layout, pair progress, animated celebration hooks and layout cleanup.');
+
+{
+ const f=fixture();const premium=f.get('arcade-premium');assert.equal(f.get('shelf-premium-title').textContent,'Premium Games');
+ assert.deepEqual(premium.children.map(tile=>tile.getAttribute('data-game')),['lava']);
+ assert.ok(!f.get('arcade-grid').children.some(tile=>tile.getAttribute('data-game')==='lava'));
+ assert.ok(!f.get('arcade-favorites').children.some(tile=>tile.getAttribute('data-game')==='lava'));
+ for(let n=0;n<data.GAMES.length;n++){assert.doesNotMatch(f.get('arcade-feature-title').textContent,/Floor Is Lava/);f.get('feature-next').click();}
+ f.run('startSeries()');assert.ok(!f.state().series.games.includes('lava'));
+ f.start('lava',0,false);assert.ok(f.run('!!lavaOptions'),'Premium card still opens the free game');
+}
+console.log('PASS: Lava is exclusively listed under Premium Games; standard shelves, featured rotation and random challenge exclude it; direct play remains available.');

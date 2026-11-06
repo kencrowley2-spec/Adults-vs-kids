@@ -391,3 +391,8 @@ body::before{display:block;inset:0;background:linear-gradient(180deg,rgba(4,5,14
  .source-memory-hud{font-size:12px;gap:12px}
  .source-memory-board{gap:8px}
 }
+
+/* Premium titles have their own shelf; placement does not change access. */
+.premium-shelf{padding:18px 20px 8px;border:2px solid #efc962;border-radius:18px;background:radial-gradient(ellipse at 5% 10%,#8c682733,transparent 65%),linear-gradient(120deg,#211d19,#101520);box-shadow:0 0 25px #e6ba3017}
+.premium-shelf .shelf-heading{margin-bottom:5px}.premium-shelf .shelf-heading h2{font-size:25px;letter-spacing:-.4px;color:#ffe09a}.premium-eyebrow{font-size:8px;letter-spacing:2px;color:#d0ba88;font-weight:800;display:block;margin-bottom:5px}.premium-shelf-caption{font-size:12px;color:#dfd5bd;margin:5px 0 10px}.premium-shelf .shelf-controls button{border-color:#d2b45888;color:#ffe09a;background:#332a1c}.premium-shelf .game-track .game-tile{border-color:#e7c45c;flex-basis:210px}.premium-shelf .game-track{scrollbar-color:#c9a75a #1d1c22}
+@media(max-width:600px){.premium-shelf{padding:14px 12px 5px}.premium-shelf .shelf-heading h2{font-size:23px}.premium-shelf .game-track .game-tile{flex-basis:190px}}

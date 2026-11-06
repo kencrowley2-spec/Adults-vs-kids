@@ -21,18 +21,18 @@ function fixture(width=844,height=390){
 }
 
 
-const TRAP_LAYOUT=[3,7,11,6,10,14];
+const TRAP_LAYOUT=[3,7,11,6,10];
 function fillTraps(f,round=0){for(const id of TRAP_LAYOUT)f.tap(id,round);}
 for(const [w,h] of [[844,390],[740,360],[932,430]]){
  const f=fixture(w,h);f.click('[data-action=start]');f.advance(3.1);assert.match(f.phase(),/BUILD YOUR TRAP/);
  assert.equal(f.document.querySelectorAll('[data-trap]').length,0);assert.equal(f.$('[data-action=attack]'),null);
- for(const id of [1,2]){f.tap(id);assert.match(f.$('.lava-toast').textContent,/first two blocks/);}assert.match(f.$('.lava-phase b').textContent,/0\/6 TRAPS/);
+ for(const id of [1,2]){f.tap(id);assert.match(f.$('.lava-toast').textContent,/first two blocks/);}assert.match(f.$('.lava-phase b').textContent,/0\/5 TRAPS/);
  f.tap(4);f.advance(.02);assert.ok(f.draws().some(a=>a[1]===512&&a[2]===0),'Builder sees sabotage');f.tap(4);
  f.tap(3);f.tap(5);assert.match(f.$('.lava-toast').textContent,/safe block between/);f.tap(3);
- for(const id of TRAP_LAYOUT.slice(0,5))f.tap(id);assert.match(f.$('.lava-phase b').textContent,/5\/6 TRAPS.*NO TIMER/);
+ for(const id of TRAP_LAYOUT.slice(0,4))f.tap(id);assert.match(f.$('.lava-phase b').textContent,/4\/5 TRAPS.*NO TIMER/);
  f.click('[data-action=pause]');f.advance(8);f.click('[data-action=resume]');
  f.advance(65);assert.match(f.phase(),/BUILD YOUR TRAP/);assert.equal(f.$('.lava-overlay').innerHTML,'','No automatic pass after the former countdown');
- f.tap(TRAP_LAYOUT[5]);assert.match(f.$('.lava-overlay').textContent,/PASS THE PHONE/,'Sixth trap immediately hands off');f.advance(.02);
+ f.tap(TRAP_LAYOUT[4]);assert.match(f.$('.lava-overlay').textContent,/PASS THE PHONE/,'Fifth trap immediately hands off');f.advance(.02);
  assert.ok(!f.draws().some(a=>a[1]===512&&a[2]===0),'Handoff hides every trap');
  f.advance(7.1);assert.match(f.phase(),/ESCAPE THE LAVA/);assert.ok(!f.draws().some(a=>a[1]===512&&a[2]===0),'Runner sees blue blocks');
  for(let n=0;n<6;n++){
@@ -42,7 +42,7 @@ for(const [w,h] of [[844,390],[740,360],[932,430]]){
   assert.match(f.$('.lava-overlay').textContent,/THEY MADE IT/);f.advance(4.6);
  }
  assert.equal(f.speech.spoken.length,0);assert.equal(f.complete.length,1);assert.equal(f.complete[0].attempts.length,6);assert.match(f.$('.lava-overlay').textContent,/LAVA CHAMPION/);
- f.advance(5);assert.equal(f.complete.length,1);f.click('[data-action=rematch]');f.advance(3.1);assert.match(f.phase(),/BUILD/);assert.match(f.$('.lava-phase b').textContent,/0\/6 TRAPS.*NO TIMER/);
+ f.advance(5);assert.equal(f.complete.length,1);f.click('[data-action=rematch]');f.advance(3.1);assert.match(f.phase(),/BUILD/);assert.match(f.$('.lava-phase b').textContent,/0\/5 TRAPS.*NO TIMER/);
  f.click('[data-action=exit]');assert.equal(f.exits(),1);assert.equal(f.$('.lava-game'),null);assert.equal(f.audio().closed,1);
 }
 {
@@ -67,4 +67,4 @@ for(const [w,h] of [[844,390],[740,360],[932,430]]){
  fillTraps(f);f.advance(7.1);assert.equal(track.volume,.48);assert.equal(f.speech.spoken.length,0);assert.equal(f.tracks.length,1);
  f.cleanup();assert.equal(track.paused,true);assert.equal(track.src,'');assert.equal(track.loaded,true);
 }
-console.log('PASS: untimed setup survives 65 seconds; first pair protected; sixth trap immediately hides and passes; all six escape turns, rematch, hidden traps, splash, escape timeout, pause and soundtrack remain functional.');
+console.log('PASS: untimed setup survives 65 seconds; first pair protected; fifth trap immediately hides and passes; all six escape turns, rematch, hidden traps, splash, escape timeout, pause and soundtrack remain functional.');

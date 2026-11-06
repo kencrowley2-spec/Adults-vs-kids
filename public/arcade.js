@@ -1,4 +1,4 @@
-import {mountLava} from './arcade-lava.js?v=6';
+import {mountLava} from './arcade-lava.js?v=7';
 import {createLobbyMusic} from './arcade-lobby-music.js?v=1';
 import {mountClaw,clawPrizes,clawFireworks} from './arcade-claw.js?v=1';
 import {mountMole,molePlan,createMoleAudio} from './arcade-mole.js?v=4';
@@ -7,7 +7,7 @@ import {mountTreasure,treasurePlan} from './arcade-treasure.js?v=1';
 import {mountBlocks} from './arcade-blocks.js?v=1';
 import {mountBasketball} from './arcade-basketball.js?v=1';
 import {coverMarkup,recentGames} from './arcade-library.js?v=12';
-import {GAMES, ANIMALS, TRIVIA, PICTURES, CHALLENGES} from './arcade-data.js?v=28';
+import {GAMES, ANIMALS, TRIVIA, PICTURES, CHALLENGES} from './arcade-data.js?v=29';
 import {shuffle, roundWinner, awardRound, lineWinner} from './arcade-core.js';
 
 import {makeMaze, codeClues, rpsWinner, GOLF_COURSES, golfStep} from './arcade-new-core.js?v=5';
@@ -374,7 +374,7 @@ function openGame(id){
 function startSeries(){
   lobbyMusic.stop();clearTimeout(featuredTimer);
   clearTimers();
-  series={games:shuffle(GAMES.filter(g=>!g.comingSoon&&g.id!=='lava')).slice(0,3),index:0,winners:[],first:0};
+  series={games:shuffle(GAMES.filter(g=>!g.comingSoon&&!g.premium&&g.id!=='lava')).slice(0,3),index:0,winners:[],first:0};
   startRecording('series',series.games.map(g=>g.id));
   wins=[0,0]; round=1; attempt=0; starter=0; turn=0; champion=-1; results=[]; used={};
   game=series.games[0]; lobby.hidden=true; arena.hidden=false;
@@ -943,7 +943,7 @@ function gameTile(g,parent){
  tile.setAttribute('data-game',g.id);tile.disabled=!!g.comingSoon;tile.setAttribute('data-coming-soon',String(!!g.comingSoon));tile.setAttribute('aria-label',g.comingSoon?`${g.name} — Coming Soon`:`Play ${g.name}`);tile.innerHTML=coverMarkup(g);return tile;
 }
 function renderRecent(){
- let ids=[];try{ids=recentGames(localStorage,recentKey,GAMES);}catch{}
+ let ids=[];try{ids=recentGames(localStorage,recentKey,GAMES.filter(g=>!g.premium));}catch{}
  $('arcade-recent-section').hidden=!ids.length;$('arcade-recent').replaceChildren();
  ids.forEach(id=>gameTile(GAMES.find(g=>g.id===id),$('arcade-recent')));
 }
@@ -951,32 +951,34 @@ function rememberGame(id){
  try{const ids=recentGames(localStorage,recentKey,GAMES);localStorage.setItem(recentKey,JSON.stringify([id,...ids.filter(x=>x!==id)].slice(0,8)));}catch{}
  renderRecent();
 }
-GAMES.forEach(g=>gameTile(g,$('arcade-grid')));
-['lava','memory','maze','treasure','tic','trivia','rps'].forEach(id=>gameTile(GAMES.find(g=>g.id===id),$('arcade-favorites')));
+GAMES.filter(g=>!g.premium).forEach(g=>gameTile(g,$('arcade-grid')));
+GAMES.filter(g=>g.premium).forEach(g=>gameTile(g,$('arcade-premium')));
+['memory','maze','treasure','tic','trivia','rps'].forEach(id=>gameTile(GAMES.find(g=>g.id===id),$('arcade-favorites')));
 renderRecent();
-for(const shelf of ['favorites','recent','all']){
+for(const shelf of ['premium','favorites','recent','all']){
  const track=$(shelf==='all'?'arcade-grid':`arcade-${shelf}`);
  for(const [direction,sign] of [['prev',-1],['next',1]])$(`shelf-${shelf}-${direction}`).addEventListener('click',()=>track.scrollBy({left:sign*track.clientWidth*.8,behavior:window.matchMedia?.('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'}));
 }
+const featuredGames=GAMES.filter(g=>!g.premium);
 let featuredIndex=0,featuredPaused=false,featuredTimer=null;
 function renderFeatured(){
- const g=GAMES[featuredIndex];
+ const g=featuredGames[featuredIndex];
  $('arcade-feature-title').textContent=g.name;
  $('feature-description').textContent=g.tag;
  $('feature-play-label').textContent=g.comingSoon?'COMING SOON':'▶ PLAY '+g.name.toUpperCase();
  $('arcade-featured-play').disabled=!!g.comingSoon;
  $('arcade-featured-play').setAttribute('aria-label',g.comingSoon?g.name+' — Coming Soon':'Play '+g.name);
  $('feature-art').innerHTML=`<div class="feature-poster" data-game="${g.id}">${coverMarkup(g)}</div><span class="feature-stamp">LESS SUPERVISING.<br><b>MORE PLAYING.</b></span>`;
- $('feature-position').textContent=(featuredIndex+1)+' / '+GAMES.length;
+ $('feature-position').textContent=(featuredIndex+1)+' / '+featuredGames.length;
 }
 function scheduleFeatured(){
  clearTimeout(featuredTimer);
  if(featuredPaused||!arena.hidden||document.hidden)return;
- featuredTimer=setTimeout(()=>{featuredIndex=(featuredIndex+1)%GAMES.length;renderFeatured();scheduleFeatured();},6500);
+ featuredTimer=setTimeout(()=>{featuredIndex=(featuredIndex+1)%featuredGames.length;renderFeatured();scheduleFeatured();},6500);
 }
-$('arcade-featured-play').addEventListener('click',()=>openGame(GAMES[featuredIndex].id));
-$('feature-prev').addEventListener('click',()=>{featuredIndex=(featuredIndex+GAMES.length-1)%GAMES.length;renderFeatured();scheduleFeatured();});
-$('feature-next').addEventListener('click',()=>{featuredIndex=(featuredIndex+1)%GAMES.length;renderFeatured();scheduleFeatured();});
+$('arcade-featured-play').addEventListener('click',()=>openGame(featuredGames[featuredIndex].id));
+$('feature-prev').addEventListener('click',()=>{featuredIndex=(featuredIndex+featuredGames.length-1)%featuredGames.length;renderFeatured();scheduleFeatured();});
+$('feature-next').addEventListener('click',()=>{featuredIndex=(featuredIndex+1)%featuredGames.length;renderFeatured();scheduleFeatured();});
 $('feature-pause').addEventListener('click',()=>{featuredPaused=!featuredPaused;$('feature-pause').textContent=featuredPaused?'Resume slides':'Pause slides';$('feature-pause').setAttribute('aria-pressed',String(featuredPaused));scheduleFeatured();});
 renderFeatured();scheduleFeatured();
 

@@ -35,16 +35,16 @@ assert.equal(danger({type:'crack',triggeredAt:1},1.94,1.9),null);assert.equal(da
 console.log('PASS: breaking traps only; hidden before landing; reveal on contact; collapse timer persists after leaving.');
 
 for(let round=0;round<3;round++){
- let tiles=course(round);for(const id of [3,7,11,6,10,14]){const p=placeTrap(tiles,id,'crack');assert.ok(p.ok,`six separated traps: ${id}`);tiles=p.tiles;}
- assert.equal(tiles.filter(t=>t.type==='crack').length,6);assert.ok(validateCourse(tiles));
- assert.match(placeTrap(tiles,13,'crack').reason,/Six traps max/);
+ let tiles=course(round);for(const id of [3,7,11,6,10]){const p=placeTrap(tiles,id,'crack');assert.ok(p.ok,`five separated traps: ${id}`);tiles=p.tiles;}
+ assert.equal(tiles.filter(t=>t.type==='crack').length,5);assert.ok(validateCourse(tiles));
+ assert.match(placeTrap(tiles,13,'crack').reason,/Five traps max/);
  let first=placeTrap(course(round),3,'crack').tiles;
  assert.match(placeTrap(first,5,'crack').reason,/safe block between/);
  assert.match(placeTrap(first,4,'crack').reason,/safe block between/);
  assert.ok(placeTrap(first,7,'crack').ok);
  first[5].type='crack';assert.equal(trapSpacingValid(first),false);assert.equal(validateCourse(first),false);
 }
-console.log('PASS: six traps on both rows, seventh rejected, adjacent/across traps rejected, separated traps allowed, spacing and winnability validated.');
+console.log('PASS: five traps on both rows, sixth rejected, adjacent/across traps rejected, separated traps allowed, spacing and winnability validated.');
 
 for(let round=0;round<3;round++){
  const tiles=course(round);for(const id of [0,1,2,15]){assert.ok(tiles[id].locked);assert.equal(placeTrap(tiles,id,'crack').ok,false);}
