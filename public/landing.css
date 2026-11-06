@@ -46,3 +46,9 @@
 .lp-hero-copy{position:relative;isolation:isolate}
 .lp-hero-copy:before{content:'';position:absolute;inset:-35px -15px -25px;z-index:-1;pointer-events:none;background:radial-gradient(ellipse at 50% 0%,#ffcf580c,transparent 70%)}
 @media(max-width:700px){.lp-warm-lights{height:66px;margin:-12px 0 8px}.lp-warm-lights img{width:900px;max-width:none;position:relative;left:50%;transform:translateX(-50%)}}
+
+/* Match the family dashboard's softly lit charcoal brick wall. */
+body{background-color:#14171b;background-image:radial-gradient(ellipse 1000px 760px at 10% 0%,#ffd52220,transparent 72%),radial-gradient(ellipse 850px 1200px at 100% 35%,#3b4bff0b,transparent 75%),linear-gradient(#171a20a3,#171a20a3),url('/assets/dashboard-brick.svg');background-size:auto,auto,auto,240px 112px}
+.lp-clock-section,.lp-discover,.lp-search-guides{background:transparent}
+.lp-arcade{background:radial-gradient(ellipse at 67% 100%,#ffd5220c,transparent 65%)}
+.lp-header~.avk-social{background:#101216c9}
