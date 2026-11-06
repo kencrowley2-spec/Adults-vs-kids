@@ -1,26 +1,28 @@
 # Club family network
 
-The private club app links to `/admin/app/network` from its home dashboard. The account identified by `families.user_id` is that family's administrator. Roster names are players, not independently authenticated administrators. No existing website profile permissions are changed.
+The private club home dashboard links to `/admin/app/network`. The account identified by `families.user_id` is that family's administrator; player roster names do not grant administrator permissions. Existing website records and access rules are unchanged.
 
-## Current implementation
+## Simple user flow
 
-- Persistent, opt-in club profile with a family alias and a random 128-bit invite code.
-- Family and friend's-family connection requests. Sending a request records the sending administrator's consent; only the receiving administrator can accept it.
-- Approved circle, incoming/outgoing requests, blocking and removal. Blocking or removal cancels open invitations. Unblocking requires a fresh connection request, with a 24-hour retry delay.
-- Challenge invitations for three club practice games. Only approved connections may exchange them; only the recipient can accept or decline. Invitations are in-app only.
-- Each side sees only the other family's club alias and relationship/invitation status. No email, invite code, child roster, or location directory is shared.
-- Database event log and mutation rate limit (60 successful actions per account per hour). Pair locks prevent reciprocal-request races; connection locks serialize challenge acceptance and blocking.
+1. Choose a unique, searchable club family name.
+2. Search another family's name and tap **Add friend**.
+3. The receiving family administrator accepts the request.
+4. Approved friends can exchange challenge invitations.
 
-The `club_private` schema is not exposed through the Data API. Tables have RLS enabled and no direct grants or row policies for client roles, intentionally denying direct reads/writes. A public SECURITY INVOKER RPC delegates to a private SECURITY DEFINER action function with an empty search path, explicit identity checks, and narrowly scoped actions. The actor is always `auth.uid()`; client-supplied roles and owner IDs have no authority.
+A family administrator can also create a named **Neighborhood** and invite families from search results. The owner manages group invitations and removals; each invited family administrator must accept before joining. Joining a Neighborhood does not automatically create friend relationships. Members can leave; the owner can close the group. Groups are private to accepted members and invited administrators. Pending invitations do not reveal the group's member list. No street address is collected.
 
-## Pre-release access
+## Implementation
 
-Both the app page/API and the database restrict access during development. The database's `club_private.preview_administrators` allowlist contains only the existing verified website administrator. Production test fixtures use a rolled-back transaction; there are no fabricated friends, requests, or scores in customer records.
+`club_private` stores family aliases, relationships, challenge invitations, Neighborhoods, memberships and an audit log. Tables have RLS enabled with no direct client-role grants or policies, intentionally denying direct access. The public SECURITY INVOKER RPC delegates to a private SECURITY DEFINER function with an empty search path. Every request verifies `auth.uid()`, the family-owner account and the pre-release allowlist. Client-supplied roles and actor IDs have no authority.
 
-## Before release
+Search returns at most 20 club aliases and IDs, excludes the current family and blocked connections, and never returns emails, child rosters or legacy invite codes. Club names are unique ignoring case and surrounding whitespace. Existing legacy codes remain internal for compatibility, are omitted from all responses, and their old direct helper is no longer callable by authenticated users. Public code-based requests and rotation are disabled.
 
-Online cross-device matches are not implemented by invitation acceptance. `onlinePlayReady` is explicitly false. Keep that disclosure until server-authoritative match sessions, authorized players, game state, result verification, disconnection/rejoin, and invitation expiry are implemented.
+Sending a friend request records the sender's approval; only the recipient administrator can accept. Blocking/removal cancels open challenge invitations. Blocking also cancels pending Neighborhood invitations between the families. Unblocking does not automatically restore friendships. Limits: 5 owned active Neighborhoods, 50 invited/accepted families per Neighborhood, 60 successful network/search actions per account per hour, and a 24-hour cooldown before re-inviting declined/removed families. Pair, connection and group locks serialize state changes.
 
-To open the network to paying families, replace the preview gate with verified membership and family-role checks in the API and database together. Do not simply remove the API administrator gate. Add any separately authenticated family members with server-managed membership records; children must never receive the family-admin role through user-editable metadata. Preserve bilateral administrator approvals for relationships, and enforce child-player eligibility at match entry. Add expiry and scheduled tournaments once real match sessions exist.
+## Pre-release status
 
-Tests: `node --experimental-strip-types tests/club-app.mjs`, `node --experimental-strip-types tests/club-network.mjs`, and `tests/club-network-access.sql` against Supabase inside its rollback transaction.
+The page, API and database remain administrator-only. The database preview allowlist contains the existing verified website administrator. Test families, requests and groups are created only inside a rolled-back transaction.
+
+Online cross-device gameplay is not activated by invitation acceptance. `onlinePlayReady` remains false, with an explicit UI disclosure. Before release, replace preview gates with verified club membership and server-managed family-role checks together. Implement authorized match sessions, authoritative game state and results, disconnection/rejoin, invitation expiry and tournament services. Do not grant administrator authority through editable user metadata.
+
+Validation: production build, account/public-page tests, `tests/club-app.mjs`, `tests/club-network.mjs`, and the rolled-back database tests in `tests/club-network-access.sql`.
