@@ -121,3 +121,13 @@ dialog.roster-dialog{width:min(560px,calc(100vw - 24px));padding:22px;max-height
 .roster-editor-teams fieldset>button{padding:10px 5px;background:transparent;color:#8d6920;border:0;font-size:12px;min-height:42px}.roster-save{display:block;width:100%;margin:18px 0 8px;min-height:46px;background:var(--gold-fill);color:#30250d;border:1px solid #bc993f;border-radius:6px;font-weight:750}
 #roster-editor-status{font-size:12px;line-height:1.5}.roster-dialog :focus-visible,.club-roster-dialog :focus-visible{outline:2px solid #a17b25;outline-offset:3px}
 @media(max-width:350px){dialog.club-roster-dialog,dialog.roster-dialog{padding:16px}.club-roster-dialog .family-roster-teams{gap:8px}.club-roster-dialog .roster-team{padding:13px 7px}.club-roster-dialog .roster-team h3{font-size:12px}.roster-player{font-size:12px;padding:9px 6px}.roster-editor-teams{grid-template-columns:1fr}}
+
+/* Sculpted metallic gold artwork inside the existing white dashboard buttons. */
+.club-first-screen .club-key-icon{width:clamp(40px,7svh,62px);height:clamp(40px,7svh,62px);border:0;background:transparent;border-radius:0;flex:none}
+.club-first-screen .club-key-icon .club-gold-icon{display:block;width:100%;height:100%;overflow:hidden}
+.club-gold-icon{overflow:hidden;flex:none}
+.bottom-nav a>span:has(.club-gold-icon){width:34px;height:34px;display:block}
+.bottom-nav .club-gold-icon{display:block;width:100%;height:100%}
+.club-home .bottom-nav a,.club-detail .bottom-nav a{gap:2px}
+@media(max-height:690px){.club-first-screen .club-key-icon{width:36px;height:36px}.club-first-screen .club-key{gap:3px}}
+@media(max-height:570px){.club-first-screen .club-key-icon{width:29px;height:29px}}
