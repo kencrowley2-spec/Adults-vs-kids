@@ -1,0 +1,84 @@
+/* The Clubhouse interior: the same white tiles and brushed gold as Home. */
+.club-detail{--muted:#71664f;--line:#ddcda5;background:#eeeae2}
+.club-detail .preview-bar{max-width:680px;background:#fff;color:#716544;min-height:24px;padding:5px 12px;font-size:8px;letter-spacing:.04em}
+.club-detail .app-shell{max-width:680px;background:#fff;border-radius:0;box-shadow:0 15px 70px #72541e12}
+.club-detail main{padding:0 20px 22px}
+.club-detail .bottom-nav{width:min(680px,100%);height:calc(72px + env(safe-area-inset-bottom));padding:5px 6px calc(5px + env(safe-area-inset-bottom))}
+.club-detail .bottom-nav a{min-height:0;font-size:8px;gap:5px;padding:5px 0}
+.club-detail .bottom-nav a[aria-current]:before{top:-5px;background:#c29b38}
+.clubhouse-interior-brand{margin:0 -20px 25px;padding:12px 20px 10px;background:linear-gradient(180deg,#ffffff18,#fff 80%),url('/assets/club-scenes/crystal-beach.webp') center 53%/cover;border-bottom:1px solid #ddcda5;display:flex;flex-direction:column;align-items:center;gap:6px}
+.clubhouse-interior-top{width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:40px}
+.clubhouse-home-link{display:inline-flex;align-items:center;gap:6px;color:#73551e;background:#ffffffed;border:1px solid #d8c795;border-radius:20px;padding:7px 10px;font-size:10px;font-weight:650}
+.clubhouse-home-link svg{width:14px;height:14px}
+.clubhouse-website-logo{display:flex;align-items:center;justify-content:center;width:106px;min-height:44px;padding:3px;flex:none}
+.clubhouse-website-logo img{display:block;width:100%;height:auto;max-height:42px;object-fit:contain}
+.club-first-screen .player-wordmark.clubhouse-website-logo{padding:0;width:106px;margin-left:auto;text-shadow:none}
+.clubhouse-interior-brand .clubhouse-sign-frame{width:min(100%,330px)}
+.club-detail .page-title{position:relative;padding:0 0 19px;margin:0 0 22px;border-bottom:1px solid #e5dcc4;text-align:left}
+.club-detail .page-title>a{display:none}
+.club-detail .page-title h1{color:#191815;font-size:clamp(25px,5vw,33px);font-weight:750}
+.club-detail .page-title p{color:#77674a;font-size:13px;line-height:1.5;margin-top:8px}
+.club-detail h2,.club-detail h3{color:#252016}
+.club-detail .section-heading h2{font-size:21px;font-weight:700}.club-detail .section-heading p{font-size:13px;color:#786c55}
+.club-detail :is(.panel,.lobby-buddies,.lobby-chat,.lobby-invites,.network-profile,.network-invite){border:1px solid #ceb77d;border-radius:8px;background:linear-gradient(145deg,#fff,#fffdf8);box-shadow:0 1px 3px #9d7a2510}
+.club-detail :is(.gold-banner,.winter-banner,.lobby-hero,.challenge-entry,.lobby-entry,.network-entry){background:linear-gradient(135deg,#fffdf8,#f6ecd0);border:1px solid #cfb779;border-radius:8px;color:#6c5220;box-shadow:none}
+.club-detail :is(.gold-banner,.winter-banner) :is(h2,p),.club-detail .lobby-hero h2,.club-detail .challenge-entry h2{color:#352a17}
+.club-detail .lobby-hero h2 span,.club-detail .lobby-entry strong,.club-detail .network-entry strong{color:#9a7628}
+.club-detail .lobby-hero:after{color:#a2803010}
+.club-detail :is(.lobby-hero>p,.challenge-entry p,.lobby-entry small,.network-entry small){color:#77684b}
+.club-detail :is(.gold-button,.navy-button,.network-secondary),.profile-save,.challenge-continue{background:#fffdf8;color:#624a1c;border:1px solid #bda05a;border-radius:6px;box-shadow:none;font-weight:700}
+.club-detail :is(.gold-banner,.winter-banner,.challenge-entry,.lobby-hero) .gold-button,.profile-save,.challenge-continue{background:var(--gold-fill);color:#30250d;border-color:#bc993f}
+.club-detail :is(.gold-button,.navy-button,.network-secondary):hover,.profile-save:hover,.challenge-continue:hover{background:#f4e6bc;filter:none}
+.club-detail .network-secondary{background:#fffdf8!important;color:#6a5120!important;border-color:#c8b16f!important}
+.club-detail .pill,.club-detail .dark-pill{background:#f3e7c2;color:#6d531b}
+.club-detail .tabs button{background:#fff;color:#725e34;border:1px solid #d8c795;border-radius:6px}
+.club-detail .tabs button.active{background:var(--gold-fill);color:#30250d;border-color:#ba9742}
+.club-detail :is(.text-link,.wide-link,.lobby-section-head a,.network-text-button){color:#8d6820}
+.club-detail .progress{background:#f0e8d4}.club-detail .progress span{background:var(--gold-fill)}
+.club-detail :is(.overview-grid .big-icon,.game-card .big-icon,.rank,.score-line b,.gain,.matchup-teams){color:#a17b25}
+.club-detail :is(.badge-card,.leader-first){background:#fff9e9;border-color:#cbb16e;color:#70551e}
+.club-detail .badge-card.locked{background:#fcfbf8;color:#857a62;border-color:#e2d9c5}
+.club-detail .locked .badge-status{background:#f1ece0;color:#75684e}
+.club-detail .leader-first :is(h3,.rank){color:#82621f}
+.club-detail .gain small,.club-detail .buddy-info small,.club-detail .chat-bubble small,.club-detail .lobby-invite small{color:#7d7057}
+.club-detail :is(input,select,textarea),dialog :is(input:not([type=radio]):not([type=checkbox]):not([type=file]),select,textarea){background:#fffefa!important;color:#292316!important;border:1px solid #cdbb8e!important;border-radius:6px;accent-color:#a17b25}
+.club-detail :is(label,.lobby-search),dialog label{color:#766039}
+.club-detail :is(.network-avatar,.buddy-avatar,.network-profile-avatar){background:#f5ebce;border:1px solid #c8b16f;color:#967126;box-shadow:none}
+.club-detail :is(.network-metrics a,.network-code){background:#fffaf0;border-color:#ddcda5;border-radius:7px}
+.club-detail .network-status,.club-detail .network-status.approved{background:#f3e7c2;color:#70551e}
+.club-detail .network-notice{background:#fff8e5;color:#6b511d;border-color:#cbb16e}
+.club-detail .network-notice.error{background:#fff0eb;color:#963f2e;border-color:#e0b6aa}
+.club-detail :is(.buddy-row,.lobby-invite,.network-blocked-row,.neighborhood-member,.neighborhood-close,.network-search-result){border-color:#e5dcc6;color:#30291b}
+.club-detail .buddy-row[aria-pressed=true]{color:#89651c;background:#fcf5e3}
+.club-detail .buddy-unread{background:#b58b2c;color:white}
+.club-detail .lobby-section-head h2{color:#8d6b22}.club-detail .lobby-section-head h2 span{background:#f4e8c7}
+.club-detail .chat-bubble{background:#fffdf7;border-color:#ddcda5;color:#443a27}
+.club-detail .chat-bubble.mine{background:#faf0d6;border-color:#d5bc7e}.club-detail .chat-bubble.ping{color:#8b6922}
+.club-detail .lobby-chat-empty>span{color:#a17b25}.club-detail .network-rules{background:#fffdf8}.club-detail .network-rules summary{color:#7e6024}
+.club-detail #networkChallengeDetails summary span{color:#8b6922}
+.club-detail .printable pre{background:#fffdf6;color:#4e4228;border:1px solid #e4d9bb;border-radius:6px}
+.club-detail .charlie-art{background:#fffaf0;border:1px solid #dac58e;border-radius:8px}
+.club-detail .app-footer{background:#fffdf8;border-top:1px solid #e5dcc4;padding:20px 20px calc(100px + env(safe-area-inset-bottom))}
+.club-detail .app-footer a{color:#896923}.club-detail .app-footer p{color:#81745a}
+/* Shared action sheets and game setup also belong to the Clubhouse. */
+dialog,dialog.friend-challenge,dialog.player-profile-dialog{background:#fffefa;color:#282216;border:1px solid #cfb779;border-radius:10px;box-shadow:0 15px 65px #6c4c2530}
+dialog::backdrop,dialog.friend-challenge::backdrop,dialog.player-profile-dialog::backdrop{background:#3e321b66;backdrop-filter:blur(5px)}
+dialog :is(h1,h2,h3),.friend-challenge h2,.challenge-friend strong{color:#282216}
+dialog p,.friend-challenge p,.challenge-friend small{color:#79694c}
+dialog .dialog-head button,.challenge-close{background:#fffaf0;color:#826324;border:1px solid #d8c795;border-radius:6px}
+.challenge-brand,.challenge-matchup b{color:#a17b25}.challenge-friend:has(input:checked){background:#f8edcd}.challenge-friend input{accent-color:#a17b25}
+.network-profile-hero{background:linear-gradient(180deg,#fffaf0,#f3e7c5);border-color:#ddcda5}.network-profile-hero :is(h2,p){color:#715521}
+.network-profile-menu button,.network-menu-pending{color:#40351e;border-color:#e6dbc1}.network-profile-menu button:hover{background:#fcf3dc}
+.network-public-profile{background:#fff8e7}.network-public-profile p{color:#6d5c3b}
+.profile-upload-label,.profile-scenes legend,.profile-small-button{color:#7c6028}.profile-photo-preview{background:#f8efd7;border-color:#cfb779;color:#98752a}
+.player-profile-dialog :is(select,input:not([type=radio]):not([type=file])){border-color:#cdbb8e}.profile-scene:has(:checked){border-color:#a17b25}.profile-scene span{background:#54401eaa}
+.club-detail :focus-visible,dialog :focus-visible,.clubhouse-website-logo:focus-visible{outline:2px solid #a17b25;outline-offset:3px}
+@media(max-width:400px){.club-detail main{padding-left:15px;padding-right:15px}.clubhouse-interior-brand{margin-left:-15px;margin-right:-15px;padding-left:15px;padding-right:15px}.clubhouse-website-logo,.club-first-screen .player-wordmark.clubhouse-website-logo{width:94px}.club-detail .page-title h1{font-size:25px}}
+@media print{.clubhouse-interior-brand{display:none!important}}
+.club-detail .network-search-result{background:#fffdf8!important;border-color:#ddcda5!important;color:#40351e!important}
+.club-detail .network-search-result h3{color:#6d531b}
+dialog :is(.gold-button,.navy-button){background:var(--gold-fill);color:#30250d;border-color:#bc993f;border-radius:6px;box-shadow:none}
+dialog .dialog-head .dark-pill{background:#f3e7c2;color:#6d531b}
+:is(#networkChallengeError,#networkNeighborhoodError,#lobbyChallengeError,#lobbyAcceptError){color:#a34331}
+.player-profile-dialog .profile-privacy,.player-profile-dialog #profileFormStatus{color:#79694c}
+@media print{.club-detail .printable pre{background:white;color:black;border:0}}
