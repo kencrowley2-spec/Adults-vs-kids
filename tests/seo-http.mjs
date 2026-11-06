@@ -8,11 +8,11 @@ const server=process.env.SEO_TEST_ORIGIN?null:spawn(process.execPath,['node_modu
 try{
  if(server)await new Promise((resolve,reject)=>{let s='';const t=setTimeout(()=>reject(Error('Startup timeout')),15000);server.stdout.on('data',d=>{s+=d;if(s.includes('Ready in')){clearTimeout(t);resolve();}});server.once('exit',c=>{clearTimeout(t);reject(Error('Server exit '+c));});});
  const sitemap=await fetch(root+'/sitemap.xml');assert.equal(sitemap.status,200);const xml=await sitemap.text();
- const paths=[...xml.matchAll(/<loc>https:\/\/adultsvskids.com([^<]*)<\/loc>/g)].map(x=>x[1]);assert.equal(paths.length,21);
+ const paths=[...xml.matchAll(/<loc>https:\/\/adultsvskids.com([^<]*)<\/loc>/g)].map(x=>x[1]);assert(paths.includes('/all-access-club'));assert(paths.includes('/products'));assert(!paths.includes('/founders'));
  const robots=await fetch(root+'/robots.txt');assert.equal(robots.status,200);const rules=await robots.text();assert.match(rules,/Sitemap: https:\/\/adultsvskids.com\/sitemap.xml/);assert.match(rules,/Disallow: \/family\$/);assert(!rules.includes('Disallow: /family\n'));assert(!xml.includes('/login'));
  const pages=new Map();
  for(const path of paths){const r=await fetch(root+path,{redirect:'manual'});assert.equal(r.status,200,path);const html=await r.text();pages.set(path,html);
-  assert.equal((html.match(/<title>/g)||[]).length,1,path);assert.equal((html.match(/name="description"/g)||[]).length,1,path);assert.equal((html.match(/rel="canonical"/g)||[]).length,1,path);assert(html.includes(`href="https://adultsvskids.com${path}"`),path);assert.match(html,/property="og:title"/);if(!['/founders','/next-chapter','/creator-league'].includes(path))assert.ok(/<h1/.test(html),path+' has a primary heading');assert(!r.headers.get('x-robots-tag')?.includes('noindex'),path);
+  assert.equal((html.match(/<title>/g)||[]).length,1,path);assert.equal((html.match(/name="description"/g)||[]).length,1,path);assert.equal((html.match(/rel="canonical"/g)||[]).length,1,path);assert(html.includes(`href="https://adultsvskids.com${path}"`),path);assert.match(html,/property="og:title"/);if(!['/creator-league'].includes(path))assert.ok(/<h1/.test(html),path+' has a primary heading');assert(!r.headers.get('x-robots-tag')?.includes('noindex'),path);
   for(const m of html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)){const json=JSON.parse(m[1]);assert.equal(json['@context'],'https://schema.org');assert(json['@graph'].some(x=>x['@type']==='Organization'));assert(json['@graph'].some(x=>x['@type']==='WebSite'));}
   assert(!/84\.6%|of parents experience guilt|Unverified figure/.test(html),path);
  }

@@ -10,7 +10,7 @@ export async function POST(request:Request){
  try{
   if(event.type==='checkout.session.completed'||event.type==='checkout.session.async_payment_succeeded'){
    const session=event.data.object as Stripe.Checkout.Session;
-   if(session.metadata?.avk_type==='pdf-v1'&&session.payment_status==='paid')await fulfillPdf(session.id);
+   if(['pdf-v1','club-prelaunch-v1'].includes(session.metadata?.avk_type||'')&&session.payment_status==='paid')await fulfillPdf(session.id);
   }
   if(event.type==='charge.refunded'||event.type==='charge.dispute.created'){
    const obj=event.data.object as Stripe.Charge|Stripe.Dispute;const id=typeof obj.payment_intent==='string'?obj.payment_intent:obj.payment_intent?.id;if(id)await revokeIntent(id);

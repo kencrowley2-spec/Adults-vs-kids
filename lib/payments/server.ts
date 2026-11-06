@@ -2,6 +2,7 @@ import Stripe from 'stripe';
 import {createClient} from '@supabase/supabase-js';
 import {pdfCart,pdfProducts} from '../../config/pdfs';
 import {paidOrder} from './policy';
+import {paidClubOrder,clubPlan} from './club';
 export function stripeClient(){const key=process.env.STRIPE_SECRET_KEY;if(!key)throw new Error('Payments are being connected.');return new Stripe(key,{httpClient:Stripe.createFetchHttpClient(),maxNetworkRetries:2,timeout:15000});}
 export function paymentAdmin(){const url=process.env.SUPABASE_URL,key=process.env.SUPABASE_SERVICE_ROLE_KEY;if(!url||!key)throw new Error('Download delivery is being connected.');return createClient(url,key,{auth:{persistSession:false,autoRefreshToken:false}});}
 export const paymentLive=()=>process.env.STRIPE_MODE==='live';
@@ -15,10 +16,16 @@ export async function availablePdfs(){
 export async function fulfillPdf(sessionId:string){
  if(!/^cs_(test_|live_)?[A-Za-z0-9]+$/.test(sessionId))throw new Error('Invalid checkout session');
  const stripe=stripeClient(),session=await stripe.checkout.sessions.retrieve(sessionId,{expand:['payment_intent.latest_charge']});
- const order=paidOrder(session,paymentLive());
+ const isClub=session.metadata?.avk_type==='club-prelaunch-v1';
+ const order=isClub?paidClubOrder(session,paymentLive()):paidOrder(session,paymentLive());
  const lines=await stripe.checkout.sessions.listLineItems(sessionId,{limit:10});
- const expected=pdfCart(order.product_ids),prices=expected.map(p=>process.env[p.priceEnv]);
- if(lines.has_more||lines.data.length!==expected.length||lines.data.some(l=>l.quantity!==1||!l.price||!prices.includes(l.price.id)))throw new Error('Unexpected checkout items');
+ if(isClub){
+  const plan=clubPlan(session.metadata?.avk_plan),line=lines.data[0];
+  if(!plan||lines.has_more||lines.data.length!==1||line.quantity!==1||line.price?.currency!=='usd'||line.price?.type!=='one_time'||line.price?.unit_amount!==plan.cents||line.amount_total!==plan.cents)throw new Error('Unexpected Club checkout items');
+ }else{
+  const expected=pdfCart(order.product_ids),prices=expected.map(p=>process.env[p.priceEnv]);
+  if(lines.has_more||lines.data.length!==expected.length||lines.data.some(l=>l.quantity!==1||!l.price||!prices.includes(l.price.id)))throw new Error('Unexpected checkout items');
+ }
  const intent=session.payment_intent;
  if(!intent||typeof intent==='string'||!intent.latest_charge||typeof intent.latest_charge==='string')throw new Error('Payment has not settled');
  const charge=intent.latest_charge;
