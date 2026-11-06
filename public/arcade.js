@@ -447,6 +447,7 @@ async function openGame(id){
   const chosen=GAMES.find(g=>g.id===id);if(!chosen||chosen.comingSoon)return;
   if(clubEntry){clubIntroPending=true;try{await clubReveal(chosen.name)}finally{clubIntroPending=false}}
 
+  if(id==='neighborhood'){window.location.assign('/defend-your-neighborhood');return;}
   if(id==='faces')return openFaces();
   if(id==='draw')return openDraw();
   if(id==='lava')return openLava();
