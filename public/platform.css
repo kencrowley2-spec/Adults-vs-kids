@@ -110,3 +110,10 @@ body.platform{margin:0;background:#f5f4ef;color:#171c19;font-family:Arial,Helvet
 .platform .game-idea-card .paperback-click-cue{flex-shrink:0;border:0;border-radius:999px;background:#ffd522;color:#111;padding:10px 14px;gap:8px;font-weight:900;letter-spacing:.7px}
 .platform .game-idea-card .game-idea-arrow{font-size:25px;color:#111}
 @media(max-width:600px){.platform .game-idea-card .paperback-buy-button{gap:12px}.platform .game-idea-card .paperback-click-cue{padding:10px 12px;font-size:9px;gap:5px}}
+
+/* Compact dashboard greeting; the family actions live below and in the tabs. */
+.platform .platform-welcome{min-height:0;padding:18px 22px;display:block}
+.platform .platform-welcome h1{margin:0}
+.platform .platform-welcome .platform-eyebrow{margin-bottom:8px}
+.platform .platform-welcome .founding-member-recognition{margin:12px 0 0}
+@media(max-width:600px){.platform .platform-welcome{padding:16px 20px}}
