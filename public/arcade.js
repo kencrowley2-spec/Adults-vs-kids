@@ -1,3 +1,4 @@
+import {mountCoverRotation,ROTATING_COVERS} from './arcade-rotation.js?v=1';
 import {mountPinball} from './arcade-pinball.js?v=1';
 import {createCaseReader} from './arcade-cases.js?v=2';
 import {mountFaces} from './arcade-faces.js?v=1';
@@ -1008,7 +1009,7 @@ const recentKey=`avk-arcade-recent:${arcadeAccountId}`;
 const caseReader=createCaseReader({coverMarkup:referenceCoverMarkup,onPlay:openGame,players:()=>[contender(0),contender(1)],getAudioContext:()=>{unlockAudio();return audioContext;},soundEnabled:()=>soundOn});
 function gameTile(g,parent){
  const slot=document.createElement('div');slot.className='shelf-slot';parent.appendChild(slot);
- const tile=button('',()=>caseReader.open(g,tile,slot),slot,'game-tile cover-tile'+(g.id==='lava'?' cover-lava':''));
+ const tile=button('',()=>{const selected=GAMES.find(entry=>entry.id===tile.getAttribute('data-game'));if(selected)caseReader.open(selected,tile,slot);},slot,'game-tile cover-tile'+(g.id==='lava'?' cover-lava':''));
  tile.setAttribute('data-game',g.id);const rect=REFERENCE_COVERS[g.id];if(rect){tile.style.setProperty('--case-x',rect[0]/1220*100+'%');tile.style.setProperty('--case-y',rect[1]/2712*100+'%');tile.style.setProperty('--case-w',rect[2]/1220*100+'%');tile.style.setProperty('--case-h',rect[3]/2712*100+'%');tile.classList.add('reference-hotspot');}tile.disabled=!!g.comingSoon;tile.setAttribute('data-coming-soon',String(!!g.comingSoon));tile.setAttribute('aria-label',g.comingSoon?`${g.name} — Coming Soon`:`Play ${g.name}`);tile.innerHTML=rect?referenceCoverMarkup(g):coverMarkup(g);if(g.id==='neighborhood')tile.setAttribute('aria-label',`${g.name} — Under Construction`);return tile;
 }
 function rememberGame(id){
@@ -1016,7 +1017,7 @@ function rememberGame(id){
 
 }
 GAMES.filter(g=>g.premium).forEach(g=>gameTile(g,$('arcade-premium')));
-for(const [shelf,ids] of Object.entries(BROWSE_SHELVES))ids.forEach(id=>{const entry=GAMES.find(g=>g.id===id);if(entry)gameTile(entry,$('arcade-'+shelf));});
+for(const [shelf,ids] of Object.entries(BROWSE_SHELVES))ids.forEach(id=>{const entry=GAMES.find(g=>g.id===id);if(entry&&(!ROTATING_COVERS.includes(id)||id==='challenge'))gameTile(entry,$('arcade-'+shelf));});
 $('arcade-random').addEventListener('click',startSeries);
 $('arcade-return').addEventListener('click',()=>{clearTimers();series=null;arena.hidden=true;lobby.hidden=false;game=null;$('arcade-favorites').querySelector('button')?.focus();});
 $('arcade-reset').addEventListener('click',()=>{
@@ -1077,3 +1078,5 @@ const linkedGame=new URLSearchParams(location.search).get('game');
 if(GAMES.some(g=>g.id===linkedGame&&!g.comingSoon))openGame(linkedGame);
 
 mountPinball({getAudioContext:()=>{unlockAudio();return audioContext;},soundEnabled:()=>soundOn,accountId:arcadeAccountId});
+
+mountCoverRotation({games:GAMES,markup:referenceCoverMarkup});
