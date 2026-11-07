@@ -8,7 +8,7 @@ import {mountFrog,frogCourses,frogRoundWinner} from './arcade-frog.js?v=3';
 import {mountTreasure,treasurePlan} from './arcade-treasure.js?v=1';
 import {mountBlocks} from './arcade-blocks.js?v=1';
 import {mountBasketball} from './arcade-basketball.js?v=1';
-import {coverMarkup,recentGames} from './arcade-library.js?v=15';
+import {coverMarkup,recentGames} from './arcade-library.js?v=16';
 import {GAMES, ANIMALS, TRIVIA, PICTURES, CHALLENGES} from './arcade-data.js?v=31';
 import {shuffle, roundWinner, awardRound, lineWinner} from './arcade-core.js';
 
@@ -1032,7 +1032,7 @@ function miniGolf(){
 const recentKey=`avk-arcade-recent:${arcadeAccountId}`;
 function gameTile(g,parent){
  const tile=button('',()=>openGame(g.id),parent,'game-tile cover-tile'+(g.id==='lava'?' cover-lava':''));
- tile.setAttribute('data-game',g.id);tile.disabled=!!g.comingSoon;tile.setAttribute('data-coming-soon',String(!!g.comingSoon));tile.setAttribute('aria-label',g.comingSoon?`${g.name} — Coming Soon`:`Play ${g.name}`);tile.innerHTML=coverMarkup(g);return tile;
+ tile.setAttribute('data-game',g.id);tile.disabled=!!g.comingSoon;tile.setAttribute('data-coming-soon',String(!!g.comingSoon));tile.setAttribute('aria-label',g.comingSoon?`${g.name} — Coming Soon`:`Play ${g.name}`);tile.innerHTML=coverMarkup(g);if(g.id==='neighborhood')tile.setAttribute('aria-label',`${g.name} — Under Construction`);return tile;
 }
 function renderRecent(){
  let ids=[];try{ids=recentGames(localStorage,recentKey,GAMES.filter(g=>!g.premium));}catch{}
