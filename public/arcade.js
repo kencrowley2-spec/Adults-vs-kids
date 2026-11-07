@@ -1,3 +1,4 @@
+import {createCaseReader} from './arcade-cases.js?v=1';
 import {mountFaces} from './arcade-faces.js?v=1';
 import {mountDraw} from './arcade-draw.js?v=1';
 import {mountLava} from './arcade-lava.js?v=7';
@@ -7,7 +8,7 @@ import {mountFrog,frogCourses,frogRoundWinner} from './arcade-frog.js?v=3';
 import {mountTreasure,treasurePlan} from './arcade-treasure.js?v=1';
 import {mountBlocks} from './arcade-blocks.js?v=1';
 import {mountBasketball} from './arcade-basketball.js?v=1';
-import {coverMarkup,recentGames,BROWSE_SHELVES} from './arcade-library.js?v=17';
+import {coverMarkup,recentGames,BROWSE_SHELVES} from './arcade-library.js?v=18';
 import {GAMES, ANIMALS, TRIVIA, PICTURES, CHALLENGES} from './arcade-data.js?v=31';
 import {shuffle, roundWinner, awardRound, lineWinner} from './arcade-core.js';
 
@@ -1003,31 +1004,10 @@ function miniGolf(){
 }
 
 const recentKey=`avk-arcade-recent:${arcadeAccountId}`;
-let bookOpening=false,bookSelection=null,bookLaunch=false;
-const bookDialog=$('arcade-book');
-function openGameBook(entry,tile,slot){
- if(bookOpening||bookDialog.open)return;
- bookOpening=true;bookSelection=entry;bookLaunch=false;
- tile.setAttribute('aria-busy','true');slot.classList.add('is-picking');
- const reveal=()=>{
-  tile.removeAttribute('aria-busy');slot.classList.remove('is-picking');bookOpening=false;
-  if(document.hidden||!arena.hidden)return;
-  $('book-game-title').textContent=entry.name;
-  $('book-game-rules').textContent=entry.description;
-  $('book-cover').setAttribute('data-game',entry.id);$('book-cover').innerHTML=coverMarkup(entry);
-  $('book-construction').hidden=entry.id!=='neighborhood';
-  bookDialog.showModal();window.dispatchEvent(new Event('arcade-overlay-open'));
- };
- if(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches)reveal();else setTimeout(reveal,300);
-}
-$('book-close').addEventListener('click',()=>bookDialog.close());
-$('book-back').addEventListener('click',()=>bookDialog.close());
-$('book-play').addEventListener('click',()=>{if(!bookSelection||bookLaunch)return;bookLaunch=true;const id=bookSelection.id;bookDialog.close();openGame(id);});
-bookDialog.addEventListener('close',()=>{bookSelection=null;window.dispatchEvent(new Event('arcade-overlay-close'));});
-bookDialog.addEventListener('click',event=>{if(event.target!==bookDialog)return;const r=bookDialog.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)bookDialog.close();});
+const caseReader=createCaseReader({coverMarkup,onPlay:openGame,players:()=>[contender(0),contender(1)],getAudioContext:()=>{unlockAudio();return audioContext;},soundEnabled:()=>soundOn});
 function gameTile(g,parent){
  const slot=document.createElement('div');slot.className='shelf-slot';parent.appendChild(slot);
- const tile=button('',()=>openGameBook(g,tile,slot),slot,'game-tile cover-tile'+(g.id==='lava'?' cover-lava':''));
+ const tile=button('',()=>caseReader.open(g,tile,slot),slot,'game-tile cover-tile'+(g.id==='lava'?' cover-lava':''));
  tile.setAttribute('data-game',g.id);tile.disabled=!!g.comingSoon;tile.setAttribute('data-coming-soon',String(!!g.comingSoon));tile.setAttribute('aria-label',g.comingSoon?`${g.name} — Coming Soon`:`Play ${g.name}`);tile.innerHTML=coverMarkup(g);if(g.id==='neighborhood')tile.setAttribute('aria-label',`${g.name} — Under Construction`);return tile;
 }
 function rememberGame(id){

@@ -29,4 +29,4 @@ export function coverMarkup(g){return `<span class="cover-brand">ADULTS vs. KIDS
 export function recentGames(storage,key,valid){try{const ids=JSON.parse(storage.getItem(key)||'[]');return Array.isArray(ids)?[...new Set(ids)].filter(id=>valid.some(g=>g.id===id)).slice(0,8):[];}catch{return [];}}
 
 // Each regular game has one permanent home on the display shelves.
-export const BROWSE_SHELVES={favorites:['memory','maze','treasure','tic','trivia','rps'],creative:['draw','faces','picture','code','number','challenge'],action:['frog','mole','claw']};
+export const BROWSE_SHELVES={favorites:['memory','maze','treasure','tic'],creative:['trivia','rps','draw','faces'],challenges:['picture','code','number','challenge'],action:['frog','mole','claw']};
