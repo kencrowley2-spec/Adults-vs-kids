@@ -77,3 +77,38 @@ body,body.club-detail,body.club-home,body.top100-page{background:#f1e6ca;color:v
 @media(max-width:350px){.club-first-screen .club-keypad{gap:7px;padding-inline:9px}.club-first-screen .club-key>span:last-of-type{font-size:9px}.club-first-screen .club-news-strip{padding-left:40px}.club-news-strip>.clubhouse-heading-icon{left:9px;width:23px;height:23px}.club-news-strip .clubhouse-title{font-size:22px}.club-first-screen .club-news-strip p{font-size:8px}.club-detail main{padding-inline:12px}.club-detail .clubhouse-interior-brand{margin-inline:-12px}.club-detail .leader-row h3{font-size:17px}.club-detail .gain{font-size:13px}}
 @media(prefers-reduced-motion:reduce){.club-first-screen .club-key{transition:none;transform:none}}
 @media print{body.club-detail,.club-detail .app-shell{background:white;color:black}.club-detail .printable.print-target{background:white;box-shadow:none;border:0}.club-detail .printable pre{background:white;color:black}.club-detail .bottom-nav{display:none}}
+/* Every app screen stays within the phone; longer tabs have explicit page buttons. */
+html:has(body.club-home),html:has(body.club-detail){height:100%;overflow:hidden;overscroll-behavior:none}
+body.club-home,body.club-detail{height:100svh;height:100dvh;overflow:hidden;overscroll-behavior:none}
+:is(.club-home,.club-detail) .preview-bar{height:24px;min-height:24px;padding-block:0;align-items:center;overflow:hidden}
+:is(.club-home,.club-detail) .app-shell{height:calc(100svh - 24px);height:calc(100dvh - 24px);min-height:0;margin-bottom:0;overflow:hidden}
+.club-home main{height:100%;padding:0 0 calc(82px + env(safe-area-inset-bottom))}
+.club-first-screen{height:100%;min-height:0;gap:8px;grid-template-rows:minmax(108px,25%) minmax(48px,9%) minmax(0,1fr) 29px;padding-bottom:5px}
+.club-first-screen .club-keypad{gap:8px;padding:2px 12px 6px}
+.club-first-screen .club-key{min-height:0;gap:3px;padding:3px}
+.club-first-screen .club-key-icon{width:clamp(27px,5.8dvh,55px);height:clamp(27px,5.8dvh,55px)}
+.club-first-screen .club-key>span:last-of-type{font-size:clamp(8px,2.55vw,13px)}
+.club-first-screen .club-news-strip{padding-block:4px}
+.club-first-screen .clubhouse-title{font-size:clamp(21px,5.8vw,34px)}
+.club-home .club-home-arcade{display:none}
+.club-home .profile-load-status{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);padding:0}
+.club-detail main{height:calc(100% - 126px - env(safe-area-inset-bottom));overflow:hidden;padding-bottom:4px}
+.club-detail .app-footer{display:none}
+.club-detail .clubhouse-interior-brand{margin-bottom:10px;padding-block:3px}
+.club-detail .page-title{margin-bottom:9px;padding-block:2px 8px}
+.club-detail .page-title h1{font-size:clamp(24px,5.6vw,34px)}
+.club-detail .page-title p{font-size:11px;line-height:1.3;margin-top:5px}
+.club-detail .tabs{margin:9px 0;gap:6px}.club-detail .tabs button{min-height:36px;padding:8px;font-size:10px}
+.club-detail main>.section-heading,.club-detail main>div>.section-heading{display:none}
+.club-detail main>.pill,.club-detail main>p{font-size:10px;margin:6px 0}
+.club-detail .club-screen-unit:not(.is-screen-visible){display:none!important}
+.club-detail :is(.game-list,.game-grid,.badge-grid,.overview-grid,.lobby-layout){display:block;gap:0;margin-top:0}
+.club-detail .is-screen-visible{margin-top:10px;margin-bottom:6px;transform-origin:top left}
+.club-detail .is-screen-visible.charlie-art{display:block;width:auto;max-width:100%;height:clamp(120px,36dvh,370px);object-fit:contain;margin-inline:auto}
+.club-detail .game-list .game-card{padding:20px 16px;gap:12px}
+.club-screen-pager{position:absolute;bottom:calc(87px + env(safe-area-inset-bottom));left:18px;right:18px;height:34px;display:flex;align-items:center;justify-content:space-between;gap:12px;color:#6e521c;font-size:11px;font-weight:800}
+.club-screen-pager button{width:58px;height:32px;border:1px solid #d2ad44;border-radius:9px;background:var(--gold-fill);color:#3e2d08;box-shadow:0 2px 0 #c39c35;font-size:22px;line-height:1}
+.club-screen-pager button:disabled{opacity:.35;box-shadow:none;cursor:default}
+@media(max-height:650px){.club-first-screen{grid-template-rows:minmax(100px,23%) 46px minmax(0,1fr) 27px;gap:6px}.club-first-screen .club-keypad{gap:6px}.club-first-screen .club-key-icon{width:29px;height:29px}.club-first-screen .club-key>span:last-of-type{font-size:8px}.club-first-screen .club-key small{font-size:4px}.club-first-screen .player-greeting h1{font-size:22px}.club-first-screen .headshot-button{width:33px;height:33px}.club-first-screen .player-greeting>.profile-eyebrow{font-size:5px}.club-first-screen .profile-bottomline{padding-bottom:4px;min-height:22px}.club-first-screen #playerRole{padding:4px 8px;font-size:6px}.club-first-screen .player-clock time{font-size:20px}.club-first-screen .club-news-strip p{font-size:8px}.club-detail .page-title p{font-size:10px}.club-detail .clubhouse-interior-brand{margin-bottom:7px}}
+@media(max-height:480px) and (orientation:landscape){.club-first-screen{grid-template-columns:31% 1fr;grid-template-rows:45px minmax(0,1fr) 26px;gap:5px}.club-first-screen .player-hero{grid-column:1;grid-row:1/4;margin:0;padding:8px;justify-content:space-around}.club-first-screen .club-news-strip{grid-column:2;grid-row:1;margin:0 7px}.club-first-screen .club-keypad{grid-column:2;grid-row:2;grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:repeat(3,minmax(0,1fr));padding:0 7px 4px;gap:5px}.club-first-screen .club-legacy-strip{grid-column:2;grid-row:3;margin:0 7px}.club-first-screen .player-header-details{display:block}.club-first-screen .player-clock{text-align:left;margin-top:10px}.club-first-screen .player-topline{flex-wrap:wrap}.club-first-screen .club-key-icon{width:24px;height:24px}.club-first-screen .club-key small{display:none}.club-first-screen .clubhouse-title{font-size:22px}}
+@media print{html:has(body.club-detail),body.club-detail,.club-detail .app-shell,.club-detail main{height:auto!important;overflow:visible!important}.club-screen-pager{display:none!important}.club-detail .printable.print-target{display:block!important;zoom:1!important}}
