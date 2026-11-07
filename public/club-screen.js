@@ -1,7 +1,7 @@
 /* Phone-sized Clubhouse pages. Original controls and IDs stay in place. */
 (()=>{
  const main=document.getElementById('appContent');
- if(!main||document.body.classList.contains('club-home'))return;
+ if(!main||document.body.classList.contains('club-home')||document.body.classList.contains('club-gallery-page'))return;
  const candidates='.panel,.badge-card,.gold-banner,.winter-banner,.challenge-entry,.lobby-entry,.network-entry,.lobby-hero,.lobby-buddies,.lobby-chat,.lobby-invites,.network-profile,.network-invite,.network-banner,.network-rules,.network-notice,.charlie-art,.wide-link';
  const pager=document.createElement('nav');pager.className='club-screen-pager';pager.setAttribute('aria-label','Content pages');
  pager.innerHTML='<button type="button" data-screen-prev aria-label="Previous page">←</button><span role="status" aria-live="polite"></span><button type="button" data-screen-next aria-label="Next page">→</button>';

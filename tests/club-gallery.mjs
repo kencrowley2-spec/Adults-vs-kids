@@ -1,0 +1,15 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {cleanGalleryImage} from '../lib/club-gallery.ts';
+import {clubPage,clubSections} from '../lib/club-app.ts';
+import {JSDOM} from 'jsdom';
+const image='data:image/jpeg;base64,'+Buffer.from([255,216,255,224,0,0]).toString('base64');
+const cleaned=cleanGalleryImage({image,title:' Family memory ',source:'upload',user_id:'intruder'});
+assert.equal(cleaned.title,'Family memory');assert.equal(cleaned.user_id,undefined);assert.equal(cleaned.image_hash.length,64);
+for(const image of ['data:image/svg+xml;base64,PHN2Zz4=','https://example.org/image.jpg','data:image/jpeg;base64,AAAA'])assert.throws(()=>cleanGalleryImage({image}));
+assert.throws(()=>cleanGalleryImage({image,title:'a'.repeat(101)}));assert.throws(()=>cleanGalleryImage({image,source:'public'}));assert.ok(clubSections.includes('gallery'));
+const home=new JSDOM(clubPage('home')).window.document;assert.equal(home.querySelector('a.club-news-strip').getAttribute('href'),'/admin/app/gallery');assert.match(home.querySelector('a.club-news-strip').textContent,/CLUBHOUSE GALLERY/);
+const dom=new JSDOM(clubPage('gallery'),{url:'https://adultsvskids.com/admin/app/gallery',runScripts:'outside-only'});const w=dom.window,d=w.document;let requests=[];
+w.fetch=async(url)=>{requests.push(url);return {ok:true,json:async()=>({items:[{title:'<script>Private memory</script>',image_data:image,source:'upload',created_at:'2026-11-07T03:45:00Z'}],total:2,page:url.endsWith('1')?1:0})}};
+w.eval(readFileSync('public/club-gallery.js','utf8'));await new Promise(r=>setTimeout(r,0));assert.equal(d.querySelector('#galleryFrame').hidden,false);assert.equal(d.querySelector('#galleryTitle').querySelector('script'),null);assert.match(d.querySelector('#galleryDate').textContent,/Saved.*2026/);assert.equal(d.querySelector('#galleryPrevious').disabled,true);d.querySelector('#galleryNext').click();await new Promise(r=>setTimeout(r,0));assert.equal(requests[1],'/api/club/gallery?page=1');assert.equal(d.querySelector('#galleryNext').disabled,true);w.close();
+console.log('PASS: gallery link, private image validation, ownership fields excluded, framed photo/date, escaped captions and no-scroll photo pagination.');
