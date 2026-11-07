@@ -263,7 +263,7 @@ try{const preference=JSON.parse(localStorage.getItem('avk:arcade-fm')||'null');i
 function saveLobbyMusic(){try{localStorage.setItem('avk:arcade-fm',JSON.stringify({enabled:lobbyMusicWanted,volume:lobbyMusicVolume}));}catch{}}
 const lobbyMusic=createLobbyMusic({
  getContext:()=>{const Audio=window.AudioContext||window.webkitAudioContext;if(!Audio)return null;audioContext??=new Audio();return audioContext;},
- allowed:()=>lobbyMusicWanted&&arena.hidden&&!lobby.hidden&&!document.hidden,
+ allowed:()=>!$('arcade-book')?.open&&lobbyMusicWanted&&arena.hidden&&!lobby.hidden&&!document.hidden,
  volume:lobbyMusicVolume,
  onState:({playing,available,blocked})=>{
   const toggle=$('lobby-music-toggle');if(!toggle)return;
@@ -1030,9 +1030,31 @@ function miniGolf(){
 }
 
 const recentKey=`avk-arcade-recent:${arcadeAccountId}`;
+let bookOpening=false,bookSelection=null,bookLaunch=false;
+const bookDialog=$('arcade-book');
+function openGameBook(entry,tile,slot){
+ if(bookOpening||bookDialog.open)return;
+ bookOpening=true;bookSelection=entry;bookLaunch=false;
+ tile.setAttribute('aria-busy','true');slot.classList.add('is-picking');
+ const reveal=()=>{
+  tile.removeAttribute('aria-busy');slot.classList.remove('is-picking');bookOpening=false;
+  if(document.hidden||!arena.hidden)return;
+  $('book-game-title').textContent=entry.name;
+  $('book-game-rules').textContent=entry.description;
+  $('book-cover').setAttribute('data-game',entry.id);$('book-cover').innerHTML=coverMarkup(entry);
+  $('book-construction').hidden=entry.id!=='neighborhood';
+  bookDialog.showModal();window.dispatchEvent(new Event('arcade-overlay-open'));
+ };
+ if(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches)reveal();else setTimeout(reveal,300);
+}
+$('book-close').addEventListener('click',()=>bookDialog.close());
+$('book-back').addEventListener('click',()=>bookDialog.close());
+$('book-play').addEventListener('click',()=>{if(!bookSelection||bookLaunch)return;bookLaunch=true;const id=bookSelection.id;bookDialog.close();openGame(id);});
+bookDialog.addEventListener('close',()=>{bookSelection=null;window.dispatchEvent(new Event('arcade-overlay-close'));});
+bookDialog.addEventListener('click',event=>{if(event.target!==bookDialog)return;const r=bookDialog.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)bookDialog.close();});
 function gameTile(g,parent){
  const slot=document.createElement('div');slot.className='shelf-slot';parent.appendChild(slot);
- const tile=button('',()=>openGame(g.id),slot,'game-tile cover-tile'+(g.id==='lava'?' cover-lava':''));
+ const tile=button('',()=>openGameBook(g,tile,slot),slot,'game-tile cover-tile'+(g.id==='lava'?' cover-lava':''));
  tile.setAttribute('data-game',g.id);tile.disabled=!!g.comingSoon;tile.setAttribute('data-coming-soon',String(!!g.comingSoon));tile.setAttribute('aria-label',g.comingSoon?`${g.name} — Coming Soon`:`Play ${g.name}`);tile.innerHTML=coverMarkup(g);if(g.id==='neighborhood')tile.setAttribute('aria-label',`${g.name} — Under Construction`);return tile;
 }
 function rememberGame(id){
