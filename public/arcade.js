@@ -1,4 +1,5 @@
-import {createCaseReader} from './arcade-cases.js?v=1';
+import {mountPinball} from './arcade-pinball.js?v=1';
+import {createCaseReader} from './arcade-cases.js?v=2';
 import {mountFaces} from './arcade-faces.js?v=1';
 import {mountDraw} from './arcade-draw.js?v=1';
 import {mountLava} from './arcade-lava.js?v=7';
@@ -8,7 +9,7 @@ import {mountFrog,frogCourses,frogRoundWinner} from './arcade-frog.js?v=3';
 import {mountTreasure,treasurePlan} from './arcade-treasure.js?v=1';
 import {mountBlocks} from './arcade-blocks.js?v=1';
 import {mountBasketball} from './arcade-basketball.js?v=1';
-import {coverMarkup,recentGames,BROWSE_SHELVES} from './arcade-library.js?v=18';
+import {coverMarkup,recentGames,BROWSE_SHELVES,REFERENCE_COVERS,referenceCoverMarkup} from './arcade-library.js?v=19';
 import {GAMES, ANIMALS, TRIVIA, PICTURES, CHALLENGES} from './arcade-data.js?v=31';
 import {shuffle, roundWinner, awardRound, lineWinner} from './arcade-core.js';
 
@@ -1004,11 +1005,11 @@ function miniGolf(){
 }
 
 const recentKey=`avk-arcade-recent:${arcadeAccountId}`;
-const caseReader=createCaseReader({coverMarkup,onPlay:openGame,players:()=>[contender(0),contender(1)],getAudioContext:()=>{unlockAudio();return audioContext;},soundEnabled:()=>soundOn});
+const caseReader=createCaseReader({coverMarkup:referenceCoverMarkup,onPlay:openGame,players:()=>[contender(0),contender(1)],getAudioContext:()=>{unlockAudio();return audioContext;},soundEnabled:()=>soundOn});
 function gameTile(g,parent){
  const slot=document.createElement('div');slot.className='shelf-slot';parent.appendChild(slot);
  const tile=button('',()=>caseReader.open(g,tile,slot),slot,'game-tile cover-tile'+(g.id==='lava'?' cover-lava':''));
- tile.setAttribute('data-game',g.id);tile.disabled=!!g.comingSoon;tile.setAttribute('data-coming-soon',String(!!g.comingSoon));tile.setAttribute('aria-label',g.comingSoon?`${g.name} — Coming Soon`:`Play ${g.name}`);tile.innerHTML=coverMarkup(g);if(g.id==='neighborhood')tile.setAttribute('aria-label',`${g.name} — Under Construction`);return tile;
+ tile.setAttribute('data-game',g.id);const rect=REFERENCE_COVERS[g.id];if(rect){tile.style.setProperty('--case-x',rect[0]/1220*100+'%');tile.style.setProperty('--case-y',rect[1]/2712*100+'%');tile.style.setProperty('--case-w',rect[2]/1220*100+'%');tile.style.setProperty('--case-h',rect[3]/2712*100+'%');tile.classList.add('reference-hotspot');}tile.disabled=!!g.comingSoon;tile.setAttribute('data-coming-soon',String(!!g.comingSoon));tile.setAttribute('aria-label',g.comingSoon?`${g.name} — Coming Soon`:`Play ${g.name}`);tile.innerHTML=rect?referenceCoverMarkup(g):coverMarkup(g);if(g.id==='neighborhood')tile.setAttribute('aria-label',`${g.name} — Under Construction`);return tile;
 }
 function rememberGame(id){
  try{const ids=recentGames(localStorage,recentKey,GAMES);localStorage.setItem(recentKey,JSON.stringify([id,...ids.filter(x=>x!==id)].slice(0,8)));}catch{}
@@ -1074,3 +1075,5 @@ window.addEventListener('pagehide',()=>{if(game?.id==='mole')clearTimers();});
 // Public game links enter the selected catalog game after account verification.
 const linkedGame=new URLSearchParams(location.search).get('game');
 if(GAMES.some(g=>g.id===linkedGame&&!g.comingSoon))openGame(linkedGame);
+
+mountPinball({getAudioContext:()=>{unlockAudio();return audioContext;},soundEnabled:()=>soundOn,accountId:arcadeAccountId});

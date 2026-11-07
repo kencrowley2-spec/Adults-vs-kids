@@ -50,7 +50,7 @@ export function createCaseReader({document:doc=globalThis.document,coverMarkup,o
    by('book-game-title').textContent=entry.name;by('book-cover').setAttribute('data-game',entry.id);by('book-cover').innerHTML=coverMarkup(entry);
    by('book-construction').hidden=entry.id!=='neighborhood';renderPage();dialog.showModal();win.dispatchEvent(new win.Event('arcade-overlay-open'));
   }
-  if(reduced()){reveal();return;}
+  if(reduced()||tile.closest('.reference-cabinet')){reveal();return;}
   const r=tile.getBoundingClientRect(),targetWidth=Math.min(205,win.innerWidth*.48),scale=targetWidth/r.width;
   flight=doc.createElement('div');flight.className='book-cover book-flight';flight.setAttribute('data-game',entry.id);flight.setAttribute('aria-hidden','true');flight.innerHTML=coverMarkup(entry);
   Object.assign(flight.style,{left:`${r.left}px`,top:`${r.top}px`,width:`${r.width}px`,height:`${r.height}px`});doc.body.appendChild(flight);

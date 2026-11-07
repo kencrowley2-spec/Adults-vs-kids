@@ -30,3 +30,14 @@ export function recentGames(storage,key,valid){try{const ids=JSON.parse(storage.
 
 // Each regular game has one permanent home on the display shelves.
 export const BROWSE_SHELVES={favorites:['memory','maze','treasure','tic'],creative:['trivia','rps','draw','faces'],challenges:['picture','code','number','challenge'],action:['frog','mole','claw']};
+
+export const REFERENCE_COVERS={
+ neighborhood:[334,516,252,354],lava:[591,538,276,332],
+ memory:[219,978,191,288],maze:[414,980,191,286],treasure:[615,978,191,288],tic:[810,978,193,288],
+ trivia:[199,1379,210,329],rps:[419,1379,191,329],draw:[617,1380,191,329],faces:[813,1379,211,329],
+ picture:[197,1758,203,305],code:[407,1758,196,305],number:[611,1758,196,305],challenge:[810,1758,204,305]
+};
+export function referenceCoverMarkup(game){
+ const r=REFERENCE_COVERS[game.id];if(!r)return coverMarkup(game);
+ const [x,y,w,h]=r;return `<span class="reference-cover-crop" style="background-size:${1220/w*100}% ${2712/h*100}%;background-position:${x/(1220-w)*100}% ${y/(2712-h)*100}%"></span>`;
+}
