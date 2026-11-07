@@ -18,11 +18,11 @@ async function load(){
   $('lb-rows').replaceChildren();
   for(const record of data.rows){
    const tr=document.createElement('tr');tr.className=record.yours?'your-row':'';
-   cell(tr,String(record.place).padStart(2,'0'),'rank rank-'+record.place);
+   const rank=cell(tr,'#'+record.place,'rank rank-'+record.place);if(record.place===1){const crown=document.createElement('span');crown.className='rank-crown';crown.setAttribute('aria-hidden','true');crown.textContent='♛';rank.prepend(crown);}
    const name=cell(tr,'','team-name');
    const emblem=document.createElement('span');emblem.className='team-emblem';emblem.setAttribute('aria-hidden','true');emblem.textContent=record.place<=3?'🏅':'⚑';
-   const label=document.createElement('strong');label.textContent=`Team “${record.family_name}”`;name.append(emblem,label);
-   if(record.yours){const badge=document.createElement('small');badge.textContent='YOUR TEAM';name.appendChild(badge);}
+   const label=document.createElement('strong');label.textContent=`${record.family_name}`;name.append(emblem,label);
+   if(record.yours){const badge=document.createElement('small');badge.textContent='YOUR FAMILY';name.appendChild(badge);}
    cell(tr,duration(record.elapsed_ms),'time-col');cell(tr,date(record.achieved_at),'record-date');
    $('lb-rows').appendChild(tr);
   }
