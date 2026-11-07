@@ -1,4 +1,4 @@
-export const ROTATING_COVERS=['challenge','frog','mole','claw'];
+export const ROTATING_COVERS=['challenge','hexgl','frog','mole','claw'];
 export function mountCoverRotation({document:doc=globalThis.document,games,markup}){
  const tile=doc.querySelector('[data-game="challenge"]'),cabinet=doc.querySelector('.reference-cabinet');if(!tile||!cabinet)return;
  const entries=ROTATING_COVERS.map(id=>games.find(game=>game.id===id)).filter(Boolean);let index=0;
