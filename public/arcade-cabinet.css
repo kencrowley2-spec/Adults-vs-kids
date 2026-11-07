@@ -46,7 +46,7 @@ body:has(#arcade-lobby:not([hidden]))>main{width:100%;max-width:none;height:calc
 .reference-cover-crop{display:block;position:absolute;inset:0;background-image:url('/assets/avk-reference-cabinet.webp');background-repeat:no-repeat;border-radius:inherit}
 .reference-cabinet .reference-hotspot>*{display:none}.reference-cabinet .reference-hotspot:hover>*,.reference-cabinet .reference-hotspot:focus-visible>*{display:block}.reference-cabinet .reference-hotspot::before,.reference-cabinet .reference-hotspot::after{display:none!important}
 .reference-cabinet .cabinet-apron{position:static;display:contents}.reference-cabinet .pinball-ball{position:absolute;z-index:3;left:46.7%;top:80.1%;width:6.5%;height:2.9%;bottom:auto;padding:0;background:transparent;border:0;box-shadow:none;pointer-events:auto;cursor:pointer}.reference-cabinet .pinball-ball:hover,.reference-cabinet .pinball-ball:focus-visible{outline:2px solid #ffdc49;outline-offset:3px;box-shadow:0 0 15px #ffdc49}
-.cabinet-play-pinball{position:absolute;z-index:3;left:28%;bottom:.9%;width:44%;height:2.8%;border:1px solid #66d8ff;border-radius:3px;background:#080b17f0;color:#b5f4ff;text-shadow:0 0 6px #329fff;font:900 clamp(8px,2.2vw,14px) Arial,sans-serif;cursor:pointer;box-shadow:0 0 8px #377ffb66}
+.cabinet-play-pinball{position:absolute;z-index:3;left:25%;bottom:.9%;width:50%;height:2.8%;border:1px solid #ff9393;border-radius:3px;background:#c71924;color:#fff;text-shadow:0 1px 2px #650810;font:900 clamp(9px,2.4vw,15px) Arial,sans-serif;cursor:pointer;box-shadow:0 0 8px #e3263666}
 .reference-cabinet .reference-hotspot .cover-info b{font-size:7px}
 body.pinball-active{overflow:hidden}
 .pinball-dialog{width:min(470px,calc(100vw - 14px));height:min(940px,calc(100dvh - 16px));max-width:none;max-height:none;margin:auto;padding:10px 12px 8px;border:3px solid #87919e;border-radius:15px;background:#030812 url('/assets/avk-pinball-cabinet.webp') center/100% 100% no-repeat;color:#fff;box-shadow:0 0 0 4px #05070a,0 25px 80px #000;overflow:hidden}
@@ -58,7 +58,7 @@ body.pinball-active{overflow:hidden}
 #pinball-message{flex:none;text-align:center;font:10px/1.3 Arial,sans-serif;color:#ffe7a2;min-height:25px;margin:8px 2px 0;background:#040913c9;border-radius:3px;padding:3px}
 @media(max-height:650px){.pinball-controls button{min-height:41px}.pinball-hud b{font-size:18px}.pinball-head h2{font-size:17px}.pinball-hud{padding:2px}#pinball-message{font-size:9px;margin-top:5px;min-height:21px}}
 @media(min-width:761px){body:has(#arcade-lobby:not([hidden]))>main{height:calc(100svh - 82px)}.arcade-cabinet.reference-cabinet{width:min(100vw,calc((100svh - 82px)*1220/2712))}}
-.reference-cabinet .cabinet-play-pinball{bottom:.1%;height:2.1%}
+.reference-cabinet .cabinet-play-pinball{bottom:.1%;height:2.7%}
 .reference-cabinet .pinball-ball{left:44%;top:78.8%;width:12%;height:5.4%}
 
 /* One full-size case cycles through the remaining games; the control deck stays clear. */
