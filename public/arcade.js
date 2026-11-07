@@ -401,33 +401,33 @@ function pick(key,source,n){
 }
 let stopLava=null;
 function openLava(){
- lobbyMusic.stop();clearTimeout(featuredTimer);clearTimers();stopLava?.();
+ lobbyMusic.stop();clearTimers();stopLava?.();
  const lineupPlayers=selectedPlayers.map(list=>list.join(' & '));
  const adultsOnly=selectedPlayers[1].length===0&&selectedPlayers[0].length>=2;
  const lavaNames=adultsOnly?[selectedPlayers[0].filter((_,i)=>i%2===0).join(' & '),selectedPlayers[0].filter((_,i)=>i%2===1).join(' & ')]:lineupPlayers.map((name,i)=>name||names[i]);
  let matchId=crypto.randomUUID();
  rememberGame('lava');arena.hidden=false;lobby.hidden=true;
  window.dispatchEvent(new CustomEvent('avk:game-start',{detail:{game:'lava',id:matchId}}));
- stopLava=mountLava({players:lavaNames,onExit:()=>{stopLava=null;arena.hidden=true;lobby.hidden=false;game=null;scheduleFeatured();lobbyMusic.start();document.querySelector('[data-game="lava"]')?.focus();},onComplete:result=>{
+ stopLava=mountLava({players:lavaNames,onExit:()=>{stopLava=null;arena.hidden=true;lobby.hidden=false;game=null;lobbyMusic.start();document.querySelector('[data-game="lava"]')?.focus();},onComplete:result=>{
   if(!kidsOnly&&!adultsOnly)recorder.capture({id:matchId,mode:'single',gameIds:['lava'],roundWinners:[result.winner]});
   window.dispatchEvent(new CustomEvent('avk:game-complete',{detail:{game:'lava',winner:result.winner,scores:result.scores,id:matchId}}));
   matchId=crypto.randomUUID();
  }});
 }
 function openFaces(){
- lobbyMusic.stop();clearTimeout(featuredTimer);clearTimers();
+ lobbyMusic.stop();clearTimers();
  rememberGame('faces');arena.hidden=true;lobby.hidden=true;
  const adultsOnly=selectedPlayers[1].length===0&&selectedPlayers[0].length>=2;
  const faceNames=adultsOnly?[selectedPlayers[0].filter((_,i)=>i%2===0).join(' & '),selectedPlayers[0].filter((_,i)=>i%2===1).join(' & ')]:selectedPlayers.map((list,i)=>list.join(' & ')||names[i]);
- mountFaces({players:faceNames,onExit:()=>{arena.hidden=true;lobby.hidden=false;game=null;scheduleFeatured();lobbyMusic.start();document.querySelector('[data-game="faces"]')?.focus();},onComplete:result=>{
+ mountFaces({players:faceNames,onExit:()=>{arena.hidden=true;lobby.hidden=false;game=null;lobbyMusic.start();document.querySelector('[data-game="faces"]')?.focus();},onComplete:result=>{
   window.dispatchEvent(new CustomEvent('avk:game-complete',{detail:{game:'faces',winner:result.winner}}));
  }});
 }
 function openDraw(){
- lobbyMusic.stop();clearTimeout(featuredTimer);clearTimers();
+ lobbyMusic.stop();clearTimers();
  let matchId=crypto.randomUUID();rememberGame('draw');arena.hidden=true;lobby.hidden=true;
  window.dispatchEvent(new CustomEvent('avk:game-start',{detail:{game:'draw',id:matchId}}));
- mountDraw({players:selectedPlayers.map((list,i)=>list.join(' & ')||names[i]),onExit:()=>{arena.hidden=true;lobby.hidden=false;game=null;scheduleFeatured();lobbyMusic.start();document.querySelector('[data-game="draw"]')?.focus();},onComplete:result=>{
+ mountDraw({players:selectedPlayers.map((list,i)=>list.join(' & ')||names[i]),onExit:()=>{arena.hidden=true;lobby.hidden=false;game=null;lobbyMusic.start();document.querySelector('[data-game="draw"]')?.focus();},onComplete:result=>{
   if(!kidsOnly&&result.winner!==null)drawRecorder.capture({id:matchId,mode:'single',gameIds:['draw'],roundWinners:[result.winner]});
   window.dispatchEvent(new CustomEvent('avk:game-complete',{detail:{game:'draw',winner:result.winner,scores:result.scores,id:matchId}}));
   matchId=crypto.randomUUID();
@@ -439,7 +439,7 @@ async function clubReveal(title){
  if(!clubEntry||!window.avkChallengeIntro)return;
  const adultsOnly=selectedPlayers[1].length===0&&selectedPlayers[0].length>=2;
  const players=adultsOnly?[selectedPlayers[0].filter((_,i)=>i%2===0).join(' & '),selectedPlayers[0].filter((_,i)=>i%2===1).join(' & ')]:selectedPlayers.map((list,i)=>list.join(' & ')||names[i]);
- lobbyMusic.stop();clearTimeout(featuredTimer);
+ lobbyMusic.stop();
  await window.avkChallengeIntro({players,game:title});
 }
 async function openGame(id){
@@ -452,7 +452,7 @@ async function openGame(id){
   if(id==='draw')return openDraw();
   if(id==='lava')return openLava();
   if(GAMES.find(g=>g.id===id)?.comingSoon)return;
-  lobbyMusic.stop();clearTimeout(featuredTimer);
+  lobbyMusic.stop();
   startRecording('single',[id]);
   window.dispatchEvent(new CustomEvent('avk:game-start',{detail:{game:id,id:recording.id}}));
   series=null;
@@ -462,7 +462,7 @@ async function openGame(id){
 }
 async function startSeries(){
   if(clubIntroPending)return;
-  lobbyMusic.stop();clearTimeout(featuredTimer);
+  lobbyMusic.stop();
   clearTimers();
   series={games:shuffle(GAMES.filter(g=>!g.comingSoon&&!g.premium&&g.id!=='lava'&&g.id!=='draw'&&g.id!=='faces')).slice(0,3),index:0,winners:[],first:0};
   startRecording('series',series.games.map(g=>g.id));
@@ -1035,50 +1035,21 @@ function gameTile(g,parent){
  const tile=button('',()=>openGame(g.id),slot,'game-tile cover-tile'+(g.id==='lava'?' cover-lava':''));
  tile.setAttribute('data-game',g.id);tile.disabled=!!g.comingSoon;tile.setAttribute('data-coming-soon',String(!!g.comingSoon));tile.setAttribute('aria-label',g.comingSoon?`${g.name} — Coming Soon`:`Play ${g.name}`);tile.innerHTML=coverMarkup(g);if(g.id==='neighborhood')tile.setAttribute('aria-label',`${g.name} — Under Construction`);return tile;
 }
-function renderRecent(){
- let ids=[];try{ids=recentGames(localStorage,recentKey,GAMES.filter(g=>!g.premium));}catch{}
- $('arcade-recent-section').hidden=!ids.length;$('arcade-recent').replaceChildren();
- ids.forEach(id=>gameTile(GAMES.find(g=>g.id===id),$('arcade-recent')));
-}
 function rememberGame(id){
  try{const ids=recentGames(localStorage,recentKey,GAMES);localStorage.setItem(recentKey,JSON.stringify([id,...ids.filter(x=>x!==id)].slice(0,8)));}catch{}
- renderRecent();
+
 }
 GAMES.filter(g=>g.premium).forEach(g=>gameTile(g,$('arcade-premium')));
 for(const [shelf,ids] of Object.entries(BROWSE_SHELVES))ids.forEach(id=>{const entry=GAMES.find(g=>g.id===id);if(entry)gameTile(entry,$('arcade-'+shelf));});
-renderRecent();
-const featuredGames=GAMES.filter(g=>!g.premium);
-let featuredIndex=0,featuredPaused=false,featuredTimer=null;
-function renderFeatured(){
- const g=featuredGames[featuredIndex];
- $('arcade-feature-title').textContent=g.name;
- $('feature-description').textContent=g.tag;
- $('feature-play-label').textContent=g.comingSoon?'COMING SOON':'▶ PLAY '+g.name.toUpperCase();
- $('arcade-featured-play').disabled=!!g.comingSoon;
- $('arcade-featured-play').setAttribute('aria-label',g.comingSoon?g.name+' — Coming Soon':'Play '+g.name);
- $('feature-art').innerHTML=`<div class="feature-poster" data-game="${g.id}">${coverMarkup(g)}</div><span class="feature-stamp">LESS SUPERVISING.<br><b>MORE PLAYING.</b></span>`;
- $('feature-position').textContent=(featuredIndex+1)+' / '+featuredGames.length;
-}
-function scheduleFeatured(){
- clearTimeout(featuredTimer);
- if(featuredPaused||!arena.hidden||document.hidden||$('memberDialog')?.open||$('arcade-more')?.open)return;
- featuredTimer=setTimeout(()=>{featuredIndex=(featuredIndex+1)%featuredGames.length;renderFeatured();scheduleFeatured();},6500);
-}
-$('arcade-featured-play').addEventListener('click',()=>openGame(featuredGames[featuredIndex].id));
-$('feature-prev').addEventListener('click',()=>{featuredIndex=(featuredIndex+featuredGames.length-1)%featuredGames.length;renderFeatured();scheduleFeatured();});
-$('feature-next').addEventListener('click',()=>{featuredIndex=(featuredIndex+1)%featuredGames.length;renderFeatured();scheduleFeatured();});
-$('feature-pause').addEventListener('click',()=>{featuredPaused=!featuredPaused;$('feature-pause').textContent=featuredPaused?'Resume slides':'Pause slides';$('feature-pause').setAttribute('aria-pressed',String(featuredPaused));scheduleFeatured();});
-renderFeatured();scheduleFeatured();
-
 $('arcade-random').addEventListener('click',startSeries);
-$('arcade-return').addEventListener('click',()=>{clearTimers();series=null;arena.hidden=true;lobby.hidden=false;game=null;scheduleFeatured();lobbyMusic.start();$('arcade-favorites').querySelector('button')?.focus();});
+$('arcade-return').addEventListener('click',()=>{clearTimers();series=null;arena.hidden=true;lobby.hidden=false;game=null;lobbyMusic.start();$('arcade-favorites').querySelector('button')?.focus();});
 $('arcade-reset').addEventListener('click',()=>{
   if(!game)return;const saved=game.id;const wasSeries=!!series;screen('<div class="result"><h3>Start over?</h3><p>The current game and all points in this match or series will reset.</p></div>');
   button(wasSeries?'Restart series':'Restart match',()=>wasSeries?startSeries():openGame(saved));button('Return to Arcade',()=>{$('arcade-return').click();},stage,'text-button');status('Match paused. Choose restart or return to the Arcade.');
 });
 document.addEventListener('visibilitychange',()=>{
   memoryClock?.setPaused(document.hidden);
-  if(document.hidden){lobbyMusic.stop();clearTimeout(featuredTimer);stopTriviaVoice();moleAudio?.stop();}else {scheduleFeatured();lobbyMusic.start();}
+  if(document.hidden){lobbyMusic.stop();stopTriviaVoice();moleAudio?.stop();}else {lobbyMusic.start();}
   if(document.hidden&&timed&&game){clearTimers();screen('<div class="result"><h3>Let’s give both teams a fair turn.</h3><p>The timed game was interrupted. Replay this round with no round win awarded.</p></div>');button('Replay this round →',beginRound);status('Round interrupted. Match score is unchanged.');}
 });
 
@@ -1129,5 +1100,5 @@ lobbyMusic.stop();lobbyMusic.start();
 const linkedGame=new URLSearchParams(location.search).get('game');
 if(GAMES.some(g=>g.id===linkedGame&&!g.comingSoon))openGame(linkedGame);
 
-window.addEventListener('arcade-overlay-open',()=>{lobbyMusic.stop();clearTimeout(featuredTimer)});
-window.addEventListener('arcade-overlay-close',()=>{scheduleFeatured();lobbyMusic.start()});
+window.addEventListener('arcade-overlay-open',()=>{lobbyMusic.stop()});
+window.addEventListener('arcade-overlay-close',()=>{lobbyMusic.start()});
