@@ -8,7 +8,7 @@ import {mountFrog,frogCourses,frogRoundWinner} from './arcade-frog.js?v=3';
 import {mountTreasure,treasurePlan} from './arcade-treasure.js?v=1';
 import {mountBlocks} from './arcade-blocks.js?v=1';
 import {mountBasketball} from './arcade-basketball.js?v=1';
-import {coverMarkup,recentGames} from './arcade-library.js?v=16';
+import {coverMarkup,recentGames,BROWSE_SHELVES} from './arcade-library.js?v=17';
 import {GAMES, ANIMALS, TRIVIA, PICTURES, CHALLENGES} from './arcade-data.js?v=31';
 import {shuffle, roundWinner, awardRound, lineWinner} from './arcade-core.js';
 
@@ -1031,7 +1031,8 @@ function miniGolf(){
 
 const recentKey=`avk-arcade-recent:${arcadeAccountId}`;
 function gameTile(g,parent){
- const tile=button('',()=>openGame(g.id),parent,'game-tile cover-tile'+(g.id==='lava'?' cover-lava':''));
+ const slot=document.createElement('div');slot.className='shelf-slot';parent.appendChild(slot);
+ const tile=button('',()=>openGame(g.id),slot,'game-tile cover-tile'+(g.id==='lava'?' cover-lava':''));
  tile.setAttribute('data-game',g.id);tile.disabled=!!g.comingSoon;tile.setAttribute('data-coming-soon',String(!!g.comingSoon));tile.setAttribute('aria-label',g.comingSoon?`${g.name} — Coming Soon`:`Play ${g.name}`);tile.innerHTML=coverMarkup(g);if(g.id==='neighborhood')tile.setAttribute('aria-label',`${g.name} — Under Construction`);return tile;
 }
 function renderRecent(){
@@ -1043,16 +1044,9 @@ function rememberGame(id){
  try{const ids=recentGames(localStorage,recentKey,GAMES);localStorage.setItem(recentKey,JSON.stringify([id,...ids.filter(x=>x!==id)].slice(0,8)));}catch{}
  renderRecent();
 }
-GAMES.filter(g=>!g.premium).forEach(g=>gameTile(g,$('arcade-grid')));
 GAMES.filter(g=>g.premium).forEach(g=>gameTile(g,$('arcade-premium')));
-['memory','maze','treasure','tic','trivia','rps'].forEach(id=>gameTile(GAMES.find(g=>g.id===id),$('arcade-favorites')));
+for(const [shelf,ids] of Object.entries(BROWSE_SHELVES))ids.forEach(id=>{const entry=GAMES.find(g=>g.id===id);if(entry)gameTile(entry,$('arcade-'+shelf));});
 renderRecent();
-const browseShelves={quick:['rps','tic','treasure','code','number'],creative:['draw','faces','picture','trivia','challenge'],action:['maze','frog','mole','claw']};
-for(const [shelf,ids] of Object.entries(browseShelves))ids.forEach(id=>{const entry=GAMES.find(g=>g.id===id);if(entry)gameTile(entry,$('arcade-'+shelf));});
-for(const shelf of ['premium','favorites','recent','all',...Object.keys(browseShelves)]){
- const track=$(shelf==='all'?'arcade-grid':`arcade-${shelf}`);
- for(const [direction,sign] of [['prev',-1],['next',1]])$(`shelf-${shelf}-${direction}`).addEventListener('click',()=>track.scrollBy({left:sign*track.clientWidth*.8,behavior:window.matchMedia?.('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'}));
-}
 const featuredGames=GAMES.filter(g=>!g.premium);
 let featuredIndex=0,featuredPaused=false,featuredTimer=null;
 function renderFeatured(){
@@ -1077,7 +1071,7 @@ $('feature-pause').addEventListener('click',()=>{featuredPaused=!featuredPaused;
 renderFeatured();scheduleFeatured();
 
 $('arcade-random').addEventListener('click',startSeries);
-$('arcade-return').addEventListener('click',()=>{clearTimers();series=null;arena.hidden=true;lobby.hidden=false;game=null;scheduleFeatured();lobbyMusic.start();$('arcade-grid').querySelector('button')?.focus();});
+$('arcade-return').addEventListener('click',()=>{clearTimers();series=null;arena.hidden=true;lobby.hidden=false;game=null;scheduleFeatured();lobbyMusic.start();$('arcade-favorites').querySelector('button')?.focus();});
 $('arcade-reset').addEventListener('click',()=>{
   if(!game)return;const saved=game.id;const wasSeries=!!series;screen('<div class="result"><h3>Start over?</h3><p>The current game and all points in this match or series will reset.</p></div>');
   button(wasSeries?'Restart series':'Restart match',()=>wasSeries?startSeries():openGame(saved));button('Return to Arcade',()=>{$('arcade-return').click();},stage,'text-button');status('Match paused. Choose restart or return to the Arcade.');

@@ -27,29 +27,6 @@ body:has(#arcade-lobby:not([hidden])) .feature-pagination{justify-content:flex-e
 body:has(#arcade-lobby:not([hidden])) .arcade-library-top{margin:34px 0 26px}
 body:has(#arcade-lobby:not([hidden])) .arcade-library-top h2{font-size:clamp(25px,3vw,34px);font-weight:800;letter-spacing:-.8px}
 body:has(#arcade-lobby:not([hidden])) .arcade-library-top p{font-size:13px;color:#bab6c1}
-body:has(#arcade-lobby:not([hidden])) .game-shelf{padding:0;margin:0 0 38px;background:none;border:0;border-radius:0;box-shadow:none}
-body:has(#arcade-lobby:not([hidden])) .shelf-heading{margin-bottom:14px;gap:14px}
-body:has(#arcade-lobby:not([hidden])) .shelf-heading h2{font-size:clamp(21px,2.2vw,28px);font-weight:800;letter-spacing:-.5px;line-height:1.2;color:#fff}
-body:has(#arcade-lobby:not([hidden])) .premium-eyebrow{color:#dfbf70;margin-bottom:7px}
-.shelf-caption,.premium-shelf-caption{font-size:12px;color:#b5b1bd;line-height:1.5;margin:6px 0 0}
-body:has(#arcade-lobby:not([hidden])) .premium-shelf-caption{margin:-5px 0 15px}
-body:has(#arcade-lobby:not([hidden])) .shelf-controls{gap:6px}
-body:has(#arcade-lobby:not([hidden])) .shelf-controls button{width:40px;height:40px;border:1px solid #ffffff20;background:#ffffff06;border-radius:50%;color:#e0dce4}
-body:has(#arcade-lobby:not([hidden])) .shelf-controls button:hover{background:#ffd522;color:#111;border-color:#ffd522}
-body:has(#arcade-lobby:not([hidden])) .game-track,body:has(#arcade-lobby:not([hidden])) #arcade-grid{gap:18px;margin:0 -4px;padding:4px 4px 16px;scroll-padding:4px;scrollbar-width:none;overscroll-behavior-x:contain}
-.game-track::-webkit-scrollbar{display:none}
-body:has(#arcade-lobby:not([hidden])) .game-track .game-tile,body:has(#arcade-lobby:not([hidden])) .game-track .game-tile:last-child{flex:0 0 clamp(245px,28vw,355px);aspect-ratio:16/10;min-height:0;border:1px solid #ffffff12;border-radius:16px;box-shadow:none;padding:0;overflow:hidden;isolation:isolate;background:radial-gradient(ellipse at 75% 10%,#ffffff16,transparent 65%),linear-gradient(130deg,var(--cover-b),var(--cover-a))}
-body:has(#arcade-lobby:not([hidden])) .game-track .game-tile:hover{transform:translateY(-3px);border-color:#ffe275;box-shadow:0 10px 28px #0003}
-body:has(#arcade-lobby:not([hidden])) .game-track .game-tile:before{background:linear-gradient(0deg,#090810d9,transparent 85%);z-index:1;pointer-events:none}
-body:has(#arcade-lobby:not([hidden])) .game-track .cover-brand{display:none}
-body:has(#arcade-lobby:not([hidden])) .game-track .cover-art{top:-17%;bottom:-8%;right:-5%;left:25%;width:80%;height:125%;filter:drop-shadow(0 8px 8px #0003);z-index:0;opacity:.92}
-body:has(#arcade-lobby:not([hidden])) .game-track .cover-art svg{height:100%;width:100%}
-body:has(#arcade-lobby:not([hidden])) .game-track .cover-info{position:absolute;inset:auto 0 0;padding:17px 20px;z-index:2;background:none;width:100%}
-body:has(#arcade-lobby:not([hidden])) .game-track .game-tile .cover-info b{font-size:clamp(20px,2vw,26px);line-height:1.05;letter-spacing:-.5px;text-shadow:0 2px 10px #0008;max-width:90%;margin:0}
-body:has(#arcade-lobby:not([hidden])) .game-track .game-tile .cover-info small{font-size:8px;letter-spacing:1px;line-height:1.5;color:#fff1c4;margin:0 0 5px}
-body:has(#arcade-lobby:not([hidden])) .game-track .cover-play{display:none}
-body:has(#arcade-lobby:not([hidden])) .game-track .cover-lava .cover-art{inset:0;width:100%;height:100%;opacity:1}
-body:has(#arcade-lobby:not([hidden])) .game-track .cover-lava .cover-art svg{width:100%;height:100%;object-fit:cover}
 body:has(#arcade-lobby:not([hidden])) .random-challenge{border:0;border-radius:16px;padding:22px 24px;margin:10px 0 38px;min-height:0;background:linear-gradient(110deg,#29222e,#16131d);color:#fff}
 body:has(#arcade-lobby:not([hidden])) .random-challenge small{color:#dfc575;letter-spacing:1.3px}
 body:has(#arcade-lobby:not([hidden])) .random-challenge b{font-size:22px;letter-spacing:-.4px}
@@ -96,23 +73,10 @@ body:has(#arcade-lobby[hidden]) .arcade-tabs{display:none}
  body:has(#arcade-lobby:not([hidden])) .feature-poster{width:120px;height:170px;right:9%;top:44px;transform:rotate(-6deg)}
  body:has(#arcade-lobby:not([hidden])) .feature-pagination{margin-bottom:22px}
  body:has(#arcade-lobby:not([hidden])) .arcade-library-top{margin:24px 0}
- body:has(#arcade-lobby:not([hidden])) .game-shelf{margin-bottom:30px}
- body:has(#arcade-lobby:not([hidden])) .shelf-heading h2{font-size:21px}
- .shelf-caption,.premium-shelf-caption{font-size:11px}
- body:has(#arcade-lobby:not([hidden])) .shelf-controls button{width:34px;height:34px}
- body:has(#arcade-lobby:not([hidden])) .game-track,body:has(#arcade-lobby:not([hidden])) #arcade-grid{gap:12px;margin-right:-18px;padding-right:18px}
- body:has(#arcade-lobby:not([hidden])) .game-track .game-tile,body:has(#arcade-lobby:not([hidden])) .game-track .game-tile:last-child{flex-basis:68vw;max-width:320px;aspect-ratio:16/10;border-radius:13px}
- body:has(#arcade-lobby:not([hidden])) .game-track .cover-info{padding:14px 16px}
- body:has(#arcade-lobby:not([hidden])) .game-track .game-tile .cover-info b{font-size:21px}
- body:has(#arcade-lobby:not([hidden])) .game-track .game-tile .cover-info small{font-size:7px;letter-spacing:.5px}
  body:has(#arcade-lobby:not([hidden])) .random-challenge{padding:20px 16px;gap:12px;margin-bottom:30px}
  body:has(#arcade-lobby:not([hidden])) .random-challenge b{font-size:18px}
  .arcade-tabs a,.arcade-tabs button{font-size:10px;gap:6px;min-height:72px}
  .arcade-tabs svg{width:25px;height:25px}
 }
 @media(max-width:360px){.arcade-tabs a,.arcade-tabs button{font-size:9px}.arcade-tabs-inner{gap:0}body:has(#arcade-lobby:not([hidden])) .feature-poster{right:0;width:105px}}
-@media(prefers-reduced-motion:reduce){html:has(.arcade-tabs){scroll-behavior:auto}.game-track .game-tile:hover{transform:none!important}}
-/* Let the shelves share one quiet backdrop instead of separate boxed headings. */
 body:has(#arcade-lobby:not([hidden]))::before{display:none}
-body:has(#arcade-lobby:not([hidden])) .arcade-library-top,
-body:has(#arcade-lobby:not([hidden])) .shelf-heading{background:none;border:0;border-radius:0;padding:0;box-shadow:none}
