@@ -15,8 +15,10 @@
   }else{startedAt=Date.now();timer=setTimeout(()=>choose(index+1),remaining)}
  }
  function choose(next){
-  stop();const previous=activeVideo();if(previous)previous.currentTime=0;
+  stop();
   index=(next+slides.length)%slides.length;remaining=5000;
+  // Rewind only the incoming clip; keep the outgoing final frame during its fade.
+  const incoming=activeVideo();if(incoming)incoming.currentTime=0;
   slides.forEach((slide,i)=>{slide.classList.toggle('is-active',i===index);slide.setAttribute('aria-hidden',String(i!==index))});
   dots.forEach((dot,i)=>dot.setAttribute('aria-pressed',String(i===index)));schedule();
  }
