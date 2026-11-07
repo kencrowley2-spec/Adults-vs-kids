@@ -35,7 +35,7 @@ body:has(#arcade-lobby:not([hidden]))>main{width:100%;max-width:none;height:calc
 #arcade-lobby:has(.reference-cabinet){width:100%;height:100%;display:flex;align-items:center;justify-content:center}
 .arcade-cabinet.reference-cabinet{position:relative;width:min(100vw,calc((100svh - 76px - env(safe-area-inset-bottom,0px))*1220/2712));height:auto;aspect-ratio:1220/2712;max-width:none;padding:0;margin:0;overflow:visible;border:0;border-radius:0;background:#020306 url('/assets/avk-reference-cabinet.webp') center/100% 100% no-repeat;box-shadow:none;perspective:none}
 .reference-cabinet::before,.reference-cabinet::after{display:none}
-.reference-cabinet .cabinet-marquee{position:absolute;inset:2.5% auto auto 7%;width:31%;height:4.6%;padding:0;margin:0;min-height:0;background:#070811;display:block;border-radius:2px}
+.reference-cabinet .cabinet-marquee{position:absolute;inset:2.5% auto auto 3%;width:31%;height:4.6%;padding:0;margin:0;min-height:0;background:#070811;display:block;border-radius:2px}
 .reference-cabinet .cabinet-marquee h1{display:block;width:100%;height:100%;margin:0}.reference-cabinet .cabinet-marquee h1 img{width:100%;height:100%;max-width:none;object-fit:contain;box-shadow:0 0 6px #ffda4522}.reference-cabinet .cabinet-marquee h1>span{display:none}
 .reference-cabinet .cabinet-scoreboard{position:static;display:contents}.reference-cabinet .cabinet-scoreboard>div,.reference-cabinet .cabinet-scoreboard>p{display:none}
 .reference-cabinet #cabinet-fx{position:absolute;z-index:3;left:77%;top:14%;width:12%;height:2%;min-height:17px;font-size:6px;padding:0;border-color:#9b722e;background:#0b0c12e8}
