@@ -22,6 +22,9 @@ try{
  assert(!/Basketball|13 interactive games/.test(home),'Homepage uses current game promotions');
  const guide=pages.get('/family-games');assert.equal((guide.match(/class="game-guide"/g)||[]).length,GAMES.length);assert(!/Block Showdown|Spot the Difference|Mini Golf|Basketball Showdown|Word Scramble|Quick Tap/.test(guide));assert.match(guide,/href="\/family\/arcade"/);
  const broken=[],checked=new Map(),external=new Set();
+ for(const html of pages.values()){const d=new JSDOM(html).window.document;for(const image of d.querySelectorAll('img[srcset]')){for(const item of image.getAttribute('srcset').split(',')){const asset=item.trim().split(/\s+/)[0];if(checked.has(asset))continue;const response=await fetch(root+asset,{method:'HEAD'});assert.equal(response.status,200,'Responsive asset '+asset);checked.set(asset,{status:response.status,html:''});}}}
+ const preview=await fetch(root+'/defend-your-neighborhood');assert.equal(preview.status,200);assert.match(preview.headers.get('x-robots-tag')||'',/noindex/);
+
  for(const [path,html] of pages){const doc=new JSDOM(html).window.document;
   for(const element of doc.querySelectorAll('a[href],img[src],script[src],link[href],video[src],source[src]')){
    const raw=element.getAttribute('href')||element.getAttribute('src');if(!raw||/^(mailto:|tel:|data:)/.test(raw))continue;
