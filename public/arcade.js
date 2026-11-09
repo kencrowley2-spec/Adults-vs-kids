@@ -1,4 +1,3 @@
-import {mountCoverRotation,ROTATING_COVERS} from './arcade-rotation.js?v=2';
 import {mountPinball} from './arcade-pinball.js?v=1';
 import {createCaseReader} from './arcade-cases.js?v=2';
 import {mountFaces} from './arcade-faces.js?v=1';
@@ -10,7 +9,7 @@ import {mountFrog,frogCourses,frogRoundWinner} from './arcade-frog.js?v=3';
 import {mountTreasure,treasurePlan} from './arcade-treasure.js?v=1';
 import {mountBlocks} from './arcade-blocks.js?v=1';
 import {mountBasketball} from './arcade-basketball.js?v=1';
-import {coverMarkup,recentGames,BROWSE_SHELVES,REFERENCE_COVERS,referenceCoverMarkup} from './arcade-library.js?v=20';
+import {coverMarkup,recentGames,BROWSE_SHELVES,referenceCoverMarkup} from './arcade-library.js?v=20';
 import {GAMES, ANIMALS, TRIVIA, PICTURES, CHALLENGES} from './arcade-data.js?v=32';
 import {shuffle, roundWinner, awardRound, lineWinner} from './arcade-core.js';
 
@@ -1011,14 +1010,14 @@ const caseReader=createCaseReader({coverMarkup:referenceCoverMarkup,onPlay:openG
 function gameTile(g,parent){
  const slot=document.createElement('div');slot.className='shelf-slot';parent.appendChild(slot);
  const tile=button('',()=>{const selected=GAMES.find(entry=>entry.id===tile.getAttribute('data-game'));if(selected)caseReader.open(selected,tile,slot);},slot,'game-tile cover-tile'+(g.id==='lava'?' cover-lava':''));
- tile.setAttribute('data-game',g.id);const rect=REFERENCE_COVERS[g.id];if(rect){tile.style.setProperty('--case-x',rect[0]/1220*100+'%');tile.style.setProperty('--case-y',rect[1]/2712*100+'%');tile.style.setProperty('--case-w',rect[2]/1220*100+'%');tile.style.setProperty('--case-h',rect[3]/2712*100+'%');tile.classList.add('reference-hotspot');}tile.disabled=!!g.comingSoon;tile.setAttribute('data-coming-soon',String(!!g.comingSoon));tile.setAttribute('aria-label',g.comingSoon?`${g.name} — Coming Soon`:`Play ${g.name}`);tile.innerHTML=rect?referenceCoverMarkup(g):coverMarkup(g);if(g.id==='neighborhood')tile.setAttribute('aria-label',`${g.name} — Under Construction`);return tile;
+ tile.setAttribute('data-game',g.id);tile.disabled=!!g.comingSoon;tile.setAttribute('data-coming-soon',String(!!g.comingSoon));tile.setAttribute('aria-label',g.comingSoon?`${g.name} — Coming Soon`:`Play ${g.name}`);tile.innerHTML=coverMarkup(g);if(g.id==='neighborhood')tile.setAttribute('aria-label',`${g.name} — Under Construction`);return tile;
 }
 function rememberGame(id){
  try{const ids=recentGames(localStorage,recentKey,GAMES);localStorage.setItem(recentKey,JSON.stringify([id,...ids.filter(x=>x!==id)].slice(0,8)));}catch{}
 
 }
 GAMES.filter(g=>g.premium).forEach(g=>gameTile(g,$('arcade-premium')));
-for(const [shelf,ids] of Object.entries(BROWSE_SHELVES))ids.forEach(id=>{const entry=GAMES.find(g=>g.id===id);if(entry&&(!ROTATING_COVERS.includes(id)||id==='challenge'))gameTile(entry,$('arcade-'+shelf));});
+for(const [shelf,ids] of Object.entries(BROWSE_SHELVES))ids.forEach(id=>{const entry=GAMES.find(g=>g.id===id);if(entry)gameTile(entry,$('arcade-'+shelf));});
 $('arcade-random').addEventListener('click',startSeries);
 $('arcade-return').addEventListener('click',()=>{clearTimers();series=null;arena.hidden=true;lobby.hidden=false;game=null;$('arcade-favorites').querySelector('button')?.focus();});
 $('arcade-reset').addEventListener('click',()=>{
@@ -1080,4 +1079,4 @@ if(GAMES.some(g=>g.id===linkedGame&&!g.comingSoon))openGame(linkedGame);
 
 mountPinball({getAudioContext:()=>{unlockAudio();return audioContext;},soundEnabled:()=>soundOn,accountId:arcadeAccountId});
 
-mountCoverRotation({games:GAMES,markup:referenceCoverMarkup});
+// Upright display shows every game at once; no rotating cover hides a game.
