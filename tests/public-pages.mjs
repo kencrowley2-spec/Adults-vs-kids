@@ -23,7 +23,7 @@ for(const g of guides)inspect(activityPage(g.slug),'/'+g.slug);inspect(paperback
 const route=load('app/family-games/route.ts');const response=route.GET();assert.equal(response.status,200);assert.match(await response.text(),/Mystery Face Showdown/);
 const dynamic=load('app/[publicSlug]/route.ts');for(const g of guides){const r=await dynamic.GET(new Request('https://adultsvskids.com/'+g.slug),{params:Promise.resolve({publicSlug:g.slug})});assert.equal(r.status,200,g.slug);assert.match(await r.text(),/index, follow/);}
 const missing=await dynamic.GET(new Request('https://adultsvskids.com/missing'),{params:Promise.resolve({publicSlug:'missing'})});assert.equal(missing.status,404);assert.equal(missing.headers.get('x-robots-tag'),'noindex');
-console.log('PASS: all catalog games, future-game fallback, eight public guide routes, canonical URLs, indexable metadata, JSON-LD, related links, paperback page and unknown-page 404.');
+console.log('PASS: all catalog games, future-game fallback, all public activity guide routes, canonical URLs, indexable metadata, JSON-LD, related links, paperback page and unknown-page 404.');
 
 for(const slug of ['about','about-the-founder','digital-philosophy','shop','next-chapter','creator-league','creators','explore']){const r=load('app/'+slug+'/route.ts').GET();assert.equal(r.status,200,slug);const html=await r.text();inspect(html,'/'+slug,false);assert.doesNotMatch(html,/href="\/website#/,'Stale homepage section link on '+slug);assert.doesNotMatch(html,/href="(?:\/explore)?#app-waitlist"/);}
 console.log('PASS: public navigation links reach existing Explore sections; stale app-waitlist links are replaced.');
