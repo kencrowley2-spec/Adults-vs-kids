@@ -12,6 +12,17 @@ window.eval(read('public/arcade-navigation.js'));
 const $=id=>document.getElementById(id);
 const tabs=document.querySelector('.arcade-tabs');
 assert.equal(tabs.querySelectorAll('a,button').length,5);
+const arcadeLinks=[...tabs.querySelectorAll('.arcade-tabs-inner > a')];
+assert.deepEqual(arcadeLinks.slice(0,2).map(a=>a.textContent.trim()),['Home','Arcade']);
+assert.equal(arcadeLinks[0].getAttribute('href'),'/family');
+assert.equal(arcadeLinks[1].getAttribute('aria-current'),'page');
+const dashboardHtml=read('lib/family-dashboard.ts');
+const dashboardTabs=new JSDOM(dashboardHtml.slice(dashboardHtml.indexOf('<nav class="dashboard-tabs"'),dashboardHtml.indexOf('</nav>',dashboardHtml.indexOf('<nav class="dashboard-tabs"'))+6)).window.document;
+const dashboardLinks=[...dashboardTabs.querySelectorAll('.dashboard-tabs-inner > a')];
+assert.deepEqual(dashboardLinks.slice(0,2).map(a=>a.textContent.trim()),['Home','Arcade']);
+assert.deepEqual(dashboardLinks.slice(0,2).map(a=>a.getAttribute('href')),['/family','/family/arcade']);
+assert.equal(dashboardLinks[0].getAttribute('aria-current'),'page');
+
 assert.equal(tabs.querySelector('[aria-current=page]').textContent.trim(),'Arcade');
 assert.equal(tabs.querySelector('a[href="/family/leaderboard"]').textContent.trim(),'Leaderboard');
 let opened=0,closed=0,random=0;
