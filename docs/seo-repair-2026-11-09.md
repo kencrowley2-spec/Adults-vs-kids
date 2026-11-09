@@ -35,3 +35,11 @@ Days 1–30: verify account/property access, inspect priority pages, submit the 
 Days 31–60: use actual query impressions to improve titles and introductions on pages with visibility but weak clicks; consolidate pages only when query overlap and content purpose support it. Test parent usability and refine activities from feedback. Review landing-to-account and purchase funnels.
 
 Days 61–90: evaluate comparable 28-day non-brand clicks, indexed pages and engaged family visits; improve pages with demonstrated demand. Publish additional original, playtested activities selectively. Repeat technical crawl and check field CWV once enough traffic exists. No guaranteed ranks, indexing dates or traffic outcomes.
+
+## Live measurement and Google validation
+
+The 9:35 AM PageSpeed follow-up (report 0gpqo3c026) measured mobile performance 79, LCP 5.9 s, FCP 0.9 s, CLS 0, TBT 0 ms; desktop performance 99, LCP 1.0 s, FCP 0.2 s, CLS 0, TBT 0 ms. Accessibility, best practices and SEO scored 100 on both. Mobile LCP remains above a good threshold; field data is still unavailable. The test followed the image release; subsequent wording clarifications use the same assets and layout.
+
+Google Rich Results Test for /downloads at 9:39 AM returned 11 valid items: five Product snippets, five Merchant listings and one BreadcrumbList. Product optional warnings are missing review, aggregateRating and availability; no reviews or availability facts were invented to clear warnings. Result: https://search.google.com/test/rich-results/result?id=zNMu9VezlufAR52MUmrj5w . Schema.org hosted validation was blocked by a human-verification screen.
+
+A Google account chooser displays two signed-out accounts. Automatic review rejected the authentication-method request because the owner account for this property was not specified. No account was selected and no credentials entered. Search Console ownership, index counts, submission and reindexing remain pending account identification and sign-in.
