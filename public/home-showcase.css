@@ -50,3 +50,13 @@ body.showcase{background:#030303;color:#fff}.showcase .sr-only{position:absolute
 .showcase .books-tile,.showcase .clock-tile{justify-content:flex-start}
 .showcase .books-tile>.gold-button,.showcase .clock-tile>.gold-button{margin-top:auto}
 .showcase .holiday-banner{margin-top:4px}
+
+/* Large, high-contrast carousel controls with comfortable touch targets. */
+.showcase .featured-row{padding-inline:28px}
+.showcase .featured-row>button{display:grid;place-items:center;width:44px;height:44px;min-width:44px;padding:0;left:4px;top:50%;transform:translateY(-50%);border:2px solid #fff098;border-radius:50%;background:linear-gradient(145deg,#fff184,#ffdc12 45%,#ffb300);color:#111;font-size:0;line-height:1;text-shadow:none;box-shadow:0 3px 10px #000c,0 0 12px #ffd00688;touch-action:manipulation;z-index:3}
+.showcase .featured-row>button[data-feature-next]{left:auto;right:4px}
+.showcase .featured-row>button:before{content:'';width:12px;height:12px;border-top:4px solid currentColor;border-right:4px solid currentColor;transform:translateX(3px) rotate(-135deg)}
+.showcase .featured-row>button[data-feature-next]:before{transform:translateX(-3px) rotate(45deg)}
+.showcase .featured-row>button:hover{filter:brightness(1.12)}
+.showcase .featured-row>button:active{transform:translateY(-50%) scale(.94)}
+.showcase .featured-row>button:focus-visible{outline:3px solid #fff;outline-offset:3px}
