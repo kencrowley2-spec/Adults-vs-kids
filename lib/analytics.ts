@@ -1,4 +1,4 @@
-export const analyticsScript='<script src="/platform-analytics.js?v=2" defer></script>';
+export const analyticsScript='<script src="/platform-analytics.js?v=3" defer></script>';
 export function trackedHtml(html:string){
  // /website always shows the public landing page, including for signed-in families.
  html=html.replace(/<a\b([^>]*)>(\s*<img\b[^>]*\bsrc="\/assets\/brand-logo\.jpg"[^>]*>)/gi,(_match,attributes:string,image:string)=>{

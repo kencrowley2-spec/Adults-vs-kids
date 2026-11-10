@@ -12,6 +12,9 @@
  window.avkAnalyticsReady=queue;
  window.addEventListener('avk:game-start',e=>send('game_start',e.detail.game,e.detail.id));
  window.addEventListener('avk:game-complete',e=>{if(e.detail.id)send('game_complete',e.detail.game,e.detail.id)});
+ window.avkAnalyticsListening=true;
+ for(const event of window.avkPendingGameEvents||[])window.dispatchEvent(event);
+ window.avkPendingGameEvents=[];
  for(const event of ['pointerdown','keydown'])document.addEventListener(event,()=>{lastActivity=Date.now()},{passive:true});
  setInterval(()=>{if(document.visibilityState==='visible'&&Date.now()-lastActivity<60000)send('heartbeat')},60000);
  document.addEventListener('click',e=>{

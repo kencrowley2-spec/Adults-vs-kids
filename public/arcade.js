@@ -59,7 +59,7 @@ function startRecording(mode,gameIds){recording={id:crypto.randomUUID(),mode,gam
 function saveCompleted(){
  if(!recording||recording.complete)return;
  recording.complete=true;
- window.dispatchEvent(new CustomEvent('avk:game-complete',{detail:{game:recording.mode==='series'?'series':recording.gameIds[0],id:recording.id}}));
+ dispatchArcadeAnalytics(new CustomEvent('avk:game-complete',{detail:{game:recording.mode==='series'?'series':recording.gameIds[0],id:recording.id}}));
  if(kidsOnly)return;
  const {id,mode,gameIds,roundWinners}=recording;
  recorder.capture({id,mode,gameIds:[...gameIds],roundWinners:[...roundWinners]});
@@ -387,32 +387,32 @@ function openLava(){
  const lavaNames=adultsOnly?[selectedPlayers[0].filter((_,i)=>i%2===0).join(' & '),selectedPlayers[0].filter((_,i)=>i%2===1).join(' & ')]:lineupPlayers.map((name,i)=>name||names[i]);
  let matchId=crypto.randomUUID();
  rememberGame('lava');arena.hidden=false;lobby.hidden=true;
- window.dispatchEvent(new CustomEvent('avk:game-start',{detail:{game:'lava',id:matchId}}));
- stopLava=mountLava({beforeRematch:()=>{if(!guestGate.allow('lava'))return false;window.dispatchEvent(new CustomEvent('avk:game-start',{detail:{game:'lava',id:matchId}}));return true;},players:lavaNames,onExit:()=>{stopLava=null;arena.hidden=true;lobby.hidden=false;game=null;document.querySelector('[data-game="lava"]')?.focus();},onComplete:result=>{
+ dispatchArcadeAnalytics(new CustomEvent('avk:game-start',{detail:{game:'lava',id:matchId}}));
+ stopLava=mountLava({beforeRematch:()=>{if(!guestGate.allow('lava'))return false;dispatchArcadeAnalytics(new CustomEvent('avk:game-start',{detail:{game:'lava',id:matchId}}));return true;},players:lavaNames,onExit:()=>{stopLava=null;arena.hidden=true;lobby.hidden=false;game=null;document.querySelector('[data-game="lava"]')?.focus();},onComplete:result=>{
   if(!kidsOnly&&!adultsOnly)recorder.capture({id:matchId,mode:'single',gameIds:['lava'],roundWinners:[result.winner]});
-  window.dispatchEvent(new CustomEvent('avk:game-complete',{detail:{game:'lava',winner:result.winner,scores:result.scores,id:matchId}}));
+  dispatchArcadeAnalytics(new CustomEvent('avk:game-complete',{detail:{game:'lava',winner:result.winner,scores:result.scores,id:matchId}}));
   matchId=crypto.randomUUID();
  }});
 }
 function openFaces(){
  clearTimers();
  let matchId=crypto.randomUUID();
- window.dispatchEvent(new CustomEvent('avk:game-start',{detail:{game:'faces',id:matchId}}));
+ dispatchArcadeAnalytics(new CustomEvent('avk:game-start',{detail:{game:'faces',id:matchId}}));
  rememberGame('faces');arena.hidden=true;lobby.hidden=true;
  const adultsOnly=selectedPlayers[1].length===0&&selectedPlayers[0].length>=2;
  const faceNames=adultsOnly?[selectedPlayers[0].filter((_,i)=>i%2===0).join(' & '),selectedPlayers[0].filter((_,i)=>i%2===1).join(' & ')]:selectedPlayers.map((list,i)=>list.join(' & ')||names[i]);
- mountFaces({beforeRematch:()=>{if(!guestGate.allow('faces'))return false;window.dispatchEvent(new CustomEvent('avk:game-start',{detail:{game:'faces',id:matchId}}));return true;},players:faceNames,onExit:()=>{arena.hidden=true;lobby.hidden=false;game=null;document.querySelector('[data-game="faces"]')?.focus();},onComplete:result=>{
-  window.dispatchEvent(new CustomEvent('avk:game-complete',{detail:{game:'faces',winner:result.winner,id:matchId}}));
+ mountFaces({beforeRematch:()=>{if(!guestGate.allow('faces'))return false;dispatchArcadeAnalytics(new CustomEvent('avk:game-start',{detail:{game:'faces',id:matchId}}));return true;},players:faceNames,onExit:()=>{arena.hidden=true;lobby.hidden=false;game=null;document.querySelector('[data-game="faces"]')?.focus();},onComplete:result=>{
+  dispatchArcadeAnalytics(new CustomEvent('avk:game-complete',{detail:{game:'faces',winner:result.winner,id:matchId}}));
   matchId=crypto.randomUUID();
  }});
 }
 function openDraw(){
  clearTimers();
  let matchId=crypto.randomUUID();rememberGame('draw');arena.hidden=true;lobby.hidden=true;
- window.dispatchEvent(new CustomEvent('avk:game-start',{detail:{game:'draw',id:matchId}}));
- mountDraw({beforeRematch:()=>{if(!guestGate.allow('draw'))return false;window.dispatchEvent(new CustomEvent('avk:game-start',{detail:{game:'draw',id:matchId}}));return true;},players:selectedPlayers.map((list,i)=>list.join(' & ')||names[i]),onExit:()=>{arena.hidden=true;lobby.hidden=false;game=null;document.querySelector('[data-game="draw"]')?.focus();},onComplete:result=>{
+ dispatchArcadeAnalytics(new CustomEvent('avk:game-start',{detail:{game:'draw',id:matchId}}));
+ mountDraw({beforeRematch:()=>{if(!guestGate.allow('draw'))return false;dispatchArcadeAnalytics(new CustomEvent('avk:game-start',{detail:{game:'draw',id:matchId}}));return true;},players:selectedPlayers.map((list,i)=>list.join(' & ')||names[i]),onExit:()=>{arena.hidden=true;lobby.hidden=false;game=null;document.querySelector('[data-game="draw"]')?.focus();},onComplete:result=>{
   if(!kidsOnly&&result.winner!==null)drawRecorder.capture({id:matchId,mode:'single',gameIds:['draw'],roundWinners:[result.winner]});
-  window.dispatchEvent(new CustomEvent('avk:game-complete',{detail:{game:'draw',winner:result.winner,scores:result.scores,id:matchId}}));
+  dispatchArcadeAnalytics(new CustomEvent('avk:game-complete',{detail:{game:'draw',winner:result.winner,scores:result.scores,id:matchId}}));
   matchId=crypto.randomUUID();
  }});
 }
@@ -439,7 +439,7 @@ async function openGame(id){
   if(GAMES.find(g=>g.id===id)?.comingSoon)return;
 
   startRecording('single',[id]);
-  window.dispatchEvent(new CustomEvent('avk:game-start',{detail:{game:id,id:recording.id}}));
+  dispatchArcadeAnalytics(new CustomEvent('avk:game-start',{detail:{game:id,id:recording.id}}));
   series=null;
   game=GAMES.find(g=>g.id===id); rememberGame(id); lobby.hidden=true; arena.hidden=false;
   $('game-title').textContent=game.id==='claw'?'THE CLAW':`${game.icon} ${game.name}`; used={}; wins=[0,0]; round=1; attempt=0; starter=0; turn=0; champion=-1; results=[];
@@ -460,7 +460,7 @@ async function startSeriesGame(){
   if(clubIntroPending)return;
   clearTimers(); game=series.games[series.index];
   if(clubEntry){clubIntroPending=true;try{await clubReveal(game.name)}finally{clubIntroPending=false}}
-  window.dispatchEvent(new CustomEvent('avk:game-start',{detail:{game:game.id,id:crypto.randomUUID()}})); round=series.index+1; attempt=0;
+  dispatchArcadeAnalytics(new CustomEvent('avk:game-start',{detail:{game:game.id,id:crypto.randomUUID()}})); round=series.index+1; attempt=0;
   starter=(series.first+series.index)%2; turn=starter;
   $('game-title').textContent=game.id==='claw'?'THE CLAW':`${game.icon} ${game.name}`; beginRound();
 }
@@ -1087,3 +1087,5 @@ window.addEventListener('pagehide',()=>{if(game?.id==='mole')clearTimers();});
 mountPinball({beforeStart:()=>guestGate.allow(),getAudioContext:()=>{unlockAudio();return audioContext;},soundEnabled:()=>soundOn,accountId:arcadeAccountId});
 
 // Upright display shows every game at once; no rotating cover hides a game.
+
+function dispatchArcadeAnalytics(event){if(!window.avkAnalyticsListening)(window.avkPendingGameEvents||=[]).push(event);window.dispatchEvent(event);}
