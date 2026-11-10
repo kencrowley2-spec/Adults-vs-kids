@@ -112,7 +112,7 @@ body:has(#arcade-lobby:not([hidden]))>main{height:calc(100svh - 76px - env(safe-
 
 /* Reference cabinet photography supplies the real bevels, recessed glass and control-deck perspective.
    The screen, marquee and pinball button remain live HTML above it. */
-body:has(#arcade-lobby:not([hidden])){background:#08090c url('/assets/arcade-room.webp') center/cover fixed}
+body:has(#arcade-lobby:not([hidden])){background:linear-gradient(#030407a8,#030407c9),url('/assets/arcade-room.webp') center/cover fixed}
 body:has(#arcade-lobby:not([hidden]))>main{height:calc(100svh - 76px - env(safe-area-inset-bottom,0px));padding:4px 0;overflow:hidden}
 .arcade-cabinet.upright-cabinet{
  width:min(100%,calc((100svh - 84px - env(safe-area-inset-bottom,0px))*679/1438));
@@ -132,7 +132,7 @@ body:has(#arcade-lobby:not([hidden]))>main{height:calc(100svh - 76px - env(safe-
 .upright-cabinet .cabinet-screen-frame{box-sizing:border-box;inset:15.35% 7.05% auto;height:46.55%;padding:1.6% 1.4% 2%;border:0;background:radial-gradient(ellipse at 50% 25%,#121b35,#0b1124 85%);box-shadow:inset 0 0 9px #000,inset 0 1px 2px #74829a55;overflow:hidden}
 .upright-cabinet .cabinet-screen-bar{font-size:1.65cqw;padding:0 0 1.6%;color:#cbd2e3}
 .upright-cabinet .cabinet-playfield{gap:4.5cqw}
-.upright-cabinet .cabinet-featured{flex:2.8}
+.upright-cabinet .cabinet-featured{flex:2.2}
 .upright-cabinet .cabinet-rotating{flex:1}
 .upright-cabinet .cabinet-featured h2,.upright-cabinet .cabinet-rotating h2{font-size:2.25cqw;margin-bottom:1.8cqw}
 .upright-cabinet .cabinet-featured .game-track,.upright-cabinet .cabinet-rotating .game-track{gap:1.1cqw}
