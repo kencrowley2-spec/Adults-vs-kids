@@ -5,7 +5,7 @@
 - Access: two guest games, then a free adult-managed family account to keep playing. The Random 3 Game Challenge requires an account. No paid subscription is required for the current Arcade.
 - Current public featured guide sections: THE CLAW, Mystery Face Showdown, Floor Is Lava: Trap Master, Whack-a-Mole, Memory Match. Timings are editorial estimates; controller rules determine scoring.
 - PDFs: four books, $2.99 each or $9.95 for all four; unlimited household printing. Confirmed Club purchases include all four PDFs.
-- Paperbacks: The Ultimate Coloring Challenge is available on Amazon for $11.99. Other paperback listings are not yet confirmed. Physical paperbacks are separate from Club membership.
+- Paperbacks: The Ultimate Coloring Challenge and The Ultimate Family Showdown are available on Amazon for $11.99 each. Books 3 and 4 paperback listings are not yet confirmed. Physical paperbacks are separate from Club membership.
 - Club: $2.99/month or $24.95/year with automatic renewal until canceled. Clubhouse is an administrator preview. Automatic weekly releases, tournaments, networking, rankings, holiday packs and trophy features remain part of the app rollout.
 - Charlie voice host: in development, targeted for January 2027. Remote cross-device gameplay is in development.
 - Official profiles confirmed in browser: Facebook page 61596213304278; TikTok @adultsvskidsofficial; YouTube channel UCs9AHRWMy5Rj2wBxa0aJ8Fg. Instagram is not yet independently verified and was not added to sameAs.
