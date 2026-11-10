@@ -16,17 +16,29 @@ export async function availablePdfs(){
 export async function fulfillPdf(sessionId:string){
  if(!/^cs_(test_|live_)?[A-Za-z0-9]+$/.test(sessionId))throw new Error('Invalid checkout session');
  const stripe=stripeClient(),session=await stripe.checkout.sessions.retrieve(sessionId,{expand:['payment_intent.latest_charge']});
- const isClub=session.metadata?.avk_type==='club-prelaunch-v1';
+ const isClub=['club-prelaunch-v1','club-subscription-v1'].includes(session.metadata?.avk_type||'');
  const order=isClub?paidClubOrder(session,paymentLive()):paidOrder(session,paymentLive());
  const lines=await stripe.checkout.sessions.listLineItems(sessionId,{limit:10});
  if(isClub){
   const plan=clubPlan(session.metadata?.avk_plan),line=lines.data[0];
-  if(!plan||lines.has_more||lines.data.length!==1||line.quantity!==1||line.price?.currency!=='usd'||line.price?.type!=='one_time'||line.price?.unit_amount!==plan.cents||line.amount_total!==plan.cents)throw new Error('Unexpected Club checkout items');
+  if(!plan||lines.has_more||lines.data.length!==1||line.quantity!==1||line.price?.currency!=='usd'||(session.mode==='subscription'?(line.price?.type!=='recurring'||line.price.recurring?.interval!==plan.interval||line.price.recurring.interval_count!==1):line.price?.type!=='one_time')||line.price?.unit_amount!==plan.cents||line.amount_total!==plan.cents)throw new Error('Unexpected Club checkout items');
  }else{
   const expected=pdfCart(order.product_ids),prices=expected.map(p=>process.env[p.priceEnv]);
   if(lines.has_more||lines.data.length!==expected.length||lines.data.some(l=>l.quantity!==1||!l.price||!prices.includes(l.price.id)))throw new Error('Unexpected checkout items');
  }
- const intent=session.payment_intent;
+ let intent=session.payment_intent;
+ if(session.mode==='subscription'){
+  const invoiceId=typeof session.invoice==='string'?session.invoice:session.invoice?.id;
+  if(!invoiceId)throw new Error('Missing subscription invoice');
+  const invoice=await stripe.invoices.retrieve(invoiceId);
+  if(invoice.status!=='paid'||invoice.amount_paid!==order.amount_total||invoice.currency!=='usd')throw new Error('Subscription payment has not settled');
+  const payments=await stripe.invoicePayments.list({invoice:invoiceId,limit:10});
+  const paid=payments.data.find(p=>p.status==='paid'&&p.payment.type==='payment_intent');
+  const paymentId=paid?.payment.payment_intent;
+  if(!paymentId)throw new Error('Missing subscription payment');
+  intent=await stripe.paymentIntents.retrieve(typeof paymentId==='string'?paymentId:paymentId.id,{expand:['latest_charge']});
+ }
+
  if(!intent||typeof intent==='string'||!intent.latest_charge||typeof intent.latest_charge==='string')throw new Error('Payment has not settled');
  const charge=intent.latest_charge;
  if(!charge.paid||charge.disputed||charge.amount_refunded>0||charge.refunded){
