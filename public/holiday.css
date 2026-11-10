@@ -64,3 +64,15 @@
  .christmas-string i:before{left:1px;width:7px;height:10px;top:-9px}
  .christmas-string i:after{left:2px;top:3px;width:3px;height:10px}
 }
+
+/* Set the hanging lights just outside the artwork, centered on the frame. */
+.christmas-top{top:-23px}
+.christmas-bottom{bottom:-24px}
+.christmas-left{left:-14px}
+.christmas-right{right:-25px}
+@media(max-width:700px){
+ .christmas-top{top:-19px}
+ .christmas-bottom{bottom:-20px}
+ .christmas-left{left:-8px;width:11px}
+ .christmas-right{right:-14px;width:11px}
+}
