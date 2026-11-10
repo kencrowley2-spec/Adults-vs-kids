@@ -6,3 +6,12 @@ body.platform:has(.stadium-main){background:radial-gradient(ellipse at 50% 15%,#
 .platform .stadium-header>button{font-size:35px;background:none;border:0;color:#fff2cc;padding:6px;width:auto}
 .stadium-logo:after{content:'';position:absolute;right:0;top:0;width:7%;height:20%;background:#000}
 @media(max-width:700px){.platform .stadium-main nav.stadium-grid{gap:7px;padding:0 3px;margin-bottom:15px}.platform .stadium-header>button{font-size:28px;padding:3px}}
+
+/* The family Arcade tile uses the supplied neon arcade photo. */
+.platform .stadium-main .stadium-grid>.stadium-arcade-photo{border:2px solid #e8bd45;isolation:isolate}
+.stadium-tile.stadium-arcade-photo img{inset:0;width:100%;height:100%;max-width:100%;object-fit:cover;object-position:50% 55%}
+.stadium-arcade-photo:after{content:'';position:absolute;inset:0;background:linear-gradient(transparent 25%,#0006 52%,#000e 100%);z-index:1;pointer-events:none}
+.stadium-arcade-copy{position:absolute;inset:auto 5% 10%;z-index:2;display:flex;flex-direction:column;align-items:center;text-align:center;color:#fff;text-shadow:0 2px 4px #000;line-height:1.1}
+.stadium-arcade-copy strong{font-size:clamp(19px,3.7vw,42px);font-weight:900;letter-spacing:.5px;text-transform:uppercase}
+.stadium-arcade-copy small{font-size:clamp(8px,1.5vw,17px);font-weight:700;color:#ffeb91;margin-top:5px}
+@media(max-width:700px){.stadium-arcade-copy strong{font-size:clamp(14px,4.1vw,27px)}.stadium-arcade-copy small{font-size:clamp(7px,1.9vw,12px);margin-top:3px}}
