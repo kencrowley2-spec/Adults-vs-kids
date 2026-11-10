@@ -1,8 +1,9 @@
 (()=>{
  const start=Date.parse('2026-10-30T15:32:00Z');
- function tick(){const n=Math.max(0,Math.floor((Date.now()-start)/1000));for(const[k,v]of Object.entries({hours:Math.floor(n/3600),minutes:Math.floor(n/60)%60,seconds:n%60})){const e=document.querySelector('[data-clock="'+k+'"]');if(e)e.textContent=String(v).padStart(2,'0')}}
+ function tick(){const n=Math.max(0,Math.floor((Date.now()-start)/1000));for(const[k,v]of Object.entries({hours:Math.floor(n/3600),minutes:Math.floor(n/60)%60,seconds:n%60})){document.querySelectorAll('[data-clock="'+k+'"]').forEach(e=>{e.textContent=String(v).padStart(2,'0')})}}
  tick();setInterval(tick,1000);document.addEventListener('visibilitychange',tick);
- const mission=document.querySelector('#missionDialog');document.querySelector('#missionBtn')?.addEventListener('click',()=>mission.showModal());mission?.querySelector('[data-close]')?.addEventListener('click',()=>mission.close());
+ const mission=document.querySelector('#missionDialog');document.querySelectorAll('#missionBtn,[data-mission-open]').forEach(button=>button.addEventListener('click',()=>{tick();mission?.showModal()}));mission?.querySelector('[data-close]')?.addEventListener('click',()=>mission.close());
+ mission?.addEventListener('click',event=>{if(event.target===mission){const r=mission.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)mission.close()}});
  const section=document.querySelector('.home-featured'),track=section?.querySelector('.featured-track');if(!track)return;
  const covers=[...track.children],dots=[...section.querySelectorAll('[data-feature-index]')],pause=section.querySelector('[data-feature-pause]');
  let index=0,paused=matchMedia('(prefers-reduced-motion: reduce)').matches;
