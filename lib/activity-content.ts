@@ -145,12 +145,12 @@ export const guides:Guide[] = [
   {
     "slug": "family-game-night-ideas",
     "title": "Family Game Night Ideas for Kids Ages 4–12",
-    "description": "Plan a simple family game night with a 30-minute schedule, fair teams, drawing challenges, shared-device games, and a playful closing celebration.",
+    "description": "Plan a simple family game night with a 25-minute schedule, fair teams, drawing challenges, shared-device games, and a playful closing celebration.",
     "intro": "The best family game night is one you can actually repeat. Start with a short plan, a few familiar supplies, and room for everyone to choose something. You can turn an ordinary weeknight into three friendly rounds without making it a big production.",
     "sections": [
       {
-        "title": "A simple 30-minute game night",
-        "text": "Use the first five minutes to choose team names and explain the rules. Spend ten minutes on a drawing or making challenge, ten on a shared-device game, and the last five celebrating and choosing a future rematch. If you only have ten minutes, play one round instead. Set out paper, crayons, and a small score sheet beforehand so preparation does not take over the evening."
+        "title": "A repeatable 25-minute game night",
+        "text": "Follow the complete 25-minute schedule below: choose teams, play Whack-a-Mole, complete one Memory Match board, draw a paper mascot and celebrate. To make it a 30-minute evening, add five extra minutes of practice before scoring. If you only have ten minutes, choose one event instead. Set out paper, crayons and a small score sheet beforehand so preparation does not take over the evening."
       },
       {
         "title": "Mix different kinds of challenges",
