@@ -12,6 +12,7 @@ for(const delta of [{amount_total:1},{livemode:false},{payment_status:'unpaid'},
 let signed=true,duplicate=false,captured=null,available=true;
 const query={select(){return this;},eq(){return this;},overlaps(){return this;},limit(){return Promise.resolve({data:duplicate?[{session_id:'existing'}]:[],error:null});},gte(){return Promise.resolve({count:0,error:null});},insert(){return Promise.resolve({error:null});}};
 const route=load('app/api/club/checkout/route.ts',{
+ '../../../../lib/analytics-server':{checkoutAnalytics:async()=>{}},
  '../../../../lib/auth/session':{verifiedMember:async()=>({user:signed?{id:owner,email:'family@example.com'}:null,headers:new Headers()}),memberReply:(b,s,h)=>new Response(JSON.stringify(b),{status:s,headers:h})},
  '../../../../lib/request-origin':{requestOrigin:()=> 'https://adultsvskids.com'},
  '../../../../lib/payments/club':club,
@@ -35,11 +36,12 @@ let savedOrder=null,refunded=false,interval='year',invoicePaid=true;
 const fakeStripe={checkout:{sessions:{retrieve:async()=>({...recurring,invoice:'in_initial',payment_intent:null,created:1000}),listLineItems:async()=>({has_more:false,data:[{quantity:1,price:{currency:'usd',type:'recurring',unit_amount:2495,recurring:{interval,interval_count:1}},amount_total:2495}]})}},invoices:{retrieve:async()=>({status:invoicePaid?'paid':'open',amount_paid:2495,currency:'usd'})},invoicePayments:{list:async()=>({data:[{status:'paid',payment:{type:'payment_intent',payment_intent:'pi_initial'}}]})},paymentIntents:{retrieve:async()=>({id:'pi_initial',latest_charge:{paid:true,disputed:false,amount_refunded:refunded?2495:0,refunded}})}};
 const oldEnv={...process.env};process.env.STRIPE_SECRET_KEY='fixture';process.env.SUPABASE_URL='fixture';process.env.SUPABASE_SERVICE_ROLE_KEY='fixture';process.env.STRIPE_MODE='live';
 const FakeStripe=Object.assign(function(){return fakeStripe;},{createFetchHttpClient:()=>({})});
-const paymentServer=load('lib/payments/server.ts',{'stripe':{default:FakeStripe},'@supabase/supabase-js':{createClient:()=>({from:()=>({upsert:async order=>{savedOrder=order;return {error:null};},update:()=>({eq:async()=>({error:null})})})})},'../../config/pdfs':catalog,'./policy':{},'./club':club});
-await paymentServer.fulfillPdf(recurring.id);assert.equal(savedOrder.payment_intent_id,'pi_initial');assert.equal(savedOrder.book_ids.length,4);
+let paidAttributions=0;
+const paymentServer=load('lib/payments/server.ts',{'../analytics-server':{purchaseAnalytics:async()=>{paidAttributions++}},'stripe':{default:FakeStripe},'@supabase/supabase-js':{createClient:()=>({from:()=>({upsert:async order=>{savedOrder=order;return {error:null};},update:()=>({eq:async()=>({error:null})})})})},'../../config/pdfs':catalog,'./policy':{},'./club':club});
+await paymentServer.fulfillPdf(recurring.id);assert.equal(savedOrder.payment_intent_id,'pi_initial');assert.equal(savedOrder.book_ids.length,4);assert.equal(paidAttributions,1);
 interval='month';await assert.rejects(()=>paymentServer.fulfillPdf(recurring.id));interval='year';
 invoicePaid=false;await assert.rejects(()=>paymentServer.fulfillPdf(recurring.id));invoicePaid=true;
-refunded=true;await assert.rejects(()=>paymentServer.fulfillPdf(recurring.id));
+refunded=true;await assert.rejects(()=>paymentServer.fulfillPdf(recurring.id));assert.equal(paidAttributions,1);
 process.env=oldEnv;
 let billingOwner=true,billingActive=true,portalConfig=null;
 const billingRoute=load('app/api/club/billing/route.ts',{

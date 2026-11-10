@@ -46,6 +46,9 @@ export async function fulfillPdf(sessionId:string){
   throw new Error('This purchase has been refunded or disputed.');
  }
  const {error}=await paymentAdmin().from('pdf_orders').upsert({...order,status:'paid',payment_intent_id:intent.id,paid_at:new Date(session.created*1000).toISOString()},{onConflict:'session_id'});
- if(error)throw error;return order;
+ if(error)throw error;
+ // A verified paid order is the conversion authority. Webhook replay retries attribution safely.
+ try{const {purchaseAnalytics}=await import('../analytics-server');await purchaseAnalytics(sessionId);}catch{console.warn('Paid order attribution pending');}
+ return order;
 }
 export async function revokeIntent(intent:string){const {error}=await paymentAdmin().from('pdf_orders').update({status:'revoked'}).eq('payment_intent_id',intent);if(error)throw error;}

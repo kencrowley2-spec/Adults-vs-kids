@@ -15,7 +15,8 @@
     "test:claw": "node tests/claw.mjs",
     "test:lava": "node tests/lava.mjs && node tests/lava-controller.mjs",
     "test:faces": "node tests/faces.mjs",
-    "test:draw": "node --experimental-strip-types tests/draw-it.mjs && node --experimental-strip-types tests/draw-it-api.mjs"
+    "test:draw": "node --experimental-strip-types tests/draw-it.mjs && node --experimental-strip-types tests/draw-it-api.mjs",
+    "test:analytics": "node --experimental-strip-types tests/analytics.mjs && node --experimental-strip-types tests/seo-account-routing.mjs && node --experimental-strip-types tests/arcade-results.mjs && node --experimental-strip-types tests/pdf-payments.mjs && node --experimental-strip-types tests/club-payments.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",

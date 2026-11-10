@@ -40,16 +40,17 @@ const client={rpc:async()=>({data:{adults:1,kids:0,total:1},error:fail?{}:null})
   then:resolve=>Promise.resolve({data:[...rows.values()].filter(r=>Object.entries(filters).every(([k,v])=>r[k]===v)).slice(0,limit||5),error:fail?{}:null}).then(resolve)
  };return query;
 }};
+const completions=[];
 const exports={};
 const code=ts.transpileModule(readFileSync(new URL('../app/api/arcade/results/route.ts',import.meta.url),'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
-vm.runInNewContext(code,{exports,require:name=>name.endsWith('/auth/session')?{verifiedMember:async()=>({user,client,headers:new Headers()}),memberReply:(body,status,headers)=>new Response(JSON.stringify(body),{status,headers})}:name.endsWith('/request-origin')?{requestOrigin:r=>new URL(r.url).origin}:name.endsWith('/arcade/results')?{completedResult,sameResult}:assert.fail(name),Request,Response,Headers,URL,console});
+vm.runInNewContext(code,{exports,require:name=>name.endsWith('/analytics-server')?{completionAnalytics:async(...args)=>completions.push(args)}:name.endsWith('/auth/session')?{verifiedMember:async()=>({user,client,headers:new Headers()}),memberReply:(body,status,headers)=>new Response(JSON.stringify(body),{status,headers})}:name.endsWith('/request-origin')?{requestOrigin:r=>new URL(r.url).origin}:name.endsWith('/arcade/results')?{completedResult,sameResult}:assert.fail(name),Request,Response,Headers,URL,console});
 const post=(body,headers={})=>exports.POST(new Request('https://adultsvskids.com/api/arcade/results',{method:'POST',headers:{Origin:'https://adultsvskids.com','Content-Type':'application/json',...headers},body:JSON.stringify(body)}));
 user=null;assert.equal((await post(single)).status,401);assert.equal((await exports.GET(new Request('https://adultsvskids.com/api/arcade/results'))).status,401);user={id:owner};
 assert.equal((await post({...single,accountId:owner},{Origin:'https://elsewhere.test'})).status,403);
 assert.equal((await post({...single,accountId:other})).status,403);
 assert.equal((await post({...single,accountId:owner},{'Content-Type':'text/plain'})).status,415);
 assert.equal((await post({...single,roundWinners:[0],accountId:owner})).status,400);assert.equal(writes,0);
-assert.equal((await post({...single,accountId:owner})).status,200);assert.equal((await post({...single,accountId:owner})).status,200);assert.equal(rows.size,1);
+assert.equal((await post({...single,accountId:owner})).status,200);assert.equal((await post({...single,accountId:owner})).status,200);assert.equal(rows.size,1);assert.equal(completions.length,2);assert.equal(completions[0][2].id,owner);assert.equal(completions[0][4],id);
 assert.equal((await post({...series,accountId:owner})).status,409);assert.equal(rows.size,1);
 assert.equal(rows.get(id).user_id,owner);
 const response=await exports.GET(new Request('https://adultsvskids.com/api/arcade/results'));assert.equal(response.status,200);assert.deepEqual((await response.json()).score,{adults:1,kids:0,total:1});

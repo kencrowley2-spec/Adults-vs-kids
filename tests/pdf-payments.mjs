@@ -29,8 +29,8 @@ assert.throws(()=>paidOrder(paid,true));
 // Exercise the real webhook handler with valid, tampered, replayed and mismatched-mode signatures.
 const stripe=new Stripe('sk_test_local_fixture'),secret='whsec_local_fixture',oldSecret=process.env.STRIPE_WEBHOOK_SECRET;
 process.env.STRIPE_WEBHOOK_SECRET=secret;
-let fulfilled=0,revoked=0;
-const hook=moduleAt('app/api/stripe/webhook/route.ts',{'../../../../lib/payments/server':{
+let fulfilled=0,revoked=0,attributed=0,attributionFails=false;
+const hook=moduleAt('app/api/stripe/webhook/route.ts',{'../../../../lib/analytics-server':{purchaseAnalytics:async id=>{assert.equal(id,paid.id);if(attributionFails)throw Error('analytics unavailable');attributed++;}},'../../../../lib/payments/server':{
  stripeClient:()=>stripe,paymentLive:()=>false,fulfillPdf:async()=>{fulfilled++},revokeIntent:async()=>{revoked++},
 }});
 const event={id:'evt_test_fixture',type:'checkout.session.completed',livemode:false,data:{object:{id:paid.id,payment_status:'paid',metadata:{avk_type:'pdf-v1'}}}};
@@ -41,8 +41,9 @@ assert.equal((await deliver(event,{timestamp:1})).status,400);
 assert.equal((await deliver({...event,livemode:true})).status,400);
 assert.equal(fulfilled,0);
 assert.equal((await deliver({...event,data:{object:{...event.data.object,payment_status:'unpaid'}}})).status,200);
-assert.equal(fulfilled,0);
-assert.equal((await deliver(event)).status,200);assert.equal(fulfilled,1);
+assert.equal(fulfilled,0);assert.equal(attributed,0);
+assert.equal((await deliver(event)).status,200);assert.equal(fulfilled,1);assert.equal(attributed,1);
+attributionFails=true;assert.equal((await deliver(event)).status,500);attributionFails=false;assert.equal((await deliver(event)).status,200);assert.equal(attributed,2);
 assert.equal((await deliver({...event,type:'charge.refunded',data:{object:{payment_intent:'pi_fixture'}}})).status,200);assert.equal(revoked,1);
 if(oldSecret===undefined)delete process.env.STRIPE_WEBHOOK_SECRET;else process.env.STRIPE_WEBHOOK_SECRET=oldSecret;
 
@@ -63,6 +64,7 @@ const originalBundlePrice=process.env.STRIPE_PDF_BUNDLE_PRICE;
 process.env.STRIPE_PDF_BUNDLE_PRICE='price_fixture_bundle';
 let checkoutParams;
 const checkoutRoute=moduleAt('app/api/pdf/checkout/route.ts',{
+ '../../../../lib/analytics-server':{checkoutAnalytics:async()=>{}},
  '../../../../lib/auth/session':{verifiedMember:async()=>({user:{id:owner,email:'family@example.test'},headers:new Headers()}),memberReply:(data,status)=>Response.json(data,{status})},
  '../../../../lib/request-origin':{requestOrigin:()=> 'https://adultsvskids.com'},
  '../../../../config/pdfs':catalog,

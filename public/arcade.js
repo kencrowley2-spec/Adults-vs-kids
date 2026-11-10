@@ -59,6 +59,7 @@ function startRecording(mode,gameIds){recording={id:crypto.randomUUID(),mode,gam
 function saveCompleted(){
  if(!recording||recording.complete)return;
  recording.complete=true;
+ window.dispatchEvent(new CustomEvent('avk:game-complete',{detail:{game:recording.mode==='series'?'series':recording.gameIds[0],id:recording.id}}));
  if(kidsOnly)return;
  const {id,mode,gameIds,roundWinners}=recording;
  recorder.capture({id,mode,gameIds:[...gameIds],roundWinners:[...roundWinners]});
@@ -387,7 +388,7 @@ function openLava(){
  let matchId=crypto.randomUUID();
  rememberGame('lava');arena.hidden=false;lobby.hidden=true;
  window.dispatchEvent(new CustomEvent('avk:game-start',{detail:{game:'lava',id:matchId}}));
- stopLava=mountLava({beforeRematch:()=>guestGate.allow('lava'),players:lavaNames,onExit:()=>{stopLava=null;arena.hidden=true;lobby.hidden=false;game=null;document.querySelector('[data-game="lava"]')?.focus();},onComplete:result=>{
+ stopLava=mountLava({beforeRematch:()=>{if(!guestGate.allow('lava'))return false;window.dispatchEvent(new CustomEvent('avk:game-start',{detail:{game:'lava',id:matchId}}));return true;},players:lavaNames,onExit:()=>{stopLava=null;arena.hidden=true;lobby.hidden=false;game=null;document.querySelector('[data-game="lava"]')?.focus();},onComplete:result=>{
   if(!kidsOnly&&!adultsOnly)recorder.capture({id:matchId,mode:'single',gameIds:['lava'],roundWinners:[result.winner]});
   window.dispatchEvent(new CustomEvent('avk:game-complete',{detail:{game:'lava',winner:result.winner,scores:result.scores,id:matchId}}));
   matchId=crypto.randomUUID();
@@ -395,18 +396,21 @@ function openLava(){
 }
 function openFaces(){
  clearTimers();
+ let matchId=crypto.randomUUID();
+ window.dispatchEvent(new CustomEvent('avk:game-start',{detail:{game:'faces',id:matchId}}));
  rememberGame('faces');arena.hidden=true;lobby.hidden=true;
  const adultsOnly=selectedPlayers[1].length===0&&selectedPlayers[0].length>=2;
  const faceNames=adultsOnly?[selectedPlayers[0].filter((_,i)=>i%2===0).join(' & '),selectedPlayers[0].filter((_,i)=>i%2===1).join(' & ')]:selectedPlayers.map((list,i)=>list.join(' & ')||names[i]);
- mountFaces({beforeRematch:()=>guestGate.allow('faces'),players:faceNames,onExit:()=>{arena.hidden=true;lobby.hidden=false;game=null;document.querySelector('[data-game="faces"]')?.focus();},onComplete:result=>{
-  window.dispatchEvent(new CustomEvent('avk:game-complete',{detail:{game:'faces',winner:result.winner}}));
+ mountFaces({beforeRematch:()=>{if(!guestGate.allow('faces'))return false;window.dispatchEvent(new CustomEvent('avk:game-start',{detail:{game:'faces',id:matchId}}));return true;},players:faceNames,onExit:()=>{arena.hidden=true;lobby.hidden=false;game=null;document.querySelector('[data-game="faces"]')?.focus();},onComplete:result=>{
+  window.dispatchEvent(new CustomEvent('avk:game-complete',{detail:{game:'faces',winner:result.winner,id:matchId}}));
+  matchId=crypto.randomUUID();
  }});
 }
 function openDraw(){
  clearTimers();
  let matchId=crypto.randomUUID();rememberGame('draw');arena.hidden=true;lobby.hidden=true;
  window.dispatchEvent(new CustomEvent('avk:game-start',{detail:{game:'draw',id:matchId}}));
- mountDraw({beforeRematch:()=>guestGate.allow('draw'),players:selectedPlayers.map((list,i)=>list.join(' & ')||names[i]),onExit:()=>{arena.hidden=true;lobby.hidden=false;game=null;document.querySelector('[data-game="draw"]')?.focus();},onComplete:result=>{
+ mountDraw({beforeRematch:()=>{if(!guestGate.allow('draw'))return false;window.dispatchEvent(new CustomEvent('avk:game-start',{detail:{game:'draw',id:matchId}}));return true;},players:selectedPlayers.map((list,i)=>list.join(' & ')||names[i]),onExit:()=>{arena.hidden=true;lobby.hidden=false;game=null;document.querySelector('[data-game="draw"]')?.focus();},onComplete:result=>{
   if(!kidsOnly&&result.winner!==null)drawRecorder.capture({id:matchId,mode:'single',gameIds:['draw'],roundWinners:[result.winner]});
   window.dispatchEvent(new CustomEvent('avk:game-complete',{detail:{game:'draw',winner:result.winner,scores:result.scores,id:matchId}}));
   matchId=crypto.randomUUID();

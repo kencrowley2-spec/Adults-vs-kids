@@ -1,3 +1,4 @@
+import {completionAnalytics} from '../../../../lib/analytics-server';
 import {verifiedMember,memberReply} from '../../../../lib/auth/session';
 import {requestOrigin} from '../../../../lib/request-origin';
 import {completedResult,sameResult} from '../../../../lib/arcade/results';
@@ -32,6 +33,7 @@ export async function POST(request:Request){
   const existing=await auth.client.from('arcade_results').select('mode,game_ids,round_winners').eq('id',result.id).eq('user_id',auth.user.id).maybeSingle();
   if(existing.error)throw new Error('Read failed');
   if(!existing.data||!sameResult(existing.data,result))return memberReply({error:'This match ID already belongs to a different result.'},409,auth.headers);
+  await completionAnalytics(request,auth.headers,auth.user,auth.isAdmin,result.id,result.mode==='series'?'series':result.gameIds[0]);
   return memberReply({saved:true,id:result.id},200,auth.headers);
  }catch{return memberReply({error:'Result not saved yet. Please retry.'},503,auth.headers);}
 }

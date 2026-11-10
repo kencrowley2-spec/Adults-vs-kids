@@ -1,3 +1,4 @@
+import {checkoutAnalytics} from '../../../../lib/analytics-server';
 import {verifiedMember,memberReply} from '../../../../lib/auth/session';
 import {requestOrigin} from '../../../../lib/request-origin';
 import {availablePdfs,paymentAdmin,paymentOrigin,paymentLive,stripeClient} from '../../../../lib/payments/server';
@@ -30,6 +31,6 @@ export async function POST(request:Request){
    subscription_data:{metadata,description:plan.title+'. Clubhouse setup: '+setup},
    custom_text:{submit:{message:clubTerms+' Your books and Clubhouse setup are available in your family account after payment.'}},
    success_url:origin+'/family/downloads?session_id={CHECKOUT_SESSION_ID}',cancel_url:origin+'/club-checkout?plan='+data.plan+'&cancelled=1',expires_at:Math.floor(Date.now()/1000)+1800},{idempotencyKey:'avk-club-'+attempt});
-  if(!session.url)throw new Error('Missing checkout URL');return reply({url:session.url});
+  if(!session.url)throw new Error('Missing checkout URL');await checkoutAnalytics(request,auth.headers,auth.user,auth.isAdmin,session.id,session.livemode);return reply({url:session.url});
  }catch(error){const e=error as {type?:string;code?:string};console.error('Club checkout unavailable',{type:e.type||'service',code:e.code||'configuration'});return reply({error:'Club checkout is temporarily unavailable. No payment was taken. Please try again shortly.'},503);}
 }

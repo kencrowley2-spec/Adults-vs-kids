@@ -1,8 +1,19 @@
 (()=>{
- if(location.pathname.startsWith('/admin'))return;
- const send=(type,detail='',id=crypto.randomUUID())=>fetch('/api/analytics',{method:'POST',credentials:'same-origin',keepalive:true,headers:{'Content-Type':'application/json'},body:JSON.stringify({id,type,path:location.pathname,detail,referrer:document.referrer?new URL(document.referrer).hostname:'Direct / unknown'})}).catch(()=>{});
+ const utm=new URLSearchParams(location.search),landing={};
+ for(const k of ['source','medium','campaign','content','term'])landing['utm_'+k]=utm.get('utm_'+k)||'';
+ let referrer='';try{referrer=document.referrer?new URL(document.referrer).hostname:'';}catch{}
+ // Serialize requests so the initial HttpOnly session cookie exists before subsequent events.
+ let queue=Promise.resolve(),lastActivity=Date.now();
+ const send=(type,detail='',id=crypto.randomUUID())=>{
+  const body=JSON.stringify({...landing,id,type,path:location.pathname,detail,referrer});
+  queue=queue.then(async()=>{for(let attempt=0;attempt<2;attempt++){try{const r=await fetch('/api/analytics',{method:'POST',credentials:'same-origin',keepalive:true,headers:{'Content-Type':'application/json'},body});if(r.ok||r.status<500)return;}catch{}}}).catch(()=>{});
+ };
  send('page_view');
+ window.avkAnalyticsReady=queue;
  window.addEventListener('avk:game-start',e=>send('game_start',e.detail.game,e.detail.id));
+ window.addEventListener('avk:game-complete',e=>{if(e.detail.id)send('game_complete',e.detail.game,e.detail.id)});
+ for(const event of ['pointerdown','keydown'])document.addEventListener(event,()=>{lastActivity=Date.now()},{passive:true});
+ setInterval(()=>{if(document.visibilityState==='visible'&&Date.now()-lastActivity<60000)send('heartbeat')},60000);
  document.addEventListener('click',e=>{
   const a=e.target.closest('a,button');if(!a)return;
   const href=a.getAttribute('href')||'',id=a.id||'';
