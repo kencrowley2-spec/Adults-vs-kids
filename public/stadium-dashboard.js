@@ -1,0 +1,15 @@
+(()=>{
+ const dashboard=document.querySelector('[data-stadium-preview]');if(!dashboard)return;
+ const records=document.querySelector('#family-records');
+ function revealRecords(){if(records)records.open=true}
+ document.querySelectorAll('a[href="#lifetime-score"],a[href="#family-roster"],a[href="#showdown-library"]').forEach(a=>a.addEventListener('click',revealRecords));
+ const menu=document.querySelector('[data-member-menu]'),sidebar=document.getElementById('memberMenu');
+ document.addEventListener('click',e=>{if(sidebar?.classList.contains('open')&&!sidebar.contains(e.target)&&!menu.contains(e.target)){sidebar.classList.remove('open');menu.setAttribute('aria-expanded','false')}});
+ document.addEventListener('keydown',e=>{if(e.key==='Escape'&&sidebar?.classList.contains('open')){sidebar.classList.remove('open');menu.setAttribute('aria-expanded','false');menu.focus()}});
+ const info={weekly:['Weekly Challenges','Find the family challenge collection and upcoming weekly drops in the All-Access Club.'],gallery:['Clubhouse Gallery','The Clubhouse Gallery is part of the Club app. Open your Clubhouse setup to check your access and available features.'],network:['Friends / Neighborhood','Family connections and challenges are part of the Club app. Open your Clubhouse setup to check your access and available features.']};
+ document.querySelectorAll('[data-stadium-info]').forEach(button=>button.addEventListener('click',()=>{const [heading,description]=info[button.dataset.stadiumInfo],dialog=document.getElementById('memberDialog'),content=document.getElementById('memberDialogContent');window.pauseFamilyTools?.();dialog.classList.remove('showdown-tools');content.replaceChildren();const h=document.createElement('h2'),p=document.createElement('p'),links=document.createElement('nav');h.id='stadium-info-title';h.textContent=heading;p.textContent=description;links.className='stadium-info-links';for(const [label,href]of [['Open Clubhouse Setup','/clubhouse-setup'],['Explore All-Access Club','/all-access-club#benefits']]){const a=document.createElement('a');a.textContent=label+' →';a.href=href;links.append(a)}content.append(h,p,links);dialog.setAttribute('aria-labelledby',h.id);dialog.showModal()}));
+ if(dashboard.dataset.stadiumPreview==='true')return;
+ const set=(selector,value)=>{const el=document.querySelector(selector);if(el)el.textContent=String(value)};
+ fetch('/api/arcade/results',{credentials:'same-origin',cache:'no-store'}).then(r=>r.ok?r.json():null).then(data=>{const s=data?.score;if(!s||![s.adults,s.kids,s.total].every(n=>Number.isSafeInteger(n)&&n>=0)||s.adults+s.kids!==s.total)return;set('[data-stadium-adults]',s.adults);set('[data-stadium-kids]',s.kids);set('[data-stadium-matches]',s.total)}).catch(()=>{});
+ fetch('/api/arcade/leaderboard?game=maze',{credentials:'same-origin',cache:'no-store'}).then(r=>r.ok?r.json():null).then(data=>{const own=data?.rows?.find(row=>row.yours);if(own&&Number.isSafeInteger(own.place))set('[data-stadium-rank]','#'+own.place);const el=document.querySelector('[data-stadium-rank]');if(el)el.title='Maze Dash Top 100 ranking'}).catch(()=>{});
+})();
