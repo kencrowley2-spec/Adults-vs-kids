@@ -27,3 +27,40 @@
 .holiday-banner{max-width:1500px;margin-left:auto;margin-right:auto;width:96%;grid-template-columns:minmax(0,42%) minmax(0,58%)}
 .holiday-banner-art img{max-height:520px}.holiday-banner-copy{padding:clamp(24px,3vw,50px)}
 @media(max-width:700px){.holiday-banner{width:94%;grid-template-columns:minmax(0,45%) minmax(0,55%);margin:10px auto 28px}.holiday-banner-art{border-radius:22px 0 0 22px;display:flex;align-items:center;background:#100a05}.holiday-banner-art img{height:auto;max-height:none}.holiday-banner-copy{padding:19px 14px 18px;gap:10px}.holiday-banner-copy h2{font-size:clamp(23px,5.8vw,39px)}.holiday-banner-copy>p{display:none}.holiday-banner-copy .holiday-eyebrow{font-size:7px;letter-spacing:.6px;line-height:1.5}.holiday-banner-price{font-size:35px}.holiday-banner-price>span{display:block;margin:3px 0 0;font-size:9px}.holiday-banner .holiday-cta{font-size:11px;min-height:44px;padding:9px 10px;gap:4px;border-radius:14px}.holiday-banner .holiday-details{font-size:9px;line-height:1.4}}
+
+/* White purchase buttons and dimensional C9 Christmas bulbs. */
+.holiday-cta,.holiday-page a.holiday-cta,.holiday-page button.holiday-cta{
+ background:linear-gradient(180deg,#fff 0%,#fff 48%,#ededeb 100%);
+ color:#151515;border:2px solid #fff;font-weight:900;
+ box-shadow:inset 0 2px 0 #fff,0 4px 0 #bab9b3,0 9px 20px #0009,0 0 22px #ffffff25;
+ text-shadow:0 1px 0 #fff;
+}
+.holiday-cta:hover{background:#fff;filter:none;box-shadow:inset 0 2px 0 #fff,0 4px 0 #bab9b3,0 10px 24px #000a,0 0 28px #ffffff50}
+.christmas-top,.christmas-bottom{border-top:4px solid #193d28;filter:drop-shadow(1px 3px 2px #000b)}
+.christmas-top{top:-5px}.christmas-bottom{bottom:-15px}
+.christmas-left,.christmas-right{border-left:4px solid #193d28;filter:drop-shadow(2px 2px 2px #000b)}
+.christmas-string i,.christmas-string i:nth-child(2n){
+ width:15px;height:28px;margin-top:10px;
+ border:1px solid #ffffff55;border-bottom-color:#0006;
+ border-radius:48% 48% 48% 48% / 30% 30% 70% 70%;
+ background:radial-gradient(ellipse at 28% 22%,#fff 0%,#ffffffba 7%,transparent 34%),linear-gradient(100deg,#0007,transparent 38%,#ffffff33 52%,#0008),var(--bulb);
+ box-shadow:inset 2px 1px 3px #fff8,inset -3px -4px 5px #0008,3px 5px 4px #000b,0 0 10px 2px currentColor,0 0 25px 3px currentColor;
+}
+.christmas-string i:before{
+ top:-11px;left:2px;width:9px;height:12px;border:1px solid #071b10;
+ border-radius:3px 3px 1px 1px;
+ background:repeating-linear-gradient(0deg,#173321 0 2px,#477553 2px 3px);
+ box-shadow:inset 2px 0 2px #829c6c,2px 1px 2px #000b;
+}
+.christmas-string i:after{
+ left:3px;top:4px;width:4px;height:13px;border-radius:70%;
+ background:linear-gradient(#fffffff2,#ffffff20);transform:rotate(-13deg);
+}
+.christmas-string i:nth-child(even){margin-top:15px}
+.christmas-left i,.christmas-left i:nth-child(2n){transform:rotate(-22deg);margin-left:1px}
+.christmas-right i,.christmas-right i:nth-child(2n){transform:rotate(22deg);margin-left:-4px}
+@media(max-width:700px){
+ .christmas-string i,.christmas-string i:nth-child(2n){width:11px;height:22px;box-shadow:inset 2px 1px 2px #fff8,inset -2px -3px 4px #0008,2px 4px 3px #000b,0 0 7px 1px currentColor,0 0 16px 2px currentColor}
+ .christmas-string i:before{left:1px;width:7px;height:10px;top:-9px}
+ .christmas-string i:after{left:2px;top:3px;width:3px;height:10px}
+}
