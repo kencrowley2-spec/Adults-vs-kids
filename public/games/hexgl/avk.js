@@ -1,6 +1,18 @@
 // Adults vs. Kids integration. Original HexGL game and notices retained.
 (function () {
   'use strict';
+  // Check each race at the real Start action, including direct links and rematches.
+  var gateReady=Promise.all([
+    import('/arcade-guest.js?v=1'),
+    fetch('/auth/status',{credentials:'same-origin',cache:'no-store'}).then(function(r){return r.ok?r.json():{signedIn:false};}).catch(function(){return {signedIn:false};})
+  ]).then(function(parts){return parts[0].mountGuestGate({signedIn:parts[1].signedIn===true});});
+  var starting=false,approved=false;
+  document.getElementById('step-2').addEventListener('click',function(event){
+    if(approved)return;
+    event.preventDefault();event.stopImmediatePropagation();
+    if(starting)return;starting=true;
+    gateReady.then(function(gate){if(gate.allow('hexgl')){approved=true;document.getElementById('step-2').click();approved=false;}}).finally(function(){starting=false;});
+  },true);
   var controls = document.getElementById('avk-drive');
   var held = new Map();
   function ship() { return window.hexGL && window.hexGL.components.shipControls; }

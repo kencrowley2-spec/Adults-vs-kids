@@ -1,7 +1,7 @@
 import {DrawMatch} from './arcade-draw-core.js';
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const colors=[['Ink','#172033'],['Red','#f04452'],['Orange','#ff8a28'],['Yellow','#ffd522'],['Green','#31be75'],['Blue','#249af4'],['Purple','#9060df'],['Pink','#f06db4'],['Brown','#996344'],['White','#ffffff']];
-export function mountDraw({players=['Adults','Kids'],onExit=()=>{},onComplete=()=>{}}={}){
+export function mountDraw({players=['Adults','Kids'],onExit=()=>{},onComplete=()=>{},beforeRematch=()=>true}={}){
  const host=document.createElement('section');host.className='draw-game';host.setAttribute('aria-label','Draw It drawing and guessing game');
  host.innerHTML=`<header class="draw-top"><button data-action="exit" aria-label="Return to Arcade">←</button><div><small>ADULTS vs. KIDS™</small><b>DRAW IT<span>!</span></b></div><button data-action="sound" aria-pressed="true">♫ On</button></header><div class="draw-scores"></div><div class="draw-body"></div>`;
  document.body.append(host);const overflow=document.body.style.overflow;document.body.style.overflow='hidden';
@@ -54,7 +54,7 @@ export function mountDraw({players=['Adults','Kids'],onExit=()=>{},onComplete=()
  if(b.dataset.tool){tool=b.dataset.tool;syncTools();return;}if(b.dataset.color){color=b.dataset.color;syncTools();return;}
  const a=b.dataset.action;if(a==='exit'){if(phase!=='setup'&&phase!=='finish'&&!confirm('Leave this match? Your drawing and points will be cleared.'))return;cleanup();onExit();return;}
  if(a==='sound'){sound=!sound;b.textContent=sound?'♫ On':'♫ Off';b.setAttribute('aria-pressed',String(sound));if(!sound)audio?.suspend();else unlock();return;}unlock();tone();
- if(a==='start'||a==='rematch'){const rounds=a==='start'?Number(host.querySelector('[data-rounds][aria-pressed="true"]').dataset.rounds):match.rounds;match=new DrawMatch(rounds,Math.random()<.5?0:1);done=false;strokes=[];redo=[];drawing();}
+ if(a==='start'||a==='rematch'){if(a==='rematch'&&!beforeRematch())return;const rounds=a==='start'?Number(host.querySelector('[data-rounds][aria-pressed="true"]').dataset.rounds):match.rounds;match=new DrawMatch(rounds,Math.random()<.5?0:1);done=false;strokes=[];redo=[];drawing();}
  if(a==='undo'&&phase==='draw'&&strokes.length){redo.push(strokes.pop());redraw();syncTools();}if(a==='redo'&&phase==='draw'&&redo.length){strokes.push(redo.pop());redraw();syncTools();}
  if(a==='clear'&&phase==='draw'&&confirm('Clear this drawing? You can undo this.')){if(strokes.length){strokes.push({tool:'clear'});redo=[];redraw();syncTools();}}
  if(a==='done'&&phase==='draw'&&strokes.length)guessing();

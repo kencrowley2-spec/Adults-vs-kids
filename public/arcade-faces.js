@@ -1,6 +1,6 @@
 import {FACES,FaceMatch,portrait} from './arcade-faces-core.js';
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-export function mountFaces({players=['Adults','Kids'],onExit=()=>{},onComplete=()=>{}}={}){
+export function mountFaces({players=['Adults','Kids'],onExit=()=>{},onComplete=()=>{},beforeRematch=()=>true}={}){
  const host=document.createElement('section');host.className='faces-game';host.setAttribute('aria-label','Mystery Face Showdown');document.body.append(host);const oldOverflow=document.body.style.overflow;document.body.style.overflow='hidden';
  let match,phase='intro',picker=0,selected=null,guessMode=false,answered=false,sound=true,audio=null,closed=false;
  const name=i=>esc(players[i]);const button=(label,action,kind='')=>`<button class="face-button ${kind}" data-action="${action}">${label}</button>`;
@@ -24,7 +24,7 @@ export function mountFaces({players=['Adults','Kids'],onExit=()=>{},onComplete=(
   tone();
   if(action==='exit'){if(['intro','result'].includes(phase)){dispose();onExit();}else overlay(`<h2>Leave this case?</h2><p>Your current game will end.</p>${button('LEAVE GAME','leave')}${button('KEEP PLAYING','dismiss','face-secondary')}`);}
   if(action==='leave'){dispose();onExit();}
-  if(action==='start'){match=new FaceMatch(Math.random()<.5?0:1);picker=0;selected=null;guessMode=false;answered=false;handoff(0,'pick');}
+  if(action==='start'){if(phase==='result'&&!beforeRematch())return;match=new FaceMatch(Math.random()<.5?0:1);picker=0;selected=null;guessMode=false;answered=false;handoff(0,'pick');}
   if(action==='ready-pick')pick();
   if(action==='lock'&&selected!==null){match.choose(picker,selected);selected=null;if(picker===0){picker=1;handoff(1,'pick');}else handoff(match.turn,'turn');}
   if(action==='ready-turn'){guessMode=false;answered=false;selected=null;board();}

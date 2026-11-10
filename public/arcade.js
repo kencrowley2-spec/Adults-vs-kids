@@ -1,9 +1,10 @@
+import {mountGuestGate} from './arcade-guest.js?v=1';
 import {mountFeaturedGames} from './arcade-featured.js?v=2';
-import {mountPinball} from './arcade-pinball.js?v=1';
+import {mountPinball} from './arcade-pinball.js?v=2';
 import {createCaseReader} from './arcade-cases.js?v=2';
-import {mountFaces} from './arcade-faces.js?v=1';
-import {mountDraw} from './arcade-draw.js?v=2';
-import {mountLava} from './arcade-lava.js?v=7';
+import {mountFaces} from './arcade-faces.js?v=2';
+import {mountDraw} from './arcade-draw.js?v=3';
+import {mountLava} from './arcade-lava.js?v=8';
 import {mountClaw,clawPrizes,clawFireworks} from './arcade-claw.js?v=4';
 import {mountMole,molePlan,createMoleAudio} from './arcade-mole.js?v=4';
 import {mountFrog,frogCourses,frogRoundWinner} from './arcade-frog.js?v=3';
@@ -24,14 +25,16 @@ let game, wins=[0,0], round=1, attempt=0, starter=0, turn=0, results=[], champio
 let series=null,recording=null;
 let kidsOnly=false;
 const arcadeAccountId=$('arcade-game').getAttribute('data-account-id');
-const recorder=createResultRecorder({
+const guestGate=mountGuestGate({signedIn:!!arcadeAccountId});
+const resultRecorder=options=>arcadeAccountId?createResultRecorder(options):{capture:()=>{},drain:()=>{}};
+const recorder=resultRecorder({
  accountId:arcadeAccountId,
  storage:{getItem:key=>localStorage.getItem(key),setItem:(key,value)=>localStorage.setItem(key,value)},
  send:result=>fetch('/api/arcade/results',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({...result,accountId:arcadeAccountId})}),
  changed:({pending,storageFailed})=>{const el=$('arcade-save-status');if(el)el.textContent=pending?`A completed result is waiting to save. ${storageFailed?'Keep this page open and retry.':'It will retry when you’re connected.'}`:(kidsOnly?'Kids vs. Kids · scores count for this match.':'Completed matches update your family’s lifetime score.');}
 });
 // Keep pending DRAW IT results independent while its database rollout is pending.
-const drawRecorder=createResultRecorder({
+const drawRecorder=resultRecorder({
  accountId:arcadeAccountId,namespace:'draw-results',
  storage:{getItem:key=>localStorage.getItem(key),setItem:(key,value)=>localStorage.setItem(key,value)},
  send:result=>fetch('/api/arcade/results',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({...result,accountId:arcadeAccountId})}),
@@ -40,7 +43,7 @@ const drawRecorder=createResultRecorder({
 drawRecorder.drain();
 window.addEventListener('online',()=>drawRecorder.drain());
 $('arcade-save-retry').addEventListener('click',()=>drawRecorder.drain());
-const timeRecorder=createResultRecorder({
+const timeRecorder=resultRecorder({
  accountId:arcadeAccountId,namespace:'times',
  storage:{getItem:key=>localStorage.getItem(key),setItem:(key,value)=>localStorage.setItem(key,value)},
  send:result=>fetch('/api/arcade/leaderboard',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({...result,accountId:arcadeAccountId})}),
@@ -384,7 +387,7 @@ function openLava(){
  let matchId=crypto.randomUUID();
  rememberGame('lava');arena.hidden=false;lobby.hidden=true;
  window.dispatchEvent(new CustomEvent('avk:game-start',{detail:{game:'lava',id:matchId}}));
- stopLava=mountLava({players:lavaNames,onExit:()=>{stopLava=null;arena.hidden=true;lobby.hidden=false;game=null;document.querySelector('[data-game="lava"]')?.focus();},onComplete:result=>{
+ stopLava=mountLava({beforeRematch:()=>guestGate.allow('lava'),players:lavaNames,onExit:()=>{stopLava=null;arena.hidden=true;lobby.hidden=false;game=null;document.querySelector('[data-game="lava"]')?.focus();},onComplete:result=>{
   if(!kidsOnly&&!adultsOnly)recorder.capture({id:matchId,mode:'single',gameIds:['lava'],roundWinners:[result.winner]});
   window.dispatchEvent(new CustomEvent('avk:game-complete',{detail:{game:'lava',winner:result.winner,scores:result.scores,id:matchId}}));
   matchId=crypto.randomUUID();
@@ -395,7 +398,7 @@ function openFaces(){
  rememberGame('faces');arena.hidden=true;lobby.hidden=true;
  const adultsOnly=selectedPlayers[1].length===0&&selectedPlayers[0].length>=2;
  const faceNames=adultsOnly?[selectedPlayers[0].filter((_,i)=>i%2===0).join(' & '),selectedPlayers[0].filter((_,i)=>i%2===1).join(' & ')]:selectedPlayers.map((list,i)=>list.join(' & ')||names[i]);
- mountFaces({players:faceNames,onExit:()=>{arena.hidden=true;lobby.hidden=false;game=null;document.querySelector('[data-game="faces"]')?.focus();},onComplete:result=>{
+ mountFaces({beforeRematch:()=>guestGate.allow('faces'),players:faceNames,onExit:()=>{arena.hidden=true;lobby.hidden=false;game=null;document.querySelector('[data-game="faces"]')?.focus();},onComplete:result=>{
   window.dispatchEvent(new CustomEvent('avk:game-complete',{detail:{game:'faces',winner:result.winner}}));
  }});
 }
@@ -403,7 +406,7 @@ function openDraw(){
  clearTimers();
  let matchId=crypto.randomUUID();rememberGame('draw');arena.hidden=true;lobby.hidden=true;
  window.dispatchEvent(new CustomEvent('avk:game-start',{detail:{game:'draw',id:matchId}}));
- mountDraw({players:selectedPlayers.map((list,i)=>list.join(' & ')||names[i]),onExit:()=>{arena.hidden=true;lobby.hidden=false;game=null;document.querySelector('[data-game="draw"]')?.focus();},onComplete:result=>{
+ mountDraw({beforeRematch:()=>guestGate.allow('draw'),players:selectedPlayers.map((list,i)=>list.join(' & ')||names[i]),onExit:()=>{arena.hidden=true;lobby.hidden=false;game=null;document.querySelector('[data-game="draw"]')?.focus();},onComplete:result=>{
   if(!kidsOnly&&result.winner!==null)drawRecorder.capture({id:matchId,mode:'single',gameIds:['draw'],roundWinners:[result.winner]});
   window.dispatchEvent(new CustomEvent('avk:game-complete',{detail:{game:'draw',winner:result.winner,scores:result.scores,id:matchId}}));
   matchId=crypto.randomUUID();
@@ -421,6 +424,7 @@ async function clubReveal(title){
 async function openGame(id){
   if(clubIntroPending)return;
   const chosen=GAMES.find(g=>g.id===id);if(!chosen||chosen.comingSoon)return;
+  if(id!=='hexgl'&&!guestGate.allow(id))return;
   if(clubEntry){clubIntroPending=true;try{await clubReveal(chosen.name)}finally{clubIntroPending=false}}
 
   if(id==='neighborhood'){window.location.assign('/defend-your-neighborhood');return;}
@@ -439,6 +443,7 @@ async function openGame(id){
 }
 async function startSeries(){
   if(clubIntroPending)return;
+  if(!arcadeAccountId){guestGate.prompt('series');return;}
 
   clearTimers();
   series={games:shuffle(GAMES.filter(g=>!g.comingSoon&&!g.premium&&g.id!=='lava'&&g.id!=='draw'&&g.id!=='faces'&&g.id!=='hexgl')).slice(0,3),index:0,winners:[],first:0};
@@ -1074,9 +1079,7 @@ window.addEventListener('pagehide',()=>{if(game?.id==='mole')clearTimers();});
 
 
 // Public game links enter the selected catalog game after account verification.
-const linkedGame=new URLSearchParams(location.search).get('game');
-if(GAMES.some(g=>g.id===linkedGame&&!g.comingSoon))openGame(linkedGame);
 
-mountPinball({getAudioContext:()=>{unlockAudio();return audioContext;},soundEnabled:()=>soundOn,accountId:arcadeAccountId});
+mountPinball({beforeStart:()=>guestGate.allow(),getAudioContext:()=>{unlockAudio();return audioContext;},soundEnabled:()=>soundOn,accountId:arcadeAccountId});
 
 // Upright display shows every game at once; no rotating cover hides a game.
