@@ -5,7 +5,7 @@ export function privateClubPage(startedAt:number|null=null,section='home'){
  const subtitles=['Play Games Now!','Compete & Win!','Your Friends & Invitations','Your Family Tournament','Your Wins & Awards','Global Rankings','New Challenges Each Week','Download Game Sheets','Timers, Music & Scores','Invite & Manage Members','Challenge Other Families','Coming January 2027'];
  let tile=0;
  html=html.replace(/<body class="([^"]*)"/, '<body class="$1 private-club"');
- html=html.replace('</head>','<link rel="stylesheet" href="/private-club.css?v=2"></head>');
+ html=html.replace('</head>','<link rel="stylesheet" href="/private-club.css?v=3"></head>');
  html=html.replace('<div class="preview-bar">','<header class="private-club-masthead"><strong>The Clubhouse · Adults vs. Kids</strong><span>YOUR PRIVATE FAMILY CLUB</span></header><div class="preview-bar">');
  html=html.replace('THE CLUBHOUSE · PRIVATE PREVIEW','♛ KEN’S PRIVATE CLUBHOUSE');
  html=html.replace('YOUR NEXT GAME NIGHT STARTS HERE','WELCOME TO YOUR CLUBHOUSE');
