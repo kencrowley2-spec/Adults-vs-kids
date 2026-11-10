@@ -161,32 +161,6 @@ body:has(#arcade-lobby:not([hidden]))>main{height:calc(100svh - 76px - env(safe-
  #arcade-lobby:has(.upright-cabinet){align-items:center}
 }
 
-/* Distance control changes cabinet size while the arcade room stays in place. */
-body:has(#arcade-lobby:not([hidden]))>main{height:calc(100svh - 132px - env(safe-area-inset-bottom,0px))}
-.arcade-cabinet.upright-cabinet{
- width:min(calc(30vw * var(--cabinet-distance,1)),calc((100svh - 140px - env(safe-area-inset-bottom,0px))*679/1438));
- touch-action:none
-}
-.cabinet-distance-control{display:none}
-body:has(#arcade-lobby:not([hidden])) .cabinet-distance-control{
- position:fixed;z-index:25;bottom:calc(80px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);
- display:grid;grid-template-columns:32px minmax(0,1fr) 32px;gap:2px 10px;align-items:center;
- box-sizing:border-box;width:min(320px,90vw);padding:5px 10px 6px;border:1px solid #ffd52266;border-radius:12px;
- background:#090c13ed;box-shadow:0 3px 12px #0009;color:#ffd522
-}
-.cabinet-distance-control label{grid-column:1/-1;text-align:center;font:700 11px/1.2 Arial,sans-serif;letter-spacing:.04em}
-.cabinet-distance-control input{width:100%;margin:0;min-width:0;height:24px;accent-color:#ffd522;cursor:ew-resize;touch-action:pan-x}
-.cabinet-distance-control button{width:32px;height:28px;padding:0;border:1px solid #ffd52255;border-radius:5px;background:#222630;color:#ffd522;font:700 21px/1 Arial,sans-serif;cursor:pointer}
-.cabinet-distance-control :focus-visible{outline:2px solid white;outline-offset:2px}
-@media(max-width:600px) and (orientation:portrait){
- .arcade-cabinet.upright-cabinet{width:min(calc(64vw * var(--cabinet-distance,1)),calc((100svh - 140px - env(safe-area-inset-bottom,0px))*679/1438))}
-}
-@media(max-height:450px){
- body:has(#arcade-lobby:not([hidden]))>main{height:calc(100svh - 116px - env(safe-area-inset-bottom,0px))}
- .arcade-cabinet.upright-cabinet{width:min(calc(30vw * var(--cabinet-distance,1)),calc((100svh - 122px - env(safe-area-inset-bottom,0px))*679/1438))}
- .cabinet-distance-control{bottom:calc(64px + env(safe-area-inset-bottom,0px))}
-}
-
 /* Frame the entire reference room on narrow screens; cover cropped out both arcade rows.
    Paint on the stage, avoiding Android's fixed body-background viewport behavior. */
 body:has(#arcade-lobby:not([hidden])){background:#08090c}
@@ -230,11 +204,22 @@ body:has(#arcade-lobby:not([hidden]))>main{
 .upright-cabinet .cabinet-screen-frame{inset:14.65% 5.8% auto 7.3%;height:45.55%}
 .upright-cabinet .cabinet-play-pinball{top:67.3%;left:34.2%;width:31.5%;height:2.65%}
 .upright-cabinet .game-track .game-tile.featured-game{box-shadow:inset 0 1px 0 #fff8,0 0 0 1px #986c00,0 0 7px #ffd52277}
-body:has(#arcade-lobby:not([hidden])) .cabinet-distance-control{background:#090b11f5;border-color:#ffe23c;box-shadow:0 0 8px #ffd52266}
+
 @media(max-width:600px) and (orientation:portrait){
  .arcade-cabinet.upright-cabinet{width:min(calc(80vw * var(--cabinet-distance,1)),calc((100svh - 140px - env(safe-area-inset-bottom,0px))*679/1438))}
 }
 @media(prefers-reduced-motion:no-preference){
  .upright-cabinet{animation:cabinet-gold-light 4s ease-in-out infinite alternate}
  @keyframes cabinet-gold-light{from{filter:drop-shadow(0 0 2px #ffe64c) drop-shadow(0 0 6px #ffcf2255)}to{filter:drop-shadow(0 0 3px #fff3a4) drop-shadow(0 0 11px #ffcf2299)}}
+}
+
+/* Fixed cabinet framing: open at the approved size without distance controls. */
+body:has(#arcade-lobby:not([hidden]))>main{height:calc(100svh - 76px - env(safe-area-inset-bottom,0px));padding:4px 0}
+.arcade-cabinet.upright-cabinet{width:min(30vw,calc((100svh - 84px - env(safe-area-inset-bottom,0px))*679/1438));touch-action:auto}
+@media(max-width:600px) and (orientation:portrait){
+ .arcade-cabinet.upright-cabinet{width:min(90vw,calc((100svh - 84px - env(safe-area-inset-bottom,0px))*679/1438))}
+}
+@media(max-height:450px){
+ body:has(#arcade-lobby:not([hidden]))>main{height:calc(100svh - 60px - env(safe-area-inset-bottom,0px))}
+ .arcade-cabinet.upright-cabinet{width:min(90vw,calc((100svh - 68px - env(safe-area-inset-bottom,0px))*679/1438))}
 }
