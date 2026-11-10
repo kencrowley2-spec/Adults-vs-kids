@@ -213,13 +213,15 @@ body:has(#arcade-lobby:not([hidden]))>main{
  @keyframes cabinet-gold-light{from{filter:drop-shadow(0 0 2px #ffe64c) drop-shadow(0 0 6px #ffcf2255)}to{filter:drop-shadow(0 0 3px #fff3a4) drop-shadow(0 0 11px #ffcf2299)}}
 }
 
-/* Fixed cabinet framing: open at the approved size without distance controls. */
-body:has(#arcade-lobby:not([hidden]))>main{height:calc(100svh - 76px - env(safe-area-inset-bottom,0px));padding:4px 0}
-.arcade-cabinet.upright-cabinet{width:min(30vw,calc((100svh - 84px - env(safe-area-inset-bottom,0px))*679/1438));touch-action:auto}
+/* Open closer: prioritize the game screen and control deck over the lower speaker panel. */
+body:has(#arcade-lobby:not([hidden]))>main{height:calc(100svh - 76px - env(safe-area-inset-bottom,0px));padding:4px 0;overflow:hidden}
+#arcade-lobby:has(.upright-cabinet){align-items:flex-start;overflow:hidden}
+.arcade-cabinet.upright-cabinet{width:min(42vw,calc((100svh - 84px - env(safe-area-inset-bottom,0px))*679/1120));flex:none;touch-action:auto}
 @media(max-width:600px) and (orientation:portrait){
- .arcade-cabinet.upright-cabinet{width:min(90vw,calc((100svh - 84px - env(safe-area-inset-bottom,0px))*679/1438))}
+ #arcade-lobby:has(.upright-cabinet){align-items:flex-start}
+ .arcade-cabinet.upright-cabinet{width:min(98vw,calc((100svh - 84px - env(safe-area-inset-bottom,0px))*679/1120))}
 }
 @media(max-height:450px){
  body:has(#arcade-lobby:not([hidden]))>main{height:calc(100svh - 60px - env(safe-area-inset-bottom,0px))}
- .arcade-cabinet.upright-cabinet{width:min(90vw,calc((100svh - 68px - env(safe-area-inset-bottom,0px))*679/1438))}
+ .arcade-cabinet.upright-cabinet{width:min(98vw,calc((100svh - 68px - env(safe-area-inset-bottom,0px))*679/1120))}
 }
