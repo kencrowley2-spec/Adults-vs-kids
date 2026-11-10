@@ -7,3 +7,14 @@ body.showcase{background:#030303;color:#fff}.showcase .sr-only{position:absolute
 
 .tile-icon svg{display:block;width:1em;height:1em}
 @media(min-width:701px){.home-tile{min-height:175px;gap:5px;padding-top:12px}.home-tile h2{font-size:clamp(18px,1.7vw,29px)}.home-tile p{font-size:clamp(11px,1.1vw,18px)}.tile-icon{font-size:1.5em;margin-right:8px}.home-time strong{font-size:clamp(20px,2.1vw,36px)}.home-time>b{font-size:23px}.clock-tile p{font-size:clamp(10px,.9vw,15px)}.books-tile h2{position:relative;padding-left:30px;width:55%;font-size:clamp(16px,1.5vw,25px)}.books-tile h2 .tile-icon{position:absolute;left:0;top:0;font-size:1.3em;margin:0}.books-tile .home-book-covers{width:43%;top:18px}.books-tile p{font-size:clamp(10px,1vw,16px)}}
+/* Keep one brand mark in the hero; let the game art fill its template. */
+.home-header .home-logo{display:none}
+.home-header{justify-content:space-between}
+.home-featured{padding-left:0;padding-right:0}
+.featured-row{position:relative;gap:0;padding:0 24px}
+.featured-row>button{position:absolute;z-index:2;left:1px;top:50%;transform:translateY(-50%);width:24px}
+.featured-row>button[data-feature-next]{left:auto;right:1px}
+.featured-window{min-width:0;padding:5px}
+.featured-track{gap:10px}
+.featured-cover{flex-basis:calc((100% - 40px)/5)}
+@media(max-width:700px){.home-header{height:48px;padding:0 4%}.home-header .home-account{margin-left:auto}.featured-row{padding:0 10px}.featured-row>button{width:16px;font-size:46px;text-shadow:0 1px 4px #000,0 0 8px #000}.featured-track{gap:6px}.featured-cover{flex-basis:calc((100% - 12px)/3);aspect-ratio:1.3}.featured-window{padding:5px}.home-featured h2{margin-bottom:4px}}
