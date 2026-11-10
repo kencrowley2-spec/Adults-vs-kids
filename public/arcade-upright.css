@@ -46,3 +46,24 @@ body:has(#arcade-lobby:not([hidden]))>main{height:calc(100svh - 76px - env(safe-
  .cabinet-control-deck{top:92%;height:6%}
  .cabinet-buttons i{height:2.2cqw}
 }
+
+/* Five permanent favorites and a rotating row, inside the existing cabinet. */
+.upright-cabinet .cabinet-playfield{display:flex;flex-direction:column;gap:2cqw}
+.cabinet-featured,.cabinet-rotating{display:flex;flex-direction:column;min-height:0;flex:2.2}
+.cabinet-rotating{flex:1}
+.cabinet-featured h2,.cabinet-rotating h2{margin:0 0 1cqw;font:900 1.8cqw/1.2 Arial,sans-serif;letter-spacing:.08em;color:#ffe348}
+.upright-cabinet .cabinet-featured .game-track,.upright-cabinet .cabinet-rotating .game-track{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:1cqw;flex:1;min-height:0}
+.upright-cabinet .cabinet-featured .game-track{grid-template-rows:repeat(2,minmax(0,1fr))}
+.upright-cabinet .game-track .game-tile,.upright-cabinet .game-track .game-tile:last-child{grid-column:auto;grid-row:auto}
+.upright-cabinet .cabinet-featured .game-tile[data-game="lava"]{grid-column:span 2}
+.upright-cabinet .game-track .game-tile.featured-game{border:2px solid #ffde39;box-shadow:0 0 5px #ffd52288,inset 0 0 0 1px #fff4}
+.rotation-heading{display:flex;align-items:center;justify-content:space-between;gap:1cqw;margin-bottom:1cqw;min-height:3cqw}
+.rotation-heading h2{margin:0;color:#e4eaff}
+.rotation-controls{display:flex;align-items:center;gap:1cqw;color:#cbd4ee;font:700 1.6cqw Arial}
+.rotation-controls button{display:grid;place-items:center;min-width:3.5cqw;height:3.5cqw;padding:0;border:1px solid #8b91a3;border-radius:2px;background:#1c2741;color:#ffe348;font:900 2.8cqw/1 Arial;cursor:pointer}
+.rotation-controls button:focus-visible{outline:2px solid #ffe348;outline-offset:2px}
+@media(max-width:600px) and (min-height:451px){
+ .cabinet-featured h2,.cabinet-rotating h2{font-size:2.3cqw}
+ .rotation-controls{font-size:2cqw}
+ .rotation-controls button{min-width:6cqw;height:6cqw;font-size:4cqw}
+}

@@ -1,3 +1,4 @@
+import {mountFeaturedGames} from './arcade-featured.js?v=1';
 import {mountPinball} from './arcade-pinball.js?v=1';
 import {createCaseReader} from './arcade-cases.js?v=2';
 import {mountFaces} from './arcade-faces.js?v=1';
@@ -1016,8 +1017,7 @@ function rememberGame(id){
  try{const ids=recentGames(localStorage,recentKey,GAMES);localStorage.setItem(recentKey,JSON.stringify([id,...ids.filter(x=>x!==id)].slice(0,8)));}catch{}
 
 }
-GAMES.filter(g=>g.premium).forEach(g=>gameTile(g,$('arcade-premium')));
-for(const [shelf,ids] of Object.entries(BROWSE_SHELVES))ids.forEach(id=>{const entry=GAMES.find(g=>g.id===id);if(entry)gameTile(entry,$('arcade-'+shelf));});
+mountFeaturedGames({games:GAMES,gameTile});
 $('arcade-random').addEventListener('click',startSeries);
 $('arcade-return').addEventListener('click',()=>{clearTimers();series=null;arena.hidden=true;lobby.hidden=false;game=null;$('arcade-favorites').querySelector('button')?.focus();});
 $('arcade-reset').addEventListener('click',()=>{
