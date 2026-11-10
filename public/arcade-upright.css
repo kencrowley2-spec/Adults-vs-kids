@@ -204,7 +204,7 @@ body:has(#arcade-lobby:not([hidden]))>main{
  background:#ffd522 url('/assets/arcade-gold-burst.svg') center/100% 100% no-repeat
 }
 .arcade-cabinet.upright-cabinet{
- background-image:url('/assets/avk-gold-cabinet.png');
+ background-image:url('/assets/avk-gold-cabinet.webp');
  background-size:131.8919% 137.4557%;
  background-position:47.4576% 32.4763%;
  background-repeat:no-repeat;
