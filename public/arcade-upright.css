@@ -186,3 +186,14 @@ body:has(#arcade-lobby:not([hidden])) .cabinet-distance-control{
  .arcade-cabinet.upright-cabinet{width:min(calc(30vw * var(--cabinet-distance,1)),calc((100svh - 122px - env(safe-area-inset-bottom,0px))*679/1438))}
  .cabinet-distance-control{bottom:calc(64px + env(safe-area-inset-bottom,0px))}
 }
+
+/* Frame the entire reference room on narrow screens; cover cropped out both arcade rows.
+   Paint on the stage, avoiding Android's fixed body-background viewport behavior. */
+body:has(#arcade-lobby:not([hidden])){background:#08090c}
+body:has(#arcade-lobby:not([hidden]))>main{
+ background-image:linear-gradient(#030407a8,#030407c9),url('/assets/arcade-room.webp');
+ background-position:center;
+ background-repeat:no-repeat;
+ background-size:100% 100%;
+ background-attachment:scroll
+}
