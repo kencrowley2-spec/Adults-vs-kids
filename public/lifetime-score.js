@@ -1,6 +1,6 @@
 import {createResultRecorder} from './arcade-results.js?v=1';
 const $=id=>document.getElementById(id),panel=$('lifetime-score');
-const gameNames={claw:'Harper’s Claw Machine Showdown',mole:'Whack-a-Mole',memory:'Memory Match',tic:'Tic-Tac-Toe',spot:'Spot the Difference',trivia:'Trivia Showdown',word:'Word Scramble',frog:'Frog Hop Showdown',tap:'Quick Tap',treasure:'Treasure Shuffle',picture:'Guess the Picture',number:'Number Battle',challenge:'Family Challenge',maze:'Maze Dash',rps:'Rock Paper Scissors',code:'Code Breaker',golf:'Mini Golf'};
+const gameNames={claw:'THE CLAW',mole:'Whack-a-Mole',memory:'Memory Match',tic:'Tic-Tac-Toe',spot:'Spot the Difference',trivia:'Trivia Showdown',word:'Word Scramble',frog:'Frog Hop Showdown',tap:'Quick Tap',treasure:'Treasure Shuffle',picture:'Guess the Picture',number:'Number Battle',challenge:'Family Challenge',maze:'Maze Dash',rps:'Rock Paper Scissors',code:'Code Breaker',golf:'Mini Golf'};
 if(panel){
  let loading=false;
  async function load(){

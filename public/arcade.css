@@ -321,7 +321,7 @@ body::before{display:block;inset:0;background:linear-gradient(180deg,rgba(4,5,14
 .mole-help{text-align:center;font-size:11px;margin:8px 0 2px;color:#ffe3a4}
 
 .claw-cabinet{width:min(100%,510px);margin:auto;background:#261a46;padding:7px;border:3px solid #ffd522;border-radius:16px;box-shadow:0 7px 0 #190d2d}
-#claw-board{width:100%;height:auto;aspect-ratio:440/430;display:block;touch-action:none;border-radius:10px}
+#claw-board{width:100%;height:auto;aspect-ratio:440/550;display:block;touch-action:none;border-radius:10px}
 #claw-board:focus-visible{outline:3px solid white}
 .claw-controls{display:flex;gap:7px;padding:7px}.claw-controls button{flex:1;min-height:44px;touch-action:none;font-size:12px;padding:9px 4px;background:#f6d86d;color:#291e3f;border:2px solid #fff0aa;border-radius:10px;font-weight:900}.claw-controls #claw-grab{background:#e8568e;color:#fff;flex:1.4}.claw-controls button:disabled{opacity:.55}
 .claw-result{position:relative;isolation:isolate}#claw-fireworks{position:absolute;inset:0 0 auto;width:100%;height:150px;pointer-events:none;z-index:-1}
@@ -415,3 +415,15 @@ body::before{display:block;inset:0;background:linear-gradient(180deg,rgba(4,5,14
 .game-shelf .game-track .game-tile{border:2px solid #080a0d;border-radius:3px;box-shadow:3px 0 0 #353638,5px 1px 0 #07090b,0 4px 10px #000c}
 .shelf-index a{border-color:#b9973e;background:#1a1b1c;color:#ffe08a;border-radius:3px}.arcade-library-top h2{color:#ffdc57}
 @media(max-width:600px){.game-shelf,.premium-shelf{border-width:6px;border-top-width:9px;padding:0 10px 8px}.game-shelf .shelf-heading,.premium-shelf .shelf-heading{margin:0 -10px 20px;padding:13px 10px;min-height:60px}.game-shelf .shelf-heading h2{font-size:19px}.premium-shelf .shelf-heading h2{font-size:21px}.premium-shelf-caption{font-size:11px;margin:-6px 0 18px}.shelf-slot{padding-bottom:13px}}
+
+/* THE CLAW: chrome deck, gold trim and large tactile controls. */
+.claw-cabinet{width:min(100%,440px);padding:4px;background:linear-gradient(125deg,#5f6173,#10111c 40%,#393847);border:2px solid #ffe181;border-radius:20px;box-shadow:0 8px 0 #080913,0 0 24px #9a6cff33}
+.claw-controls{padding:9px 6px 7px;gap:9px;align-items:center}.claw-controls button{min-height:49px;color:#e9ebff;background:linear-gradient(#4e5269,#202333);border:1px solid #a3adc0;box-shadow:0 4px 0 #080b16;border-radius:12px;font-size:12px}.claw-controls #claw-grab{color:#271d0b;background:linear-gradient(#fff3a3,#ffd522 65%,#e6a528);border:2px solid #fff4b4;box-shadow:0 4px 0 #936319,0 0 18px #ffde4433;font-size:21px;letter-spacing:1px}.claw-controls button:active{transform:translateY(3px);box-shadow:none}.claw-cabinet .mole-help{color:#d9dbed;font-size:10px!important;padding:2px 4px 5px}
+
+.claw-window{position:relative;overflow:hidden;border-radius:14px;background:#090a17}.claw-hud{position:absolute;top:19%;left:14%;right:14%;display:flex;justify-content:space-between;align-items:center;color:#fff;font-size:13px;font-weight:900;pointer-events:none;text-shadow:0 2px 5px #000}.claw-hud span{background:#0a0a1aca;border:1px solid #ad95e855;padding:6px 10px;border-radius:8px}.claw-time{font:900 26px Arial;color:#ffe381;background:#0a0a1aca;border-radius:8px;padding:4px 9px}.claw-time.urgent{color:#ff777e}.claw-phase{position:absolute;bottom:3%;left:0;right:0;color:#f6e5ac;font:bold 11px Arial;letter-spacing:2px;text-shadow:0 2px 3px #000;pointer-events:none}.claw-cabinet{border:1px solid #756945;background:linear-gradient(125deg,#343746,#0d0f19 40%,#35313c);padding:3px}.claw-controls #claw-grab{background:linear-gradient(#ff7d7d,#ee284f 65%,#a10e34);color:#fff;border-color:#ff9a9a;box-shadow:0 4px 0 #730c29,0 0 18px #ff445533}
+
+#arcade-game:has(.claw-cabinet){background:radial-gradient(ellipse at 50% 45%,#221535,#090b14 75%);color:#fff}
+#arcade-game:has(.claw-cabinet) .competition-hud{display:none}
+#arcade-game:has(.claw-cabinet) .text-button,#arcade-game:has(.claw-cabinet) .arena-top .eyebrow,#arcade-game:has(.claw-cabinet) #round-label,#arcade-game:has(.claw-cabinet) #arcade-message{color:#ede6f8}
+#arcade-game:has(.claw-cabinet) .arcade-controls button{background:#1b1b2b;color:#eee6ff;border-color:#5e506e}
+#game-stage .claw-cabinet .mole-help{color:#e2d8ef!important;font-size:10px!important}.claw-phase{text-align:center}

@@ -17,7 +17,7 @@ export const GAMES = [
   {id:'number',icon:'🔢',name:'Number Battle',tag:'MAKE EVERY ANSWER COUNT.',color:'mint',description:'Five addition or subtraction puzzles per team, with 30 seconds to answer. Most correct wins; equal scores use the faster time.'},
   {id:'challenge',icon:'🏆',name:'Family Challenge',tag:'PUT THE SCREEN TO WORK.',color:'pink',description:'A real-world, 20-second challenge for each team. The other team counts and enters the score honestly. Most repetitions wins. Clear a little space and play at your own pace.'},
   {id:'mole',icon:'🔨',name:'Whack-a-Mole',tag:'NINE HOLES. QUICK HANDS. GO!',color:'yellow',description:'Nine holes, purple moles, and quick reactions! Whack the moles before they hide. Each hit earns one point. Both teams get the same pattern and 20 seconds. Most hits wins!'},
-  {id:'claw',icon:'🧸',name:'Harper’s Claw Machine Showdown',tag:'LINE IT UP. TIME IT. GRAB IT.',color:'pink',description:'Each player gets 3 attempts with an arcade claw. Drag or use the arrows to aim. Drop when the grip marker is green for small prizes (1 point) or gold for large prizes (3 points). You have 12 seconds to aim each grab. Most points wins this one-round Showdown. Equal scores are a draw.'},
+  {id:'claw',icon:'🧸',name:'THE CLAW',tag:'30 SECONDS. GRAB THE GLORY.',color:'pink',description:'Each player gets 30 seconds. Drag or hold the arrows to aim. The gold ring shows a toy in reach. Press GRAB to lift and deliver it automatically. Every toy retrieved earns 1 point. Same toy pile for both players. Most toys wins; equal scores tie. A grab started before the buzzer finishes.'},
 ];
 export const ANIMALS=['🐶','🦊','🐼','🐸','🦁','🐵','🐰'];
 export const TRIVIA = [

@@ -4,14 +4,14 @@ import {createCaseReader} from './arcade-cases.js?v=2';
 import {mountFaces} from './arcade-faces.js?v=1';
 import {mountDraw} from './arcade-draw.js?v=2';
 import {mountLava} from './arcade-lava.js?v=7';
-import {mountClaw,clawPrizes,clawFireworks} from './arcade-claw.js?v=1';
+import {mountClaw,clawPrizes,clawFireworks} from './arcade-claw.js?v=3';
 import {mountMole,molePlan,createMoleAudio} from './arcade-mole.js?v=4';
 import {mountFrog,frogCourses,frogRoundWinner} from './arcade-frog.js?v=3';
 import {mountTreasure,treasurePlan} from './arcade-treasure.js?v=1';
 import {mountBlocks} from './arcade-blocks.js?v=1';
 import {mountBasketball} from './arcade-basketball.js?v=1';
-import {coverMarkup,recentGames,BROWSE_SHELVES,referenceCoverMarkup} from './arcade-library.js?v=20';
-import {GAMES, ANIMALS, TRIVIA, PICTURES, CHALLENGES} from './arcade-data.js?v=32';
+import {coverMarkup,recentGames,BROWSE_SHELVES,referenceCoverMarkup} from './arcade-library.js?v=21';
+import {GAMES, ANIMALS, TRIVIA, PICTURES, CHALLENGES} from './arcade-data.js?v=33';
 import {shuffle, roundWinner, awardRound, lineWinner} from './arcade-core.js';
 
 import {makeMaze, codeClues, rpsWinner, GOLF_COURSES, golfStep} from './arcade-new-core.js?v=5';
@@ -107,7 +107,7 @@ function competitionUpdate(progress){
   cue=score>target.score?'lead':score===target.score&&distance>target.distance?'distance':'';
  }
  else if(target){
-  const gap=target.score-score,step=game.id==='basketball'?2:1,timeBreak=['spot','picture','number','maze'].includes(game.id),maxScore={trivia:5,picture:3,number:5,spot:3,treasure:5,claw:9}[game.id];
+  const gap=target.score-score,step=game.id==='basketball'?2:1,timeBreak=['spot','picture','number','maze'].includes(game.id),maxScore={trivia:5,picture:3,number:5,spot:3,treasure:5,claw:24}[game.id];
   call=gap<0?`${name} TAKES THE LEAD!`:gap===0?(timeBreak?'SCORE TIED — TIME DECIDES!':score===maxScore?'TIED AT THE MAXIMUM!':'TIED! ONE MORE TO LEAD!'):gap<=step?'ONE SCORE AWAY FROM A TIE!':`${gap} MORE TO TIE ${rival}!`;
   detail=`BEAT ${rival}'S ${target.score} · You have ${score}${timeBreak?` · Their time: ${target.elapsed.toFixed(1)}s`:''}`;
   if(competitionPhase==='handoff')call=target.score===maxScore&&!timeBreak?`MATCH ${rival}'S ${target.score} TO FORCE A REPLAY!`:`BEAT ${rival}'S ${target.score}!`;
@@ -363,13 +363,13 @@ function focusFirst(){ stage.querySelector('button,input')?.focus({preventScroll
 function status(text){$('arcade-message').textContent=text;}
 function scoreboard(){
  if($('mole-volume-control'))$('mole-volume-control').hidden=game?.id!=='mole';
-  $('match-format').textContent=series?'3-GAME SERIES':game?.id==='claw'?'3 GRABS EACH · ONE ROUND':game?.id==='mole'?'20 SECONDS EACH · ONE ROUND':game?.id==='frog'?'BEST OF THREE · 3 TRIES EACH':game?.id==='treasure'?'5 GUESSES EACH · ONE ROUND':game?.id==='blocks'?'60 SECONDS EACH · ONE ROUND':game?.id==='basketball'?'30 SECONDS EACH':'BEST OF FIVE';
+  $('match-format').textContent=series?'3-GAME SERIES':game?.id==='claw'?'30 SECONDS EACH · ONE ROUND':game?.id==='mole'?'20 SECONDS EACH · ONE ROUND':game?.id==='frog'?'BEST OF THREE · 3 TRIES EACH':game?.id==='treasure'?'5 GUESSES EACH · ONE ROUND':game?.id==='blocks'?'60 SECONDS EACH · ONE ROUND':game?.id==='basketball'?'30 SECONDS EACH':'BEST OF FIVE';
   $('arcade-reset').textContent=series?'Restart series ↻':'Restart match ↻';
   $('series-lineup').hidden=!series;
   if(series) $('series-lineup').innerHTML=series.games.map((g,i)=>`<div class="series-pick ${i===series.index?'active':''}"><small>GAME ${i+1}${series.winners[i]!==undefined?` · ${teamLabel(series.winners[i])} win`:''}</small><b>${g.icon} ${g.name}</b></div>`).join('');
   $('arcade-score').innerHTML=names.map((name,i)=>`<div id="arcade-team-${i}" class="team-score ${turn===i&&champion<0?'current':''}" aria-current="${turn===i&&champion<0}" aria-label="${escapePlayer(name)}${turn===i&&champion<0?', current turn':''}"><span><span class="score-avatar" aria-hidden="true">${i===0?'🔥':'⚡'}</span> ${i===0?'★':'✦'} ${kidsOnly?'':'TEAM '}${escapePlayer(name.toUpperCase())}</span>${!kidsOnly&&selectedPlayers[i].length?`<small class="arcade-player-names">${selectedPlayers[i].map(escapePlayer).join(' · ')}</small>`:''}<strong>${game?.id==='claw'&&!series?(game.clawPoints?.[i]??0):game?.id==='mole'&&!series?(game.molePoints?.[i]??0):game?.id==='treasure'&&!series?(game.treasurePoints?.[i]??0):game?.id==='blocks'&&!series?(game.blockPoints?.[i]??0):game?.id==='basketball'&&!series?(game.basketballPoints?.[i]??0):game?.id==='code'&&champion<0?(game.safePoints?.[i]??0):wins[i]}</strong><div class="win-dots" ${['claw','mole','treasure'].includes(game?.id)&&!series?'hidden':''} aria-label="${wins[i]} ${series?'game':'round'} wins">${Array.from({length:game?.id==='frog'&&!series?2:3},(_,n)=>n).map(n=>`<i class="${n<wins[i]?'won':''}"></i>`).join('')}</div></div>`).join('');
   const rivalry=document.createElement('div');rivalry.className='competition-hud';rivalry.innerHTML='<strong id="competition-call" role="status" aria-live="polite"></strong><small id="competition-detail"></small>';$('arcade-score').appendChild(rivalry);competitionUpdate();
-  $('round-label').textContent=game?.id==='claw'&&!series?(results[0]&&results[1]?'SHOWDOWN COMPLETE':'SMALL = 1 POINT · LARGE = 3 POINTS'):game?.id==='mole'&&!series?(results[0]&&results[1]?'SHOWDOWN COMPLETE':'1 HIT = 1 POINT · MOST HITS WINS'):game?.id==='treasure'&&!series?(results[0]&&results[1]?'SHOWDOWN COMPLETE':'1 TREASURE = 1 POINT · MOST POINTS WINS'):game?.id==='blocks'&&!series?(results[0]&&results[1]?'MATCH COMPLETE':'1 PIECE = 1 POINT · MOST POINTS WINS'):game?.id==='basketball'&&!series?(champion>=0?'MATCH COMPLETE':'2 POINTS PER BASKET · MOST POINTS WINS'):series?`${champion>=0?'SERIES COMPLETE':`GAME ${series.index+1} OF 3${attempt?' · TIE REPLAY':''}`} · SERIES SCORE` : champion>=0?'MATCH COMPLETE':`ROUND ${round} OF ${game?.id==='frog'?3:5}${attempt?' · TIE REPLAY':''} · FIRST TO ${game?.id==='frog'?2:3} WINS`;
+  $('round-label').textContent=game?.id==='claw'&&!series?(results[0]&&results[1]?'SHOWDOWN COMPLETE':'1 TOY RETRIEVED = 1 POINT'):game?.id==='mole'&&!series?(results[0]&&results[1]?'SHOWDOWN COMPLETE':'1 HIT = 1 POINT · MOST HITS WINS'):game?.id==='treasure'&&!series?(results[0]&&results[1]?'SHOWDOWN COMPLETE':'1 TREASURE = 1 POINT · MOST POINTS WINS'):game?.id==='blocks'&&!series?(results[0]&&results[1]?'MATCH COMPLETE':'1 PIECE = 1 POINT · MOST POINTS WINS'):game?.id==='basketball'&&!series?(champion>=0?'MATCH COMPLETE':'2 POINTS PER BASKET · MOST POINTS WINS'):series?`${champion>=0?'SERIES COMPLETE':`GAME ${series.index+1} OF 3${attempt?' · TIE REPLAY':''}`} · SERIES SCORE` : champion>=0?'MATCH COMPLETE':`ROUND ${round} OF ${game?.id==='frog'?3:5}${attempt?' · TIE REPLAY':''} · FIRST TO ${game?.id==='frog'?2:3} WINS`;
 }
 function pick(key,source,n){
   if(!used[key] || used[key].length<n) used[key]=shuffle(source);
@@ -1050,19 +1050,19 @@ function finishMoleMatch(winner,detail){
 }
 
 function clawMachine(){
- screen('<div class="claw-cabinet"><canvas id="claw-board" tabindex="0" role="application" aria-label="Claw machine. Drag to aim, or use left and right arrows. Press Drop Claw or Space when the grip marker is green; large prizes need gold. Three attempts."></canvas><div class="claw-controls"><button id="claw-left" type="button" aria-label="Move claw left">◀ LEFT</button><button id="claw-grab" type="button">DROP CLAW</button><button id="claw-right" type="button" aria-label="Move claw right">RIGHT ▶</button></div><p class="mole-help">Drag to aim · Green grabs small · Gold grabs large</p></div>');
+ screen('<div class="claw-cabinet"><div class="claw-window"><canvas id="claw-board" tabindex="0" role="application" aria-label="THE CLAW. Drag to aim, or use left and right arrows. Press Grab or Space. 30 seconds per player. Each toy delivered earns one point."></canvas><div class="claw-hud"><span id="claw-count">0 TOYS</span><strong id="claw-timer" class="claw-time">30s</strong></div><span id="claw-phase" class="claw-phase">AIM • GRAB • COLLECT</span></div><div class="claw-controls"><button id="claw-left" type="button" aria-label="Move claw left">◀ LEFT</button><button id="claw-grab" type="button">GRAB</button><button id="claw-right" type="button" aria-label="Move claw right">RIGHT ▶</button></div><p class="mole-help">Drag or use arrows to aim · GRAB to collect · 1 toy = 1 point</p></div>');
  timed=true;
- stopClaw=mountClaw({canvas:$('claw-board'),left:$('claw-left'),right:$('claw-right'),grab:$('claw-grab'),team:teamName(turn),prizes:game.clawLayout,later,sound:chime,onStatus:status,effects:effectsOn,
+ stopClaw=mountClaw({canvas:$('claw-board'),timer:$('claw-timer'),counter:$('claw-count'),phaseLabel:$('claw-phase'),left:$('claw-left'),right:$('claw-right'),grab:$('claw-grab'),team:teamName(turn),prizes:game.clawLayout,later,sound:chime,onStatus:status,effects:effectsOn,
   onScore:points=>{game.clawPoints[turn]=points;scoreboard();competitionUpdate({score:points});},onEnd:result=>{timed=false;chime('buzzer');finishTurn(result);}});
 }
 function finishClawMatch(winner,detail){
  if(winner!==null){wins[winner]=1;champion=winner;if(recording)recording.roundWinners.push(winner);saveCompleted();}
  scoreboard();
- screen(`<div class="result claw-result"><canvas id="claw-fireworks" aria-hidden="true"></canvas><span class="giant-icon">${winner===null?'🤝':'🏆'}</span><p class="eyebrow">CLAW MACHINE · SHOWDOWN COMPLETE</p><h3>${winner===null?'A tie! Congratulations to both players!':`Congratulations, ${teamLabel(winner)}!`}</h3><p>${winner===null?'Matching prize hauls!':'You win the Showdown!'}</p><p>${escapePlayer(detail)}</p><div class="final-score">${results[0].score} <span>–</span> ${results[1].score}</div><p>Three grabs each. Small prizes: 1 point. Large prizes: 3.</p></div>`);
+ screen(`<div class="result claw-result"><canvas id="claw-fireworks" aria-hidden="true"></canvas><span class="giant-icon">${winner===null?'🤝':'🏆'}</span><p class="eyebrow">CLAW MACHINE · SHOWDOWN COMPLETE</p><h3>${winner===null?'A tie! Congratulations to both players!':`Congratulations, ${teamLabel(winner)}!`}</h3><p>${winner===null?'Matching prize hauls!':'You win the Showdown!'}</p><p>${escapePlayer(detail)}</p><div class="final-score">${results[0].score} <span>–</span> ${results[1].score}</div><p>30 seconds each. Every toy retrieved earns 1 point.</p></div>`);
  clawFireworks($('claw-fireworks'),later,effectsOn);
  button('Rematch →',()=>openGame('claw'));button('Return to Arcade',()=>$('arcade-return').click(),stage,'text-button');
  react(winner===null?'turn':'win',winner===null?'Congratulations to both players!':`Congratulations, ${teamName(winner)}!`);
- status(winner===null?'Tie game! Congratulations to both players!':`Congratulations, ${teamName(winner)}! You win Harper’s Claw Machine Showdown!`);focusFirst();
+ status(winner===null?'Tie game! Congratulations to both players!':`Congratulations, ${teamName(winner)}! You win THE CLAW!`);focusFirst();
 }
 
 const requestedGame=new URLSearchParams(location.search).get('game');
