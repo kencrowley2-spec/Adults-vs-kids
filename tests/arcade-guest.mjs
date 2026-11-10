@@ -35,7 +35,7 @@ vm.runInNewContext(ts.transpileModule(readFileSync('app/family/arcade/route.ts',
   if(name.includes('arcade-data'))return {GAMES};
   if(name.includes('family-roster'))return {cleanRoster:r=>({...r,playingAdults:[],playingKids:[]})};
   if(name.includes('auth/session'))return {
-   verifiedMember:async()=>({user,client:{from(){queries++;return {select(){return {eq(){return {maybeSingle:async()=>({data:null})};}}};}}},headers:new Headers()}),
+   verifiedMember:async()=>({user,client:{from(){queries++;return {select:()=>({eq:()=>({maybeSingle:async()=>({data:null})})})};}},headers:new Headers()}),
    memberReply:(body,status,headers)=>new Response(body,{status,headers})
   };
   throw Error(name);
