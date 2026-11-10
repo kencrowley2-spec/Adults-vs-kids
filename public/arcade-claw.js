@@ -1,4 +1,4 @@
-import {createClawScene} from './arcade-claw-3d.js?v=1';
+import {createClawScene} from './arcade-claw-3d.js?v=2';
 // Identical seeded toy piles for both competitors. All toys are worth one point.
 export function clawPrizes(seed){
  const random=()=>{seed=seed*16807%2147483647;return (seed-1)/2147483646;};
@@ -12,17 +12,17 @@ export function clawCatch(prizes,x){
 export function mountClaw({canvas,left,right,grab,team,prizes:layout,later,onScore,onEnd,onStatus,sound,effects=true,timer,counter,phaseLabel}){
  const prizes=layout.map(p=>({...p}));let visual;
  try{visual=createClawScene(canvas,prizes,effects);}catch(error){console.error('THE CLAW renderer:',error);onStatus('3D graphics could not start. Please enable hardware acceleration or try an updated browser.');return ()=>{};}
- const started=performance.now(),deadline=started+30000;
+ let started=performance.now(),deadline=started+30000,ready=!visual.ready;
  let score=0,x=220,origin=220,direction=0,phase='aim',phaseAt=started,last=started,ended=false,caught=null,drag=null;
  const clamp=v=>Math.max(48,Math.min(392,v));
  function controls(disabled){grab.disabled=disabled;left.disabled=disabled;right.disabled=disabled;}
- function finish(){if(ended)return;ended=true;controls(true);visual.dispose();onEnd({score,elapsed:30,label:`${score} toys retrieved in 30 seconds`});}
+ function finish(){if(ended)return;ended=true;controls(true);visual.dispose();onEnd({score,elapsed:30,label:`${score} ${score===1?'toy':'toys'} retrieved in 30 seconds`});}
  function drop(){
-  if(ended||phase!=='aim'||performance.now()>=deadline)return;
+  if(ended||!ready||phase!=='aim'||performance.now()>=deadline)return;
   caught=clawCatch(prizes,x);origin=x;phase='drop';phaseAt=performance.now();direction=0;drag=null;controls(true);sound('tap');onStatus('Claw dropping…');
  }
  function frame(){
-  if(ended)return;const now=performance.now(),dt=Math.min(50,now-last);last=now;
+  if(ended)return;if(!ready){later(frame,16);return;}const now=performance.now(),dt=Math.min(50,now-last);last=now;
   if(phase==='aim'&&now>=deadline){finish();return;}
   if(phase==='aim')x=clamp(x+direction*dt*.3);
   let age=now-phaseAt;
@@ -52,7 +52,8 @@ export function mountClaw({canvas,left,right,grab,team,prizes:layout,later,onSco
  canvas.addEventListener('pointermove',e=>{if(!ended&&e.pointerId===drag&&phase==='aim')aim(e);});
  for(const type of ['pointerup','pointercancel','lostpointercapture'])canvas.addEventListener(type,()=>{drag=null;});
  canvas.addEventListener('keydown',e=>{if(ended||!['ArrowLeft','ArrowRight',' ','Enter'].includes(e.key)||phase!=='aim')return;e.preventDefault();if(e.key==='ArrowLeft')x=clamp(x-14);else if(e.key==='ArrowRight')x=clamp(x+14);else if(!e.repeat)drop();});
- onStatus(`${team}, you have 30 seconds! Drag or use arrows to aim, then press GRAB. Each toy delivered earns 1 point.`);frame();
+ if(visual.ready){controls(true);onStatus('Loading THE CLAW…');visual.ready.then(()=>{if(ended)return;started=performance.now();deadline=started+30000;last=started;ready=true;controls(false);onStatus(`${team}, 30 seconds! Aim at a toy and press GRAB.`);}).catch(error=>{if(!ended){ended=true;visual.dispose();onStatus('The artwork could not load. Return to Arcade and try again.');console.error(error);}});}
+ if(!visual.ready)onStatus(`${team}, you have 30 seconds! Drag or use arrows to aim, then press GRAB. Each toy delivered earns 1 point.`);frame();
  return ()=>{if(!ended)visual.dispose();ended=true;direction=0;drag=null;};
 }
 export function clawFireworks(canvas,later,effects=true){

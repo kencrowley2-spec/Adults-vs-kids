@@ -161,32 +161,6 @@ body:has(#arcade-lobby:not([hidden]))>main{height:calc(100svh - 76px - env(safe-
  #arcade-lobby:has(.upright-cabinet){align-items:center}
 }
 
-/* Distance control changes cabinet size while the arcade room stays in place. */
-body:has(#arcade-lobby:not([hidden]))>main{height:calc(100svh - 132px - env(safe-area-inset-bottom,0px))}
-.arcade-cabinet.upright-cabinet{
- width:min(calc(30vw * var(--cabinet-distance,1)),calc((100svh - 140px - env(safe-area-inset-bottom,0px))*679/1438));
- touch-action:none
-}
-.cabinet-distance-control{display:none}
-body:has(#arcade-lobby:not([hidden])) .cabinet-distance-control{
- position:fixed;z-index:25;bottom:calc(80px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);
- display:grid;grid-template-columns:32px minmax(0,1fr) 32px;gap:2px 10px;align-items:center;
- box-sizing:border-box;width:min(320px,90vw);padding:5px 10px 6px;border:1px solid #ffd52266;border-radius:12px;
- background:#090c13ed;box-shadow:0 3px 12px #0009;color:#ffd522
-}
-.cabinet-distance-control label{grid-column:1/-1;text-align:center;font:700 11px/1.2 Arial,sans-serif;letter-spacing:.04em}
-.cabinet-distance-control input{width:100%;margin:0;min-width:0;height:24px;accent-color:#ffd522;cursor:ew-resize;touch-action:pan-x}
-.cabinet-distance-control button{width:32px;height:28px;padding:0;border:1px solid #ffd52255;border-radius:5px;background:#222630;color:#ffd522;font:700 21px/1 Arial,sans-serif;cursor:pointer}
-.cabinet-distance-control :focus-visible{outline:2px solid white;outline-offset:2px}
-@media(max-width:600px) and (orientation:portrait){
- .arcade-cabinet.upright-cabinet{width:min(calc(64vw * var(--cabinet-distance,1)),calc((100svh - 140px - env(safe-area-inset-bottom,0px))*679/1438))}
-}
-@media(max-height:450px){
- body:has(#arcade-lobby:not([hidden]))>main{height:calc(100svh - 116px - env(safe-area-inset-bottom,0px))}
- .arcade-cabinet.upright-cabinet{width:min(calc(30vw * var(--cabinet-distance,1)),calc((100svh - 122px - env(safe-area-inset-bottom,0px))*679/1438))}
- .cabinet-distance-control{bottom:calc(64px + env(safe-area-inset-bottom,0px))}
-}
-
 /* Frame the entire reference room on narrow screens; cover cropped out both arcade rows.
    Paint on the stage, avoiding Android's fixed body-background viewport behavior. */
 body:has(#arcade-lobby:not([hidden])){background:#08090c}
@@ -196,4 +170,56 @@ body:has(#arcade-lobby:not([hidden]))>main{
  background-repeat:no-repeat;
  background-size:100% 100%,135% 128%;
  background-attachment:scroll
+}
+
+/* Yellow comic-burst edition, matching the supplied cabinet reference. */
+body:has(#arcade-lobby:not([hidden])){background:#ffd522}
+body:has(#arcade-lobby:not([hidden]))>main{
+ background:#ffd522 url('/assets/arcade-gold-burst.svg') center/100% 100% no-repeat
+}
+.arcade-cabinet.upright-cabinet{
+ background-image:url('/assets/avk-gold-cabinet.webp');
+ background-size:131.8919% 137.4557%;
+ background-position:47.4576% 32.4763%;
+ background-repeat:no-repeat;
+ border-radius:1.8cqw;
+ filter:drop-shadow(0 0 2px #ffe64c) drop-shadow(0 0 8px #ffcf2280);
+ box-shadow:0 10px 24px #422c0080
+}
+.upright-cabinet .cabinet-marquee{
+ inset:.55% 3.6% auto 4.4%;height:8.25%;padding:0;
+ border:2px solid #504b2f;border-radius:0;
+ background:#ffdf22;box-shadow:inset 0 1px 4px #fff8,0 3px 5px #000b
+}
+.upright-cabinet .cabinet-marquee h1{
+ padding:1% 3%;background:linear-gradient(110deg,#ffe838,#ffdb1a);color:#050505;box-shadow:inset 0 0 12px #ffff7777;
+ justify-content:space-between;gap:4%
+}
+.upright-cabinet .cabinet-marquee h1::after{display:none}
+.upright-cabinet .cabinet-marquee img{width:43%;height:94%;mix-blend-mode:multiply}
+.upright-cabinet .cabinet-marquee h1>span{max-width:49%;font-family:Arial,'Arial Black',sans-serif;font-weight:1000;font-size:6.5cqw;line-height:1.02;text-shadow:none;color:#050505}
+.upright-cabinet .cabinet-marquee i{font:1000 5.1cqw/1.1 Arial,sans-serif;letter-spacing:-.035em;color:#050505;text-shadow:none}
+.upright-cabinet .cabinet-scoreboard::before{left:7.3%;right:5.8%;top:11.45%;height:3.3%}
+.upright-cabinet #cabinet-fx{top:12.1%;right:7.4%}
+.upright-cabinet .cabinet-screen-frame{inset:14.65% 5.8% auto 7.3%;height:45.55%}
+.upright-cabinet .cabinet-play-pinball{top:67.3%;left:34.2%;width:31.5%;height:2.65%}
+.upright-cabinet .game-track .game-tile.featured-game{box-shadow:inset 0 1px 0 #fff8,0 0 0 1px #986c00,0 0 7px #ffd52277}
+
+@media(max-width:600px) and (orientation:portrait){
+ .arcade-cabinet.upright-cabinet{width:min(calc(80vw * var(--cabinet-distance,1)),calc((100svh - 140px - env(safe-area-inset-bottom,0px))*679/1438))}
+}
+@media(prefers-reduced-motion:no-preference){
+ .upright-cabinet{animation:cabinet-gold-light 4s ease-in-out infinite alternate}
+ @keyframes cabinet-gold-light{from{filter:drop-shadow(0 0 2px #ffe64c) drop-shadow(0 0 6px #ffcf2255)}to{filter:drop-shadow(0 0 3px #fff3a4) drop-shadow(0 0 11px #ffcf2299)}}
+}
+
+/* Fixed cabinet framing: open at the approved size without distance controls. */
+body:has(#arcade-lobby:not([hidden]))>main{height:calc(100svh - 76px - env(safe-area-inset-bottom,0px));padding:4px 0}
+.arcade-cabinet.upright-cabinet{width:min(30vw,calc((100svh - 84px - env(safe-area-inset-bottom,0px))*679/1438));touch-action:auto}
+@media(max-width:600px) and (orientation:portrait){
+ .arcade-cabinet.upright-cabinet{width:min(90vw,calc((100svh - 84px - env(safe-area-inset-bottom,0px))*679/1438))}
+}
+@media(max-height:450px){
+ body:has(#arcade-lobby:not([hidden]))>main{height:calc(100svh - 60px - env(safe-area-inset-bottom,0px))}
+ .arcade-cabinet.upright-cabinet{width:min(90vw,calc((100svh - 68px - env(safe-area-inset-bottom,0px))*679/1438))}
 }

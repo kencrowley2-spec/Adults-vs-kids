@@ -4,13 +4,13 @@ import {createCaseReader} from './arcade-cases.js?v=2';
 import {mountFaces} from './arcade-faces.js?v=1';
 import {mountDraw} from './arcade-draw.js?v=2';
 import {mountLava} from './arcade-lava.js?v=7';
-import {mountClaw,clawPrizes,clawFireworks} from './arcade-claw.js?v=3';
+import {mountClaw,clawPrizes,clawFireworks} from './arcade-claw.js?v=4';
 import {mountMole,molePlan,createMoleAudio} from './arcade-mole.js?v=4';
 import {mountFrog,frogCourses,frogRoundWinner} from './arcade-frog.js?v=3';
 import {mountTreasure,treasurePlan} from './arcade-treasure.js?v=1';
 import {mountBlocks} from './arcade-blocks.js?v=1';
 import {mountBasketball} from './arcade-basketball.js?v=1';
-import {coverMarkup,recentGames,BROWSE_SHELVES,referenceCoverMarkup} from './arcade-library.js?v=21';
+import {coverMarkup,recentGames,BROWSE_SHELVES,referenceCoverMarkup} from './arcade-library.js?v=22';
 import {GAMES, ANIMALS, TRIVIA, PICTURES, CHALLENGES} from './arcade-data.js?v=33';
 import {shuffle, roundWinner, awardRound, lineWinner} from './arcade-core.js';
 
@@ -434,7 +434,7 @@ async function openGame(id){
   window.dispatchEvent(new CustomEvent('avk:game-start',{detail:{game:id,id:recording.id}}));
   series=null;
   game=GAMES.find(g=>g.id===id); rememberGame(id); lobby.hidden=true; arena.hidden=false;
-  $('game-title').textContent=`${game.icon} ${game.name}`; used={}; wins=[0,0]; round=1; attempt=0; starter=0; turn=0; champion=-1; results=[];
+  $('game-title').textContent=game.id==='claw'?'THE CLAW':`${game.icon} ${game.name}`; used={}; wins=[0,0]; round=1; attempt=0; starter=0; turn=0; champion=-1; results=[];
   starter=Math.random()<.5?0:1;turn=starter;beginRound();
 }
 async function startSeries(){
@@ -453,7 +453,7 @@ async function startSeriesGame(){
   if(clubEntry){clubIntroPending=true;try{await clubReveal(game.name)}finally{clubIntroPending=false}}
   window.dispatchEvent(new CustomEvent('avk:game-start',{detail:{game:game.id,id:crypto.randomUUID()}})); round=series.index+1; attempt=0;
   starter=(series.first+series.index)%2; turn=starter;
-  $('game-title').textContent=`${game.icon} ${game.name}`; beginRound();
+  $('game-title').textContent=game.id==='claw'?'THE CLAW':`${game.icon} ${game.name}`; beginRound();
 }
 function finishSeriesGame(winner,detail){
   if(winner!==null){wins[winner]++;series.winners.push(winner);}
@@ -1050,7 +1050,7 @@ function finishMoleMatch(winner,detail){
 }
 
 function clawMachine(){
- screen('<div class="claw-cabinet"><div class="claw-window"><canvas id="claw-board" tabindex="0" role="application" aria-label="THE CLAW. Drag to aim, or use left and right arrows. Press Grab or Space. 30 seconds per player. Each toy delivered earns one point."></canvas><div class="claw-hud"><span id="claw-count">0 TOYS</span><strong id="claw-timer" class="claw-time">30s</strong></div><span id="claw-phase" class="claw-phase">AIM • GRAB • COLLECT</span></div><div class="claw-controls"><button id="claw-left" type="button" aria-label="Move claw left">◀ LEFT</button><button id="claw-grab" type="button">GRAB</button><button id="claw-right" type="button" aria-label="Move claw right">RIGHT ▶</button></div><p class="mole-help">Drag or use arrows to aim · GRAB to collect · 1 toy = 1 point</p></div>');
+ screen('<div class="claw-cabinet"><div class="claw-window"><canvas id="claw-board" tabindex="0" role="application" aria-label="THE CLAW. Drag to aim, or use left and right arrows. Press Grab or Space. 30 seconds per player. Each toy delivered earns one point."></canvas><div class="claw-hud"><span id="claw-count">0 TOYS</span><strong id="claw-timer" class="claw-time">30s</strong></div><span id="claw-phase" class="claw-phase">AIM • GRAB • COLLECT</span></div><div class="claw-controls"><button id="claw-left" type="button" aria-label="Move claw left">◀</button><button id="claw-grab" type="button">GRAB</button><button id="claw-right" type="button" aria-label="Move claw right">▶</button></div><p class="mole-help">Drag or use arrows to aim · GRAB to collect · 1 toy = 1 point</p></div>');
  timed=true;
  stopClaw=mountClaw({canvas:$('claw-board'),timer:$('claw-timer'),counter:$('claw-count'),phaseLabel:$('claw-phase'),left:$('claw-left'),right:$('claw-right'),grab:$('claw-grab'),team:teamName(turn),prizes:game.clawLayout,later,sound:chime,onStatus:status,effects:effectsOn,
   onScore:points=>{game.clawPoints[turn]=points;scoreboard();competitionUpdate({score:points});},onEnd:result=>{timed=false;chime('buzzer');finishTurn(result);}});

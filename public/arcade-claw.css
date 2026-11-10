@@ -1,0 +1,40 @@
+/* THE CLAW — the glass chamber is the screen, not a cabinet thumbnail. */
+.claw-cabinet{width:100%;height:100%;min-height:0;margin:0;padding:0;border:0;border-radius:0;box-shadow:none;background:#0b0911;display:grid;grid-template-rows:minmax(0,1fr) 80px}
+.claw-window{position:relative;min-width:0;min-height:0;width:100%;height:100%;border-radius:0;overflow:hidden;background:#1b0d37}
+#claw-board{width:100%;height:100%;aspect-ratio:auto;border-radius:0;display:block;touch-action:none;user-select:none;-webkit-user-select:none}
+.claw-hud{top:12px;left:auto;right:25px;width:auto;z-index:3;pointer-events:none}.claw-hud>span{display:none}.claw-time{font-size:30px;line-height:1;background:linear-gradient(#11111de8,#1c162de8);border:1px solid #d6b76b88;border-radius:10px;box-shadow:0 3px 14px #0006;padding:8px 12px;color:#ffe7a3}
+.claw-phase,.claw-cabinet>.mole-help{display:none}
+.claw-controls{display:grid;grid-template-columns:1fr 1.8fr 1fr;align-items:center;gap:11px;margin:0;padding:11px 17px 15px;background:linear-gradient(165deg,#35313d 0,#16131e 30%,#0a0a12 90%);border-top:2px solid #756c80;box-shadow:inset 0 1px 0 #e9e2fc66}
+.claw-controls button{height:51px;min-height:51px;margin:0;padding:4px;font-size:17px;font-weight:900;border:1px solid #8e879d;border-radius:13px;background:linear-gradient(#45414f,#22202a);color:#f6eaff;box-shadow:0 4px 0 #020208,inset 0 1px 0 #fff2;touch-action:none;cursor:pointer}
+.claw-controls #claw-grab{height:54px;min-height:54px;font-size:26px;letter-spacing:2px;background:linear-gradient(#ff9b97 0,#f34050 23%,#d91c3c 76%,#a30925);border:1px solid #ffacac;box-shadow:0 5px 0 #6d0b24,inset 0 1px 3px #ffe8e8bb,0 0 24px #ff265522;color:#fff}
+.claw-controls button:active{transform:translateY(3px);box-shadow:0 1px 0 #08040a}.claw-controls button:disabled{opacity:.65}
+/* Compact arena chrome leaves virtually all vertical space for the machine. */
+#arcade-game:has(.claw-cabinet){padding:0!important;gap:0!important;grid-template-columns:1fr;grid-template-rows:38px 37px minmax(0,1fr);background:#090810;color:#fff}
+#arcade-game:has(.claw-cabinet) .arena-top{grid-row:1;grid-column:1;padding:0 9px;height:38px;min-height:38px;background:#111019;position:relative;z-index:4}
+#arcade-game:has(.claw-cabinet) .arena-top .eyebrow{display:none}
+#arcade-game:has(.claw-cabinet) #game-title{position:absolute;z-index:5;left:50%;top:5px;transform:translateX(-50%);white-space:nowrap;font-size:24px;line-height:1.1;font-style:italic;letter-spacing:1px;color:#fff0bb;text-shadow:0 0 15px #e9bd6955;text-align:center;margin:0}
+#arcade-game:has(.claw-cabinet) .arcade-controls,#arcade-game:has(.claw-cabinet) #round-label,#arcade-game:has(.claw-cabinet) .arcade-feedback,#arcade-game:has(.claw-cabinet) .competition-hud{display:none}
+#arcade-game:has(.claw-cabinet) #arcade-score{grid-column:1;grid-row:2;width:100%;max-width:none;height:37px;gap:0;padding:0 8px;background:#111019;margin:0;align-items:center}
+#arcade-game:has(.claw-cabinet) .team-score{height:30px;min-height:0;border-radius:5px;padding:3px 12px;border-width:1px;gap:4px;box-shadow:none}.team-score.current{border-color:#ffe38a}
+#arcade-game:has(.claw-cabinet) .team-score strong{font-size:22px}#arcade-game:has(.claw-cabinet) .team-score>span{font-size:9px;letter-spacing:.4px}#arcade-game:has(.claw-cabinet) .score-avatar{display:none}
+#arcade-game:has(.claw-cabinet) .game-viewport{grid-column:1;grid-row:3;width:100%;height:100%;min-height:0;overflow:hidden}
+#arcade-game:has(.claw-cabinet) #game-stage{width:100%;height:100%;max-width:none;padding:0!important;transform:none!important;margin:0}
+#arcade-game:has(.claw-cabinet) .arena-bottom{position:absolute;bottom:83px;left:18%;right:18%;z-index:5;min-height:0;padding:0;display:block;pointer-events:none}
+#arcade-game:has(.claw-cabinet) #arcade-message{padding:5px 8px;margin:0;text-align:center;font-size:10px;background:#100c1ac9;color:#fff4d1;border-radius:7px;box-shadow:0 2px 5px #0005}
+#arcade-game:has(.claw-cabinet) #arcade-reset{display:none}
+/* The direct preview uses the same large play surface and control deck. */
+body.claw-preview{height:100dvh;overflow:hidden;background:#090810!important;color:#fff}
+body.claw-preview::before,body.claw-preview::after{display:none!important}
+.claw-preview main{height:100dvh;width:100%;max-width:680px;margin:0 auto;padding:0;display:grid;grid-template-rows:43px 36px minmax(0,1fr) 23px;gap:0;align-items:stretch;justify-content:stretch}
+.claw-preview .preview-head{grid-row:1;height:43px;min-height:0;width:100%;padding:0 13px;display:flex;flex-direction:row;justify-content:space-between;background:#111019;font-size:9px;border:0}
+.claw-preview .preview-head>strong{font-size:27px;font-style:italic;letter-spacing:1px;color:#fff0bc;text-shadow:0 0 14px #f9cc6b44}.claw-preview .preview-head>span{font-size:8px;letter-spacing:1px;color:#c8bba5}
+.claw-preview .preview-score{grid-row:2;max-width:none;width:100%;height:36px;gap:7px;padding:0 10px 4px;background:#111019;align-items:stretch}
+.claw-preview .preview-score>div{padding:3px 11px;font-size:10px;border-radius:6px}.claw-preview .preview-score b{font-size:22px;line-height:1}
+.claw-preview .claw-cabinet{grid-row:3;width:100%;height:100%;border-radius:0;flex-shrink:1}
+.claw-preview #preview-status{grid-row:4;font-size:10px;line-height:1.2;min-height:0;height:23px;overflow:hidden;padding:5px 8px;margin:0;max-width:none;color:#eee1c2;background:#101018}
+.claw-preview .preview-note{display:none}
+.claw-preview .preview-overlay{backdrop-filter:blur(1px);background:#100b2655}.claw-preview .preview-overlay>div{max-width:320px;padding:22px;background:linear-gradient(145deg,#221830ed,#0c0914f2);border:1px solid #a48d56;box-shadow:0 12px 55px #0008;border-radius:16px}.claw-preview .preview-overlay h1{font-size:30px}.claw-preview .preview-overlay p{font-size:13px}.claw-preview .preview-overlay button{font-size:17px;min-height:53px}
+@media(min-width:700px){#arcade-game:has(.claw-cabinet){max-width:680px!important;left:50%!important;right:auto!important;transform:translateX(-50%);box-shadow:0 0 100px #000}body:has(.claw-cabinet){background:#08070e}}
+#arcade-game:has(.claw-cabinet) #game-title{grid-area:auto!important;align-self:auto;top:5px;line-height:28px}
+#arcade-game:has(.claw-cabinet) #arcade-score:before{display:none}
+.claw-cabinet button:focus-visible,#claw-board:focus-visible{outline:3px solid #fff0b4;outline-offset:-3px}

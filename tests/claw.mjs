@@ -9,15 +9,15 @@ class Input{
  click(){if(!this.disabled)this.emit('click');}
  getBoundingClientRect(){return{left:0,width:220};}
 }
-function fixture(){
- let now=0,id=0,disposed=0,prizes;const jobs=new Map(),scores=[],ends=[],frames=[],statuses=[];
- const c=vm.createContext({console,Math,performance:{now:()=>now},createClawScene:(canvas,p)=>{prizes=p;return{render:f=>frames.push({...f}),dispose:()=>disposed++};}});
+function fixture(options={}){
+ let now=0,id=0,disposed=0,prizes,resolveLoading;const loading=options.loading?new Promise(resolve=>{resolveLoading=resolve;}):undefined;const jobs=new Map(),scores=[],ends=[],frames=[],statuses=[];
+ const c=vm.createContext({console,Math,performance:{now:()=>now},createClawScene:(canvas,p)=>{prizes=p;return{ready:loading,render:f=>frames.push({...f}),dispose:()=>disposed++};}});
  vm.runInContext(source+'\nthis.api={mountClaw,clawCatch,clawPrizes}',c);
  const canvas=new Input(),left=new Input(),right=new Input(),grab=new Input(),timer=new Input(),counter=new Input();
  const layout=c.api.clawPrizes(123);
  const stop=c.api.mountClaw({canvas,left,right,grab,timer,counter,team:'Crowley',prizes:layout,later:(fn,delay)=>jobs.set(++id,{at:now+delay,fn}),onScore:n=>scores.push(n),onEnd:r=>ends.push(r),onStatus:s=>statuses.push(s),sound:()=>{}});
  function advance(ms){const end=now+ms;for(;;){const next=[...jobs].sort((a,b)=>a[1].at-b[1].at)[0];if(!next||next[1].at>end)break;jobs.delete(next[0]);now=next[1].at;next[1].fn();}now=end;}
- return{...c.api,canvas,left,right,grab,timer,counter,layout,prizes,scores,ends,frames,statuses,stop,advance,disposed:()=>disposed};
+ return{...c.api,canvas,left,right,grab,timer,counter,layout,prizes,scores,ends,frames,statuses,stop,advance,disposed:()=>disposed,resolveLoading};
 }
 {
  const f=fixture();assert.equal(f.prizes.length,24);assert.deepEqual(f.layout,f.clawPrizes(123));
@@ -56,5 +56,13 @@ function fixture(){
 {
  const f=fixture();f.canvas.emit('keydown',{key:' ',repeat:true});f.advance(1600);assert.equal(f.scores.length,0);
  f.canvas.emit('keydown',{key:'Enter',repeat:false});f.advance(1600);assert.equal(f.scores[0],1);
+}
+{
+ const f=fixture({loading:true});f.advance(12000);assert.equal(f.ends.length,0);assert.equal(f.grab.disabled,true);
+ f.resolveLoading();await Promise.resolve();f.advance(29900);assert.equal(f.ends.length,0);
+ f.grab.click();f.advance(1700);assert.equal(f.ends.length,1);assert.equal(f.ends[0].score,1);
+}
+{
+ const f=fixture({loading:true});f.stop();f.resolveLoading();await Promise.resolve();f.advance(60000);assert.equal(f.ends.length,0);assert.equal(f.disposed(),1);
 }
 console.log('PASS: THE CLAW — 30 seconds, one point per delivered toy, forgiving grabs, unlimited attempts, late completion, deadline rejection, identical piles, input and cleanup.');
