@@ -37,7 +37,7 @@ $('networkNeighborhoodForm').onsubmit=async e=>{e.preventDefault();const form=e.
 document.querySelectorAll('[data-network-tab]').forEach(b=>b.onclick=()=>setTab(b.dataset.networkTab));
 document.addEventListener('click',async e=>{const b=e.target.closest('[data-network-action]');if(!b||busy)return;const action=b.dataset.networkAction;
  if(action==='open_profile'){openProfile(b.dataset.id);return}
- if(action==='accept_challenge'){location.href='/admin/app/lobby';return}
+ if(action==='accept_challenge'){location.href=document.body.classList.contains('private-club')?'/admin/private-club/lobby':'/admin/app/lobby';return}
  if(action==='view_profile'){$('networkPublicProfile').hidden=!$('networkPublicProfile').hidden;return}
  if(action==='open_challenge'){if($('networkProfileDialog').open)$('networkProfileDialog').close();window.avkOpenChallenge?.({friendId:b.dataset.id,mode:'family'});return}
  if(action==='choose_group'){selectedGroup=b.dataset.id;renderSearch();$('networkSearchSection').scrollIntoView({behavior:'smooth',block:'start'});$('networkSearchForm').elements.query.focus();return}
