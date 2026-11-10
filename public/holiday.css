@@ -76,3 +76,12 @@
  .christmas-left{left:-8px;width:11px}
  .christmas-right{right:-14px;width:11px}
 }
+
+/* Approved gift-wrapped holiday creative; links stay aligned at every width. */
+.holiday-present{position:relative;isolation:isolate;width:96%;max-width:1500px;margin:10px auto 28px;line-height:0}
+.holiday-present-main{display:block;border-radius:20px;overflow:hidden}
+.holiday-present img{display:block;width:100%;height:auto;aspect-ratio:3/2}
+.holiday-present-details{position:absolute;left:56%;top:81%;width:34%;height:8%;border-radius:8px}
+.holiday-present a:focus-visible{outline:3px solid #fff;outline-offset:4px;box-shadow:0 0 0 7px #b80013}
+.holiday-present-details:hover{background:#fff1}
+@media(max-width:700px){.holiday-present{width:96%;margin:10px auto 24px}.holiday-present-main{border-radius:12px}}
