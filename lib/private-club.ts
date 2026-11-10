@@ -5,7 +5,7 @@ export function privateClubPage(startedAt:number|null=null,section='home'){
  const subtitles=['Play Games Now!','Compete & Win!','Your Friends & Invitations','Your Family Tournament','Your Wins & Awards','Global Rankings','New Challenges Each Week','Download Game Sheets','Timers, Music & Scores','Invite & Manage Members','Challenge Other Families','Coming January 2027'];
  let tile=0;
  html=html.replace(/<body class="([^"]*)"/, '<body class="$1 private-club"');
- html=html.replace('</head>','<link rel="stylesheet" href="/private-club.css?v=3"></head>');
+ html=html.replace('</head>','<link rel="stylesheet" href="/private-club.css?v=4"></head>');
  html=html.replace('<div class="preview-bar">','<header class="private-club-masthead"><strong>The Clubhouse · Adults vs. Kids</strong><span>YOUR PRIVATE FAMILY CLUB</span></header><div class="preview-bar">');
  html=html.replace('THE CLUBHOUSE · PRIVATE PREVIEW','♛ KEN’S PRIVATE CLUBHOUSE');
  html=html.replace('YOUR NEXT GAME NIGHT STARTS HERE','WELCOME TO YOUR CLUBHOUSE');
@@ -16,5 +16,6 @@ export function privateClubPage(startedAt:number|null=null,section='home'){
  html=html.replace('</body>','<script src="/private-club.js?v=2" defer></script></body>');
  html=html.replace('<script src="/club-screen.js?v=2" defer></script>','');
  html=html.replace('/club-network.js?v=3','/club-network.js?v=4');
+ html=html.replace(/<a class="club-key" href="\/admin\/app\/charlie"[^]*?<\/a>/, '<a class="club-key private-charlie-tile" href="/admin/app/charlie" aria-label="Charlie AI — coming January 2027"><img class="private-charlie-art" src="/assets/charlie-dashboard-tile.webp" alt="Meet Charlie, your Adults vs. Kids AI game host" width="1536" height="1033"><span class="private-charlie-label">Charlie AI</span></a>');
  return html.replace(/href="\/admin\/app(?=[/"#?])/g,'href="/admin/private-club');
 }

@@ -6,16 +6,16 @@ const source=readFileSync('lib/private-club.ts','utf8').replace("'./club-app'",J
 const {privateClubPage}=await import('data:text/javascript;base64,'+Buffer.from(stripTypeScriptTypes(source)).toString('base64'));
 const html=privateClubPage(1700000000000),dom=new JSDOM(html,{url:'https://adultsvskids.com/admin/private-club',runScripts:'outside-only'}),w=dom.window,d=w.document;
 assert.equal(d.querySelectorAll('.club-key').length,12);
-assert.equal(d.querySelectorAll('.private-tile-caption').length,12);
+assert.equal(d.querySelectorAll('.private-tile-caption').length,11);
 assert.equal(d.querySelector('[data-family-clock]').dataset.familyClock,'1700000000000');
 w.localStorage.setItem('avk-private-club-v1',JSON.stringify({matches:[{parents:3,kids:1,game:'balloons',at:Date.now()}],days:[]}));
 w.eval(readFileSync('public/club-app.js','utf8'));w.eval(readFileSync('public/private-club.js','utf8'));
 assert.equal(d.querySelector('[data-parents]').textContent,'1');assert.equal(d.querySelector('[data-kids]').textContent,'0');assert.equal(d.querySelector('#privateMatchCount').textContent,'1');
-assert.match(html,/noindex,nofollow,noarchive/);assert.match(html,/Coming January 2027/);assert.doesNotMatch(html,/PREMIUM ACTIVE/);
+assert.match(html,/noindex,nofollow,noarchive/);assert.match(html,/coming January 2027/);assert.doesNotMatch(html,/PREMIUM ACTIVE/);
 const route=readFileSync('app/admin/private-club/[[...page]]/route.ts','utf8');assert.ok(route.indexOf('if(!auth.isAdmin)')<route.indexOf('privateClubPage(startedAt,section)'));assert.match(route,/verifiedMember\(request\)/);
 assert.match(readFileSync('lib/admin-dashboard.ts','utf8'),/href="\/admin\/private-club"/);
 assert.doesNotMatch(readFileSync('app/sitemap.ts','utf8'),/private-club/);
 w.close();console.log('PASS: private dashboard tiles, saved statistics, clock, administrator guard, admin button, and no sitemap entry.');
 
-for(const section of ['home','battles','championships','trophies','weekly','leaderboard','printables','charlie','network','lobby','gallery']){const page=new JSDOM(privateClubPage(null,section));assert.ok(page.window.document.body.classList.contains('private-club'));assert.match(page.serialize(),/private-club.css\?v=3/);assert.equal(page.window.document.querySelectorAll('a[href^="/admin/app"]').length,0);assert.equal(page.window.document.querySelector('.bottom-nav a').getAttribute('href'),'/admin/private-club');page.window.close();}
+for(const section of ['home','battles','championships','trophies','weekly','leaderboard','printables','charlie','network','lobby','gallery']){const page=new JSDOM(privateClubPage(null,section));assert.ok(page.window.document.body.classList.contains('private-club'));assert.match(page.serialize(),/private-club.css\?v=4/);assert.equal(page.window.document.querySelectorAll('a[href^="/admin/app"]').length,0);assert.equal(page.window.document.querySelector('.bottom-nav a').getAttribute('href'),'/admin/private-club');page.window.close();}
 console.log('PASS: all private tabs share the theme and stay inside private navigation.');
