@@ -17,7 +17,7 @@ assert.deepEqual(arcadeLinks.slice(0,2).map(a=>a.textContent.trim()),['Home','Ar
 assert.equal(arcadeLinks[0].getAttribute('href'),'/family');
 assert.equal(arcadeLinks[1].getAttribute('aria-current'),'page');
 const dashboardHtml=read('lib/family-dashboard.ts');
-const dashboardTabs=new JSDOM(dashboardHtml.slice(dashboardHtml.indexOf('<nav class="dashboard-tabs"'),dashboardHtml.indexOf('</nav>',dashboardHtml.indexOf('<nav class="dashboard-tabs"'))+6)).window.document;
+const dashboardTabs=new JSDOM(dashboardHtml.slice(dashboardHtml.lastIndexOf('<nav class="dashboard-tabs"'),dashboardHtml.indexOf('</nav>',dashboardHtml.lastIndexOf('<nav class="dashboard-tabs"'))+6)).window.document;
 const dashboardLinks=[...dashboardTabs.querySelectorAll('.dashboard-tabs-inner > a')];
 assert.deepEqual(dashboardLinks.slice(0,2).map(a=>a.textContent.trim()),['Home','Arcade']);
 assert.deepEqual(dashboardLinks.slice(0,2).map(a=>a.getAttribute('href')),['/family','/family/arcade']);

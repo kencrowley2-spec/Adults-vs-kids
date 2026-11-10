@@ -102,3 +102,7 @@ body:has(#arcade-lobby:not([hidden])) .lobby-note{display:none}body:has(#arcade-
 
 /* The yellow logo artwork sits directly on the dark header. */
 .compact-arcade-header .arcade-logo img{background:transparent;border:0;padding:0;box-shadow:none;border-radius:0;object-fit:contain}
+
+/* Shared HD artwork in game tiles and the instruction-book cover. */
+.cover-art.cover-art-hd{overflow:hidden}
+.cover-art.cover-art-hd>img{display:block;width:100%;height:100%;max-width:100%;object-fit:cover;object-position:center;filter:none}
