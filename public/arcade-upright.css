@@ -109,3 +109,45 @@ body:has(#arcade-lobby:not([hidden]))>main{height:calc(100svh - 76px - env(safe-
  .upright-cabinet .cabinet-rotating .game-track .cover-art{height:56%;bottom:44%}
  .upright-cabinet .cabinet-rotating .game-track .cover-info b{font-size:1.65cqw}
 }
+
+/* Reference cabinet photography supplies the real bevels, recessed glass and control-deck perspective.
+   The screen, marquee and pinball button remain live HTML above it. */
+body:has(#arcade-lobby:not([hidden])){background:#08090c url('/assets/arcade-room.webp') center/cover fixed}
+body:has(#arcade-lobby:not([hidden]))>main{height:calc(100svh - 76px - env(safe-area-inset-bottom,0px));padding:4px 0;overflow:hidden}
+.arcade-cabinet.upright-cabinet{
+ width:min(100%,calc((100svh - 84px - env(safe-area-inset-bottom,0px))*679/1438));
+ height:auto;max-width:720px;aspect-ratio:679/1438;
+ background:url('/assets/avk-depth-cabinet.webp') center bottom/100% 106.815% no-repeat;
+ border:0;border-radius:1.5cqw;box-shadow:0 12px 45px #000c;overflow:hidden
+}
+.upright-cabinet::before,.upright-cabinet::after{display:none}
+.upright-cabinet .cabinet-marquee{inset:.85% 4.65% auto;height:8.15%;padding:0;border:0;background:#ffd522;box-shadow:inset 0 2px 5px #fff9,inset 0 -4px 8px #6e520088,0 0 12px #ffdb2244;overflow:hidden}
+.upright-cabinet .cabinet-marquee h1{box-sizing:border-box;margin:0;padding:1% 4%;align-items:center;gap:5%;border:0;background:linear-gradient(110deg,#ffe94a,#ffd522 48%,#f3c800);box-shadow:inset 0 1px 3px #fff8;color:white}
+.upright-cabinet .cabinet-marquee h1::after{content:"";position:absolute;inset:0 0 0 38%;background:#101114;clip-path:polygon(12% 0,100% 0,100% 100%,0 100%);z-index:0}
+.upright-cabinet .cabinet-marquee img{position:relative;z-index:1;width:35%;height:95%;filter:none}
+.upright-cabinet .cabinet-marquee h1>span{position:relative;z-index:1;font-size:7.8cqw;max-width:59%;text-shadow:0 2px 2px #000}
+.upright-cabinet .cabinet-marquee i{font-size:2.3cqw;letter-spacing:.18em;color:#ffd522}
+.upright-cabinet .cabinet-scoreboard::before{content:"ADULTS vs. KIDS  /  GAME ROOM";position:absolute;left:7.2%;right:7.2%;top:12.05%;height:3.1%;box-sizing:border-box;display:flex;align-items:center;padding:0 3%;background:linear-gradient(#343537,#242527);border:1px solid #444;border-radius:4cqw;font:700 2.1cqw Arial,sans-serif;color:#eee}
+.upright-cabinet #cabinet-fx{top:12.6%;right:9%;height:2%;font-size:1.8cqw;border-radius:2px;background:#151618;color:#ffd522}
+.upright-cabinet .cabinet-screen-frame{box-sizing:border-box;inset:15.35% 7.05% auto;height:46.55%;padding:1.6% 1.4% 2%;border:0;background:radial-gradient(ellipse at 50% 25%,#121b35,#0b1124 85%);box-shadow:inset 0 0 9px #000,inset 0 1px 2px #74829a55;overflow:hidden}
+.upright-cabinet .cabinet-screen-bar{font-size:1.65cqw;padding:0 0 1.6%;color:#cbd2e3}
+.upright-cabinet .cabinet-playfield{gap:4.5cqw}
+.upright-cabinet .cabinet-featured{flex:2.8}
+.upright-cabinet .cabinet-rotating{flex:1}
+.upright-cabinet .cabinet-featured h2,.upright-cabinet .cabinet-rotating h2{font-size:2.25cqw;margin-bottom:1.8cqw}
+.upright-cabinet .cabinet-featured .game-track,.upright-cabinet .cabinet-rotating .game-track{gap:1.1cqw}
+.upright-cabinet .game-track .game-tile .cover-info b{font-size:2.85cqw;line-height:1.04}
+.upright-cabinet .game-track .cover-art{inset:0 0 35%;width:100%;height:65%}
+.upright-cabinet .game-track .cover-info{height:37%;padding:2% 3%}
+.upright-cabinet .cabinet-rotating .game-track .cover-info{height:39%}
+.upright-cabinet .cabinet-rotating .game-track .cover-art{height:64%;bottom:36%}
+.upright-cabinet .cabinet-rotating .game-track .cover-info b{font-size:2.6cqw}
+.upright-cabinet .game-track .cover-construction{font-size:1.65cqw}
+.upright-cabinet .rotation-heading{margin:0 0 1.8cqw;min-height:5.2cqw}
+.upright-cabinet .rotation-heading h2{margin:0}
+.upright-cabinet .rotation-controls{gap:.9cqw;font-size:1.9cqw}
+.upright-cabinet .rotation-controls button{min-width:5.3cqw;height:5.7cqw;font-size:4cqw}
+.upright-cabinet .cabinet-speakers,.upright-cabinet .cabinet-control-deck{display:none}
+.upright-cabinet .cabinet-play-pinball{box-sizing:border-box;left:33.6%;bottom:auto;top:69.25%;width:31.2%;height:2.6%;border:1px solid #888;border-radius:2px;background:linear-gradient(#3b3b3b,#171717);color:#ffe5a0;font:900 2.55cqw Arial,sans-serif;box-shadow:inset 0 1px 1px #fff3,0 2px 3px #0008;text-shadow:0 0 5px #ffa51f}
+.upright-cabinet .cabinet-play-pinball:focus-visible{outline:2px solid #ffd522;outline-offset:3px}
+@media(max-height:450px){body:has(#arcade-lobby:not([hidden]))>main{height:calc(100svh - 60px);padding:2px}.arcade-cabinet.upright-cabinet{width:min(100%,calc((100svh - 64px)*679/1438))}}
