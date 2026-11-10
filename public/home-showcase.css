@@ -6,3 +6,4 @@ body.showcase{background:#030303;color:#fff}.showcase .sr-only{position:absolute
 @media(prefers-reduced-motion:reduce){.featured-track{transition:none}}
 
 .tile-icon svg{display:block;width:1em;height:1em}
+@media(min-width:701px){.home-tile{min-height:175px;gap:5px;padding-top:12px}.home-tile h2{font-size:clamp(18px,1.7vw,29px)}.home-tile p{font-size:clamp(11px,1.1vw,18px)}.tile-icon{font-size:1.5em;margin-right:8px}.home-time strong{font-size:clamp(20px,2.1vw,36px)}.home-time>b{font-size:23px}.clock-tile p{font-size:clamp(10px,.9vw,15px)}.books-tile h2{position:relative;padding-left:30px;width:55%;font-size:clamp(16px,1.5vw,25px)}.books-tile h2 .tile-icon{position:absolute;left:0;top:0;font-size:1.3em;margin:0}.books-tile .home-book-covers{width:43%;top:18px}.books-tile p{font-size:clamp(10px,1vw,16px)}}
