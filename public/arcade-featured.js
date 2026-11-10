@@ -1,4 +1,4 @@
-export const FEATURED_GAMES=['lava','faces','claw','mole','memory'];
+export const FEATURED_GAMES=['lava','treasure','claw','mole','memory'];
 
 export function mountFeaturedGames({document:doc=globalThis.document,games,gameTile}){
  const featured=doc.getElementById('arcade-favorites'),track=doc.getElementById('arcade-rotating');

@@ -70,7 +70,7 @@ body:has(#arcade-lobby:not([hidden]))>main{height:calc(100svh - 76px - env(safe-
 /* Illustrated cabinet covers: large artwork above a dedicated title panel. */
 .upright-cabinet .cabinet-featured .game-track{grid-template-columns:repeat(6,minmax(0,1fr))}
 .upright-cabinet .cabinet-featured .game-tile,.upright-cabinet .cabinet-featured .game-tile:last-child{grid-column:span 2}
-.upright-cabinet .cabinet-featured .game-tile[data-game="lava"],.upright-cabinet .cabinet-featured .game-tile[data-game="faces"]{grid-column:span 3}
+.upright-cabinet .cabinet-featured .game-tile[data-game="lava"],.upright-cabinet .cabinet-featured .game-tile[data-game="treasure"]{grid-column:span 3}
 .upright-cabinet .game-track .game-tile{--cover-a:#214d9b;--cover-b:#101b4a;background:radial-gradient(ellipse at 50% 12%,#ffffff40,transparent 68%),linear-gradient(145deg,var(--cover-a),var(--cover-b));border-radius:6px;border-color:#a9c3ff80;box-shadow:inset 0 1px 0 #ffffff80,0 3px 6px #0009;isolation:isolate}
 .upright-cabinet .game-track .game-tile[data-game="lava"]{--cover-a:#ff8a16;--cover-b:#9c1e17}
 .upright-cabinet .game-track .game-tile[data-game="faces"]{--cover-a:#6e55d9;--cover-b:#241b64}
