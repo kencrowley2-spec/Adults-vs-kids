@@ -57,9 +57,9 @@ function fixture(firstTeam=0,withSpeech=false,withAudio=false,players=null,holdM
     createGain(){const gain={gain:{value:1,setValueAtTime(){},linearRampToValueAtTime(){},exponentialRampToValueAtTime(){}},connect(){},disconnect(){this.disconnected=true;}};audio.gains.push(gain);return gain;}
     createOscillator(){const node={frequency:{value:0,setValueAtTime(){},exponentialRampToValueAtTime(){}},stops:[],connect(){},disconnect(){this.disconnected=true;},start(){this.started=true;},stop(at){this.stops.push(at);if(Number.isFinite(at))scheduled.set(++seq,{at:at*1000,fn:()=>this.onended?.()});else this.onended?.();}};audio.nodes.push(node);return node;}
   }
-  const context=vm.createContext({mountFaces:options=>{context.facesOptions=options;return ()=>{};},mountDraw:options=>{context.drawOptions=options;return ()=>{};},mountLava:options=>{context.lavaOptions=options;return ()=>{};},URLSearchParams,location:{search:club?'?source=club':''},clawPrizes,clawCatch,molePlan,treasurePlan,...core,...data,GAMES:fixtureGames,...newCore,...library,Math:testMath,document:doc,crypto,CustomEvent:class{constructor(type,options){this.type=type;this.detail=options.detail;}},window:{dispatchEvent:e=>telemetry.push(e),addEventListener(){},...voiceWindow,...(withAudio?{AudioContext:AudioContextMock}:{})},createResultRecorder:({namespace})=>({drain:async()=>{},capture:result=>{(namespace==='times'?timedSaved:saved).push(result);}}),performance:{now:()=>now},console,setTimeout:(fn,delay)=>{scheduled.set(++seq,{at:now+delay,fn});return seq;},clearTimeout:id=>scheduled.delete(id)});
+  const context=vm.createContext({createClawScene:()=>({render(){},dispose(){}}),mountFaces:options=>{context.facesOptions=options;return ()=>{};},mountDraw:options=>{context.drawOptions=options;return ()=>{};},mountLava:options=>{context.lavaOptions=options;return ()=>{};},URLSearchParams,location:{search:club?'?source=club':''},clawPrizes,clawCatch,molePlan,treasurePlan,...core,...data,GAMES:fixtureGames,...newCore,...library,Math:testMath,document:doc,crypto,CustomEvent:class{constructor(type,options){this.type=type;this.detail=options.detail;}},window:{dispatchEvent:e=>telemetry.push(e),addEventListener(){},...voiceWindow,...(withAudio?{AudioContext:AudioContextMock}:{})},createResultRecorder:({namespace})=>({drain:async()=>{},capture:result=>{(namespace==='times'?timedSaved:saved).push(result);}}),performance:{now:()=>now},console,setTimeout:(fn,delay)=>{scheduled.set(++seq,{at:now+delay,fn});return seq;},clearTimeout:id=>scheduled.delete(id)});
   vm.runInContext(readFileSync(new URL('../public/arcade-lobby-music.js',import.meta.url),'utf8').replace(/export /g,''),context);
-  vm.runInContext(readFileSync(new URL('../public/arcade-claw.js',import.meta.url),'utf8').replace(/export /g,''),context);
+  vm.runInContext(readFileSync(new URL('../public/arcade-claw.js',import.meta.url),'utf8').replace(/^import .*;\n/gm,'').replace(/export /g,''),context);
   vm.runInContext(readFileSync(new URL('../public/arcade-mole.js',import.meta.url),'utf8').replace(/export /g,''),context);
   vm.runInContext(readFileSync(new URL('../public/arcade-frog.js',import.meta.url),'utf8').replace(/export /g,''),context);
   vm.runInContext(readFileSync(new URL('../public/arcade-treasure.js',import.meta.url),'utf8').replace(/export /g,''),context);
@@ -616,44 +616,53 @@ for(let seed=1;seed<=100;seed++){
 }
 console.log('PASS: nine DOM targets, purple/green hit states, source spawn cadence, 20-second turns, duplicate/alternate input, fair collision-free schedules, draws and interruption cleanup.');
 
-// Real claw controller: three attempts, positioning and timing, fair handoff.
+// THE CLAW: forgiving deterministic catches, one point per delivered toy,
+// a real 30-second clock, duplicate input protection and fair handoffs.
 {
  const prizes=clawPrizes(123);
- const small=prizes[0],large=prizes[1];
- assert.equal(clawCatch(prizes,small.x+Math.sin(small.phase)*9,.5,0).points,1);
- assert.equal(clawCatch(prizes,large.x+Math.sin(large.phase)*9,.5,0).points,3);
- assert.equal(clawCatch(prizes,large.x,.75,0),null);
- assert.equal(clawCatch(prizes,15,.5,0),null);
+ assert.equal(prizes.length,24);
+ for(const prize of prizes)assert.equal(clawCatch(prizes,prize.x).points,1);
+ assert.equal(clawCatch(prizes,0),null);
+ assert.equal(clawCatch(prizes.map(p=>({...p,taken:true})),220),null);
  assert.deepEqual(clawPrizes(123),prizes);
 }
 for(const first of [0,1]){
  const f=fixture();f.start('claw',first);
- const seed=first===0?536870912:1610612734;
- const large=clawPrizes(seed)[1];
- for(let attempt=0;attempt<3;attempt++){
-  const board=f.get('claw-board');board.getBoundingClientRect=()=>({left:0,top:0,width:220,height:215});
-  // First grab aligns with a large prize and the center grip immediately.
-  const x=attempt===0?large.x+Math.sin(large.phase)*9:220;
-  board.dispatch('pointerdown',{pointerId:1,isPrimary:true,clientX:x/2});board.dispatch('pointerup',{pointerId:1});
-  f.get('claw-grab').click();f.get('claw-grab').click();f.advance(2400);
+ for(let attempt=0;attempt<4;attempt++){
+  f.get('claw-grab').click();f.get('claw-grab').click();
+  f.advance(1000); // Lifting does not score; the toy must reach the chute.
+  assert.match(f.get('arcade-team-'+first).textContent,new RegExp(String(attempt)));
+  f.advance(600);
+  assert.match(f.get('arcade-team-'+first).textContent,new RegExp(String(attempt+1)));
  }
- assert.ok(f.get('handoff-countdown'));assert.match(f.get('arcade-team-'+first).textContent,/3/);
- f.advance(4000);
- // Second side never presses drop: aim timers automatically use all 3 attempts.
- f.advance(45000);
- assert.equal(f.state().champion,first);assert.equal(f.saved.length,1);assert.equal(f.saved[0].gameIds[0],'claw');
- assert.ok(f.get('claw-fireworks'));assert.match(f.get('game-stage').textContent,/Congratulations/);
+ assert.equal(f.get('handoff-countdown'),null); // More than three grabs allowed.
+ f.advance(30000-6400);
+ assert.ok(f.get('handoff-countdown'));f.advance(4000);
+ f.advance(29900);assert.equal(f.saved.length,0);
+ f.advance(200);
+ assert.equal(f.state().champion,first);assert.equal(f.saved.length,1);
+ assert.equal(f.saved[0].gameIds[0],'claw');assert.ok(f.get('claw-fireworks'));
  f.advance(10000);assert.equal(f.saved.length,1);
 }
 {
- const f=fixture();f.start('claw');f.advance(45000);f.advance(45000);
- assert.equal(f.saved.length,0);assert.match(f.get('game-stage').textContent,/tie/);assert.ok(f.get('claw-fireworks'));
+ const f=fixture();f.start('claw');f.advance(29900);
+ f.get('claw-grab').click();f.advance(1000);
+ assert.equal(f.get('handoff-countdown'),null);
+ f.advance(600);assert.ok(f.get('handoff-countdown'));
+ assert.match(f.get('arcade-team-0').textContent,/1/);
+}
+{
+ const f=fixture();f.start('claw');f.advance(29900);
+ assert.equal(f.get('handoff-countdown'),null);f.advance(200);
+ assert.ok(f.get('handoff-countdown'));f.advance(4000);f.advance(30100);
+ assert.equal(f.saved.length,0);assert.match(f.get('game-stage').textContent,/tie/);
+ assert.ok(f.get('claw-fireworks'));
 }
 {
  const f=fixture();f.start('claw');f.doc.hidden=true;f.doc.handlers.visibilitychange();f.advance(60000);
  assert.match(f.get('game-stage').textContent,/interrupted/);assert.equal(f.saved.length,0);
 }
-console.log('PASS: Harper’s Claw Machine 1/3-point grabs, timing misses, three attempts, handoff, fireworks, ties and interruption.');
+console.log('PASS: THE CLAW one-point retrievals, 30-second turns, unlimited grabs, buzzer completion, fair handoff, ties and interruption.');
 
 // Rivalry HUD follows the actual opponent, including reverse starts, ties and overtakes.
 for(const first of [0,1]){
