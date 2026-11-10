@@ -67,3 +67,45 @@ body:has(#arcade-lobby:not([hidden]))>main{height:calc(100svh - 76px - env(safe-
  .rotation-controls{font-size:2cqw}
  .rotation-controls button{min-width:6cqw;height:6cqw;font-size:4cqw}
 }
+/* Illustrated cabinet covers: large artwork above a dedicated title panel. */
+.upright-cabinet .cabinet-featured .game-track{grid-template-columns:repeat(6,minmax(0,1fr))}
+.upright-cabinet .cabinet-featured .game-tile,.upright-cabinet .cabinet-featured .game-tile:last-child{grid-column:span 2}
+.upright-cabinet .cabinet-featured .game-tile[data-game="lava"],.upright-cabinet .cabinet-featured .game-tile[data-game="faces"]{grid-column:span 3}
+.upright-cabinet .game-track .game-tile{--cover-a:#214d9b;--cover-b:#101b4a;background:radial-gradient(ellipse at 50% 12%,#ffffff40,transparent 68%),linear-gradient(145deg,var(--cover-a),var(--cover-b));border-radius:6px;border-color:#a9c3ff80;box-shadow:inset 0 1px 0 #ffffff80,0 3px 6px #0009;isolation:isolate}
+.upright-cabinet .game-track .game-tile[data-game="lava"]{--cover-a:#ff8a16;--cover-b:#9c1e17}
+.upright-cabinet .game-track .game-tile[data-game="faces"]{--cover-a:#6e55d9;--cover-b:#241b64}
+.upright-cabinet .game-track .game-tile[data-game="claw"]{--cover-a:#e9469c;--cover-b:#681b81}
+.upright-cabinet .game-track .game-tile[data-game="mole"]{--cover-a:#f5a337;--cover-b:#754024}
+.upright-cabinet .game-track .game-tile[data-game="memory"]{--cover-a:#19b9c8;--cover-b:#176597}
+.upright-cabinet .game-track .game-tile[data-game="frog"]{--cover-a:#64c84c;--cover-b:#116f62}
+.upright-cabinet .game-track .game-tile[data-game="treasure"]{--cover-a:#e5ac27;--cover-b:#7a3e10}
+.upright-cabinet .game-track .game-tile[data-game="trivia"],.upright-cabinet .game-track .game-tile[data-game="challenge"]{--cover-a:#b252d8;--cover-b:#492188}
+.upright-cabinet .game-track .game-tile[data-game="rps"]{--cover-a:#f88038;--cover-b:#b22a6b}
+.upright-cabinet .game-track .cover-art{inset:1% 0 31%;width:100%;height:68%;filter:drop-shadow(0 3px 2px #0005);transform:none;display:flex;align-items:center;justify-content:center}
+.upright-cabinet .game-track .cover-art>svg{width:100%;height:100%;max-width:none;max-height:none;object-fit:contain}
+.upright-cabinet .game-track .cover-info{inset:auto 0 0;height:35%;min-height:0;padding:3% 4%;display:flex;align-items:center;justify-content:center;text-align:center;background:linear-gradient(180deg,#071020d9,#050b19f5);border-top:1px solid #ffffff35;z-index:2;box-sizing:border-box}
+.upright-cabinet .game-track .game-tile .cover-info b{font:900 1.85cqw/1.04 Arial,sans-serif;letter-spacing:-.02em;text-shadow:0 2px 2px #000;overflow-wrap:normal;text-wrap:balance;color:#fff}
+.upright-cabinet .game-track .game-tile.featured-game{border:2px solid #ffe16a;box-shadow:inset 0 1px 0 #fff8,0 0 0 1px #8a5708,0 3px 7px #000a,0 0 9px #ffc62833}
+.upright-cabinet .game-track .game-tile[data-game="lava"] .cover-art{inset:0 0 25%;height:75%;filter:none}
+.upright-cabinet .game-track .game-tile[data-game="lava"] .cover-art>svg{object-fit:cover}
+.upright-cabinet .game-track .game-tile[data-game="lava"] .cover-art>svg>image:first-child{width:100%;height:100%}
+.upright-cabinet .game-track .game-tile:hover,.upright-cabinet .game-track .game-tile:focus-visible{filter:brightness(1.12);outline:2px solid #fff4bd;outline-offset:1px}
+.upright-cabinet .game-track .cover-construction{top:0;bottom:auto;z-index:3;font-size:1.05cqw;padding:2px 0;letter-spacing:0}
+@media(max-width:600px) and (min-height:451px){
+ .upright-cabinet .game-track .game-tile .cover-info b{font-size:3cqw;line-height:1.02}
+ .upright-cabinet .game-track .cover-info{height:38%;padding:2% 3%}
+ .upright-cabinet .game-track .cover-art{height:65%;bottom:35%}
+ .upright-cabinet .game-track .cover-construction{font-size:1.7cqw}
+}
+.upright-cabinet .game-track .game-tile,.upright-cabinet .game-track .game-tile:last-child{border-radius:6px}
+.upright-cabinet .game-track .game-tile[data-game="lava"] .cover-art{background:url('/assets/lava-room.webp') center/cover}
+.upright-cabinet .game-track .game-tile[data-game="lava"] .cover-art>svg>image:first-child{visibility:hidden}
+@media(min-width:601px) and (min-height:451px){
+ .cabinet-screen-frame{top:25%;height:49%}
+ .cabinet-speakers{top:77%;height:7%}
+ .upright-cabinet .game-track .cover-info{height:39%;padding:1% 3%}
+ .upright-cabinet .game-track .cover-art{height:64%;bottom:36%}
+ .upright-cabinet .cabinet-rotating .game-track .cover-info{height:48%}
+ .upright-cabinet .cabinet-rotating .game-track .cover-art{height:56%;bottom:44%}
+ .upright-cabinet .cabinet-rotating .game-track .cover-info b{font-size:1.65cqw}
+}
