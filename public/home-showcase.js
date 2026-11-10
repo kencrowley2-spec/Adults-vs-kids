@@ -7,7 +7,7 @@
  const section=document.querySelector('.home-featured'),track=section?.querySelector('.featured-track');if(!track)return;
  const covers=[...track.children],dots=[...section.querySelectorAll('[data-feature-index]')],pause=section.querySelector('[data-feature-pause]');
  let index=0,paused=matchMedia('(prefers-reduced-motion: reduce)').matches;
- function render(){const visible=matchMedia('(max-width:700px)').matches?3:5;covers.forEach((cover,i)=>{cover.style.order=String((i-index+covers.length)%covers.length);const active=(i-index+covers.length)%covers.length<visible;cover.tabIndex=active?0:-1;cover.setAttribute('aria-hidden',String(!active))});dots.forEach((dot,i)=>dot.setAttribute('aria-pressed',String(i===index)))}
+ function render(){const visible=matchMedia('(max-width:700px)').matches?2:matchMedia('(max-width:1100px)').matches?3:5;covers.forEach((cover,i)=>{cover.style.order=String((i-index+covers.length)%covers.length);const active=(i-index+covers.length)%covers.length<visible;cover.tabIndex=active?0:-1;cover.setAttribute('aria-hidden',String(!active))});dots.forEach((dot,i)=>dot.setAttribute('aria-pressed',String(i===index)))}
  function choose(n){index=(n+covers.length)%covers.length;render()}
  function pauseState(){pause.textContent=paused?'▶':'Ⅱ';pause.setAttribute('aria-pressed',String(paused));pause.setAttribute('aria-label',paused?'Resume featured slideshow':'Pause featured slideshow')}
  section.querySelector('[data-feature-prev]').onclick=()=>choose(index-1);section.querySelector('[data-feature-next]').onclick=()=>choose(index+1);dots.forEach((dot,i)=>dot.onclick=()=>choose(i));pause.onclick=()=>{paused=!paused;pauseState()};
