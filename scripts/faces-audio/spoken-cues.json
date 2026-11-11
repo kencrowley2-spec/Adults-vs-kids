@@ -1,0 +1,503 @@
+{
+  "cues": [
+    {
+      "id": "welcome",
+      "text": "G'day, detectives! Pick your secret face. Let's crack this case!",
+      "start": 0,
+      "end": 64
+    },
+    {
+      "id": "turn",
+      "text": "You're up, detective! Ask a question, or take a guess.",
+      "start": 65,
+      "end": 119
+    },
+    {
+      "id": "pass",
+      "text": "Pass the board, mate. No peeking!",
+      "start": 120,
+      "end": 153
+    },
+    {
+      "id": "recover",
+      "text": "Hang on, detective! That face still fits your clues. Let's bring it back.",
+      "start": 154,
+      "end": 227
+    },
+    {
+      "id": "guess",
+      "text": "Ready to crack the case? Pick your final guess!",
+      "start": 228,
+      "end": 275
+    },
+    {
+      "id": "win",
+      "text": "Case closed! Brilliant detective work!",
+      "start": 276,
+      "end": 314
+    },
+    {
+      "id": "section-eyes",
+      "text": "Eye color! Pick the feature you want to ask about.",
+      "start": 315,
+      "end": 365
+    },
+    {
+      "id": "q-eyes-0",
+      "text": "Does your person have blue eyes?",
+      "start": 366,
+      "end": 398
+    },
+    {
+      "id": "a-eyes-0-true",
+      "text": "Yes! Your opponent's person has blue eyes. Flip down everyone who does not have blue eyes.",
+      "start": 399,
+      "end": 489
+    },
+    {
+      "id": "a-eyes-0-false",
+      "text": "No! Your opponent's person does not have blue eyes. Flip down everyone who has blue eyes.",
+      "start": 490,
+      "end": 579
+    },
+    {
+      "id": "q-eyes-1",
+      "text": "Does your person have green eyes?",
+      "start": 580,
+      "end": 613
+    },
+    {
+      "id": "a-eyes-1-true",
+      "text": "Yes! Your opponent's person has green eyes. Flip down everyone who does not have green eyes.",
+      "start": 614,
+      "end": 706
+    },
+    {
+      "id": "a-eyes-1-false",
+      "text": "No! Your opponent's person does not have green eyes. Flip down everyone who has green eyes.",
+      "start": 707,
+      "end": 798
+    },
+    {
+      "id": "q-eyes-2",
+      "text": "Does your person have brown eyes?",
+      "start": 799,
+      "end": 832
+    },
+    {
+      "id": "a-eyes-2-true",
+      "text": "Yes! Your opponent's person has brown eyes. Flip down everyone who does not have brown eyes.",
+      "start": 833,
+      "end": 925
+    },
+    {
+      "id": "a-eyes-2-false",
+      "text": "No! Your opponent's person does not have brown eyes. Flip down everyone who has brown eyes.",
+      "start": 926,
+      "end": 1017
+    },
+    {
+      "id": "q-eyes-3",
+      "text": "Does your person have black eyes?",
+      "start": 1018,
+      "end": 1051
+    },
+    {
+      "id": "a-eyes-3-true",
+      "text": "Yes! Your opponent's person has black eyes. Flip down everyone who does not have black eyes.",
+      "start": 1052,
+      "end": 1144
+    },
+    {
+      "id": "a-eyes-3-false",
+      "text": "No! Your opponent's person does not have black eyes. Flip down everyone who has black eyes.",
+      "start": 1145,
+      "end": 1236
+    },
+    {
+      "id": "section-hair",
+      "text": "Hair color! Pick the feature you want to ask about.",
+      "start": 1237,
+      "end": 1288
+    },
+    {
+      "id": "q-hair-0",
+      "text": "Does your person have black hair?",
+      "start": 1289,
+      "end": 1322
+    },
+    {
+      "id": "a-hair-0-true",
+      "text": "Yes! Your opponent's person has black hair. Flip down everyone who does not have black hair.",
+      "start": 1323,
+      "end": 1415
+    },
+    {
+      "id": "a-hair-0-false",
+      "text": "No! Your opponent's person does not have black hair. Flip down everyone who has black hair.",
+      "start": 1416,
+      "end": 1507
+    },
+    {
+      "id": "q-hair-1",
+      "text": "Does your person have brown hair?",
+      "start": 1508,
+      "end": 1541
+    },
+    {
+      "id": "a-hair-1-true",
+      "text": "Yes! Your opponent's person has brown hair. Flip down everyone who does not have brown hair.",
+      "start": 1542,
+      "end": 1634
+    },
+    {
+      "id": "a-hair-1-false",
+      "text": "No! Your opponent's person does not have brown hair. Flip down everyone who has brown hair.",
+      "start": 1635,
+      "end": 1726
+    },
+    {
+      "id": "q-hair-2",
+      "text": "Does your person have blond hair?",
+      "start": 1727,
+      "end": 1760
+    },
+    {
+      "id": "a-hair-2-true",
+      "text": "Yes! Your opponent's person has blond hair. Flip down everyone who does not have blond hair.",
+      "start": 1761,
+      "end": 1853
+    },
+    {
+      "id": "a-hair-2-false",
+      "text": "No! Your opponent's person does not have blond hair. Flip down everyone who has blond hair.",
+      "start": 1854,
+      "end": 1945
+    },
+    {
+      "id": "q-hair-3",
+      "text": "Does your person have red hair?",
+      "start": 1946,
+      "end": 1977
+    },
+    {
+      "id": "a-hair-3-true",
+      "text": "Yes! Your opponent's person has red hair. Flip down everyone who does not have red hair.",
+      "start": 1978,
+      "end": 2066
+    },
+    {
+      "id": "a-hair-3-false",
+      "text": "No! Your opponent's person does not have red hair. Flip down everyone who has red hair.",
+      "start": 2067,
+      "end": 2154
+    },
+    {
+      "id": "q-hair-4",
+      "text": "Does your person have gray hair?",
+      "start": 2155,
+      "end": 2187
+    },
+    {
+      "id": "a-hair-4-true",
+      "text": "Yes! Your opponent's person has gray hair. Flip down everyone who does not have gray hair.",
+      "start": 2188,
+      "end": 2278
+    },
+    {
+      "id": "a-hair-4-false",
+      "text": "No! Your opponent's person does not have gray hair. Flip down everyone who has gray hair.",
+      "start": 2279,
+      "end": 2368
+    },
+    {
+      "id": "q-hair-5",
+      "text": "Does your person have a bald head?",
+      "start": 2369,
+      "end": 2403
+    },
+    {
+      "id": "a-hair-5-true",
+      "text": "Yes! Your opponent's person has a bald head. Flip down everyone who does not have a bald head.",
+      "start": 2404,
+      "end": 2498
+    },
+    {
+      "id": "a-hair-5-false",
+      "text": "No! Your opponent's person does not have a bald head. Flip down everyone who has a bald head.",
+      "start": 2499,
+      "end": 2592
+    },
+    {
+      "id": "section-style",
+      "text": "Hair style! Pick the feature you want to ask about.",
+      "start": 2593,
+      "end": 2644
+    },
+    {
+      "id": "q-style-0",
+      "text": "Does your person have long hair?",
+      "start": 2645,
+      "end": 2677
+    },
+    {
+      "id": "a-style-0-true",
+      "text": "Yes! Your opponent's person has long hair. Flip down everyone who does not have long hair.",
+      "start": 2678,
+      "end": 2768
+    },
+    {
+      "id": "a-style-0-false",
+      "text": "No! Your opponent's person does not have long hair. Flip down everyone who has long hair.",
+      "start": 2769,
+      "end": 2858
+    },
+    {
+      "id": "q-style-1",
+      "text": "Does your person have short hair?",
+      "start": 2859,
+      "end": 2892
+    },
+    {
+      "id": "a-style-1-true",
+      "text": "Yes! Your opponent's person has short hair. Flip down everyone who does not have short hair.",
+      "start": 2893,
+      "end": 2985
+    },
+    {
+      "id": "a-style-1-false",
+      "text": "No! Your opponent's person does not have short hair. Flip down everyone who has short hair.",
+      "start": 2986,
+      "end": 3077
+    },
+    {
+      "id": "q-style-2",
+      "text": "Does your person have a bald head?",
+      "start": 3078,
+      "end": 3112
+    },
+    {
+      "id": "a-style-2-true",
+      "text": "Yes! Your opponent's person has a bald head. Flip down everyone who does not have a bald head.",
+      "start": 3113,
+      "end": 3207
+    },
+    {
+      "id": "a-style-2-false",
+      "text": "No! Your opponent's person does not have a bald head. Flip down everyone who has a bald head.",
+      "start": 3208,
+      "end": 3301
+    },
+    {
+      "id": "section-glasses",
+      "text": "Glasses! Pick the feature you want to ask about.",
+      "start": 3302,
+      "end": 3350
+    },
+    {
+      "id": "q-glasses-0",
+      "text": "Does your person have glasses?",
+      "start": 3351,
+      "end": 3381
+    },
+    {
+      "id": "a-glasses-0-true",
+      "text": "Yes! Your opponent's person has glasses. Flip down everyone who does not have glasses.",
+      "start": 3382,
+      "end": 3468
+    },
+    {
+      "id": "a-glasses-0-false",
+      "text": "No! Your opponent's person does not have glasses. Flip down everyone who has glasses.",
+      "start": 3469,
+      "end": 3554
+    },
+    {
+      "id": "q-glasses-1",
+      "text": "Does your person have no glasses?",
+      "start": 3555,
+      "end": 3588
+    },
+    {
+      "id": "a-glasses-1-true",
+      "text": "Yes! Your opponent's person does not have glasses. Flip down everyone who has glasses.",
+      "start": 3589,
+      "end": 3675
+    },
+    {
+      "id": "a-glasses-1-false",
+      "text": "No! Your opponent's person has glasses. Flip down everyone who does not have glasses.",
+      "start": 3676,
+      "end": 3761
+    },
+    {
+      "id": "section-hat",
+      "text": "Hats! Pick the feature you want to ask about.",
+      "start": 3762,
+      "end": 3807
+    },
+    {
+      "id": "q-hat-0",
+      "text": "Does your person have a hat?",
+      "start": 3808,
+      "end": 3836
+    },
+    {
+      "id": "a-hat-0-true",
+      "text": "Yes! Your opponent's person has a hat. Flip down everyone who does not have a hat.",
+      "start": 3837,
+      "end": 3919
+    },
+    {
+      "id": "a-hat-0-false",
+      "text": "No! Your opponent's person does not have a hat. Flip down everyone who has a hat.",
+      "start": 3920,
+      "end": 4001
+    },
+    {
+      "id": "q-hat-1",
+      "text": "Does your person have no hat?",
+      "start": 4002,
+      "end": 4031
+    },
+    {
+      "id": "a-hat-1-true",
+      "text": "Yes! Your opponent's person does not have a hat. Flip down everyone who has a hat.",
+      "start": 4032,
+      "end": 4114
+    },
+    {
+      "id": "a-hat-1-false",
+      "text": "No! Your opponent's person has a hat. Flip down everyone who does not have a hat.",
+      "start": 4115,
+      "end": 4196
+    },
+    {
+      "id": "section-earrings",
+      "text": "Earrings! Pick the feature you want to ask about.",
+      "start": 4197,
+      "end": 4246
+    },
+    {
+      "id": "q-earrings-0",
+      "text": "Does your person have earrings?",
+      "start": 4247,
+      "end": 4278
+    },
+    {
+      "id": "a-earrings-0-true",
+      "text": "Yes! Your opponent's person has earrings. Flip down everyone who does not have earrings.",
+      "start": 4279,
+      "end": 4367
+    },
+    {
+      "id": "a-earrings-0-false",
+      "text": "No! Your opponent's person does not have earrings. Flip down everyone who has earrings.",
+      "start": 4368,
+      "end": 4455
+    },
+    {
+      "id": "q-earrings-1",
+      "text": "Does your person have no earrings?",
+      "start": 4456,
+      "end": 4490
+    },
+    {
+      "id": "a-earrings-1-true",
+      "text": "Yes! Your opponent's person does not have earrings. Flip down everyone who has earrings.",
+      "start": 4491,
+      "end": 4579
+    },
+    {
+      "id": "a-earrings-1-false",
+      "text": "No! Your opponent's person has earrings. Flip down everyone who does not have earrings.",
+      "start": 4580,
+      "end": 4667
+    },
+    {
+      "id": "section-beard",
+      "text": "Beard! Pick the feature you want to ask about.",
+      "start": 4668,
+      "end": 4714
+    },
+    {
+      "id": "q-beard-0",
+      "text": "Does your person have a beard?",
+      "start": 4715,
+      "end": 4745
+    },
+    {
+      "id": "a-beard-0-true",
+      "text": "Yes! Your opponent's person has a beard. Flip down everyone who does not have a beard.",
+      "start": 4746,
+      "end": 4832
+    },
+    {
+      "id": "a-beard-0-false",
+      "text": "No! Your opponent's person does not have a beard. Flip down everyone who has a beard.",
+      "start": 4833,
+      "end": 4918
+    },
+    {
+      "id": "q-beard-1",
+      "text": "Does your person have no beard?",
+      "start": 4919,
+      "end": 4950
+    },
+    {
+      "id": "a-beard-1-true",
+      "text": "Yes! Your opponent's person does not have a beard. Flip down everyone who has a beard.",
+      "start": 4951,
+      "end": 5037
+    },
+    {
+      "id": "a-beard-1-false",
+      "text": "No! Your opponent's person has a beard. Flip down everyone who does not have a beard.",
+      "start": 5038,
+      "end": 5123
+    },
+    {
+      "id": "section-mustache",
+      "text": "Mustache! Pick the feature you want to ask about.",
+      "start": 5124,
+      "end": 5173
+    },
+    {
+      "id": "q-mustache-0",
+      "text": "Does your person have a mustache?",
+      "start": 5174,
+      "end": 5207
+    },
+    {
+      "id": "a-mustache-0-true",
+      "text": "Yes! Your opponent's person has a mustache. Flip down everyone who does not have a mustache.",
+      "start": 5208,
+      "end": 5300
+    },
+    {
+      "id": "a-mustache-0-false",
+      "text": "No! Your opponent's person does not have a mustache. Flip down everyone who has a mustache.",
+      "start": 5301,
+      "end": 5392
+    },
+    {
+      "id": "q-mustache-1",
+      "text": "Does your person have no mustache?",
+      "start": 5393,
+      "end": 5427
+    },
+    {
+      "id": "a-mustache-1-true",
+      "text": "Yes! Your opponent's person does not have a mustache. Flip down everyone who has a mustache.",
+      "start": 5428,
+      "end": 5520
+    },
+    {
+      "id": "a-mustache-1-false",
+      "text": "No! Your opponent's person has a mustache. Flip down everyone who does not have a mustache.",
+      "start": 5521,
+      "end": 5612
+    }
+  ],
+  "text": "G'day, detectives! Pick your secret face. Let's crack this case!\nYou're up, detective! Ask a question, or take a guess.\nPass the board, mate. No peeking!\nHang on, detective! That face still fits your clues. Let's bring it back.\nReady to crack the case? Pick your final guess!\nCase closed! Brilliant detective work!\nEye color! Pick the feature you want to ask about.\nDoes your person have blue eyes?\nYes! Your opponent's person has blue eyes. Flip down everyone who does not have blue eyes.\nNo! Your opponent's person does not have blue eyes. Flip down everyone who has blue eyes.\nDoes your person have green eyes?\nYes! Your opponent's person has green eyes. Flip down everyone who does not have green eyes.\nNo! Your opponent's person does not have green eyes. Flip down everyone who has green eyes.\nDoes your person have brown eyes?\nYes! Your opponent's person has brown eyes. Flip down everyone who does not have brown eyes.\nNo! Your opponent's person does not have brown eyes. Flip down everyone who has brown eyes.\nDoes your person have black eyes?\nYes! Your opponent's person has black eyes. Flip down everyone who does not have black eyes.\nNo! Your opponent's person does not have black eyes. Flip down everyone who has black eyes.\nHair color! Pick the feature you want to ask about.\nDoes your person have black hair?\nYes! Your opponent's person has black hair. Flip down everyone who does not have black hair.\nNo! Your opponent's person does not have black hair. Flip down everyone who has black hair.\nDoes your person have brown hair?\nYes! Your opponent's person has brown hair. Flip down everyone who does not have brown hair.\nNo! Your opponent's person does not have brown hair. Flip down everyone who has brown hair.\nDoes your person have blond hair?\nYes! Your opponent's person has blond hair. Flip down everyone who does not have blond hair.\nNo! Your opponent's person does not have blond hair. Flip down everyone who has blond hair.\nDoes your person have red hair?\nYes! Your opponent's person has red hair. Flip down everyone who does not have red hair.\nNo! Your opponent's person does not have red hair. Flip down everyone who has red hair.\nDoes your person have gray hair?\nYes! Your opponent's person has gray hair. Flip down everyone who does not have gray hair.\nNo! Your opponent's person does not have gray hair. Flip down everyone who has gray hair.\nDoes your person have a bald head?\nYes! Your opponent's person has a bald head. Flip down everyone who does not have a bald head.\nNo! Your opponent's person does not have a bald head. Flip down everyone who has a bald head.\nHair style! Pick the feature you want to ask about.\nDoes your person have long hair?\nYes! Your opponent's person has long hair. Flip down everyone who does not have long hair.\nNo! Your opponent's person does not have long hair. Flip down everyone who has long hair.\nDoes your person have short hair?\nYes! Your opponent's person has short hair. Flip down everyone who does not have short hair.\nNo! Your opponent's person does not have short hair. Flip down everyone who has short hair.\nDoes your person have a bald head?\nYes! Your opponent's person has a bald head. Flip down everyone who does not have a bald head.\nNo! Your opponent's person does not have a bald head. Flip down everyone who has a bald head.\nGlasses! Pick the feature you want to ask about.\nDoes your person have glasses?\nYes! Your opponent's person has glasses. Flip down everyone who does not have glasses.\nNo! Your opponent's person does not have glasses. Flip down everyone who has glasses.\nDoes your person have no glasses?\nYes! Your opponent's person does not have glasses. Flip down everyone who has glasses.\nNo! Your opponent's person has glasses. Flip down everyone who does not have glasses.\nHats! Pick the feature you want to ask about.\nDoes your person have a hat?\nYes! Your opponent's person has a hat. Flip down everyone who does not have a hat.\nNo! Your opponent's person does not have a hat. Flip down everyone who has a hat.\nDoes your person have no hat?\nYes! Your opponent's person does not have a hat. Flip down everyone who has a hat.\nNo! Your opponent's person has a hat. Flip down everyone who does not have a hat.\nEarrings! Pick the feature you want to ask about.\nDoes your person have earrings?\nYes! Your opponent's person has earrings. Flip down everyone who does not have earrings.\nNo! Your opponent's person does not have earrings. Flip down everyone who has earrings.\nDoes your person have no earrings?\nYes! Your opponent's person does not have earrings. Flip down everyone who has earrings.\nNo! Your opponent's person has earrings. Flip down everyone who does not have earrings.\nBeard! Pick the feature you want to ask about.\nDoes your person have a beard?\nYes! Your opponent's person has a beard. Flip down everyone who does not have a beard.\nNo! Your opponent's person does not have a beard. Flip down everyone who has a beard.\nDoes your person have no beard?\nYes! Your opponent's person does not have a beard. Flip down everyone who has a beard.\nNo! Your opponent's person has a beard. Flip down everyone who does not have a beard.\nMustache! Pick the feature you want to ask about.\nDoes your person have a mustache?\nYes! Your opponent's person has a mustache. Flip down everyone who does not have a mustache.\nNo! Your opponent's person does not have a mustache. Flip down everyone who has a mustache.\nDoes your person have no mustache?\nYes! Your opponent's person does not have a mustache. Flip down everyone who has a mustache.\nNo! Your opponent's person has a mustache. Flip down everyone who does not have a mustache.\n"
+}
