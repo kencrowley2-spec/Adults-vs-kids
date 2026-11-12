@@ -205,8 +205,8 @@ export const guides:Guide[] = [
   },
   {
     "slug": "parent-vs-kid-competition-games",
-    "title": "Parents vs Kids: 15 Hilarious Family Challenges",
-    "description": "Try 15 parents-versus-kids challenges with clear scoring, household supplies and mixed-age adaptations. Drawing duels, funny pitches and friendly rematches.",
+    "title": "15 Parents vs Kids Games and Challenges to Play at Home",
+    "description": "Play 15 parents vs kids games at home with clear rules, fair scoring and age adaptations. Start with a drawing duel, sock toss or a no-supplies challenge.",
     "intro": "The grown-ups do not get to be the judges every time. Pick three challenges, agree on points and give both sides a practice turn. These original rounds use everyday supplies and suggested ages, with playful handicaps agreed before the score starts. Suggested ages are 4–12 with adults unless a challenge says otherwise. Choose a five-minute round, allow two minutes to gather the supplies named in its rules, and practice before scoring. Read prompts aloud and remove time pressure for younger children; agree on adaptations before points count.",
     "sections": [
       {
