@@ -31,10 +31,10 @@ for(const state of ['guest','expired','unverified']){
 }
 verifiedUser={id:'user',email_confirmed_at:'2026-11-01T00:00:00Z'};error=null;rotate=true;
 const response=await home.GET(request());
-assert.equal(response.status,303);assert.equal(response.headers.get('location'),'/family');
+assert.equal(response.status,200);assert.equal(response.headers.get('location'),null);
 assert.equal(response.headers.get('cache-control'),'private, no-store');
-assert.match(response.headers.get('set-cookie'),/session=refreshed/);assert.equal(await response.text(),'');
+assert.match(response.headers.get('set-cookie'),/session=refreshed/);assert.match(await response.text(),/Public landing page/);
 assert.equal(checks,4,'Every visit must verify the session server-side');
 const website=compile('../app/website/route.ts',name=>name==='../../site-html'?{default:'<html>Public landing page</html>'}:name==='../../lib/analytics'?{trackedHtml:html=>html}:assert.fail(name));
-assert.match(await website.GET().text(),/Public landing page/);
-console.log('PASS: verified users redirect to /family, refreshed cookies survive, guest/expired/unverified sessions see the landing page, spoofed identity headers are ignored, and the public website stays accessible.');
+const alias=website.GET(new Request('https://adultsvskids.com/website?utm_source=youtube&utm_content=002_track'));assert.equal(alias.status,308);assert.equal(alias.headers.get('location'),'https://adultsvskids.com/?utm_source=youtube&utm_content=002_track');
+console.log('PASS: guests and verified users see the canonical public homepage, refreshed cookies survive, guest/expired/unverified sessions see the landing page, spoofed identity headers are ignored, and the duplicate /website permanently redirects while preserving campaign parameters.');

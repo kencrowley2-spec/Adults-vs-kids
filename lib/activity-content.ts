@@ -146,7 +146,7 @@ export const guides:Guide[] = [
     "slug": "family-game-night-ideas",
     "title": "Family Game Night Ideas for Kids Ages 4–12",
     "description": "Plan a simple family game night with a 25-minute schedule, fair teams, drawing challenges, shared-device games, and a playful closing celebration.",
-    "intro": "The best family game night is one you can actually repeat. Start with a short plan, a few familiar supplies, and room for everyone to choose something. You can turn an ordinary weeknight into three friendly rounds without making it a big production.",
+    "intro": "The best family game night is one you can actually repeat. Start with a short plan, a few familiar supplies, and room for everyone to choose something. You can turn an ordinary weeknight into three friendly rounds without making it a big production. Plan 30 minutes for ages 4–12 with adults: five minutes to choose teams and gather paper, crayons and a shared device, twenty minutes for two games and five minutes to celebrate. Follow the complete game plan below. Suggested ages are starting points rather than formal ratings.",
     "sections": [
       {
         "title": "A repeatable 25-minute game night",
@@ -207,7 +207,7 @@ export const guides:Guide[] = [
     "slug": "parent-vs-kid-competition-games",
     "title": "Parents vs Kids: 15 Hilarious Family Challenges",
     "description": "Try 15 parents-versus-kids challenges with clear scoring, household supplies and mixed-age adaptations. Drawing duels, funny pitches and friendly rematches.",
-    "intro": "The grown-ups do not get to be the judges every time. Pick three challenges, agree on points and give both sides a practice turn. These original rounds use everyday supplies and suggested ages, with playful handicaps agreed before the score starts.",
+    "intro": "The grown-ups do not get to be the judges every time. Pick three challenges, agree on points and give both sides a practice turn. These original rounds use everyday supplies and suggested ages, with playful handicaps agreed before the score starts. Suggested ages are 4–12 with adults unless a challenge says otherwise. Choose a five-minute round, allow two minutes to gather the supplies named in its rules, and practice before scoring. Read prompts aloud and remove time pressure for younger children; agree on adaptations before points count.",
     "sections": [
       {
         "title": "1. Non-dominant hand drawing",
@@ -370,27 +370,27 @@ export const guides:Guide[] = [
     "sections": [
       {
         "title": "A 30-minute rainy-day plan",
-        "text": "Use five minutes to choose two activities and gather supplies, ten minutes for drawing, ten for a soft sock toss and five for a story. Let each child choose one part. Skip timed competition if anyone is tired; completing an activity together is enough."
+        "text": "Suggested ages 4–12 with adults · 30 minutes · Materials: paper, crayons, rolled socks, a basket and a timer. Minutes 0–5: choose two activities, name teams and clear the floor. Minutes 5–15: create a folded-paper creature. Minutes 15–25: take five sock throws each, then swap positions for a rematch. Minutes 25–30: tell a one-sentence story and put supplies away. Shorten or remove timed scoring when anyone needs a calmer activity."
       },
       {
         "title": "Ages 4–6: turn the table into a creature workshop",
-        "text": "Set out paper and crayons. Each person draws an animal head, folds it away and passes the paper for someone else to add a body. Unfold the creatures, name them and tell one sentence about where they live. An adult can help fold and write down the names."
+        "text": "Ages 4–6 with an adult · About 10 minutes · Materials: paper and crayons. Set out paper and crayons. Each person draws an animal head, folds it away and passes the paper for someone else to add a body. Unfold the creatures, name them and tell one sentence about where they live. An adult can help fold and write down the names. Score cooperatively: one completed creature is a shared win; everyone names one detail. In a small space, pass paper around the same table."
       },
       {
         "title": "Ages 7–9: become indoor detectives",
-        "text": "Place six familiar large objects on a table. Look for 20 seconds, cover them and remove one while the others look away. Let each person guess, then rotate the detective. For a second round, move an object instead of removing it. Keep the same number of turns for everyone."
+        "text": "Ages 7–9 · About 8 minutes · Materials: six large objects and a towel. Place six familiar large objects on a table. Look for 20 seconds, cover them and remove one while the others look away. Let each person guess, then rotate the detective. For a second round, move an object instead of removing it. Keep the same number of turns for everyone. Score one point per correct guess across three equal turns each. Use three objects for younger siblings."
       },
       {
         "title": "Ages 10–12: make a household invention",
-        "text": "Give each team paper, a pencil and one ordinary safe prop such as a spoon. Spend five minutes inventing a new use. Present its name, job and slogan in 20 seconds. Count completed elements rather than ranking people’s confidence. Younger siblings can draw the invention or announce its name."
+        "text": "Ages 10–12 · About 10 minutes · Materials: paper, pencil and a safe household prop. Give each team paper, a pencil and one ordinary safe prop such as a spoon. Spend five minutes inventing a new use. Present its name, job and slogan in 20 seconds. Count completed elements rather than ranking people’s confidence. Younger siblings can draw the invention or announce its name. Award one point each for a name, a purpose and a slogan; equal totals are a tie."
       },
       {
         "title": "Move gently without turning furniture into an obstacle course",
-        "text": "Roll socks into balls and aim at a laundry basket. Play seated or standing, with distances chosen before the round. Give each person five throws and collect them together. Keep the space clear of breakables. If the room is crowded, substitute a clapping rhythm game."
+        "text": "Ages 4–12 · About 8 minutes · Materials: rolled socks and a basket. Roll socks into balls and aim at a laundry basket. Play seated or standing, with distances chosen before the round. Give each person five throws and collect them together. Keep the space clear of breakables. If the room is crowded, substitute a clapping rhythm game. Score one point per successful throw. In a small space, sit close to the target or copy three-beat clapping patterns cooperatively instead."
       },
       {
         "title": "Choose a calm ending",
-        "text": "Tell a one-sentence story around the circle, draw your favorite moment or play one shared-device memory round. Agree on the endpoint before opening a digital game. Keep paper and crayons in a basket so the next rainy-day activity is easy to start."
+        "text": "Ages 4–12 · About 5 minutes · No supplies needed for the spoken version. Tell a one-sentence story around the circle, draw your favorite moment or play one shared-device memory round. Agree on the endpoint before opening a digital game. Keep paper and crayons in a basket so the next rainy-day activity is easy to start. Each person adds one sentence for two turns; the last speaker ends the story. No competitive score is needed."
       }
     ],
     "related": [
@@ -406,28 +406,32 @@ export const guides:Guide[] = [
     "intro": "A family tournament works when everyone can contribute. This guide is about organizing teams and a series; choose individual challenge rules from our parent-versus-kid guide. Start with three rounds and a finish time, rather than an evening of elimination.",
     "sections": [
       {
-        "title": "Pick a format that fits the people playing",
-        "text": "With two players, try an adult-versus-child series. With four, make two mixed-age pairs. With an odd number, rotate a nonplaying scorekeeper after each round so everyone plays equally often. For a larger family, use three teams and give each the same number of attempts."
+        "title": "Choose balanced teams and a 30-minute finish",
+        "text": "Suggested ages 4–12 with adults · About 30 minutes · Materials: paper, pencils, six familiar large objects, a towel and a timer. With four players, make two mixed-age pairs; for adults-versus-kids teams, agree on younger-player help before starting. Let every team choose a name and practice each task once without points."
       },
       {
-        "title": "Use three different skills",
-        "text": "Choose drawing, memory and chance rather than three speed games. For example, draw a mascot with three required details, remember six covered objects and play Rock Paper Scissors. Give each game a single series point regardless of its raw score, so one high-scoring activity does not dominate the event."
+        "title": "Round 1: draw the championship mascot",
+        "text": "Allow five minutes. Each team draws a mascot that has a hat, a snack and a team flag. Award one raw point for each required detail. Adults can use their non-dominant hand if everyone agrees first. Younger children can point to details for a partner to draw. The higher raw score wins one series point; a tie earns half a point per team."
       },
       {
-        "title": "Make this three-column scorecard",
-        "text": "On paper, write a row for each team and columns named Drawing, Memory and Chance. Write 1 for a round win, 0 for a loss and 0.5 for a tie. Total the three columns after the final round. Announce the scoring before the first attempt and do not change it to favor a team."
+        "title": "Round 2: memory-tray showdown",
+        "text": "Allow eight minutes. Show six objects for 20 seconds, cover them and remove one out of sight. Every player guesses once; a correct guess earns one raw point. Swap the hider and repeat so each side has the same number of attempts. Use three objects for a younger player and agree on that before the scored round. Convert the round result to one series point for a win or half each for a tie."
       },
       {
-        "title": "Adapt the task before points count",
-        "text": "Let younger children have an adult reader, extra drawing time or a shorter throwing distance in a homemade game. Practice the adjusted task once and get agreement from everyone. Keep digital Arcade scoring as built in. When a rule feels unfair, finish unscored and adjust it before a future round."
+        "title": "Round 3: three-turn chance match",
+        "text": "Allow five minutes. Play three turns of Rock Paper Scissors. A winning hand earns one raw point and matching hands are replayed once; if still tied, that turn is a draw. Highest raw total wins one series point; a tied round earns half each. An adult can demonstrate the hand signs or a child can point to drawn symbols."
       },
       {
-        "title": "Let a tie be a real result",
-        "text": "Choose before the series whether ties share points or get one replay. A tied championship can have joint winners. If everyone wants a decider, use a short agreed chance round instead of choosing the strongest player’s favorite skill after seeing the result."
+        "title": "Record results and settle a championship tie",
+        "text": "Use the free championship scorecard below. Write the raw score separately from series points: win = 1, loss = 0, tie = 0.5. Add the three series columns. Decide before starting whether a tied total means joint champions or one three-turn Rock Paper Scissors decider. If that decider is tied, share the championship; do not add surprise rounds after the result."
       },
       {
-        "title": "Finish with a celebration and a rematch invitation",
-        "text": "Name one clever or funny moment from each team. Give the winners a paper crown or the next game choice. Let a player decline the press conference or photo. Record the score on your household sheet if you want to repeat the same series next week."
+        "title": "A four-team bracket without long waits",
+        "text": "For a larger group, write semifinal A: Team 1 versus Team 2, and semifinal B: Team 3 versus Team 4. Play one agreed challenge in each semifinal; both winners play a final and the other two teams play a friendly placement round. Give everyone the same attempts and reuse the stated tie rule. With three teams use a round robin: A–B, B–C, C–A, with a rest between turns. Announce whether you are using a bracket or a three-round series before play."
+      },
+      {
+        "title": "End with a family celebration",
+        "text": "Save five minutes to total points, announce one funny or clever moment from every team and choose who hosts next time. Photos and pretend press conferences are optional. Keep the scorecard for a rematch, and let a player choose a cooperative round whenever the competition stops being fun."
       }
     ],
     "related": [
@@ -439,12 +443,12 @@ export const guides:Guide[] = [
   {
     "slug": "printable-family-games",
     "title": "Printable Family Games and Activity Challenges",
-    "description": "Make a free paper scorecard, drawing challenge and memory game at home. Compare DIY family printables with the Adults vs. Kids paid activity-book PDFs.",
+    "description": "Print a free family championship scorecard with three-round scoring and a four-team bracket. Try drawing and memory activities, then explore paid book PDFs.",
     "intro": "Start with paper and a pen, or print these instructions using your browser. The activities below are free to make yourself. The ADULTS vs. KIDS full activity-book PDFs are separate paid products: $2.99 each or $9.95 for all four, with unlimited household printing.",
     "sections": [
       {
-        "title": "Make a free three-round scorecard",
-        "text": "Draw four columns labeled Team, Round 1, Round 2 and Round 3. Add a row for each player or team and leave room for a total. Agree on one point per challenge won and half a point for ties. Use tally marks for younger scorekeepers, then add them together at the end."
+        "title": "Use the free printable championship scorecard",
+        "text": "The free sheet below includes team names, three rounds, raw scores, series points, a final total and a four-team bracket. Print one copy for ages 4–12 with adults; allow two minutes to fill it in. Award one series point for a win, zero for a loss and half each for a tie. Keep raw game scores separate so a high-scoring game does not dominate the championship."
       },
       {
         "title": "Write six drawing prompt cards",

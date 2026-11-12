@@ -20,8 +20,10 @@
  document.addEventListener('click',e=>{
   const a=e.target.closest('a,button');if(!a)return;
   const href=a.getAttribute('href')||'',id=a.id||'';
-  if(/amazon\.|amzn\./i.test(href))send('outbound','Amazon');
+  let amazon=false;try{const host=new URL(href,location.href).hostname;amazon=/(^|\.)amazon\.[a-z.]+$/i.test(host)||host==='link.amazon'||host==='amzn.to';}catch{}
+  if(amazon)send('outbound','Amazon');
   else if(/liveStart|liveResume|showdownStart/.test(id))send('tool_start','Timer / music / scorecard');
+  else if(a.closest('#clubCheckoutForm')||href.startsWith('/club-checkout'))send('checkout_click','Club checkout');
   else if(/pdfCheckout/.test(id))send('checkout_click','PDF checkout');
   else if(href.startsWith('/api/pdf/download'))send('download_click','PDF download');
  });
