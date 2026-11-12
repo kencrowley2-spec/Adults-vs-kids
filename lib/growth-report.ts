@@ -51,7 +51,7 @@ export async function growthReport(){
   rows('analytics_checkouts','checkout_id,user_id,session_id,livemode,created_at','created_at'),
   rows('analytics_accounts','user_id,is_internal_test')
  ]);
- let subscriptions:{status:string;active:number|null;cancelScheduled:number|null;complete:boolean}={status:'unavailable',active:null,cancelScheduled:null,complete:false};
+ let subscriptions:{status:string;active:number|null;cancelScheduled:number|null;complete:boolean}={status:paymentLive()?'Live Stripe read unavailable':'Live billing mode is not enabled',active:null,cancelScheduled:null,complete:false};
  if(paymentLive())try{
   const stripe=stripeClient();let after:string|undefined,active=0,cancelScheduled=0,complete=false;
   for(let n=0;n<10;n++){
