@@ -1,13 +1,14 @@
 # Google Organic Growth measurement foundation
 
-Status: prepared for review; no production deployment, account setting change, new property, Web stream, API grant, or new live tracking event has been performed.
+Status: website integration prepared for review, not deployed. Owner-approved Google account/property/Web stream creation and Search Console association completed November 12, 2026 (Indiana time). No API grant or live GA4 tracking event verified.
 
 ## Verified account evidence (November 12, 2026, Indiana time)
 
-- Signed-in Google Analytics opens account 415708536 / property 563555408. Home says "No data streams found." The visible property selector begins "hook up> https://sites.googl...". This does not independently establish an ADULTS vs. KIDS property.
-- Google's first-use "My email communications" dialog blocks property selection. Four optional categories are checked. The owner expressly required authorization before account setting changes. No preferences were saved and no new property/stream was created.
-- Search Console property https://adultsvskids.com/ remains accessible and Settings says "You are a verified owner." Property added November 4, 2026.
-- Its Associations page reports no associated Google Analytics service, no pending requests, and "We couldn't find a Google Analytics property for kencrowley2@gmail.com" on the disabled Associate control.
+- Initial selected Google account/property was unrelated to AVK and had no streams. After owner approval, optional email categories were saved off and brand/domain searches found no matching AVK property.
+- Owner explicitly approved creation and acceptance of the Analytics and Data Processing Terms. Dedicated account 416262797 / property 564237839 is named ADULTS vs. KIDS — adultsvskids.com. Indianapolis reporting time and USD independently verified in Property details.
+- Web stream ADULTS vs. KIDS — Website: https://adultsvskids.com, stream ID 16331959213, measurement ID G-LG4GGTDM9Q. Enhanced measurement is off; explicit page_view and paperback_outbound are controlled by the reviewed collector. Google reports no received website data; collection is not operational yet.
+- Search Console property https://adultsvskids.com/ remains accessible; Google listed it as eligible for association under verified-owner authority.
+- After separate owner approval, association was submitted. Google confirmed LINK CREATED and listed stream 16331959213 against the exact URL-prefix property, dated November 12, 2026. This UI association does not grant server reporting credentials.
 - The current report still shows 77 impressions, 4 clicks, 5.2% CTR and 9.6 average position, with available chart dates November 3-10. This is historical baseline data, not a ranking gain caused by today's release.
 - Read-only first-party database snapshot: attribution began November 10 at 15:39:11 UTC; 30 non-test sessions across all sources, 0 recognized Google-organic sessions, 0 verified Google-origin signups and 0 mapped Google-origin stored paid orders. Scope differs from the Search Console baseline. These are not GA4 measurements or a complete revenue reconciliation.
 
@@ -45,7 +46,7 @@ The GA4/Search Console UI association is separate from server API credentials: l
 
 Passed: production build/type checks; public pages; existing analytics/payment/account access fixtures; Google adapter contracts; consent simulations; duplicate and private admin fixtures; 32-page built HTTP crawl. No real signup, payment, customer email or synthetic production tracking write was performed.
 
-Pending: confirmed AVK GA4 account/property; actual stream/measurement ID; live GA4 DebugView or Realtime receipt; GA4/Search Console association; service account/API grants; active read-only Google report calls; mobile/desktop browser acceptance and performance measurements after activation; complete gift-basket attribution and renewal/refund/cancellation ledger.
+Pending: live GA4 DebugView or Realtime receipt; service account/API grants; active read-only Google report calls; mobile/desktop browser acceptance and performance measurements after activation; complete gift-basket attribution and renewal/refund/cancellation ledger.
 
 No live event or operational Analytics claim is made from mocked Google responses, a successful build, a tag request, or an HTTP 204.
 
