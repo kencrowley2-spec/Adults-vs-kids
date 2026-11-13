@@ -11,6 +11,12 @@ export async function GET(request:Request){
  if(!auth.isAdmin)return memberReply({error:'Administrator access required.'},403,auth.headers);
  try{
  const url=new URL(request.url),section=url.searchParams.get('section')||'overview';
+ if(section==='google-organic'){
+  const days=Number(url.searchParams.get('days')||28);
+  if(![7,28,90].includes(days))return memberReply({error:'Choose 7, 28 or 90 days.'},400,auth.headers);
+  const {googleOrganicReport}=await import('../../../lib/google-organic-report');
+  return memberReply(await googleOrganicReport(days),200,auth.headers);
+ }
  if(section==='growth'){const {growthReport}=await import('../../../lib/growth-report');return memberReply(await growthReport(),200,auth.headers);}
  if(section==='purchases'){
  const page=Math.max(0,Math.min(100000,Number.parseInt(url.searchParams.get('page')||'0',10)||0));

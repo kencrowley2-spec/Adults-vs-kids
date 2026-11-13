@@ -1,0 +1,45 @@
+import assert from 'node:assert/strict';
+import {readFileSync,existsSync} from 'node:fs';
+import {resolve,dirname} from 'node:path';
+import vm from 'node:vm';
+import ts from 'typescript';
+import {JSDOM} from 'jsdom';
+import {createSign} from 'node:crypto';
+const cache=new Map(),env={};
+function load(file){const path=resolve(file);if(cache.has(path))return cache.get(path);const exports={};cache.set(path,exports);const code=ts.transpileModule(readFileSync(path,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;vm.runInNewContext(code,{exports,process:{env},Buffer,URL,URLSearchParams,Date,Intl,Map,Set,Promise,AbortSignal,Response,Request,Headers,require:name=>{if(name==='node:crypto')return {createSign};if(name==='./payments/server')return {};const p=resolve(dirname(path),name);return load(existsSync(p)?p:p+'.ts');}},{filename:path});return exports;}
+const reporting=load('lib/google-reporting.ts'),business=load('lib/organic-business.ts'),measurement=load('lib/google-measurement.ts');
+const now=new Date('2026-11-13T01:00:00Z');
+assert.equal(reporting.reportWindows(28,now).current.start,'2026-10-15');
+assert.equal(reporting.reportWindows(28,now).current.end,'2026-11-11');
+assert.equal(reporting.reportWindows(28,now).previous.end,'2026-10-14');
+assert.throws(()=>reporting.reportWindows(30,now));
+let calls=[];env.GOOGLE_REPORTING_ENABLED='true';env.GA4_PROPERTY_ID='1234';
+const send=async(url,body)=>{calls.push({url,body});if(url.includes('analyticsdata'))return {rows:[{dimensionValues:[{value:'20261110'}],metricValues:[{value:'3'}]}],metadata:{timeZone:'America/Indiana/Indianapolis'}};return {rows:body.dimensions.length===0?[{clicks:4,impressions:77,ctr:4/77,position:9.6}]:body.dimensions.includes('query')?[{keys:['family games at home',...(body.dimensions.includes('page')?['https://adultsvskids.com/games-to-play-with-kids-at-home']:[])],clicks:0,impressions:1,ctr:0,position:53}]:[]};};
+const g=await reporting.searchConsoleReport(28,now,send,'mock-token');assert.equal(g.status,'Connected');assert.equal(g.totals.impressions,77);assert.equal(g.keywords.length,10);assert.equal(g.keywords.find(k=>k.keyword==='family games at home').position,53);assert.equal(g.keywords.find(k=>k.keyword==='parents vs kids games').position,null);assert.equal(g.undisclosedImpressions,76);
+for(const {body} of calls){assert.equal(body.type,'web');assert.equal(body.dataState,'final');assert.equal(body.aggregationType,body.dimensions.includes('page')?'auto':'byProperty');}
+calls=[];const a=await reporting.analyticsReport(28,now,send,'mock-token');assert.equal(a.sessions,3);for(const {body} of calls){const f=body.dimensionFilter.andGroup.expressions;assert.equal(f[0].filter.fieldName,'sessionSource');assert.equal(f[0].filter.stringFilter.value,'google');assert.equal(f[1].filter.stringFilter.value,'organic');assert(!JSON.stringify(body).includes('totalRevenue'));}
+delete env.GOOGLE_REPORTING_ENABLED;assert.equal((await reporting.searchConsoleReport(28,now)).keywords.length,10);assert.equal((await reporting.analyticsReport(28,now)).status,'Not Yet Available');
+const date='2026-11-10T18:00:00Z';
+const sessions=[{id:'g',visitor_id:'v',source:'www.google.com',utm_medium:'',started_at:date,landing_path:'/family-games'},{id:'cpc',source:'www.google.com',utm_medium:'cpc',started_at:date},{id:'qa',source:'www.google.com',started_at:date,is_internal_test:true},{id:'social',source:'youtube',started_at:date}];
+assert.equal(business.isGoogleOrganic(sessions[0]),true);assert.equal(business.isGoogleOrganic(sessions[1]),false);assert.equal(business.isGoogleOrganic({source:'fakegoogle.com'}),false);assert.equal(business.isGoogleOrganic({source:'google.attacker.com'}),false);assert.equal(business.isGoogleOrganic({source:'google',utm_medium:'organic'}),true);
+const accounts=[{user_id:'u',signup_session_id:'g',signup_verified_at:date},{user_id:'intent',signup_session_id:'g',signup_verified_at:null}];
+const orders=[{session_id:'pdf',user_id:'u',status:'paid',currency:'usd',amount_total:299},{session_id:'pdf',user_id:'u',status:'paid',currency:'usd',amount_total:299},{session_id:'refund',user_id:'u',status:'revoked',currency:'usd',amount_total:299},{session_id:'test',user_id:'u',status:'paid',currency:'usd',amount_total:299},{session_id:'mismatch',user_id:'u',status:'paid',currency:'usd',amount_total:299},{session_id:'annual',user_id:'u',status:'paid',currency:'usd',amount_total:2495}];
+const checkouts=[{checkout_id:'pdf',user_id:'u',session_id:'g',livemode:true},{checkout_id:'refund',user_id:'u',session_id:'g',livemode:true},{checkout_id:'test',user_id:'u',session_id:'g',livemode:false},{checkout_id:'mismatch',user_id:'other',session_id:'g',livemode:true},{checkout_id:'annual',user_id:'u',session_id:'g',livemode:true}];
+const receipts=new Map(['pdf','refund','test','mismatch'].map(id=>[id,{kind:'pdf',cents:299,paidAt:date}]));receipts.set('annual',{kind:'club-year',cents:2495,paidAt:date});
+const events=[{event_type:'outbound',detail:'Amazon',analytics_session_id:'g',created_at:date}];
+const r=business.aggregateOrganicBusiness(sessions,accounts,orders,checkouts,events,receipts,28,now).current;
+assert.equal(r.sessions,1);assert.equal(r.verifiedRegistrations,1);assert.equal(r.pdfPurchases,1);assert.equal(r.initialAnnual,1);assert.equal(r.initialMonthly,0);assert.equal(r.revenueCents,2794);assert.equal(r.conversionSessionRate,1);assert.equal(r.amazonOutbound,1);
+accounts[0].is_internal_test=true;assert.equal(business.aggregateOrganicBusiness(sessions,accounts,orders,checkouts,events,receipts,28,now).current.revenueCents,0);
+assert.equal(measurement.googleMeasurementId(),null);env.GA4_COLLECTION_ENABLED='true';env.GA4_MEASUREMENT_ID='G-TEST1234';
+assert.equal(measurement.googleMeasurementHtml('<link rel="canonical" href="https://adultsvskids.com/family-games">').includes('google-measurement.js'),true);
+assert.equal(measurement.googleMeasurementHtml('<link rel="canonical" href="https://adultsvskids.com/admin">'),'');
+env.GA4_MEASUREMENT_ID='G-BAD" onclick="bad';assert.equal(measurement.googleMeasurementId(),null);
+const paidSession={id:'pdf',status:'complete',mode:'payment',payment_status:'paid',livemode:true,currency:'usd',amount_total:299,client_reference_id:'u',metadata:{avk_type:'pdf-v1'},payment_intent:{latest_charge:{paid:true,disputed:false,refunded:false,amount_refunded:0,currency:'usd',amount:299,created:1794333600}}};
+const stripe={checkout:{sessions:{retrieve:async()=>paidSession}},invoices:{retrieve:async()=>({status:'paid',amount_paid:299,currency:'usd'})},invoicePayments:{list:async()=>({data:[{status:'paid',payment:{type:'payment_intent',payment_intent:'pi_first'}}]})},paymentIntents:{retrieve:async()=>paidSession.payment_intent}};
+const order={session_id:'pdf',user_id:'u',amount_total:299,product_ids:['book-1']};
+assert.equal((await business.reconcileOrder(order,stripe)).kind,'pdf');paidSession.payment_intent.latest_charge.amount_refunded=1;assert.equal(await business.reconcileOrder(order,stripe),null);paidSession.payment_intent.latest_charge.amount_refunded=0;
+paidSession.status='open';assert.equal(await business.reconcileOrder(order,stripe),null);paidSession.status='complete';assert.equal(await business.reconcileOrder({...order,user_id:'wrong'},stripe),null);
+paidSession.mode='subscription';paidSession.metadata={avk_type:'club-subscription-v1',avk_plan:'month'};paidSession.invoice='in_first';assert.equal((await business.reconcileOrder({...order,product_ids:['club-month']},stripe)).kind,'club-month');paidSession.metadata.avk_type='club-prelaunch-v1';assert.equal(await business.reconcileOrder({...order,product_ids:['club-month']},stripe),null);
+const ui=new JSDOM('<!doctype html><body></body>',{runScripts:'outside-only'});ui.window.eval(readFileSync('public/admin-organic.js','utf8'));
+const markup=ui.window.avkOrganicReport({days:28,search:g,analytics:a,business:{current:r},definitions:['<img src=x onerror=alert(1)>']});ui.window.document.body.innerHTML=markup;assert.equal(ui.window.document.querySelectorAll('#organicRange option').length,3);assert(!ui.window.document.querySelector('img'));assert(markup.includes('Not Yet Available'));assert(markup.includes('parents vs kids games'));
+console.log('PASS: read-only API contracts, exact dates/keyword gaps, brand suppression, paid/source exclusion, signup authority, refund/test/owner protections, revenue deduplication, coherent cohort rates, collector feature gates and admin output escaping.');
