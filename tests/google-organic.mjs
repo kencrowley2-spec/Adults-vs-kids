@@ -32,7 +32,7 @@ assert.equal(r.sessions,1);assert.equal(r.verifiedRegistrations,1);assert.equal(
 accounts[0].is_internal_test=true;assert.equal(business.aggregateOrganicBusiness(sessions,accounts,orders,checkouts,events,receipts,28,now).current.revenueCents,0);
 assert.equal(measurement.googleMeasurementId(),null);env.GA4_COLLECTION_ENABLED='true';env.GA4_MEASUREMENT_ID='G-TEST1234';
 assert.equal(measurement.googleMeasurementHtml('<link rel="canonical" href="https://adultsvskids.com/family-games">').includes('google-measurement.js'),true);
-assert.equal(measurement.googleMeasurementHtml('<link rel="canonical" href="https://adultsvskids.com/admin">'),'');
+assert.equal(measurement.googleMeasurementHtml('<link rel="canonical" href="https://adultsvskids.com/admin">'),'');for(const path of ['/family','/family/arcade','/member-preview','/preview/flex-off','/clubhouse-setup'])assert.equal(measurement.googleMeasurementHtml('<link rel="canonical" href="https://adultsvskids.com'+path+'">'),'');
 env.GA4_MEASUREMENT_ID='G-BAD" onclick="bad';assert.equal(measurement.googleMeasurementId(),null);
 const paidSession={id:'pdf',status:'complete',mode:'payment',payment_status:'paid',livemode:true,currency:'usd',amount_total:299,client_reference_id:'u',metadata:{avk_type:'pdf-v1'},payment_intent:{latest_charge:{paid:true,disputed:false,refunded:false,amount_refunded:0,currency:'usd',amount:299,created:1794333600}}};
 const stripe={checkout:{sessions:{retrieve:async()=>paidSession}},invoices:{retrieve:async()=>({status:'paid',amount_paid:299,currency:'usd'})},invoicePayments:{list:async()=>({data:[{status:'paid',payment:{type:'payment_intent',payment_intent:'pi_first'}}]})},paymentIntents:{retrieve:async()=>paidSession.payment_intent}};

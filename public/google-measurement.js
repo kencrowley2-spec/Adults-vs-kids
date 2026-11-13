@@ -3,7 +3,7 @@
  if(!['adultsvskids.com','www.adultsvskids.com'].includes(location.hostname)||navigator.globalPrivacyControl===true||navigator.doNotTrack==='1')return;
  const canonical=document.querySelector('link[rel="canonical"]');if(!canonical)return;
  let page;try{page=new URL(canonical.href);if(page.origin!=='https://adultsvskids.com')return;}catch{return;}
- if(/^\/(admin|auth|api|family\/|login|signup|logout|play\/|club-checkout|verify-email|reset-password|forgot-password)/.test(page.pathname))return;
+ if(/^\/(?:admin|auth|api|family|login|signup|logout|play|club-checkout|verify-email|reset-password|forgot-password|member-preview|clubhouse-setup|preview|defend-your-neighborhood)(?:\/|$)/.test(page.pathname))return;
  const params=new URLSearchParams(location.search);if(params.get('utm_medium')==='internal'||params.get('utm_source')==='qa')return;
  const key='avk_google_consent_v1',maxAge=180*86400000;
  let consent='unset',id=null,configured=false,starting=false;
