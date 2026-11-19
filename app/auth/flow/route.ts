@@ -1,3 +1,4 @@
+import {PASSWORD_MAX_LENGTH, PASSWORD_REQUIREMENTS, meetsPasswordRequirements} from '../../../lib/auth/password-policy';
 import {accountAnalytics} from '../../../lib/analytics-server';
 import {arcadeDestination} from '../../../lib/arcade-links';
 import {requestOrigin} from '../../../lib/request-origin';
@@ -14,8 +15,11 @@ export async function POST(request:Request){const auth=memberClient(request);con
  const password=typeof data.password==='string'?data.password:'';
  if(!['login','admin-login','signup','recover','resend','reset'].includes(action))return fail('Invalid account action.');
  if(action!=='reset'&&(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||email.length>254))return fail('Enter a valid email address.');
- if(['login','admin-login','signup','reset'].includes(action)&&(password.length<1||password.length>128))return fail('Enter your password.');
- if(['signup','reset'].includes(action)&&(password.length<12||password!==data.confirmPassword))return fail('Use at least 12 characters and make sure the passwords match.');
+ if(['login','admin-login'].includes(action)&&(password.length<1||password.length>PASSWORD_MAX_LENGTH))return fail('Enter your password.');
+ if(action==='signup'||action==='reset'){
+  if(!meetsPasswordRequirements(password))return fail(PASSWORD_REQUIREMENTS);
+  if(password!==data.confirmPassword)return fail('Please make sure the two passwords match.');
+ }
  if(['signup','recover','resend'].includes(action)&&env.AUTH_EMAIL_READY!=='true')return fail('Verification email delivery is still being connected. No account or email was created by this request.',503);
  if(action==='signup'){
   if(env.AUTH_REGISTRATION_OPEN!=='true')return fail('New family registration is not open yet.',503);
@@ -24,6 +28,7 @@ export async function POST(request:Request){const auth=memberClient(request);con
   const settings=await fetch(env.SUPABASE_URL+'/auth/v1/settings',{headers:{apikey:env.SUPABASE_PUBLISHABLE_KEY!}});const config=await settings.json() as {mailer_autoconfirm?:boolean};
   if(!settings.ok||config.mailer_autoconfirm!==false)return fail('Email confirmation must be configured before registration can open.',503);
   const {data:signup,error}=await auth.client.auth.signUp({email,password,options:{emailRedirectTo:origin+'/auth/confirm?next='+encodeURIComponent(arcadeDestination(data.game)),data:{display_name:data.displayName.trim(),family_name:typeof data.name==='string'?data.name.trim().slice(0,60):''}}});
+  if(error?.code==='weak_password')return fail('Choose a stronger password. Try adding more words or characters.');
   if(error)return fail(error.code==='over_email_send_rate_limit'?'Please wait before requesting another email.':'We could not complete registration. Email delivery may not be ready; please try again later.',error.status===429?429:400);
   if(signup.user?.identities?.length)await accountAnalytics(request,auth.headers,signup.user,isAdministrator(signup.user,env.ADMIN_EMAIL),'intent');
   return memberReply({redirect:'/verify-email',message:'If this address is eligible for a new account, a verification email will be sent. Check your inbox before signing in.'},200,auth.headers);
@@ -45,7 +50,9 @@ export async function POST(request:Request){const auth=memberClient(request);con
  }
  if(action==='reset'){
   const {data:current,error}=await auth.client.auth.getUser();if(error||!current.user?.email_confirmed_at)return fail('Open a valid password reset email before choosing a new password.',401);
-  const updated=await auth.client.auth.updateUser({password});if(updated.error)return fail('We could not update your password. Please request a new recovery email.');
+  const updated=await auth.client.auth.updateUser({password});if(updated.error?.code==='weak_password')return fail('Choose a stronger password. Try adding more words or characters.');
+  if(updated.error?.code==='same_password')return fail('Choose a password different from your current one.');
+  if(updated.error)return fail('We could not update your password. Please request a new recovery email.');
   await auth.client.auth.signOut({scope:'global'});return memberReply({redirect:'/login?updated=1'},200,auth.headers);
  }
  return fail('Invalid account action.');
