@@ -7,6 +7,10 @@ const dom=new JSDOM(html,{runScripts:'outside-only',url:'https://adultsvskids.co
 const {window}=dom,{document}=window;
 window.HTMLDialogElement.prototype.showModal=function(){this.open=true};
 window.HTMLDialogElement.prototype.close=function(){this.open=false;this.dispatchEvent(new window.Event('close'))};
+const timerScripts=[...document.scripts].map(script=>script.getAttribute('src'));
+assert.ok(timerScripts.some(src=>src?.startsWith('/timer-announcer.js?')));
+assert.ok(timerScripts.findIndex(src=>src?.startsWith('/timer-announcer.js?'))<timerScripts.findIndex(src=>src?.startsWith('/family-tools.js?')));
+window.eval(read('public/timer-announcer.js'));
 window.eval(read('public/family-tools.js'));
 window.eval(read('public/arcade-navigation.js'));
 const $=id=>document.getElementById(id);
