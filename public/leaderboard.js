@@ -1,7 +1,8 @@
-const games={maze:{name:'Maze Dash',rule:'Reach the flag before the 45-second buzzer.'},spot:{name:'Spot the Difference',rule:'Find all 3 differences. Wrong taps add 1 second each.'},picture:{name:'Guess the Picture',rule:'Answer all 3 pictures correctly within 30 seconds.'},number:{name:'Number Battle',rule:'Answer all 5 number puzzles correctly within 30 seconds.'}};
 const $=id=>document.getElementById(id);
-let game='maze',nextUpdate=0,loading=false,sequence=0,lastAttempt=0;
-const duration=ms=>(ms/1000).toFixed(3)+'s';
+const tabs=[...document.querySelectorAll('[data-game]')];
+let active=tabs[0];
+let game=active.dataset.game,nextUpdate=0,loading=false,sequence=0,lastAttempt=0;
+const displayScore=n=>n+' '+(n===1?active.dataset.unit.slice(0,-1):active.dataset.unit);
 const date=value=>new Date(value).toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit',timeZoneName:'short'});
 function cell(row,value,className=''){const td=document.createElement('td');td.className=className;td.textContent=value;row.appendChild(td);return td;}
 async function load(){
@@ -23,14 +24,14 @@ async function load(){
    const emblem=document.createElement('span');emblem.className='team-emblem';emblem.setAttribute('aria-hidden','true');emblem.textContent=record.place<=3?'🏅':'⚑';
    const label=document.createElement('strong');label.textContent=`${record.family_name}`;name.append(emblem,label);
    if(record.yours){const badge=document.createElement('small');badge.textContent='YOUR FAMILY';name.appendChild(badge);}
-   cell(tr,duration(record.elapsed_ms),'time-col');cell(tr,date(record.achieved_at),'record-date');
+   cell(tr,displayScore(record.score),'time-col');cell(tr,date(record.achieved_at),'record-date');
    $('lb-rows').appendChild(tr);
   }
   $('lb-empty').hidden=data.rows.length>0;
-  $('lb-status').textContent=data.rows.length?`${games[game].name}: ${data.rows.length} ranked ${data.rows.length===1?'family':'families'}.`:'';
-  $('lb-best').textContent=data.bestMs===null?'NO RECORD YET':duration(data.bestMs);
+  $('lb-status').textContent=data.rows.length?`${active.textContent}: ${data.rows.length} ranked ${data.rows.length===1?'family':'families'}.`:'';
+  $('lb-best').textContent=data.bestScore===null?'NO RECORD YET':displayScore(data.bestScore);
   const own=data.rows.find(r=>r.yours);
-  $('lb-position').textContent=own?`Published rank #${own.place} · New personal bests enter the next daily update.`:data.bestMs===null?'Complete a qualifying turn to enter.':'Record saved · Check the next daily update for your ranking.';
+  $('lb-position').textContent=own?`Published rank #${own.place} · New personal bests enter the next daily update.`:data.bestScore===null?'Complete a qualifying turn to enter.':'Record saved · Check the next daily update for your ranking.';
   tick();
  }catch{if(token===sequence){$('lb-status').textContent='We couldn’t load the latest standings. Please retry.';$('lb-retry').hidden=false;}}
  finally{if(token===sequence)loading=false;}
@@ -42,11 +43,14 @@ function tick(){
  // Re-fetch after the scheduled refresh, including tabs left open overnight.
  if(!seconds&&!loading&&Date.now()-lastAttempt>60000&&!document.hidden)load();
 }
-for(const button of document.querySelectorAll('[data-game]'))button.addEventListener('click',()=>{
- game=button.dataset.game;
+for(const button of tabs)button.addEventListener('click',()=>{
+ active=button;game=button.dataset.game;
+ $('lb-direction').textContent=(active.dataset.lower==='true'?'LOWER':'HIGHER')+' SCORE WINS';
+ $('lb-unit').textContent=active.dataset.unit.toUpperCase();
+ $('lb-teams').textContent='— / 100 TEAMS';
  for(const tab of document.querySelectorAll('[data-game]'))tab.setAttribute('aria-pressed',String(tab===button));
- $('lb-game-title').textContent=games[game].name;$('lb-rule').textContent=games[game].rule;
- $('lb-caption').textContent=games[game].name+' · Top 100 fastest families';
+ $('lb-game-title').textContent=active.textContent;$('lb-rule').textContent=active.dataset.rule;
+ $('lb-caption').textContent=active.textContent+' · Top 100 families';
  $('lb-play').href=$('lb-empty-play').href='/family/arcade?game='+game;
  $('lb-rows').replaceChildren();$('lb-empty').hidden=true;$('lb-best').textContent='—';$('lb-position').textContent='Loading your record…';load();
 });

@@ -3,7 +3,7 @@ import {mountGuestGate} from './arcade-guest.js?v=1';
 import {mountFeaturedGames} from './arcade-featured.js?v=3';
 import {mountPinball} from './arcade-pinball.js?v=2';
 import {createCaseReader} from './arcade-cases.js?v=2';
-import {mountFaces} from './arcade-faces.js?v=4';
+import {mountFaces} from './arcade-faces.js?v=5';
 import {mountDraw} from './arcade-draw.js?v=3';
 import {mountLava} from './arcade-lava.js?v=8';
 import {mountClaw,clawPrizes,clawFireworks} from './arcade-claw.js?v=4';
@@ -48,7 +48,7 @@ const timeRecorder=resultRecorder({
  accountId:arcadeAccountId,namespace:'times',
  storage:{getItem:key=>localStorage.getItem(key),setItem:(key,value)=>localStorage.setItem(key,value)},
  send:result=>fetch('/api/arcade/leaderboard',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({...result,accountId:arcadeAccountId})}),
- changed:({pending})=>{const el=$('arcade-timed-save');if(el)el.textContent=pending?'Your timed record is waiting to save. Retry saving when connected.':'Successful timed runs enter the next daily Top 100 update.';}
+ changed:({pending})=>{const el=$('arcade-timed-save');if(el)el.textContent=pending?'Your game record is waiting to save. Retry saving when connected.':'Featured game records enter the next daily Top 100 update.';}
 });
 timeRecorder.drain();
 window.addEventListener('online',()=>timeRecorder.drain());
@@ -56,6 +56,9 @@ $('arcade-save-retry').addEventListener('click',()=>timeRecorder.drain());
 recorder.drain();
 window.addEventListener('online',()=>recorder.drain());
 $('arcade-save-retry').addEventListener('click',()=>recorder.drain());
+function recordFeatured(game,score){
+ timeRecorder.capture({id:crypto.randomUUID(),game,score});
+}
 function startRecording(mode,gameIds){recording={id:crypto.randomUUID(),mode,gameIds,roundWinners:[],complete:false};}
 function saveCompleted(){
  if(!recording||recording.complete)return;
@@ -402,6 +405,7 @@ function openLava(){
  rememberGame('lava');arena.hidden=false;lobby.hidden=true;
  dispatchArcadeAnalytics(new CustomEvent('avk:game-start',{detail:{game:'lava',id:matchId}}));
  stopLava=mountLava({beforeRematch:()=>{if(!guestGate.allow('lava'))return false;dispatchArcadeAnalytics(new CustomEvent('avk:game-start',{detail:{game:'lava',id:matchId}}));return true;},players:lavaNames,onExit:()=>{stopLava=null;arena.hidden=true;lobby.hidden=false;game=null;document.querySelector('[data-game="lava"]')?.focus();},onComplete:result=>{
+  recordFeatured('lava',Math.max(...result.scores));
   if(!kidsOnly&&!adultsOnly)recorder.capture({id:matchId,mode:'single',gameIds:['lava'],roundWinners:[result.winner]});
   dispatchArcadeAnalytics(new CustomEvent('avk:game-complete',{detail:{game:'lava',winner:result.winner,scores:result.scores,id:matchId}}));
   matchId=crypto.randomUUID();
@@ -420,6 +424,7 @@ function openFaces(){
  const adultsOnly=selectedPlayers[1].length===0&&selectedPlayers[0].length>=2;
  const faceNames=adultsOnly?[selectedPlayers[0].filter((_,i)=>i%2===0).join(' & '),selectedPlayers[0].filter((_,i)=>i%2===1).join(' & ')]:selectedPlayers.map((list,i)=>list.join(' & ')||names[i]);
  mountFaces({beforeRematch:()=>{if(!guestGate.allow('faces'))return false;dispatchArcadeAnalytics(new CustomEvent('avk:game-start',{detail:{game:'faces',id:matchId}}));return true;},players:faceNames,onExit:()=>{arena.hidden=true;lobby.hidden=false;game=null;document.querySelector('[data-game="faces"]')?.focus();},onComplete:result=>{
+  if(result.correct)recordFeatured('faces',result.questions);
   dispatchArcadeAnalytics(new CustomEvent('avk:game-complete',{detail:{game:'faces',winner:result.winner,id:matchId}}));
   matchId=crypto.randomUUID();
  }});
@@ -612,6 +617,7 @@ function finishRound(winner,detail){
   status(champion>=0?`${teamName(winner)} win ${wins[winner]}–${wins[1-winner]}.`:winner===null?'Tie! Replay this round.':`${teamName(winner)} earn one round win.`); focusFirst();
 }
 function finishTurn(result){
+  if((game.id==='claw'||game.id==='mole')&&result.score>0)recordFeatured(game.id,result.score);
   const target={maze:1,spot:3,picture:3,number:5}[game.id];
   if(target&&result.score===target&&Number.isFinite(result.elapsed)&&result.elapsed>=.1&&result.elapsed<=({maze:45,spot:45,picture:30,number:30}[game.id])){
     timeRecorder.capture({id:crypto.randomUUID(),game:game.id,score:result.score,elapsedMs:Math.round(result.elapsed*1000)});
@@ -707,7 +713,7 @@ function memory(){
     });
   }
   function finishBoard(){
-    complete=true;pauseClock();$('memory-time').textContent=clockText();
+    complete=true;recordFeatured('memory',moves);pauseClock();$('memory-time').textContent=clockText();
     if(best===null||moves<best){best=moves;$('memory-best').textContent=`${best} moves`;try{localStorage.setItem(bestKey,String(best));}catch{}}
     react('win',`${teamName(turn)} +1 POINT!`);
     later(()=>finishRound(roundWinner({score:points[0]},{score:points[1]}),`Round points — ${teamName(0)} ${points[0]} · ${teamName(1)} ${points[1]}. Cleared in ${moves} moves (${clockText()}). One matching pair = one point. Most points wins the round.`),800);

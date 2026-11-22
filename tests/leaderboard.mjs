@@ -12,3 +12,9 @@ const matches=createResultRecorder({accountId:'family-a',storage,send:async()=>(
 const other=createResultRecorder({accountId:'family-b',namespace:'times',storage,send:async()=>({ok:true})});assert.equal(other.pendingCount(),0);
 online=true;const restored=createResultRecorder({accountId:'family-a',namespace:'times',storage,send:async data=>{sent.push(data);return {ok:true};}});await restored.drain();assert.equal(restored.pendingCount(),0);assert.equal(sent[0].id,sent[1].id);
 console.log('PASS: all timed games, perfect completion, invalid/partial times, isolated durable timed queue and retry deduplication.');
+for(const [game,score] of [['lava',500],['faces',0],['claw',1],['mole',28],['memory',12]]){
+ assert.deepEqual(timedResult({id,game,score}),{id,game,score,elapsedMs:null});
+}
+for(const [game,score] of [['lava',631],['faces',-1],['claw',25],['mole',29],['memory',11]]){
+ assert.throws(()=>timedResult({id,game,score}));
+}
