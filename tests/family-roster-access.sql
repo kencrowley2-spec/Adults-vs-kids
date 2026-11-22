@@ -11,8 +11,8 @@ select set_config('request.jwt.claim.sub',(select family_a::text from roster_tes
 insert into public.family_rosters(user_id,adults,kids,playing_adults,playing_kids) select family_a,array['Parent'],array['One','Two','Three','Four','Five'],array[0],array[0,4] from roster_test_ids;
 do $$ begin
  if (select cardinality(kids) from public.family_rosters)<>5 then raise exception 'Five kids not saved';end if;
- begin update public.family_rosters set kids=array['1','2','3','4','5','6'];raise exception 'Six kids accepted';exception when check_violation then null;end;
- begin update public.family_rosters set playing_kids=array[5];raise exception 'Out-of-range selection accepted';exception when check_violation then null;end;
+ update public.family_rosters set kids=array_fill('Kid'::text,array[18]), adults=array_fill('Adult'::text,array[14]),playing_adults=array[13],playing_kids=array[17];
+ begin update public.family_rosters set playing_kids=array[18];raise exception 'Out-of-range selection accepted';exception when check_violation then null;end;
  begin update public.family_rosters set user_id=(select family_b from roster_test_ids);raise exception 'Cross-family reassignment accepted';exception when insufficient_privilege then null;end;
 end $$;
 select set_config('request.jwt.claim.sub',(select family_b::text from roster_test_ids),true);
@@ -25,5 +25,5 @@ do $$ begin
  begin perform * from public.family_rosters;raise exception 'Anonymous read accepted';exception when insufficient_privilege then null;end;
 end $$;
 reset role;
-select 'PASS: owner save, five-kid limit, valid selection indexes, family isolation, ownership protection and anonymous denial; test fixtures rolled back' as validation;
+select 'PASS: owner save, expanded teams, valid selection indexes, family isolation, ownership protection and anonymous denial; test fixtures rolled back' as validation;
 rollback;

@@ -248,3 +248,12 @@ body:has(#arcade-lobby:not([hidden]))>main{background:radial-gradient(ellipse at
 .upright-cabinet .game-track .game-tile:hover,.upright-cabinet .game-track .game-tile:focus-visible{filter:brightness(1.1);outline:2px solid #fff2be;outline-offset:1px;box-shadow:0 0 14px #ffdc5766}
 .upright-cabinet .cabinet-play-pinball{background:linear-gradient(#ff574a,#b51019);color:#fff9dd;border:1px solid #ffdd96;border-radius:1cqw;box-shadow:0 2px 0 #5c070a,0 0 12px #fa512d66;text-shadow:0 1px 2px #510807}
 @media(prefers-reduced-motion:reduce){.upright-cabinet .game-track .game-tile{transition:none}}
+
+#choose-arcade-players{position:fixed;top:max(6px,env(safe-area-inset-top));right:max(8px,env(safe-area-inset-right));z-index:8;min-height:44px;padding:8px 14px;border:1px solid #f8cf4e;border-radius:24px;background:#151515;color:#ffe279;font-weight:800}
+#game-stage #mole-start{display:block;margin:12px auto;min-height:64px;width:min(80%,320px);font-size:clamp(24px,5vw,38px);font-weight:900;background:#ffd522;color:#161616;border:3px solid #161616;border-radius:16px;box-shadow:0 4px 0 #a57d04}
+#arcade-players{width:min(90vw,440px);max-height:80dvh;overflow:auto;padding:20px;border:2px solid #ffd522;border-radius:16px;background:#191919;color:white}
+#arcade-players::backdrop{background:#000b}
+#arcade-players fieldset{margin:12px 0;padding:8px 12px;border:1px solid #666;border-radius:8px}
+#arcade-players label{display:flex;gap:10px;align-items:center;min-height:44px;overflow-wrap:anywhere}
+#arcade-players input{width:20px;height:20px;accent-color:#ffd522}
+#arcade-players button{min-height:44px;margin-right:8px}

@@ -7,7 +7,7 @@ import {mountFaces} from './arcade-faces.js?v=4';
 import {mountDraw} from './arcade-draw.js?v=3';
 import {mountLava} from './arcade-lava.js?v=8';
 import {mountClaw,clawPrizes,clawFireworks} from './arcade-claw.js?v=4';
-import {mountMole,molePlan,createMoleAudio} from './arcade-mole.js?v=4';
+import {mountMole,molePlan,createMoleAudio} from './arcade-mole.js?v=5';
 import {mountFrog,frogCourses,frogRoundWinner} from './arcade-frog.js?v=3';
 import {mountTreasure,treasurePlan} from './arcade-treasure.js?v=1';
 import {mountBlocks} from './arcade-blocks.js?v=1';
@@ -70,17 +70,27 @@ let timers=[], generation=0, timed=false, used={};
 const names=['Adults','Kids'];
 const selectedPlayers=[[],[]];
 const lineup=$('arcade-roster-lineup');
-if(lineup){for(const [team,key] of [[0,'data-adults'],[1,'data-kids']]){try{const list=JSON.parse(lineup.getAttribute(key)||'[]');if(Array.isArray(list)&&list.length<=10&&list.every(name=>typeof name==='string'&&name.length<=30))selectedPlayers[team]=list;}catch{}}}
-kidsOnly=selectedPlayers[0].length===0&&selectedPlayers[1].length>=2;
-if(kidsOnly){
- const kids=[...selectedPlayers[1]];
- selectedPlayers[0]=kids.filter((_,i)=>i%2===0);
- selectedPlayers[1]=kids.filter((_,i)=>i%2===1);
- names[0]=selectedPlayers[0].join(' & ');names[1]=selectedPlayers[1].join(' & ');
+function setLineup(adults,kids){
+ kidsOnly=adults.length===0&&kids.length>=2;
+ selectedPlayers[0]=kidsOnly?kids.filter((_,i)=>i%2===0):adults;
+ selectedPlayers[1]=kidsOnly?kids.filter((_,i)=>i%2===1):kids;
+ names[0]=kidsOnly?selectedPlayers[0].join(' & '):'Adults';
+ names[1]=kidsOnly?selectedPlayers[1].join(' & '):'Kids';
 }
+if(lineup)setLineup(JSON.parse(lineup.getAttribute('data-adults')),JSON.parse(lineup.getAttribute('data-kids')));
 function teamName(team){return names[team];}
 if(kidsOnly)$('arcade-save-status').textContent='Kids vs. Kids · scores count for this match.';
 function teamLabel(team,uppercase=false){return escapePlayer(uppercase?teamName(team).toUpperCase():teamName(team));}
+$('choose-arcade-players')?.addEventListener('click',async()=>{
+ const {chooseArcadePlayers}=await import('./arcade-players.js?v=1');
+ chooseArcadePlayers(roster=>{
+  const adults=roster.playingAdults.map(i=>roster.adults[i]),kids=roster.playingKids.map(i=>roster.kids[i]);
+  setLineup(adults,kids);
+  $('lineup-adults').textContent=adults.join(' · ')||'No adults selected';
+  $('lineup-kids').textContent=kids.join(' · ')||'No kids selected';
+  $('arcade-save-status').textContent=kidsOnly?'Kids vs. Kids · scores count for this match.':'Completed matches update your family’s lifetime score.';
+ });
+});
 const escapePlayer=value=>value.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
 // One shared rivalry layer; scoring and result recording stay with each game.
@@ -211,13 +221,15 @@ function readArcade(text,volume=triviaVolume,style={}){
   if(!soundOn){triviaVoiceStatus('Sound is off. Turn Sound on to hear questions and answers.');return;}
   if(document.hidden)return;
   const token=triviaSpeechToken;
-  const voice=announcerVoice();
-  if(!voice){triviaVoiceStatus('An American male voice is unavailable on this device. You can still read and play.');return;}
+  const voice=style.host&&announcerChoice==='auto'
+   ? (window.speechSynthesis.getVoices().filter(v=>/^en\b/i.test(v.lang)&&/natural|neural|premium|enhanced/i.test(v.name)).sort((a,b)=>announcerScore(b)-announcerScore(a))[0]||announcerVoice())
+   : announcerVoice();
+  if(!voice&&!style.host){triviaVoiceStatus('An American male voice is unavailable on this device. You can still read and play.');return;}
   try{
     const utterance=new window.SpeechSynthesisUtterance(text);triviaSpeech=utterance;
     // Keep an American male voice at a natural pitch with an upbeat pace.
     utterance.lang='en-US';utterance.rate=style.rate??1.08;
-    utterance.pitch=1.02;utterance.volume=volume;
+    utterance.pitch=style.pitch??1.02;utterance.volume=volume;
     if(voice)utterance.voice=voice;
     triviaVoiceStatus('Voice ready · tap Hear question & answers if needed');
     utterance.onstart=()=>{if(token===triviaSpeechToken){triviaVoiceStatus('Reading aloud…',true);style.onStart?.();}};
@@ -489,19 +501,27 @@ function finishSeriesGame(winner,detail){
   react(winner===null?'turn':'win',winner===null?'Tie — rematch!':`${teamName(winner)} win!`);
   status(complete?`${teamName(champion)} win the series ${wins[champion]}–${wins[1-champion]}.`:winner===null?'Tie! Replay this game.':`${teamName(winner)} earn one series point.`);focusFirst();
 }
-// Finish the roster introduction before starting the gameplay countdown.
+// The opener waits for Start. The second turn keeps the automatic handoff.
 function moleHandoff(team,detail,action){
  turn=team;competitionPhase='handoff';scoreboard();
  const spokenNames=i=>selectedPlayers[i].join(', ').replace(/, ([^,]+)$/, ' and $1');
  const first=!results[1-team];
- const introduction=first
-  ? `Today's challenge is ${spokenNames(0)||teamName(0)} versus ${spokenNames(1)||teamName(1)}. Match starts in.`
-  : `${spokenNames(team)||teamName(team)}, match starts in.`;
+ if(first){
+  const intro=`Welcome to Whack-a-Mole! Today it’s ${spokenNames(0)||teamName(0)} versus ${spokenNames(1)||teamName(1)}. ${contender(team)}, you’re up first!`;
+  screen(`<div class="handoff">${matchupMarkup()}<h3>${contenderLabel(team)}, you’re up first!</h3><button type="button" id="mole-start">Start Game</button><p>20 seconds · One point per mole</p></div>`);
+  status('Press Start Game when you’re ready.');
+  const start=$('mole-start');
+  start.addEventListener('click',()=>{if(start.disabled)return;start.disabled=true;unlockAudio();action();focusFirst();});
+  start.focus({preventScroll:true});
+  if(moleVolume>0)readArcade(intro,moleVolume,{host:true,rate:1.02,pitch:1.06});
+  return;
+ }
+ const introduction=`${spokenNames(team)||teamName(team)}, take the spotlight! Your turn starts in.`;
  screen(`<div class="handoff">${matchupMarkup()}<h3>${contenderLabel(team)}</h3><p id="mole-introduction">${escapePlayer(introduction)}</p><p id="handoff-countdown" class="handoff-countdown" style="font-size:42px;font-weight:900;color:#111">…</p></div>`);
  timed=true; // A hidden page interrupts this round rather than skipping an introduction.
  const token=generation;let settled=false,started=false;
- moleAudio=createMoleAudio({enabled:()=>soundOn,getContext:()=>{unlockAudio();return audioContext;},volume:()=>moleVolume,speak:(line,volume)=>readArcade(line,volume,{rate:1.06}),later});
- if(!first)moleAudio.cue('buzzer');
+ moleAudio=createMoleAudio({enabled:()=>soundOn,getContext:()=>{unlockAudio();return audioContext;},volume:()=>moleVolume,speak:(line,volume)=>readArcade(line,volume,{host:true,rate:1.04,pitch:1.06}),later});
+ moleAudio.cue('buzzer');
  status(`${contender(team)} is being introduced. The countdown starts afterward.`);
  function countdown(number){
   if(token!==generation||document.hidden)return;
@@ -515,7 +535,7 @@ function moleHandoff(team,detail,action){
   stopTriviaVoice();countdown(3);
  }
  moleIntroDone=ready;
- const utterance=soundOn&&moleVolume>0?readArcade(introduction,moleVolume,{rate:1.06,onStart:()=>{started=true;},onDone:ready}):null;
+ const utterance=soundOn&&moleVolume>0?readArcade(introduction,moleVolume,{host:true,rate:1.04,pitch:1.06,onStart:()=>{started=true;},onDone:ready}):null;
  if(!utterance)later(ready,1000);
  else {
   // Native speech can be blocked or omit completion events. Allow a generous
@@ -1049,7 +1069,7 @@ document.addEventListener('visibilitychange',()=>{
 function whackAMole(){
  screen('<section class="source-mole-game" aria-label="Whack-a-Mole"><h3>Whack-a-Mole</h3><div class="source-mole-hud"><span>Score: <b id="mole-score">0</b></span><span>Time: <b id="mole-time">20</b></span><span>Best: <b id="mole-best">0</b></span></div><div class="source-mole-grid" id="mole-board" role="group" aria-label="Nine mole holes. Tap a mole or use keys 1 through 9."></div><p class="source-mole-hint">Whack the moles before they hide. 20 seconds!<br>One hit = one point · Keyboard: 1–9</p></section>');
  timed=true;status(`${teamName(turn)}: 20 seconds. GO! One hit = one point.`);
- moleAudio=createMoleAudio({enabled:()=>soundOn,getContext:()=>{unlockAudio();return audioContext;},volume:()=>moleVolume,speak:(line,volume)=>readArcade(line,volume,{rate:1.08}),later});moleAudio.music();moleAudio.announce('GO!',true);
+ moleAudio=createMoleAudio({enabled:()=>soundOn,getContext:()=>{unlockAudio();return audioContext;},volume:()=>moleVolume,speak:(line,volume)=>readArcade(line,volume,{host:true,rate:1.09,pitch:1.06}),later});moleAudio.music();moleAudio.announce('Let’s whack those moles!',true);
  stopMole=mountMole({root:$('mole-board'),accountId:arcadeAccountId,team:teamName(turn),plan:game.molePlan,later,sound:kind=>moleAudio?.cue(kind),onCue:line=>moleAudio?.announce(line),onStatus:status,
   onScore:points=>{game.molePoints[turn]=points;scoreboard();competitionUpdate({score:points});},
   onEnd:result=>{timed=false;chime('buzzer');finishTurn(result);}});
@@ -1061,7 +1081,7 @@ function finishMoleMatch(winner,detail){
  screen(`<div class="result mole-victory"><span class="mole-fireworks" aria-hidden="true"></span><div class="mole-confetti" aria-hidden="true">✦ · ★ · ✧ · ★ · ✦</div><span class="giant-icon mole-trophy">${winner===null?'🤝':'🏆'}</span><p class="eyebrow">WHACK-A-MOLE · SHOWDOWN COMPLETE</p><h3>${winner===null?'It’s a tie!':`${teamLabel(winner)} win!`}</h3><p>${winner===null?'HIGH FIVES ALL ROUND':`${contenderLabel(winner)} HAS THE CROWN!`}</p><p>${escapePlayer(detail)}</p><div class="final-score">${results[0].score} <span>–</span> ${results[1].score}</div><p>One hit = one point · 20 seconds each.</p><p>${winner===null?'Two teams. Two legends. The mole kingdom belongs to everyone!':kidsOnly?`${contenderLabel(winner)} rules the mole kingdom! ${contenderLabel(1-winner)}, your comeback awaits!`:winner===1?'BREAKING NEWS! The Kids have taken over the mole kingdom! Adults, your comeback awaits!':'UNBELIEVABLE! Adults rule the mole kingdom! Kids, demand a rematch!'}</p><span class="mole-dancer" aria-hidden="true">${winner===null?'🐹 🐹':'🐹'}</span></div>`);
  button('REMATCH!',()=>openGame('mole'));if(winner===null)button('Optional tiebreaker · 20 seconds each',()=>openGame('mole'),stage,'text-button');button('Return to Arcade',()=>$('arcade-return').click(),stage,'text-button');
  react(winner===null?'turn':'win',winner===null?'Even score!':`${teamName(winner)} win!`);
- moleAudio=createMoleAudio({enabled:()=>soundOn,getContext:()=>{unlockAudio();return audioContext;},volume:()=>moleVolume,speak:(line,volume)=>readArcade(line,volume,{rate:1.08}),later});moleAudio.cue('buzzer');later(()=>moleAudio?.cue('victory'),380);moleAudio.announce(winner===null?'Two teams! Two champions!':`${contender(winner)}! The new Whack-a-Mole champions! Ready for a rematch?`,true);
+ moleAudio=createMoleAudio({enabled:()=>soundOn,getContext:()=>{unlockAudio();return audioContext;},volume:()=>moleVolume,speak:(line,volume)=>readArcade(line,volume,{host:true,rate:1.09,pitch:1.06}),later});moleAudio.cue('buzzer');later(()=>moleAudio?.cue('victory'),380);moleAudio.announce(winner===null?'Two teams! Two champions!':`${contender(winner)}! The new Whack-a-Mole champions! Ready for a rematch?`,true);
  status(winner===null?'Tie game! Share a high five.':`${teamName(winner)} win Whack-a-Mole!`);focusFirst();
 }
 

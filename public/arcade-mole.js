@@ -58,6 +58,8 @@ export function mountMole({root,team,plan,later,onScore,onEnd,sound,onStatus,onC
 export function createMoleAudio({enabled,volume,speak,later,getContext}){
  let context=null,closed=false,beatIndex=0,lastVoice=-Infinity;
  const nodes=new Set();
+ let clip=null;
+ const recordings={'Let’s whack those moles!':'/assets/mole-go.mp3','FIVE SECONDS REMAINING!':'/assets/mole-final-five.mp3'};
  function tone(hz,duration=.12,type='sine',level=.06,slide=0){
   if(closed||!enabled()||document.hidden||volume()<=0)return;
   try{
@@ -75,8 +77,14 @@ export function createMoleAudio({enabled,volume,speak,later,getContext}){
   else if(kind==='buzzer'){tone(150,.35,'triangle',.12,80);}
   else {const notes=kind==='gold'||kind==='sparkle'?[880,1320,1760]:kind==='victory'?[523,659,784,1046,784,1046]:[523,659,880];notes.forEach((n,i)=>later(()=>tone(n,.16,'triangle',kind==='sparkle'?.025:.07),i*85));}
  }
- function announce(line,force=false){const now=performance.now();if(closed||!enabled()||volume()<=0||document.hidden||(!force&&now-lastVoice<3500))return;lastVoice=now;speak(line,volume());}
+ function announce(line,force=false){const now=performance.now();if(closed||!enabled()||volume()<=0||document.hidden||(!force&&now-lastVoice<3500))return;lastVoice=now;
+  const path=recordings[line];
+  if(clip){clip.pause();clip=null;}
+  if(!path||!window.Audio){speak(line,volume());return;}
+  const recording=new window.Audio(path);clip=recording;recording.volume=volume();
+  recording.play().catch(()=>{if(clip===recording&&!closed&&enabled()&&!document.hidden)speak(line,volume());});
+ }
  function music(){if(closed)return;const melody=[523,659,784,659,587,698,880,698];tone(melody[beatIndex%8],.1,'triangle',.018);if(beatIndex%2===0)tone([131,175,147,196][Math.floor(beatIndex/4)%4],.18,'sine',.03);beatIndex++;later(music,250);}
- function silence(){for(const n of nodes){try{n.stop();n.disconnect();}catch{}}nodes.clear();}
+ function silence(){if(clip){clip.pause();clip=null;}for(const n of nodes){try{n.stop();n.disconnect();}catch{}}nodes.clear();}
  return {cue,announce,music,silence,stop(){closed=true;silence();if(context&&!getContext)try{context.close?.();}catch{}}};
 }

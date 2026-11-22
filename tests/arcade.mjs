@@ -48,7 +48,7 @@ function fixture(firstTeam=0,withSpeech=false,withAudio=false,players=null,holdM
   if(players){const lineup=new Element();lineup.id='arcade-roster-lineup';lineup.setAttribute('data-adults',JSON.stringify(players[0]));lineup.setAttribute('data-kids',JSON.stringify(players[1]));root.appendChild(lineup);}
   root.querySelector('#arcade-game').hidden=true;
   const doc={hidden:false,getElementById:id=>root.querySelector('#'+id),createElement:tag=>new Element(tag),handlers:{},addEventListener(type,fn){this.handlers[type]=fn;}};
-  const speech={spoken:[],cancels:0,getVoices:()=>[{name:'Microsoft David',lang:'en-US',localService:true}],cancel(){this.cancels++;},speak(utterance){this.spoken.push(utterance);utterance.onstart?.();if(!holdMoleIntro&&(utterance.text.includes('Match starts in.')||utterance.text.includes(', match starts in.')))scheduled.set(++seq,{at:now+1000,fn:()=>utterance.onend?.()});}};
+  const speech={spoken:[],cancels:0,getVoices:()=>[{name:'Microsoft David',lang:'en-US',localService:true}],cancel(){this.cancels++;},speak(utterance){this.spoken.push(utterance);utterance.onstart?.();if(!holdMoleIntro&&(utterance.text.includes('Match starts in.')||utterance.text.includes('Your turn starts in.')))scheduled.set(++seq,{at:now+1000,fn:()=>utterance.onend?.()});}};
   const voiceWindow=withSpeech?{speechSynthesis:speech,SpeechSynthesisUtterance:class {constructor(text){this.text=text;}}}:{};
   const audio={nodes:[],gains:[]};
   class AudioContextMock {
@@ -74,7 +74,7 @@ function fixture(firstTeam=0,withSpeech=false,withAudio=false,players=null,holdM
   const buttons=()=>get('game-stage').querySelectorAll('button');
   const click=text=>{const b=buttons().find(b=>b.textContent===text||b.getAttribute('data-answer')===text);assert.ok(b,`Missing button: ${text}`);b.click();};
   function advance(ms){const end=now+ms;let guard=0;while(true){const task=[...scheduled.entries()].filter(([,t])=>t.at<=end).sort((a,b)=>a[1].at-b[1].at)[0];if(!task)break;assert.ok(++guard<10000);scheduled.delete(task[0]);now=task[1].at;task[1].fn();}now=end;}
-  function start(id,first=0,wait=true){selectedFirst=first;const i=fixtureGames.findIndex(g=>g.id===id);if(fixtureGames[i].comingSoon){fixtureGames[i].comingSoon=false;try{vm.runInContext('openGame('+JSON.stringify(id)+')',context);}finally{fixtureGames[i].comingSoon=true;}}else {const tile=[...get('arcade-grid').children,...get('arcade-premium').children].find(tile=>tile.getAttribute('data-game')===id);assert.ok(tile,'Game has a selection card: '+id);tile.click();}if(wait&&id!=='memory')advance(4000);}
+  function start(id,first=0,wait=true){selectedFirst=first;const i=fixtureGames.findIndex(g=>g.id===id);if(fixtureGames[i].comingSoon){fixtureGames[i].comingSoon=false;try{vm.runInContext('openGame('+JSON.stringify(id)+')',context);}finally{fixtureGames[i].comingSoon=true;}}else {const tile=[...get('arcade-grid').children,...get('arcade-premium').children].find(tile=>tile.getAttribute('data-game')===id);assert.ok(tile,'Game has a selection card: '+id);tile.click();}if(wait&&id!=='memory'){advance(4000);if(id==='mole')get('mole-start').click();}}
 
   return {run:source=>vm.runInContext(source,context),clock:()=>now,root,doc,get,buttons,click,advance,start,saved,timedSaved,telemetry,speech,audio,state:context.state,resolveGame:context.resolveGame,seriesWith:context.seriesWith};
 }
@@ -131,7 +131,8 @@ for(const game of data.GAMES.filter(g=>g.id!=='lava'&&g.id!=='draw'&&g.id!=='fac
   assert.ok(f.get('memory-cards'));assert.match(f.get('turn-strip').textContent,new RegExp(core.teamName(first)+' go first'));
   f.advance(4999);assert.ok(f.get('memory-cards').children.every(c=>c.disabled));f.advance(1);assert.ok(f.get('memory-cards').children.some(c=>!c.disabled));
  }else{
-  assert.equal(f.get('handoff-countdown').textContent,game.id==='mole'?'…':'4');f.advance(3999);assert.ok(f.get('handoff-countdown'));f.advance(1);assert.equal(f.get('handoff-countdown'),null);noNavigation(f);
+  if(game.id==='mole'){assert.ok(f.get('mole-start'));continue;}
+  assert.equal(f.get('handoff-countdown').textContent,'4');f.advance(3999);assert.ok(f.get('handoff-countdown'));f.advance(1);assert.equal(f.get('handoff-countdown'),null);noNavigation(f);
  }
 }
 
@@ -724,26 +725,23 @@ for(const first of [0,1]){
  const f=fixture(0,true);f.start('mole');const plan=f.run('game.molePlan');let elapsed=0;
  for(const e of plan){const at=e.at+100;f.advance(at-elapsed);elapsed=at;f.get('mole-board').children[e.hole].click();}
  assert.equal(f.run('game.molePoints[0]'),28);f.advance(20000-elapsed);f.advance(4000);f.advance(20000);assert.equal(f.saved.length,1);
- for(let n=0;n<3;n++){f.click('REMATCH!');f.advance(4000);assert.deepEqual([...f.run('game.molePoints')],[0,0]);f.advance(20000);f.advance(4000);f.advance(20000);assert.match(f.get('game-stage').textContent,/It’s a tie/);}
+ for(let n=0;n<3;n++){f.click('REMATCH!');f.get('mole-start').click();assert.deepEqual([...f.run('game.molePoints')],[0,0]);f.advance(20000);f.advance(4000);f.advance(20000);assert.match(f.get('game-stage').textContent,/It’s a tie/);}
 }
 console.log('PASS: identical 1-point opportunities for both teams, exact perfect-turn score, optional tiebreaker, mute cleanup and three clean rematches.');
 
-// Concise roster matchup, followed immediately by 3–2–1 when speech ends.
+// The opening waits for a tap even if speech finishes, is muted, or stalls.
 for(const first of [0,1]){
  const f=fixture(0,true,false,[['Daddy'],['Harper','Chloe']],true);f.start('mole',first,false);
- const intro=f.speech.spoken.at(-1);assert.equal(intro.text,"Today's challenge is Daddy versus Harper and Chloe. Match starts in.");assert.equal(intro.rate,1.06);
- assert.doesNotMatch(f.get('game-stage').textContent,/pass the device|get comfortable|get ready|you’re up/i);
- const cancels=f.speech.cancels;f.advance(10000);assert.equal(f.get('mole-board'),null);assert.equal(f.speech.cancels,cancels);assert.equal(f.speech.spoken.at(-1),intro);
- intro.onend();assert.equal(f.get('handoff-countdown').textContent,'3');f.advance(1000);assert.equal(f.get('handoff-countdown').textContent,'2');f.advance(1000);assert.equal(f.get('handoff-countdown').textContent,'1');f.advance(999);assert.equal(f.get('mole-board'),null);f.advance(1);assert.ok(f.get('mole-board'));
- f.advance(20000);const second=f.speech.spoken.at(-1);assert.equal(second.text,first===0?'Harper and Chloe, match starts in.':'Daddy, match starts in.');second.onend();f.advance(3000);assert.ok(f.get('mole-board'));
+ const intro=f.speech.spoken.at(-1);assert.match(intro.text,/Daddy versus Harper and Chloe/);
+ intro.onend();f.advance(30000);assert.equal(f.get('mole-board'),null);assert.equal(f.get('handoff-countdown'),null);
+ f.get('mole-start').click();assert.ok(f.get('mole-board'));
+ f.advance(20000);const second=f.speech.spoken.at(-1);assert.match(second.text,/Your turn starts in/);
+ second.onend();f.advance(3000);assert.ok(f.get('mole-board'));assert.equal(f.get('mole-start'),null);
 }
 {
- const f=fixture(0,true,false,null,true);f.start('mole',0,false);f.advance(2000);f.get('arcade-sound').click();f.advance(3000);assert.ok(f.get('mole-board'),'Muting continues with a visual countdown');
+ const f=fixture(0,true,false,null,true);f.start('mole',0,false);f.get('arcade-sound').click();
+ f.advance(30000);assert.ok(f.get('mole-start'));f.get('mole-start').click();assert.ok(f.get('mole-board'));
 }
-{
- const f=fixture(0,true,false,null,true);f.start('mole',0,false);const old=f.speech.spoken.at(-1);f.doc.hidden=true;f.doc.handlers.visibilitychange();old.onend();f.advance(60000);assert.equal(f.get('mole-board'),null);assert.equal(f.saved.length,0);assert.match(f.get('game-stage').textContent,/interrupted/);
-}
-console.log('PASS: exact concise roster matchup, immediate 3–2–1, both starting orders, short second-turn cue, mute and interruption handling.');
 
 // Each team receives exactly 20 seconds after introductions and the countdown.
 for(const first of [0,1]){
