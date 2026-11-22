@@ -1,4 +1,5 @@
 const $=id=>document.getElementById(id);
+import {importDeviceBests} from './arcade-import-bests.js?v=1';
 const tabs=[...document.querySelectorAll('[data-game]')];
 let active=tabs[0];
 let game=active.dataset.game,nextUpdate=0,loading=false,sequence=0,lastAttempt=0;
@@ -13,6 +14,15 @@ async function load(){
   if(response.status===401){location.assign('/login');return;}
   if(!response.ok)throw new Error('Unavailable');
   const data=await response.json();if(token!==sequence)return;
+  const history=$('lb-history-rows');
+  history.replaceChildren();
+  for(const entry of data.history??[]){
+   const item=document.createElement('li'),name=document.createElement('b'),count=document.createElement('span');
+   name.textContent='#'+entry.place+'  '+entry.family_name+(entry.yours?' · Your family':'');
+   count.textContent=entry.matches+' '+(entry.matches===1?'match':'matches');
+   item.append(name,count);history.appendChild(item);
+  }
+  $('lb-history').hidden=!history.children.length;
   nextUpdate=Date.parse(data.next_update_at);
   $('lb-updated').textContent='Last updated '+date(data.updated_at);
   $('lb-teams').textContent=`${data.rows.length} / 100 TEAMS`;
@@ -44,6 +54,7 @@ function tick(){
  if(!seconds&&!loading&&Date.now()-lastAttempt>60000&&!document.hidden)load();
 }
 for(const button of tabs)button.addEventListener('click',()=>{
+ $('lb-history').hidden=true;
  active=button;game=button.dataset.game;
  $('lb-direction').textContent=(active.dataset.lower==='true'?'LOWER':'HIGHER')+' SCORE WINS';
  $('lb-unit').textContent=active.dataset.unit.toUpperCase();
@@ -57,4 +68,6 @@ for(const button of tabs)button.addEventListener('click',()=>{
 $('lb-retry').addEventListener('click',load);
 window.addEventListener('online',()=>{if(!loading)load();});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&!loading)load();});
-setInterval(tick,1000);load();
+setInterval(tick,1000);
+const firstLoad=load();
+importDeviceBests(document.body.dataset.accountId).then(async imported=>{if(imported){await firstLoad;load();}});

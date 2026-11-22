@@ -9,13 +9,14 @@ export async function GET(request:Request){
  const featured=featuredGame(game)?FEATURED_RANKING[game]:null;
  if(!featured&&!Object.hasOwn(TIMED_GAMES,game))return memberReply({error:'Unknown game.'},400,auth.headers);
  try{
-  const [board,state,best]=await Promise.all([
+  const [board,state,best,history]=await Promise.all([
    auth.client.from('arcade_leaderboard').select('place,user_id,family_name,elapsed_ms,score,achieved_at').eq('game',game).order('place').limit(100),
    auth.client.from('arcade_leaderboard_state').select('updated_at,next_update_at').eq('id',1).single(),
    auth.client.from('arcade_timed_results').select('score,elapsed_ms').eq('user_id',auth.user.id).eq('game',game).order(featured?'score':'elapsed_ms',{ascending:featured?.lower??true}).limit(1).maybeSingle(),
+   featured?auth.client.from('featured_match_standings').select('place,user_id,family_name,matches').eq('game',game).order('place').limit(100):Promise.resolve({data:[],error:null}),
   ]);
-  if(board.error||state.error||best.error)throw new Error('Unavailable');
-  return memberReply({game,rows:board.data.map(({user_id,...row})=>({...row,yours:user_id===auth.user!.id})),...state.data,bestScore:best.data?.score??null,bestMs:best.data?.elapsed_ms??null},200,auth.headers);
+  if(board.error||state.error||best.error||history.error)throw new Error('Unavailable');
+  return memberReply({game,history:(history.data??[]).map(({user_id,...row})=>({...row,yours:user_id===auth.user!.id})),rows:board.data.map(({user_id,...row})=>({...row,yours:user_id===auth.user!.id})),...state.data,bestScore:best.data?.score??null,bestMs:best.data?.elapsed_ms??null},200,auth.headers);
  }catch{return memberReply({error:'Rankings are temporarily unavailable. Please retry.'},503,auth.headers);}
 }
 export async function POST(request:Request){

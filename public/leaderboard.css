@@ -15,3 +15,8 @@ tbody tr:has(.rank-1){background:var(--yellow);border-color:#ffe568;color:#08080
 @media(max-width:480px){.lb-header{padding:8px 15px;height:70px}.lb-header img{width:96px;height:48px}.lb-header nav{font-size:10px;gap:12px}main{padding:24px 13px 0}h1{font-size:30px}.intro-copy{font-size:12px}.game-tabs{gap:5px}.game-tabs button{font-size:9px;padding:9px 5px}.ranked-heading{display:flex;align-items:center}.ranked-heading h2{font-size:20px}.ranked-heading .play-button{margin:0;white-space:normal;max-width:112px;text-align:center}.ranked-heading p{font-size:10px}.standing-strip{padding-inline:2px}.standing-strip b{display:block;margin:4px 0 0}.ranking-banner{font-size:9px}tbody tr{grid-template-columns:42px minmax(0,1fr) 77px;gap:3px 7px;padding:13px 11px;min-height:84px}.rank{font-size:25px}.team-name strong{font-size:17px}td.time-col{font-size:17px}.record-date{font-size:8px}.your-standing{flex-wrap:wrap;padding:15px}.your-standing small{flex-basis:100%;margin:0}}
 
 @media(max-width:600px){.game-tabs{grid-template-columns:repeat(6,minmax(0,1fr))}.game-tabs button{grid-column:span 2;font-size:12px}.game-tabs button:nth-last-child(-n+2){grid-column:span 3}}
+#lb-history{margin:12px 0 20px;padding:16px;border:1px solid #665627;border-radius:12px;background:#17150f}
+#lb-history h3{margin:0;color:#ffe39a}#lb-history p{margin:6px 0 12px;color:#ccc}
+#lb-history ol{margin:0;padding:0;list-style:none;max-height:260px;overflow:auto}
+#lb-history li{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-top:1px solid #ffffff20}
+#lb-history li span{white-space:nowrap;color:#ffda60}

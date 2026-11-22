@@ -26,6 +26,7 @@ let game, wins=[0,0], round=1, attempt=0, starter=0, turn=0, results=[], champio
 let series=null,recording=null;
 let kidsOnly=false;
 const arcadeAccountId=$('arcade-game').getAttribute('data-account-id');
+if(arcadeAccountId)import('./arcade-import-bests.js?v=1').then(m=>m.importDeviceBests(arcadeAccountId)).catch(()=>{});
 const guestGate=mountGuestGate({signedIn:!!arcadeAccountId});
 const resultRecorder=options=>arcadeAccountId?createResultRecorder(options):{capture:()=>{},drain:()=>{}};
 const recorder=resultRecorder({
