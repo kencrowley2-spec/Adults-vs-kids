@@ -22,18 +22,18 @@ const session=compile('../lib/auth/session.ts',name=>{
  };
  throw Error(`Unexpected dependency: ${name}`);
 });
-const home=compile('../app/route.ts',name=>name==='../site-html'?{default:'<html>Public landing page</html>'}:name==='../lib/auth/session'?session:assert.fail(name));
+const home=compile('../app/route.ts',name=>name==='../site-html'?{default:'<a href="/signup" data-family-dashboard>Public landing page</a>'}:name==='../lib/auth/session'?session:assert.fail(name));
 const request=()=>new Request('https://adultsvskids.com/',{headers:{'oai-authenticated-user-email':'spoof@example.test'}});
 for(const state of ['guest','expired','unverified']){
  verifiedUser=state==='unverified'?{id:'user',email_confirmed_at:null}:null;error=state==='expired'?new Error('Expired session'):null;
- const response=await home.GET(request());assert.equal(response.status,200);assert.match(await response.text(),/Public landing page/);
+ const response=await home.GET(request());assert.equal(response.status,200);assert.match(await response.text(),/href="\/signup" data-family-dashboard/);
  assert.equal(response.headers.get('location'),null);assert.equal(response.headers.get('cache-control'),'private, no-store');
 }
 verifiedUser={id:'user',email_confirmed_at:'2026-11-01T00:00:00Z'};error=null;rotate=true;
 const response=await home.GET(request());
 assert.equal(response.status,200);assert.equal(response.headers.get('location'),null);
 assert.equal(response.headers.get('cache-control'),'private, no-store');
-assert.match(response.headers.get('set-cookie'),/session=refreshed/);assert.match(await response.text(),/Public landing page/);
+assert.match(response.headers.get('set-cookie'),/session=refreshed/);assert.match(await response.text(),/href="\/family" data-family-dashboard/);
 assert.equal(checks,4,'Every visit must verify the session server-side');
 const website=compile('../app/website/route.ts',name=>name==='../../site-html'?{default:'<html>Public landing page</html>'}:name==='../../lib/analytics'?{trackedHtml:html=>html}:assert.fail(name));
 const alias=website.GET(new Request('https://adultsvskids.com/website?utm_source=youtube&utm_content=002_track'));assert.equal(alias.status,308);assert.equal(alias.headers.get('location'),'https://adultsvskids.com/?utm_source=youtube&utm_content=002_track');
