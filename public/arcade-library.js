@@ -12,7 +12,6 @@ const art={
  basketball:()=>`<rect x="44" y="15" width="152" height="100" rx="12" fill="#d7dfd7" stroke="#f7a54b" stroke-width="5"/><path d="M95 85V50h50v35" fill="none" stroke="#e97735" stroke-width="5"/><path d="m82 95 20 52h36l20-52m-66 0 22 52m34-52-22 52m-38-33h62m-54 17h44" fill="none" stroke="white" stroke-width="3"/><ellipse cx="120" cy="95" rx="43" ry="9" fill="none" stroke="#ff862d" stroke-width="6"/>${emoji('🏀',185,174,74)}`,
 
  memory:()=>card(31,48,-17,emoji('🐸',35,65,46))+card(89,25,9,emoji('🐼',35,65,46))+card(148,55,19,emoji('🐸',35,65,46)),
- maze:()=>`<g fill="none" stroke="#fff" stroke-width="9" stroke-linejoin="round"><path d="M31 155V28h175v127H69V65h97v51h-50"/><path d="M70 28v37M166 65h40M69 116H31"/></g><path d="M49 149V46h99v37h37v53h-67" stroke="#ffd522" stroke-width="6" fill="none" stroke-dasharray="9 6"/><circle cx="49" cy="150" r="11" fill="#ffd522"/>${emoji('🏁',121,139,38)}`,
  golf:()=>`<path d="M0 130Q70 65 130 130T260 114V190H0Z" fill="#b9ef63" stroke="#164d35" stroke-width="4"/><ellipse cx="166" cy="141" rx="24" ry="8" fill="#102623"/><path d="M166 140V33l50 22-50 18" fill="#ffd522" stroke="#17251a" stroke-width="4"/><path d="M49 70l39 70-27 8" fill="none" stroke="white" stroke-width="9"/><circle cx="78" cy="151" r="9" fill="white" stroke="#17251a" stroke-width="3"/>`,
  tic:()=>`<g stroke="#ffffffbb" stroke-width="5"><path d="M84 22v142m73-142v142M28 70h184M28 116h184"/></g><g stroke="#ffd522" stroke-width="12" stroke-linecap="round"><path d="m38 28 29 29m0-29L38 57m64 27 29 23m0-23-29 23m65 46 29 26m0-26-29 26"/></g><g stroke="white" stroke-width="8" fill="none"><circle cx="119" cy="43" r="18"/><circle cx="50" cy="140" r="18"/></g>`,
  rps:()=>emoji('✊',63,104,70)+emoji('✋',177,108,70)+emoji('✌️',122,160,70),
@@ -25,11 +24,11 @@ const art={
  number:()=>`<g font-size="65" font-weight="900" fill="white" stroke="#182950" stroke-width="2"><text x="30" y="83" transform="rotate(-12 30 83)">7</text><text x="148" y="156" transform="rotate(13 148 156)">4</text></g><text x="109" y="119" text-anchor="middle" font-size="68" font-weight="900" fill="#ffd522">+</text><path d="M160 40h43M181 18v43M31 139h41" stroke="#ffd522" stroke-width="9"/>`,
  challenge:()=>emoji('🏆',122,142,128)+`<path d="m29 40 5 13 14 1-11 9 4 14-12-8-12 8 4-14-11-9 14-1Zm177 67 4 10 11 1-9 7 3 11-9-6-9 6 3-11-9-7 11-1Z" fill="white"/>`
 };
-const HD_COVERS=new Set(['lava','faces','claw','mole','memory','draw']);
+const HD_COVERS=new Set(['lava','faces','claw','mole','memory','draw','maze']);
 function hdCoverMarkup(g){
  const fullWidth=g.id==='claw'?960:1448;
  const sources=`/assets/display/featured-${g.id}.webp 480w, /assets/featured/${g.id}${g.id==='claw'?'':'-960'}.webp 960w${g.id==='claw'?'':`, /assets/featured/${g.id}.webp 1448w`}`;
- const detail={draw:'VISUAL CHARADES',lava:'3 COMPLETE ROUNDS',faces:'ASK & SOLVE',claw:'30 SEC EACH',mole:'20 SEC EACH',memory:'BEST OF 5'}[g.id];
+ const detail={maze:'12 BOARDS',draw:'VISUAL CHARADES',lava:'3 COMPLETE ROUNDS',faces:'ASK & SOLVE',claw:'30 SEC EACH',mole:'20 SEC EACH',memory:'BEST OF 5'}[g.id];
  return `<span class="cover-brand">ADULTS vs. KIDS</span><span class="cover-art cover-art-hd"><img src="/assets/featured/${g.id}.webp" srcset="${sources}" sizes="(max-width:600px) 44vw, 300px" alt="" width="${fullWidth}" height="${fullWidth*3/4}" decoding="async"></span><span class="cover-info"><small>${g.tag}</small><b>${g.name}</b></span><span class="cover-play">PLAY NOW <span>${detail} ↗</span></span>`;
 }
 function flexCoverMarkup(g){return `<span class="cover-art cover-art-hd" style="position:absolute;inset:0;width:100%;height:100%;margin:0"><img src="/assets/flex-off-cover.webp" srcset="/assets/display/flex-cover.webp 480w, /assets/flex-off-cover-960.webp 960w, /assets/flex-off-cover.webp 1448w" sizes="(max-width:600px) 44vw, 300px" alt="${g.name} — Harper’s Gymnastics Challenge" width="1448" height="1930" style="width:100%;height:100%;object-fit:contain" decoding="async"></span>`;}
@@ -41,7 +40,7 @@ export const BROWSE_SHELVES={favorites:['memory','maze','treasure','tic'],creati
 
 export const REFERENCE_COVERS={
  neighborhood:[334,516,252,354],lava:[591,538,276,332],
- memory:[219,978,191,288],maze:[414,980,191,286],treasure:[615,978,191,288],tic:[810,978,193,288],
+ memory:[219,978,191,288],treasure:[615,978,191,288],tic:[810,978,193,288],
  trivia:[199,1379,210,329],rps:[419,1379,191,329],draw:[617,1380,191,329],faces:[813,1379,211,329],
  picture:[197,1758,203,305],code:[407,1758,196,305],number:[611,1758,196,305],challenge:[810,1758,204,305]
 };

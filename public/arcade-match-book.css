@@ -19,8 +19,9 @@ dialog.match-book {
   background-position:center,center 38%; background-size:cover;
 }
 .match-book[data-game="draw"] {--game-art:url("/assets/featured/draw-960.webp")}
-.match-book[data-game="draw"] #book-game-title {min-height:clamp(7rem,25dvh,12rem)}
-.match-book[data-game="draw"] #book-game-title::before {background-image:linear-gradient(0deg,#191816,transparent 55%),var(--game-art)}
+.match-book[data-game="maze"] {--game-art:url("/assets/featured/maze-960.webp")}
+.match-book:is([data-game="draw"],[data-game="maze"]) #book-game-title {min-height:clamp(7rem,25dvh,12rem)}
+.match-book:is([data-game="draw"],[data-game="maze"]) #book-game-title::before {background-image:linear-gradient(0deg,#191816,transparent 55%),var(--game-art)}
 .match-book[data-game="faces"] {--game-art:url("/assets/featured/faces-960.webp")}
 .match-book[data-game="ghostline"] {--game-art:url("/assets/ghostline-gt.webp")}
 .match-book[data-game="claw"] {--game-art:url("/assets/featured/claw.webp")}
