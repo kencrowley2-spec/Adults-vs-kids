@@ -2,7 +2,7 @@ import {mountFlex} from './arcade-flex.js?v=1';
 import {mountGuestGate} from './arcade-guest.js?v=1';
 import {mountFeaturedGames} from './arcade-featured.js?v=3';
 import {mountPinball} from './arcade-pinball.js?v=2';
-import {createCaseReader} from './arcade-cases.js?v=2';
+import {createCaseReader} from './arcade-cases.js?v=3';
 import {mountFaces} from './arcade-faces.js?v=6';
 import {mountDraw} from './arcade-draw.js?v=3';
 import {mountLava} from './arcade-lava.js?v=8';
@@ -12,7 +12,7 @@ import {mountFrog,frogCourses,frogRoundWinner} from './arcade-frog.js?v=3';
 import {mountTreasure,treasurePlan} from './arcade-treasure.js?v=1';
 import {mountBlocks} from './arcade-blocks.js?v=1';
 import {mountBasketball} from './arcade-basketball.js?v=1';
-import {coverMarkup,recentGames,BROWSE_SHELVES,referenceCoverMarkup} from './arcade-library.js?v=25';
+import {coverMarkup,recentGames,BROWSE_SHELVES} from './arcade-library.js?v=25';
 import {GAMES, ANIMALS, TRIVIA, PICTURES, CHALLENGES} from './arcade-data.js?v=35';
 import {shuffle, roundWinner, awardRound, lineWinner} from './arcade-core.js';
 
@@ -1074,10 +1074,10 @@ function miniGolf(){
 }
 
 const recentKey=`avk-arcade-recent:${arcadeAccountId}`;
-const caseReader=createCaseReader({coverMarkup:referenceCoverMarkup,onPlay:openGame,players:()=>[contender(0),contender(1)],getAudioContext:()=>{unlockAudio();return audioContext;},soundEnabled:()=>soundOn});
+const caseReader=createCaseReader({onPlay:openGame,players:()=>[contender(0),contender(1)],getAudioContext:()=>{unlockAudio();return audioContext;},soundEnabled:()=>soundOn});
 function gameTile(g,parent){
  const slot=document.createElement('div');slot.className='shelf-slot';parent.appendChild(slot);
- const tile=button('',()=>{const selected=GAMES.find(entry=>entry.id===tile.getAttribute('data-game'));if(selected)caseReader.open(selected,tile,slot);},slot,'game-tile cover-tile'+(g.id==='lava'?' cover-lava':''));
+ const tile=button('',()=>{const selected=GAMES.find(entry=>entry.id===tile.getAttribute('data-game'));if(selected)caseReader.open(selected);},slot,'game-tile cover-tile'+(g.id==='lava'?' cover-lava':''));
  tile.setAttribute('data-game',g.id);tile.disabled=!!g.comingSoon;tile.setAttribute('data-coming-soon',String(!!g.comingSoon));tile.setAttribute('aria-label',g.comingSoon?`${g.name} — Coming Soon`:`Play ${g.name}`);tile.innerHTML=coverMarkup(g);if(g.id==='neighborhood')tile.setAttribute('aria-label',`${g.name} — Under Construction`);return tile;
 }
 function rememberGame(id){
