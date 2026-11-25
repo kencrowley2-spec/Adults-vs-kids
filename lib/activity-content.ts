@@ -514,4 +514,18 @@ export const guides:Guide[] = [
       "quality-time-with-children"
     ]
   }
+,
+  {
+    slug:'family-game-night-gifts',
+    title:'Family Game Night Gifts for Christmas and Beyond',
+    description:'Choose a family gift by available time, reading level and supplies. Try a paper basketball tournament, a coloring sprint or a ready-to-wrap game night.',
+    intro:'Start with the evening you want to give. Will two people have ten minutes after dinner, or will cousins fill the kitchen table? Pick one activity they can start before the wrapping paper is cleared.',
+    sections:[
+      {title:'For a mixed-age Christmas table',text:'Fold a strip of wrapping paper into a score tent. Pair a reader with each younger player. Make a basket from an empty box, give each team three paper-ball shots from its own agreed line, then switch who shoots first. Write down baskets made. Play sitting down if that works better for your table.'},
+      {title:'For a family with ten quiet minutes',text:'Put two crayons and two copies of a coloring prompt in an envelope. Each person adds one surprise detail, swaps pages, then tells the story of the other picture. A child who prefers describing to drawing can direct a grown-up. Keep the finished pages together as a dated keepsake.'},
+      {title:'For someone opening a gift from far away',text:'Send a date for a family game night along with the activity. For a video call, use paper at each end. Each side draws three objects, gives one clue at a time and lets the other side guess. Alternate clue-givers. The game works again on birthdays with three entirely new objects.'},
+      {title:'Choose a format that fits the household',text:'A paperback works for a family without a printer. A household-print PDF works when several siblings need their own copies. For a packaged championship night, check the basket contents, delivery area, shipping estimate and current order deadline before purchasing. If time is short, a free printable and a handwritten invitation can be ready today.'}
+    ],
+    related:['printable-family-games','family-game-night-ideas','games-to-play-with-kids-at-home']
+  }
 ];

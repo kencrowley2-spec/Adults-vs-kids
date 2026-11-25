@@ -22,9 +22,11 @@
   const href=a.getAttribute('href')||'',id=a.id||'';
   let amazon=false;try{const host=new URL(href,location.href).hostname;amazon=/(^|\.)amazon\.[a-z.]+$/i.test(host)||host==='link.amazon'||host==='amzn.to';}catch{}
   if(amazon)send('outbound','Amazon');
+  else if(/^\/assets\/samples\/(coloring|family-showdown|make-and-play|young-adult)\/sample-round\.pdf$/.test(href))send('download_click','Free sample '+href.split('/')[3]);
   else if(/liveStart|liveResume|showdownStart/.test(id))send('tool_start','Timer / music / scorecard');
   else if(a.closest('#clubCheckoutForm')||href.startsWith('/club-checkout'))send('checkout_click','Club checkout');
   else if(/pdfCheckout/.test(id))send('checkout_click','PDF checkout');
+  else if(href==='/printables/family-championship-scorecard.pdf')send('download_click','Free championship scorecard');
   else if(href.startsWith('/api/pdf/download'))send('download_click','PDF download');
  });
 })();

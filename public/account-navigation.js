@@ -10,7 +10,7 @@
     if(!link.dataset.loginLabel)link.dataset.loginLabel=link.innerHTML;
     link.href=signedIn?'/family':'/login';
     if(signedIn){link.textContent='Dashboard';link.setAttribute('aria-label','Open your family dashboard')}
-    else{link.innerHTML=link.dataset.loginLabel;link.removeAttribute('aria-label')}
+    else{link.innerHTML=link.dataset.loginLabel;link.setAttribute('aria-label','Log in')}
    }
   }catch{}
  }
