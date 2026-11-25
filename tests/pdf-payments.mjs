@@ -71,7 +71,7 @@ const checkoutRoute=moduleAt('app/api/pdf/checkout/route.ts',{
  '../../../../lib/payments/server':{
   availablePdfs:async()=>catalog.pdfProducts.map(p=>({...p,available:true})),
   paymentLive:()=>false,paymentOrigin:()=> 'https://adultsvskids.com',
-  paymentAdmin:()=>({from:()=>({select:()=>({eq:()=>({gte:async()=>({count:0,error:null})})}),insert:async()=>({error:null})})}),
+  paymentAdmin:()=>({rpc:()=>({single:async()=>({data:{intent_id:'fixture',expires_at:'2026-11-25T20:00:00Z'}})}),from:()=>({select:()=>({eq:()=>({gte:async()=>({count:0,error:null})})}),insert:async()=>({error:null})})}),
   stripeClient:()=>({prices:{retrieve:async id=>({id,active:true,type:'one_time',currency:'usd',unit_amount:995,livemode:false})},checkout:{sessions:{create:async params=>{checkoutParams=params;return {url:'https://checkout.stripe.com/c/pay/cs_test_fixture'};}}}}),
  },
 });

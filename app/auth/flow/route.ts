@@ -1,6 +1,6 @@
 import {PASSWORD_MAX_LENGTH, PASSWORD_REQUIREMENTS, meetsPasswordRequirements} from '../../../lib/auth/password-policy';
 import {accountAnalytics} from '../../../lib/analytics-server';
-import {arcadeDestination} from '../../../lib/arcade-links';
+import {accountDestination,purchaseSelection} from '../../../lib/arcade-links';
 import {requestOrigin} from '../../../lib/request-origin';
 const env = process.env;
 import { isAdministrator } from '../../../lib/auth/access';
@@ -11,6 +11,7 @@ export async function POST(request:Request){const auth=memberClient(request);con
  if(!request.headers.get('Content-Type')?.includes('application/json'))return fail('Invalid request.',415);
  const text=await request.text();if(text.length>5000)return fail('Request too large.',413);let data;try{data=JSON.parse(text)}catch{return fail('Invalid request.')}
  if(!auth.client)return fail('Account setup is not complete yet. Please try again later.',503);
+ const purchase=purchaseSelection(data.purchase);
  const action=data.action,email=typeof data.email==='string'?data.email.trim().toLowerCase():'';
  const password=typeof data.password==='string'?data.password:'';
  if(!['login','admin-login','signup','recover','resend','reset'].includes(action))return fail('Invalid account action.');
@@ -27,11 +28,11 @@ export async function POST(request:Request){const auth=memberClient(request);con
   if(data.adult!==true)return fail('An adult needs to manage the family account.');
   const settings=await fetch(env.SUPABASE_URL+'/auth/v1/settings',{headers:{apikey:env.SUPABASE_PUBLISHABLE_KEY!}});const config=await settings.json() as {mailer_autoconfirm?:boolean};
   if(!settings.ok||config.mailer_autoconfirm!==false)return fail('Email confirmation must be configured before registration can open.',503);
-  const {data:signup,error}=await auth.client.auth.signUp({email,password,options:{emailRedirectTo:origin+'/auth/confirm?next='+encodeURIComponent(arcadeDestination(data.game)),data:{display_name:data.displayName.trim(),family_name:typeof data.name==='string'?data.name.trim().slice(0,60):''}}});
+  const {data:signup,error}=await auth.client.auth.signUp({email,password,options:{emailRedirectTo:origin+'/auth/confirm?next='+encodeURIComponent(accountDestination(data.game,null))+(purchase?'&purchase='+encodeURIComponent(purchase):''),data:{display_name:data.displayName.trim(),family_name:typeof data.name==='string'?data.name.trim().slice(0,60):''}}});
   if(error?.code==='weak_password')return fail('Choose a stronger password. Try adding more words or characters.');
   if(error)return fail(error.code==='over_email_send_rate_limit'?'Please wait before requesting another email.':'We could not complete registration. Email delivery may not be ready; please try again later.',error.status===429?429:400);
   if(signup.user?.identities?.length)await accountAnalytics(request,auth.headers,signup.user,isAdministrator(signup.user,env.ADMIN_EMAIL),'intent');
-  return memberReply({redirect:'/verify-email',message:'If this address is eligible for a new account, a verification email will be sent. Check your inbox before signing in.'},200,auth.headers);
+  return memberReply({redirect:'/verify-email'+(purchase?'?purchase='+encodeURIComponent(purchase):''),message:'If this address is eligible for a new account, a verification email will be sent. Check your inbox before signing in.'},200,auth.headers);
  }
  if(action==='login'||action==='admin-login'){
   const {data:session,error}=await auth.client.auth.signInWithPassword({email,password});
@@ -39,10 +40,10 @@ export async function POST(request:Request){const auth=memberClient(request);con
   const isAdmin=isAdministrator(session.user,env.ADMIN_EMAIL);
   if(action==='admin-login'&&!isAdmin){await auth.client.auth.signOut({scope:'local'});return fail('This account is not authorized for administration.',403)}
   await accountAnalytics(request,auth.headers,session.user,isAdmin,'verified');
-  return memberReply({redirect:action==='admin-login'?'/admin':arcadeDestination(data.game)},200,auth.headers);
+  return memberReply({redirect:action==='admin-login'?'/admin':accountDestination(data.game,purchase)},200,auth.headers);
  }
  if(action==='resend'){
-  const {error}=await auth.client.auth.resend({type:'signup',email,options:{emailRedirectTo:origin+'/auth/confirm?next='+encodeURIComponent(arcadeDestination(data.game))}});if(error)return fail('Please wait and try again. We could not send the confirmation email.',error.status===429?429:400);
+  const {error}=await auth.client.auth.resend({type:'signup',email,options:{emailRedirectTo:origin+'/auth/confirm?next='+encodeURIComponent(accountDestination(data.game,null))+(purchase?'&purchase='+encodeURIComponent(purchase):'')}});if(error)return fail('Please wait and try again. We could not send the confirmation email.',error.status===429?429:400);
   return memberReply({message:'If this account needs verification, a confirmation email will be sent. Please check your inbox.'},200,auth.headers);
  }
  if(action==='recover'){

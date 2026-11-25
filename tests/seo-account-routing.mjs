@@ -64,3 +64,12 @@ user = {id:'fixture',email_confirmed_at:'2026-11-01'};
 const confirm=compile('app/auth/confirm/route.ts',require);const verified=await confirm.GET(new Request('https://adultsvskids.com/auth/confirm?code=fixture&next='+encodeURIComponent('/family/arcade?game=memory')));assert.equal(verified.headers.get('Location'),'/family/arcade?game=memory');
 const books=compile('app/play/[slug]/route.ts',require);for(const slug of ['coloring','family-showdown','make-and-play','young-adult']){const r=await books.GET(null,{params:Promise.resolve({slug})});assert.equal(r.status,308);assert.equal(r.headers.get('Location'),'/explore?book='+slug+'#books');}assert.equal((await books.GET(null,{params:Promise.resolve({slug:'missing'})})).status,404);
 console.log('PASS: game links survive login, signup and verified email; unsafe destinations fall back; password requirements, reset access and independent Show controls work; four book sample URLs resolve correctly. No real accounts or emails created.');
+
+for(const key of ['bundle','book-1,book-3','club-month','club-year']){
+ const destination=links.accountDestination(null,key);
+ const response=await post({action:'login',email:'fixture@example.test',password:'test-only',purchase:key});
+ assert.equal((await response.json()).redirect,destination);
+ const callback=await confirm.GET(new Request('https://adultsvskids.com/auth/confirm?code=fixture&purchase='+encodeURIComponent(key)));
+ assert.equal(callback.headers.get('location'),destination);
+}
+assert.equal(links.accountDestination(null,'//external.example'),'/family');

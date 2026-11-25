@@ -9,9 +9,10 @@
   estimate.disabled=true;try{const data=await api('quote?zip='+encodeURIComponent(value));if(id!==version)return;quotedZip=value;free=free&&value===recoverZip;shipping.textContent=free?'FREE — Happy Holidays!':money(data.cents);total.textContent=money(free?9900:data.total);pay.disabled=false;status.textContent=free?'Your holiday free-shipping offer is applied.':'Shipping estimate ready. Review your total, then continue to Stripe.';}catch(e){if(id===version)status.textContent=e.message;}finally{estimate.disabled=false;}}
  zip.addEventListener('input',()=>{version++;quotedZip='';pay.disabled=true;shipping.textContent='Enter ZIP';total.textContent='—';status.textContent='';});
  zip.addEventListener('change',()=>{if(/^\d{5}$/.test(zip.value))quote()});estimate.addEventListener('click',quote);
+ const intents=new Map();
  async function checkout(recovery){if(!quotedZip||quotedZip!==zip.value.trim()){await quote();if(!quotedZip)return;}
   pay.disabled=true;accept.disabled=true;const target=recovery?offerStatus:status;target.textContent='Opening secure Stripe checkout…';
-  try{const data=await api('checkout',{zip:quotedZip,recovery});const url=new URL(data.url);if(url.protocol!=='https:'||url.hostname!=='checkout.stripe.com')throw new Error('Checkout could not be opened. Please try again.');pending.set(true);location.assign(url.href);}catch(e){target.textContent=e.message;pay.disabled=false;accept.disabled=false;}}
+  try{const key=quotedZip+'-'+recovery;if(!intents.has(key))intents.set(key,crypto.randomUUID());const data=await api('checkout',{zip:quotedZip,recovery,intent:intents.get(key)});const url=new URL(data.url);if(url.protocol!=='https:'||url.hostname!=='checkout.stripe.com')throw new Error('Checkout could not be opened. Please try again.');pending.set(true);location.assign(url.href);}catch(e){target.textContent=e.message;pay.disabled=false;accept.disabled=false;}}
  form.addEventListener('submit',async e=>{e.preventDefault();if(!quotedZip){await quote();return;}await checkout(free);});
  accept.addEventListener('click',async()=>{free=true;zip.value=recoverZip;await quote();if(quotedZip)await checkout(true);});
  offer.querySelectorAll('[data-offer-close]').forEach(b=>b.addEventListener('click',()=>{offer.close();accept.disabled=false;status.textContent='Checkout was canceled. No payment was taken.';}));

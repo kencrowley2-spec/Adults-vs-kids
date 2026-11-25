@@ -55,3 +55,25 @@ assert.equal((await billingRoute.POST(request({},'https://attacker.example'))).s
 billingOwner=false;assert.equal((await billingRoute.POST(request({}))).status,401);billingOwner=true;
 billingActive=false;assert.equal((await billingRoute.POST(request({}))).status,404);
 console.log('PASS: Initial subscription invoice fulfillment, wrong intervals, unpaid invoices, refunds, owned billing portal and end-of-period cancellation.');
+
+let weeklyUser=null,paidActive=[],legacy=false,serviceFailure=false;
+const weekly=load('app/family/weekly-challenge/route.ts',{
+ '../../../lib/auth/session':{
+  verifiedMember:async()=>({user:weeklyUser,isAdmin:false,headers:new Headers()}),
+  memberReply:(html,status)=>new Response(html,{status}),
+  memberRedirect:path=>new Response(null,{status:303,headers:{location:path}})
+ },
+ '../../../lib/payments/subscriptions':{clubSubscriptions:async id=>{
+  assert.equal(id,owner);if(serviceFailure)throw Error('Unavailable');
+  return {paidActive,legacy};
+ }}
+});
+const weeklyRequest=new Request('https://adultsvskids.com/family/weekly-challenge');
+assert.equal((await weekly.GET(weeklyRequest)).status,303);
+weeklyUser={id:owner};
+assert.equal((await weekly.GET(weeklyRequest)).status,403);
+paidActive=[{status:'active'}];
+assert.match(await (await weekly.GET(weeklyRequest)).text(),/four-week rotation/);
+paidActive=[];legacy=true;assert.equal((await weekly.GET(weeklyRequest)).status,200);
+serviceFailure=true;assert.equal((await weekly.GET(weeklyRequest)).status,503);
+console.log('PASS: ordinary paid family weekly challenge, legacy access, unpaid denial and provider outage.');

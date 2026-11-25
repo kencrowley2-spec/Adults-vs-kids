@@ -36,7 +36,7 @@ document.querySelectorAll('[data-auth-form]').forEach(form => {
    const response = await fetch('/auth/flow', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({...data, action: form.dataset.action, game: form.dataset.game, adult: data.adult === 'on'})
+    body: JSON.stringify({...data, action: form.dataset.action, game: form.dataset.game, purchase: form.dataset.purchase, adult: data.adult === 'on'})
    });
    const result = await response.json();
    if (!response.ok) throw new Error(result.error || 'We could not complete that. Please try again.');

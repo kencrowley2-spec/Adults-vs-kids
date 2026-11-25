@@ -17,6 +17,19 @@ export async function GET(request:Request){
   const {googleOrganicReport}=await import('../../../lib/google-organic-report');
   return memberReply(await googleOrganicReport(days),200,auth.headers);
  }
+ if(section==='financials'){
+  const db=paymentAdmin();
+  const [ledger,baskets,notifications,internalAccounts]=await Promise.all([
+   db.rpc('direct_order_financials'),
+   db.from('holiday_orders').select('checkout_id,live,paid_cents,shipping_cents,paid_at,fulfillment,tracking_number').order('paid_at',{ascending:false}).limit(100),
+   db.from('order_notifications').select('kind',{count:'exact',head:true}).is('delivered_at',null),
+   db.from('analytics_accounts').select('user_id,is_internal_test',{count:'exact'}).eq('is_internal_test',true).limit(1000)
+  ]);
+  const report=checked(ledger);
+  const {clubRevenueSnapshot}=await import('../../../lib/growth-report');
+  const subscriptions=await clubRevenueSnapshot(internalAccounts.data||[],!internalAccounts.error&&internalAccounts.count===internalAccounts.data?.length);
+  return memberReply({...report,subscriptions,baskets:baskets.error?null:baskets.data,pendingMessages:notifications.error?null:notifications.count},200,auth.headers);
+ }
  if(section==='growth'){const {growthReport}=await import('../../../lib/growth-report');return memberReply(await growthReport(),200,auth.headers);}
  if(section==='purchases'){
  const page=Math.max(0,Math.min(100000,Number.parseInt(url.searchParams.get('page')||'0',10)||0));
@@ -68,6 +81,25 @@ export async function POST(request:Request){
  try{
  const text=await request.text();if(text.length>10000)return fail('Request too large.',413);const data=JSON.parse(text);
  const uuid=(v:unknown)=>typeof v==='string'&&/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);
+ if(data.action==='basket-progress'){
+  const id=data.checkoutId;
+  if(typeof id!=='string'||!/^cs_(test|live)_[A-Za-z0-9]+$/.test(id))return fail('Invalid basket order.');
+  const shipping=data.stage==='shipped';
+  if(!shipping&&data.stage!=='packed')return fail('Choose a packing status.');
+  if(shipping&&(typeof data.tracking!=='string'||!/^[a-zA-Z0-9 -]{5,80}$/.test(data.tracking)))return fail('Enter the carrier tracking number.');
+  const db=paymentAdmin();
+  const row=await db.from('holiday_orders').select('payment_intent').eq('checkout_id',id).maybeSingle();
+  if(row.error)throw row.error;
+  if(!row.data)return fail('Order unavailable.',404);
+  const refund=await db.from('holiday_refunds').select('payment_intent').eq('payment_intent',row.data.payment_intent).maybeSingle();
+  if(refund.error)throw refund.error;
+  if(refund.data)return fail('Review the refund or dispute before shipping.',409);
+  const update=shipping?{fulfillment:'shipped',tracking_number:data.tracking.trim(),fulfilled_at:new Date().toISOString()}:{fulfillment:'packed'};
+  const saved=await db.from('holiday_orders').update(update).eq('checkout_id',id).eq('fulfillment',shipping?'packed':'ready_to_pack').select('checkout_id');
+  if(saved.error)throw saved.error;
+  if(!saved.data.length)return fail('This order changed. Refresh its packing status.',409);
+  return memberReply({message:shipping?'Shipment recorded.':'Order marked packed.'},200,auth.headers);
+ }
  if(data.action==='review'){
  if(!uuid(data.id)||!['new','reviewed','archived'].includes(data.status)||typeof data.note!=='string'||data.note.length>1000)return fail('Check the review details.');
  checked(await auth.client.from('admin_message_reviews').upsert({message_id:data.id,status:data.status,note:data.note.trim(),updated_by:auth.user.id,updated_at:new Date().toISOString()}));

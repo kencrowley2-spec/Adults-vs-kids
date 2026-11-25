@@ -51,18 +51,33 @@ export async function growthReport(){
   rows('analytics_checkouts','checkout_id,user_id,session_id,livemode,created_at','created_at'),
   rows('analytics_accounts','user_id,is_internal_test')
  ]);
- let subscriptions:{status:string;active:number|null;cancelScheduled:number|null;complete:boolean}={status:paymentLive()?'Live Stripe read unavailable':'Live billing mode is not enabled',active:null,cancelScheduled:null,complete:false};
- if(paymentLive())try{
-  const stripe=stripeClient();let after:string|undefined,active=0,cancelScheduled=0,complete=false;
-  for(let n=0;n<10;n++){
-   const page=await stripe.subscriptions.list({status:'all',limit:100,...(after?{starting_after:after}:{})});
-   for(const sub of page.data)if(sub.livemode&&sub.metadata.avk_type==='club-subscription-v1'&&!excludedSubscription(sub.metadata.avk_user_id,accounts)){
-    if(sub.status==='active'){active++;if(sub.cancel_at_period_end)cancelScheduled++;}
-   }
-   if(!page.has_more){complete=true;break;}after=page.data.at(-1)?.id;
-  }
-  subscriptions={status:'live Stripe status snapshot',active,cancelScheduled,complete};
- }catch{/* Do not substitute zero for unavailable live billing. */}
+ const subscriptions=await clubRevenueSnapshot(accounts,!truncated.includes('analytics_accounts'));
  return {...aggregateGrowth(sessions,events,orders,checkouts,accounts),truncated,subscriptions,searchConsole:{status:'Not connected',impressions:null,clicks:null},limitations:['Only post-attribution sessions are included; older traffic remains in the legacy panels.','Confirmed revenue covers live mapped initial paid checkouts only; recurring renewals, unmapped legacy orders and Amazon sales are not included.','External video reach and retention require connected platform reports.']};
 }
 function excludedSubscription(user:unknown,accounts:Row[]){return accounts.some(a=>a.user_id===user&&a.is_internal_test);}
+
+export async function clubRevenueSnapshot(accounts:Row[],accountsComplete:boolean){
+ const unavailable={status:'Live Club billing unavailable',active:null,cancelScheduled:null,complete:false,mrr:null,arr:null};
+ if(!paymentLive()||!accountsComplete)return unavailable;
+ try{
+  const stripe=stripeClient();
+  let after:string|undefined,active=0,cancelScheduled=0,annualRunRate=0;
+  for(let pageNumber=0;pageNumber<10;pageNumber++){
+   const page=await stripe.subscriptions.list({status:'active',limit:100,...(after?{starting_after:after}:{})});
+   for(const sub of page.data){
+    if(!sub.livemode||sub.metadata.avk_type!=='club-subscription-v1'||excludedSubscription(sub.metadata.avk_user_id,accounts))continue;
+    if(!sub.metadata.avk_user_id||sub.items.has_more||sub.items.data.length!==1)return unavailable;
+    const item=sub.items.data[0],price=item.price,interval=price.recurring?.interval;
+    if(price.currency!=='usd'||item.quantity!==1||price.recurring?.interval_count!==1)return unavailable;
+    if(interval==='month'&&price.unit_amount===299)annualRunRate+=299*12;
+    else if(interval==='year'&&price.unit_amount===2495)annualRunRate+=2495;
+    else return unavailable;
+    active++;
+    if(sub.cancel_at_period_end)cancelScheduled++;
+   }
+   if(!page.has_more)return {status:'Live Stripe status snapshot',active,cancelScheduled,complete:true,mrr:annualRunRate/12,arr:annualRunRate};
+   after=page.data.at(-1)?.id;
+  }
+ }catch{/* Provider access can be unavailable without affecting the order ledger. */}
+ return unavailable;
+}

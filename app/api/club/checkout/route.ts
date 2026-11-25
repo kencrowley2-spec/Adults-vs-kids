@@ -13,7 +13,10 @@ export async function POST(request:Request){
  try{
   const raw=await request.text();if(raw.length>1000)return reply({error:'Invalid request.'},400);
   const data=JSON.parse(raw),plan=clubPlan(data.plan);if(!plan||data.accepted!==true)return reply({error:'Choose a plan and accept automatic renewal terms.'},400);
-  const products=await availablePdfs();if(!paymentLive()||!products.find(p=>p.id==='bundle')?.available)return reply({error:'Club checkout is being connected. No payment has been taken.'},503);
+  const sandbox=process.env.STRIPE_MODE==='test'&&process.env.STRIPE_SECRET_KEY?.startsWith('sk_test_')&&
+   !!process.env.AVK_SANDBOX_DATABASE_URL&&process.env.SUPABASE_URL===process.env.AVK_SANDBOX_DATABASE_URL&&
+   new URL(process.env.SUPABASE_URL).hostname!=='ivrounrajalbemgdydfc.supabase.co'&&process.env.VERCEL_ENV!=='production';
+  const products=await availablePdfs();if((!paymentLive()&&!sandbox)||!products.find(p=>p.id==='bundle')?.available)return reply({error:'Club checkout is being connected. No payment has been taken.'},503);
   const db=paymentAdmin();
   const existing=await db.from('pdf_orders').select('session_id').eq('user_id',auth.user.id).eq('status','paid').overlaps('product_ids',['club-month','club-year']).limit(1);
   if(existing.error)throw existing.error;

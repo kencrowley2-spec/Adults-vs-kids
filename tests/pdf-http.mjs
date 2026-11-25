@@ -11,7 +11,7 @@ try{
  for(const path of ['/api/pdf/orders','/api/pdf/download?order=cs_test_fake123&book=book-1'])assert.equal((await fetch(root+path)).status,401);
  assert.equal((await fetch(root+'/api/pdf/checkout',{method:'POST',headers:{origin:root,'content-type':'application/json'},body:JSON.stringify({products:['book-1'],cents:1})})).status,401);
  assert.equal((await fetch(root+'/api/stripe/webhook',{method:'POST',body:'{}'})).status,503);
- const redirect=await fetch(root+'/family/downloads',{redirect:'manual'});assert.equal(redirect.status,303);assert.equal(redirect.headers.get('location'),'/login');
+ const redirect=await fetch(root+'/family/downloads',{redirect:'manual'});assert.equal(redirect.status,303);assert.equal(redirect.headers.get('location'),'/login?purchase=library');
  assert.equal((await fetch(root+'/api/pdf/checkout',{method:'POST',headers:{origin:'https://attacker.example','content-type':'application/json'},body:'{}'})).status,403);
  console.log('PASS: production HTTP PDF store, real catalog shape/prices, closed checkout, sign-in requirements, origin checks, unsigned webhook, and dashboard library redirect.');
 }finally{server.kill('SIGTERM');}
