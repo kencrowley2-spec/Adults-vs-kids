@@ -16,21 +16,44 @@ console.log('DRAW IT: balanced turns, 3/5/unlimited matches, ties, image validat
 
 // Controller integration uses explicit service stubs, never a claimed real AI result.
 const {JSDOM}=await import('jsdom');const vm=(await import('node:vm')).default;const fs=await import('node:fs');
-async function fixture(rounds=3,success=true){
+async function fixture(rounds=3,success=true,member=false){
  const dom=new JSDOM('<body></body>',{url:'https://example.test',pretendToBeVisual:true});const {window}=dom;const context=new Proxy({},{get:(t,k)=>k==='getImageData'?()=>({data:[]}):()=>{}});
  window.HTMLCanvasElement.prototype.getContext=()=>context;window.HTMLCanvasElement.prototype.toDataURL=()=>image;window.HTMLCanvasElement.prototype.setPointerCapture=()=>{};
  window.HTMLElement.prototype.getBoundingClientRect=()=>({width:380,height:390,left:0,top:0});
- const requests=[],complete=[];let nextSuccess=success;
- const c=vm.createContext({window,document:window.document,DrawMatch,ResizeObserver:class{observe(){}disconnect(){}},AbortController,setTimeout,clearTimeout,setInterval,clearInterval,confirm:()=>true,fetch:async(url,opts)=>{if(url==='/api/club/gallery')return {ok:true,json:async()=>({saved:true})};requests.push(JSON.parse(opts.body));return {ok:nextSuccess,json:async()=>nextSuccess?{guess:'TEST SERVICE dragon',comment:'Test response only.',uncertain:true}:{error:'TEST SERVICE unavailable'}};}});
- vm.runInContext(fs.readFileSync(new URL('../public/arcade-draw.js',import.meta.url),'utf8').replace(/^import .*;\n/,'').replace('export function mountDraw','function mountDraw'),c);c.complete=r=>complete.push(r);vm.runInContext('this.cleanup=mountDraw({players:["Adults","Kids"],onComplete:complete})',c);
+ const requests=[],complete=[];let nextSuccess=success,galleryOK=true,cloudUncertain=false;
+ const c=vm.createContext({window,document:window.document,DrawMatch,ResizeObserver:class{observe(){}disconnect(){}},AbortController,AbortSignal,setTimeout,clearTimeout,setInterval,clearInterval,confirm:()=>true,
+  recognizeDrawing:async canvas=>{assert.equal(canvas.tagName,'CANVAS');return nextSuccess?'Test sketch reader':null;},
+  fetch:async(url,opts)=>{
+   const payload=JSON.parse(opts.body);requests.push({url,payload});
+   if(url==='/api/club/gallery')return {ok:galleryOK,json:async()=>({saved:galleryOK})};
+   assert.equal(url,'/api/arcade/draw-it');return {ok:true,json:async()=>({guess:'Test online reader',uncertain:cloudUncertain})};
+  }});
+ vm.runInContext(fs.readFileSync(new URL('../public/arcade-draw.js',import.meta.url),'utf8').replace(/^import .*;$/gm,'').replace('export function mountDraw','function mountDraw'),c);c.complete=r=>complete.push(r);c.member=member;vm.runInContext('this.cleanup=mountDraw({players:["Adults","Kids"],signedIn:member,cloudVision:member,onComplete:complete})',c);
  const $=s=>window.document.querySelector(s);const click=s=>{assert.ok($(s),'Missing '+s);$(s).click();};
  click(`[data-rounds="${rounds}"]`);click('[data-action=start]');
  function draw(){const canvas=$('canvas');for(const type of ['pointerdown','pointermove','pointerup'])canvas.dispatchEvent(new window.MouseEvent(type,{bubbles:true,clientX:50,clientY:50,button:0}));}
- async function turn(correct=true){draw();click('[data-action=done]');$('#draw-answer').value='<dragon>';click('[data-action=lock]');click('[data-action=generate]');await new Promise(r=>setTimeout(r,0));if(nextSuccess){assert.match($('.draw-ai-answer').textContent,/TEST SERVICE/);click('[data-action=reveal]');}else{assert.match($('.draw-error').textContent,/unavailable/);assert.equal($('.draw-ai-answer'),null);click('[data-action=skip]');}$('#draw-answer').value='Dragon';click('[data-action=actual]');assert.equal($('.draw-comparison script'),null);click('[data-action='+ (correct?'correct':'incorrect')+']');await new Promise(r=>setTimeout(r,0));}
- return {$,click,draw,turn,requests,complete,cleanup:c.cleanup,service:value=>nextSuccess=value};
+ const tick=()=>new Promise(r=>setTimeout(r,0));
+ async function lock(){draw();click('[data-action=done]');$('#draw-answer').value='<dragon>';click('[data-action=lock]');await tick();}
+ async function turn(correct=true){
+  await lock();
+  if(nextSuccess){assert.match($('.draw-ai-answer').textContent,/Test sketch/);assert.equal($('#draw-answer').value,'');}
+  else{assert.equal($('#draw-answer').value,'<dragon>');assert.match($('.draw-reader small').textContent,/guessed/);assert.doesNotMatch($('.draw-reader small').textContent,/AI/);}
+  $('#draw-answer').value='Dragon';click('[data-action=actual]');assert.equal($('.draw-comparison script'),null);
+  click('[data-action='+ (correct?'correct':'incorrect')+']');await tick();
+ }
+ return {$,click,draw,turn,lock,requests,complete,cleanup:c.cleanup,gallery:value=>galleryOK=value,uncertain:value=>cloudUncertain=value};
+
 }
 const f=await fixture();assert.equal(f.$('#draw-done').disabled,true);f.draw();assert.equal(f.$('#draw-done').disabled,false);f.click('[data-action=undo]');assert.equal(f.$('#draw-done').disabled,true);f.click('[data-action=redo]');assert.equal(f.$('#draw-done').disabled,false);f.click('[data-action=clear]');assert.equal(f.$('#draw-done').disabled,true);f.click('[data-action=undo]');assert.equal(f.$('#draw-done').disabled,false);
-for(let i=0;i<6;i++){await f.turn(i%2===0);assert.equal(f.requests.length,i+1);assert.deepEqual(Object.keys(f.requests[i]),['image']);if(i<5)f.click('[data-action=next]');}
+for(let i=0;i<6;i++){await f.turn(i%2===0);assert.equal(f.requests.length,0,'guest round uses on-device recognition and no gallery');if(i<5)f.click('[data-action=next]');}
 f.click('[data-action=finish]');assert.equal(f.complete.length,1);assert.equal(f.complete[0].scores.reduce((a,b)=>a+b),3);f.click('[data-action=rematch]');assert.equal(f.$('#draw-done').disabled,true);assert.match(f.$('.draw-eyebrow').textContent,/ROUND 1/);f.cleanup();
 const fail=await fixture(0,false);await fail.turn();fail.click('[data-action=next]');await fail.turn();fail.click('[data-action=end]');assert.equal(fail.complete[0].winner,null);fail.cleanup();
-console.log('DRAW IT controller: draw/undo/redo/clear, locked guess escaping, image-only submission, test AI reveal, failure/skip, alternating turns, scoring, completion, ties and rematch passed.');
+const member=await fixture(3,false,true);
+member.uncertain(true);await member.lock();member.click('[data-action=online]');await new Promise(r=>setTimeout(r,0));
+assert.deepEqual(Object.keys(member.requests[0].payload),['image']);assert.equal(member.$('#draw-answer').value,'<dragon>');
+member.click('[data-action=actual]');member.gallery(false);member.click('[data-action=correct]');await new Promise(r=>setTimeout(r,0));
+assert.match(member.$('.draw-gallery-status').textContent,/unconfirmed/);member.gallery(true);member.click('.draw-gallery-status button');await new Promise(r=>setTimeout(r,0));
+assert.match(member.$('.draw-gallery-status').textContent,/Saved to/);member.click('[data-action=next]');
+member.uncertain(false);await member.lock();member.click('[data-action=online]');await new Promise(r=>setTimeout(r,0));
+assert.equal(member.$('.draw-ai-answer').textContent,'Test online reader');member.cleanup();
+console.log('Draw It controller: local recognition, editable human fallback, private image-only online opt-in, guest scoring, gallery failure/retry, alternating turns, ties and rematch passed.');

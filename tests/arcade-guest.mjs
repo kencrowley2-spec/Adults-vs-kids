@@ -31,7 +31,7 @@ for(let i=0;i<5;i++)assert.equal(member.allow('memory'),true,'members bypass tri
 let user=null,queries=0;
 const exports={};
 vm.runInNewContext(ts.transpileModule(readFileSync('app/family/arcade/route.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS}}).outputText,{
- exports,Request,Response,Headers,URL,require:name=>{
+ exports,Request,Response,Headers,URL,process:{env:{}},require:name=>{
   if(name.includes('arcade-data'))return {GAMES};
   if(name.includes('family-roster'))return {cleanRoster:r=>({...r,playingAdults:[],playingKids:[]})};
   if(name.includes('auth/session'))return {

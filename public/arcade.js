@@ -5,7 +5,7 @@ import {mountFeaturedGames} from './arcade-featured.js?v=5';
 import {mountPinball} from './arcade-pinball.js?v=3';
 import {createCaseReader} from './arcade-cases.js?v=4';
 import {mountFaces} from './arcade-faces.js?v=9';
-import {mountDraw} from './arcade-draw.js?v=3';
+import {mountDraw} from './arcade-draw.js?v=4';
 import {mountLava} from './arcade-lava.js?v=10';
 import {mountClaw,clawPrizes,clawFireworks} from './arcade-claw.js?v=5';
 import {mountMole,molePlan,createMoleAudio} from './arcade-mole.js?v=5';
@@ -13,8 +13,8 @@ import {mountFrog,frogCourses,frogRoundWinner} from './arcade-frog.js?v=3';
 import {mountTreasure,treasurePlan} from './arcade-treasure.js?v=1';
 import {mountBlocks} from './arcade-blocks.js?v=1';
 import {mountBasketball} from './arcade-basketball.js?v=1';
-import {coverMarkup,recentGames,BROWSE_SHELVES} from './arcade-library.js?v=28';
-import {GAMES, ANIMALS, TRIVIA, PICTURES, CHALLENGES} from './arcade-data.js?v=38';
+import {coverMarkup,recentGames,BROWSE_SHELVES} from './arcade-library.js?v=29';
+import {GAMES, ANIMALS, TRIVIA, PICTURES, CHALLENGES} from './arcade-data.js?v=39';
 import {shuffle, roundWinner, awardRound, lineWinner} from './arcade-core.js';
 
 import {makeMaze, codeClues, rpsWinner, GOLF_COURSES, golfStep} from './arcade-new-core.js?v=5';
@@ -461,7 +461,7 @@ function openDraw(){
  clearTimers();
  let matchId=crypto.randomUUID();rememberGame('draw');arena.hidden=true;lobby.hidden=true;
  dispatchArcadeAnalytics(new CustomEvent('avk:game-start',{detail:{game:'draw',id:matchId}}));
- mountDraw({beforeRematch:()=>{if(!guestGate.allow('draw'))return false;dispatchArcadeAnalytics(new CustomEvent('avk:game-start',{detail:{game:'draw',id:matchId}}));return true;},players:selectedPlayers.map((list,i)=>list.join(' & ')||names[i]),onExit:()=>{arena.hidden=true;lobby.hidden=false;game=null;document.querySelector('[data-game="draw"]')?.focus();},onComplete:result=>{
+ mountDraw({signedIn:!!arcadeAccountId,cloudVision:$('arcade-game').dataset.drawCloud==='true',beforeRematch:()=>{if(!guestGate.allow('draw'))return false;dispatchArcadeAnalytics(new CustomEvent('avk:game-start',{detail:{game:'draw',id:matchId}}));return true;},players:selectedPlayers.map((list,i)=>list.join(' & ')||names[i]),onExit:()=>{arena.hidden=true;lobby.hidden=false;game=null;document.querySelector('[data-game="draw"]')?.focus();},onComplete:result=>{
   if(kidsOnly||result.winner===null)capturePlay(matchId,'draw');else drawRecorder.capture({id:matchId,mode:'single',gameIds:['draw'],roundWinners:[result.winner]});
   dispatchArcadeAnalytics(new CustomEvent('avk:game-complete',{detail:{game:'draw',winner:result.winner,scores:result.scores,id:matchId}}));
   matchId=crypto.randomUUID();

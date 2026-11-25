@@ -1,37 +1,15 @@
-# DRAW IT! — review build
+# Draw It! Visual Charades
 
-Implementation is on `feature/draw-it`. Do not merge, migrate the production database, or deploy production until the family has tested and approved the game.
+Draw It opens at `/family/arcade?game=draw`. On one device, players alternate drawing a silent clue and guessing. The artist can peek at an optional idea card. The partner locks one guess before the sketch reader runs. A confident reading appears beside the partner’s answer. When the reader abstains, cannot load, or is skipped, the artist’s answer field starts with the partner’s exact guess and can be edited. Only the artist awards the human guesser a point. Each round gives both players a turn.
 
-The game uses a blank canvas, five tools, ten colors, adjustable sizes, undo/redo/reversible clear, one locked human guess, blind AI recognition, artist's actual answer, artist-confirmed points, balanced alternating turns, 3/5/unlimited rounds, ties, and rematches. One round includes one drawing by each side. AI never scores. Unlimited matches can end after a complete pair of turns. Tied and kid-versus-kid matches do not write an Adults/Kids lifetime win, matching existing platform behavior.
+## Sketch reader
 
-The existing selected family roster supplies names. A new catalog tile launches a full-screen controller; other games remain intact. DRAW IT is excluded from Random 3 Game Challenge because its turn structure and required external service differ from those games.
+The browser downloads the quantized model on its first reading. It crops the finished bitmap, normalizes the visible ink to a 20 × 20 grid, and runs a small neural network trained on 88 doodle categories. The reader sees the pixels, with all erasures and undo operations applied. Idea cards and player guesses are never inputs. No account, provider credentials or per-drawing network request is necessary for this reader.
 
-## AI setup still required
+The model was trained on 145,200 samples from Google, Inc.’s [Quick, Draw! dataset](https://github.com/googlecreativelab/quickdraw-dataset), licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). The weights and preprocessing are adaptations. Use `scripts/draw-it/train.py` to rebuild the weights. With the shipped confidence cutoffs, the quantized model offered a guess for 48.2% of 13,200 held-out in-category bitmaps and identified 88.4% of those guesses correctly. Free-form family drawings can be outside the model’s vocabulary.
 
-The connected Vercel project had no OPENAI_API_KEY when inspected. Recognition has **not** been validated against a real provider. Test-service responses in automated tests are explicitly marked and never ship as successful fallback guesses.
+Signed-in families can explicitly request a second opinion on unclear sketches when the existing server-side OpenAI integration is enabled with `DRAW_IT_AI_ENABLED=true` and `OPENAI_API_KEY`. The endpoint requires a verified session, same-origin JSON, a bounded PNG and the existing atomic Supabase usage budget. Only that opt-in sends a picture to the provider. An uncertain response, failure or timeout keeps the partner’s guess.
 
-Configure a server-only `OPENAI_API_KEY`, an appropriate provider account/data-retention configuration for the intended child audience, and `DRAW_IT_AI_ENABLED=true` in the review environment. Optional `DRAW_IT_VISION_MODEL` defaults to `gpt-4.1-mini`. Never use a public-prefixed key. No dependency or client key is needed. The server calls the Responses API with an inline PNG and `store:false`. Only the picture and a fixed prompt are sent, not player names, human guesses, or intended answers. Provider safety retention may apply; the game discloses this. No image or answer is logged or written to our database/storage.
+Guest rounds require no gallery save. Member drawings save to the private Clubhouse Gallery in the background, with an option to retry a failed save. Match completion and rematches use the existing Arcade result and guest-allowance handling.
 
-Apply `supabase/migrations/20261106000100_draw_it.sql` in an isolated review database before testing persistence and real recognition. It adds an RLS-protected counter table, an authenticated-only atomic budget function, and extends the existing result validator for DRAW IT. The endpoint fails closed if the migration or budget is unavailable. Limits are 30 calls/family/day, 500 calls overall/day, and 4 seconds between calls per family. Failed provider calls consume budget. Image bodies are bounded before parsing, PNG dimensions are checked, and requests require verified membership plus same origin. The provider request times out after 25 seconds. Errors preserve the picture and offer retry or skipping AI; no successful guess is fabricated.
-
-## Verification
-
-Passed:
-
-- Production Next.js build and TypeScript check.
-- Existing account access, Arcade regression, and completed-result API tests.
-- DRAW IT controller/model tests: undo/redo/clear, escaping, blind image-only payload, service-fixture reveal, service failure and skipping, switching, balanced 3/5-round matches, unlimited finish, scoring, ties, completion and clean rematch.
-- DRAW IT API fixtures: auth/origin/content type, key missing, oversized request, malformed image, guessed-answer rejection, database failure, rate limit, success schema, store:false and honest upstream failure.
-- Browser QA at 390×844 and 360×640 portrait plus 844×390 landscape. Drawing, undo, locked guess, genuine unavailable-service screen, actual-answer reveal, artist-confirmed point and next artist were exercised. Drawing screen fits without internal scrolling at 360×640 and 844×390.
-
-Commands:
-
-```sh
-npm run build
-npm test
-npm run test:arcade
-node --experimental-strip-types tests/arcade-results.mjs
-npm run test:draw
-```
-
-Not yet verified: real provider recognition quality, live database migration/persistence, physical iOS/Android finger input, or microphone permissions/transcription on those devices. Test these with the family before final approval. Browser testing used mouse input and phone-size frames, not physical mobile hardware. No production environment variables or database were changed.
+Run `npm run test:draw` for the match, controller and optional provider endpoint tests.

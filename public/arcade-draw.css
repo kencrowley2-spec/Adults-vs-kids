@@ -3,3 +3,43 @@
 .draw-drawing{height:100%;min-height:0}.draw-paper{position:relative;min-height:120px}.draw-paper canvas{position:absolute;height:100%;width:auto;max-width:100%;aspect-ratio:1;object-fit:contain}.draw-colors button{min-height:32px;height:32px;width:32px}.draw-edit button{min-height:36px}@media(max-height:600px) and (orientation:landscape){.draw-colors button{min-height:22px;height:22px;width:22px}.draw-edit button{min-height:32px}.draw-drawing{min-height:240px}.draw-paper canvas{height:100%;width:auto}}
 .draw-paper{background:#2a303b}.draw-paper canvas{max-width:none;object-fit:fill}
 .draw-fireworks{position:absolute;inset:0;pointer-events:none}.draw-fireworks span{position:absolute;top:12%;left:10%;font-size:100px;line-height:1;color:#ffdd35;animation:draw-burst 1.4s ease-out both}.draw-fireworks span:nth-child(2){left:65%;top:35%;color:#f06db4;animation-delay:.3s}.draw-fireworks span:nth-child(3){left:40%;top:3%;color:#6cdcfb;animation-delay:.6s}@keyframes draw-burst{from{transform:scale(.05);opacity:1}to{transform:scale(1.4) rotate(40deg);opacity:0}}
+
+/* Paper, ink and the neon trim of the Family Arcade cabinet. */
+.draw-game {background:radial-gradient(ellipse at 12% 0%,#19394a,transparent 48%),radial-gradient(ellipse at 100% 80%,#312245,transparent 46%),#101522}
+.draw-game .draw-welcome {max-width:510px;gap:12px;padding-top:8px}
+.draw-cover {position:relative;margin:6px 5px 4px;padding:0 0 14px;background:#fff4d6;color:#222535;border:2px solid #282439;border-radius:3px 14px 4px 10px;box-shadow:3px 4px 0 #68dcce,6px 7px 0 #243241;transform:rotate(-.7deg)}
+.draw-cover:before,.draw-cover:after {content:"";position:absolute;top:-5px;width:38px;height:12px;background:#ffcc5bcd;transform:rotate(-13deg);left:14px}
+.draw-cover:after {left:auto;right:14px;transform:rotate(11deg)}
+.draw-cover img {display:block;width:100%;height:clamp(104px,22dvh,190px);border-radius:1px 11px 0 0;object-fit:cover;object-position:50% 45%}
+.draw-game .draw-cover .draw-eyebrow {margin:9px 0 2px;color:#555062;font-size:12px}
+.draw-welcome .draw-cover h1 {font-size:clamp(36px,8vw,56px);letter-spacing:-.05em}
+.draw-welcome .draw-cover h1 em {color:#923958}
+.draw-cover>p:last-child {font-size:14px;line-height:1.35;margin:6px 12px 0}
+.draw-game .draw-rules {font-size:14px;line-height:1.45}
+.draw-game .draw-primary {border-radius:12px;background:linear-gradient(#ffe86b,#ffcd34);box-shadow:0 3px 0 #94631c}
+.draw-scores>div {background:linear-gradient(130deg,#182b35,#1c2030);border-color:#485c71}
+.draw-scores .draw-current {border-color:#6de4d2}
+.draw-round-choices button[aria-pressed=true] {background:#183936;border-color:#76ebd8}
+.draw-welcome details a {color:#9ae9f0}
+.draw-paper {border-color:#f8e8b4;border-radius:10px;background:#eee3c9;box-shadow:0 3px 0 #a88649}
+.draw-toolbar,.draw-answer-tile {background:linear-gradient(140deg,#203441,#202538);border-color:#496678}
+.draw-reader {border-color:#68dccd}
+.draw-reader .draw-ai-answer {color:#b1fff1}
+.draw-human-reveal {grid-template-columns:repeat(2,minmax(0,1fr))}
+.draw-gallery-status button {background:transparent;color:#95ebef;text-decoration:underline}
+.draw-colors button {min-width:0;width:min(32px,8%);flex-shrink:1}
+@media (max-height:520px) and (orientation:landscape){
+ .draw-game .draw-welcome {display:grid;grid-template-columns:1fr 1fr;align-items:center;max-width:800px}
+ .draw-cover {grid-row:span 4}
+ .draw-welcome details {grid-column:1/-1}
+}
+.draw-game .draw-idea-toggle {flex-shrink:0;padding:5px 10px;min-height:34px;color:#a3f7e5;background:#163839;border:1px solid #427268;font-size:12px}
+.draw-game .draw-idea {width:min(355px,90vw);text-align:center;padding:22px 18px;border:2px solid #362b2a;border-radius:5px 16px 6px 12px;background:#fff2d5;color:#272538;box-shadow:4px 5px 0 #4bbcac}
+.draw-idea::backdrop {background:#0b1227c9}
+.draw-game .draw-idea .draw-eyebrow {color:#77455a}
+.draw-idea strong {display:block;font-size:34px;line-height:1.1;margin:12px 0}
+.draw-idea p {font-size:14px}
+.draw-idea button {margin-top:10px}
+@media(max-height:600px) and (orientation:landscape){
+ .draw-game .draw-idea-toggle {font-size:10px;min-height:28px}
+}
