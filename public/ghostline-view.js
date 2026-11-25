@@ -1,6 +1,7 @@
+import {wheelGeometry,FULL_LOCK} from './ghostline-wheel.js';
 import {scenery,imageFor} from './ghostline-scenery.js?v=4';
 export function paint(ctx,w,h,car,ghost){
- const mid=w*.47;
+ const {x:mid,y:wy,radius}=wheelGeometry(w,h);
  const rect=(x,y,a,b,c)=>{ctx.fillStyle=c;ctx.fillRect(x,y,a,b);};
  function poly(c,...p){ctx.fillStyle=c;ctx.beginPath();ctx.moveTo(p[0],p[1]);for(let i=2;i<p.length;i+=2)ctx.lineTo(p[i],p[i+1]);ctx.closePath();ctx.fill();}
  function oval(x,y,a,b,c){ctx.fillStyle=c;ctx.beginPath();ctx.ellipse(x,y,a,b,0,0,Math.PI*2);ctx.fill();}
@@ -23,9 +24,8 @@ export function paint(ctx,w,h,car,ghost){
  // Place the driver's gauges under the sight line. The console recedes to the right.
  const cabWidth=Math.max(w*1.25,h*.96),cabLeft=mid-cabWidth*.38;
  if(dash)ctx.drawImage(dash,cabLeft,h*.55,cabWidth,h*.49);
- const radius=Math.min(w*.31,h*.285),wy=h*.946;
  const wheel=imageFor('wheel');
- ctx.save();ctx.translate(mid,wy);ctx.rotate(car.steer*.76);ctx.lineCap='round';
+ ctx.save();ctx.translate(mid,wy);ctx.rotate(car.steer*FULL_LOCK);ctx.lineCap='round';
  if(wheel){
   const sw=radius*2.48,sh=sw*wheel.naturalHeight/wheel.naturalWidth;
   ctx.drawImage(wheel,-sw/2,-sh/2,sw,sh);
