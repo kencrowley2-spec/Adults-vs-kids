@@ -1,12 +1,12 @@
 import {wheelGeometry,FULL_LOCK} from './ghostline-wheel.js';
-import {scenery,imageFor} from './ghostline-scenery.js?v=4';
-export function paint(ctx,w,h,car,ghost){
+import {scenery,imageFor} from './ghostline-scenery.js?v=5';
+export function paint(ctx,w,h,car,ghost,tunnel=false){
  const {x:mid,y:wy,radius}=wheelGeometry(w,h);
  const rect=(x,y,a,b,c)=>{ctx.fillStyle=c;ctx.fillRect(x,y,a,b);};
  function poly(c,...p){ctx.fillStyle=c;ctx.beginPath();ctx.moveTo(p[0],p[1]);for(let i=2;i<p.length;i+=2)ctx.lineTo(p[i],p[i+1]);ctx.closePath();ctx.fill();}
  function oval(x,y,a,b,c){ctx.fillStyle=c;ctx.beginPath();ctx.ellipse(x,y,a,b,0,0,Math.PI*2);ctx.fill();}
  function grad(y,z,...colors){const g=ctx.createLinearGradient(0,y,0,z);colors.forEach((c,i)=>g.addColorStop(i/(colors.length-1),c));return g;}
- scenery(ctx,w,h,car,ghost);
+ scenery(ctx,w,h,car,ghost,tunnel);
  // Hood, windshield pillars, stitched dashboard and a rotating three-spoke GT wheel.
  const hood=imageFor('hood');
  if(hood){

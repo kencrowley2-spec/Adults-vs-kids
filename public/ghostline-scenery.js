@@ -1,4 +1,5 @@
-import {bend,LENGTH} from './ghostline-core.js?v=5';
+import {tunnelSlice,tunnelEntrance} from './ghostline-tunnel.js';
+import {bend,LENGTH} from './ghostline-core.js?v=6';
 
 // Static centre line sampled in world metres. The same meshes are viewed by both drivers.
 const step=4, samples=[];
@@ -21,13 +22,13 @@ export function loadRaceArt(onLoad){
  return ()=>{active=false;};
 }
 export function imageFor(id){const img=art[id];return img?.complete&&img.naturalWidth?img:null;}
-export function scenery(ctx,w,h,car,ghost){
+export function scenery(ctx,w,h,car,ghost,tunnel=false){
  const base=at(car.s),grade=(at(car.s+5).height-base.height)/5;
  const lens=Math.min(w*.86,h*1.32),vertical=Math.min(h*.94,w*1.02),horizon=h*.405;
  const mid=w*(.47-car.steer*.009);
  function project(s,lat=0,up=0){
   const a=at(s),z=Math.max(1,s-car.s);
-  return {x:mid+(a.centre-base.centre-base.heading*z+lat-car.x)*lens/z,
+  return {x:mid+((a.centre-base.centre-base.heading*z)*(tunnel?-1:1)+lat-car.x)*lens/z,
    y:horizon+(1.35+base.height+grade*z*.66-a.height-up)*vertical/z,r:lens/z,v:vertical/z,s};
  }
  function polygon(color,points){
@@ -48,6 +49,7 @@ export function scenery(ctx,w,h,car,ghost){
   ctx.fillStyle=g;ctx.fillRect(0,0,w,horizon+8);
  }
  ctx.fillStyle='#7d804e';ctx.fillRect(0,horizon+h*.035,w,h);
+ if(tunnel&&car.s>=tunnelEntrance){ctx.fillStyle='#20262a';ctx.fillRect(0,0,w,h);}
  function stand(p,side){
   const x=side*13;
   for(let tier=0;tier<4;tier++){
@@ -73,8 +75,10 @@ export function scenery(ctx,w,h,car,ghost){
  for(let i=rows.length-2;i>=0;i--){
   const a=rows[i],b=rows[i+1],n=Math.floor((a.s+.001)/step),alt=n%2;
   // Ground drawn back to front also hides vehicles and barriers beyond a crest.
+  const covered=tunnel&&a.s>=tunnelEntrance;
   if(a.y>=b.y){
-   ctx.fillStyle=n%4<2?'#81804c':'#858550';ctx.fillRect(0,b.y,w,a.y-b.y+.55);
+   if(!covered){ctx.fillStyle=n%4<2?'#81804c':'#858550';ctx.fillRect(0,b.y,w,a.y-b.y+.55); }
+   else strip(a,b,-8.75,8.75,"#45494c");
    strip(a,b,-6.05,6.05,alt?'#d6cbb6':'#ae4c39');
    strip(a,b,-5.35,5.35,n%4===0?'#505358':'#515459');
    for(const side of [-1,1]){
@@ -95,6 +99,8 @@ export function scenery(ctx,w,h,car,ghost){
    }
    if(a.s>=LENGTH&&a.s<LENGTH+8)for(let q=0;q<14;q++)strip(a,b,-5+q*10/14,-5+(q+1)*10/14,(n+q)%2?'#e8e6df':'#2d3034');
   }
+  if(covered)tunnelSlice(a,b,n,point,polygon,strip,i===rows.length-2);
+  else {
   for(const side of [-1,1]){
    const edge=side*8.5;
    polygon('#807d70',[point(a,edge,.7),point(b,edge,.7),point(b,edge,.27),point(a,edge,.27)]);
@@ -146,6 +152,7 @@ export function scenery(ctx,w,h,car,ghost){
    strip(a,b,-7,7,'#bcb3a2',5.6);
    const font=Math.max(1,.8*a.v);
    ctx.font='bold '+font+'px system-ui';ctx.textAlign='center';ctx.fillStyle='#ffd675';ctx.fillText(n===LENGTH/step?'FINISH':'GHOSTLINE   GT',a.x,a.y-4.66*a.v);
+  }
   }
   // Lay each ribbon on the recorded line so it bends with the rival's path.
   if(ghost?.rolling&&a.s<ghostS&&b.s>ghost.behind.at(-1).s+3.6){

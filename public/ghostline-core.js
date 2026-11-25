@@ -6,9 +6,9 @@ export function bend(s){
  return 0;
 }
 export function grid(){return {s:0,x:0,speed:31,steer:0,lateralSpeed:0,time:0};}
-export function drive(car,input){
+export function drive(car,input,direction=1){
  if(car.s>=LENGTH)return;
- const k=bend(car.s),dt=STEP;
+ const k=direction*bend(car.s),dt=STEP;
  car.steer+=(input-car.steer)*.085;
  // Cornering demand grows with speed squared. A short lateral response time
  // lets an early turn-in settle the car before the apex.
@@ -29,10 +29,10 @@ export function replay(trace,time){
 
 // A rolling start puts the benchmark in sight. It gives up speed at the apex,
 // leaving room for a clean human racing line to catch it.
-export function paceRun(){
+export function paceRun(direction=1){
  const frames=[];let s=12;
  while(s<LENGTH){
-  frames.push({s,x:-bend(s+10)*145});
+  frames.push({s,x:-direction*bend(s+10)*145});
   s=Math.min(LENGTH,s+(38.6-310*Math.abs(bend(s)))*STEP);
  }
  frames.push({s:LENGTH,x:0});return frames;
