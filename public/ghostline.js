@@ -1,7 +1,7 @@
 import {gtEngine} from './ghostline-engine.js';
-import {LENGTH,STEP,grid,drive,rivalAt,wakeStrength,paceRun} from './ghostline-core.js?v=4';
-import {paint} from './ghostline-view.js?v=4';
-import {loadRaceArt} from './ghostline-scenery.js?v=3';
+import {LENGTH,STEP,grid,drive,rivalAt,wakeStrength,paceRun} from './ghostline-core.js?v=5';
+import {paint} from './ghostline-view.js?v=5';
+import {loadRaceArt} from './ghostline-scenery.js?v=4';
 export function mountGhostline({players,onExit,onComplete,beforeRematch}){
  const host=document.createElement('dialog');host.className='ghostline';host.setAttribute('aria-label','Ghostline GT');
  host.innerHTML='<canvas aria-label="Driver’s view of the circuit"></canvas><div class="gt-hud"><b></b><output></output><span></span><button class="gt-exit" aria-label="Exit race">×</button></div><div class="gt-steer"><button aria-label="Steer left">◀</button><button aria-label="Steer right">▶</button></div><section class="gt-panel"><h2></h2><p></p><button></button></section>';

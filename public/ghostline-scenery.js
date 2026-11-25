@@ -1,4 +1,4 @@
-import {bend,LENGTH} from './ghostline-core.js?v=3';
+import {bend,LENGTH} from './ghostline-core.js?v=5';
 
 // Static centre line sampled in world metres. The same meshes are viewed by both drivers.
 const step=4, samples=[];
@@ -14,7 +14,7 @@ function at(s){
 const art={};
 export function loadRaceArt(onLoad){
  let active=true;
- for(const id of ['wheel','rival','sky','tree','dash','hood']){
+ for(const id of ['wheel','rival','sky','tree','cab','hood','asphalt']){
   if(art[id]){art[id].decode?.().then(()=>{if(active)onLoad();}).catch(()=>{});continue;}
   const img=new Image();img.onload=()=>{if(active)onLoad();};img.src='/assets/ghostline/'+id+'.webp';art[id]=img;
  }
@@ -24,7 +24,7 @@ export function imageFor(id){const img=art[id];return img?.complete&&img.natural
 export function scenery(ctx,w,h,car,ghost){
  const base=at(car.s),grade=(at(car.s+5).height-base.height)/5;
  const lens=Math.min(w*.86,h*1.32),vertical=Math.min(h*.94,w*1.02),horizon=h*.405;
- const mid=w*(.5-car.steer*.008);
+ const mid=w*(.47-car.steer*.009);
  function project(s,lat=0,up=0){
   const a=at(s),z=Math.max(1,s-car.s);
   return {x:mid+(a.centre-base.centre-base.heading*z+lat-car.x)*lens/z,
@@ -81,14 +81,16 @@ export function scenery(ctx,w,h,car,ghost){
     strip(a,b,side*5.17,side*5.09,'#dfdccc');
     strip(a,b,side*1.45,side*1.08,'#4c4f53');
    }
-   if(a.s-car.s<60){
-    // Tiny aggregate marks are fixed to the asphalt, so their flow tracks wheel speed.
-    for(let chip=0;chip<10;chip++){
-     const seed=(n*7919+chip*6151)%9973,lat=(seed/9973-.5)*10;
-     const t=((seed*47)%991)/991,px=(a.x+lat*a.r)*(1-t)+(b.x+lat*b.r)*t;
-     const py=a.y*(1-t)+b.y*t;
-     ctx.fillStyle=chip%2?'#ffffff0d':'#10131818';
-     ctx.fillRect(px,py,Math.max(.5,a.r*.034),Math.max(.5,a.v*.012));
+   const surface=imageFor('asphalt');
+   if(surface&&a.s-car.s<80&&a.y>b.y+.12){
+    // Perspective samples are anchored in track metres so the grain moves under the tires.
+    const height=a.y-b.y,steps=Math.max(1,Math.ceil(height/2.5));
+    for(let line=0;line<steps;line++){
+     const t=(line+.5)/steps,r=a.r+(b.r-a.r)*t,cx=a.x+(b.x-a.x)*t;
+     const depth=lens/r;
+     const row=(car.s+depth)%12/12*surface.naturalHeight;
+     const footprint=Math.min(surface.naturalHeight-row,Math.max(1,(b.s-a.s)/steps/12*surface.naturalHeight));
+     ctx.drawImage(surface,0,row,surface.naturalWidth,footprint,cx-r*5.09,a.y-height*(line+1)/steps,r*10.18,height/steps+.6);
     }
    }
    if(a.s>=LENGTH&&a.s<LENGTH+8)for(let q=0;q<14;q++)strip(a,b,-5+q*10/14,-5+(q+1)*10/14,(n+q)%2?'#e8e6df':'#2d3034');
@@ -158,16 +160,22 @@ export function scenery(ctx,w,h,car,ghost){
      const near=project(lo,edge(lo)),far=project(hi,edge(hi));
      const height=s=>.24+.075*Math.sin(car.time*7-(ghostS-s)*.28);
      const low=height(lo),high=height(hi);
-     polygon('rgba(82,219,255,'+(.12+(.18+.36*(ghost.wake||0))*fade)+')',[
+     polygon('rgba(82,219,255,'+(.08+(.12+.22*(ghost.wake||0))*fade)+')',[
       point(near,-.047,low),point(near,.047,low+.055),point(far,.047,high+.055),point(far,-.047,high)]);
     }
    }
   }
   if(ghost&&ghostS>=a.s&&ghostS<b.s&&ghostS-car.s>=2.8){
    const g=project(ghostS,ghost.x),r=Math.min(g.r,w*.235),sprite=imageFor('rival');
-   ctx.save();ctx.globalAlpha=.27;ctx.fillStyle='#14404c';ctx.beginPath();ctx.ellipse(g.x,g.y,r*1.08,r*.14,0,0,Math.PI*2);ctx.fill();
-   ctx.globalAlpha=.68;
-   if(sprite){const sw=r*2.18,sh=sw*sprite.naturalHeight/sprite.naturalWidth;ctx.drawImage(sprite,g.x-sw/2,g.y-sh,sw,sh);
+   ctx.save();
+   ctx.fillStyle='rgba(23,21,21,.52)';ctx.beginPath();ctx.ellipse(g.x-r*.08,g.y-r*.015,r*1.04,r*.12,0,0,Math.PI*2);ctx.fill();
+   for(const side of [-1,1]){
+    ctx.fillStyle='#252425';ctx.beginPath();ctx.ellipse(g.x+side*r*.865,g.y,r*.155,r*.045,0,0,Math.PI*2);ctx.fill();
+   }
+   ctx.globalAlpha=.97;
+   if(sprite){const sw=r*2.18,sh=sw*sprite.naturalHeight/sprite.naturalWidth;
+    // The tire contact patches are at 97% of the source image height.
+    ctx.translate(0,sh*.03);ctx.drawImage(sprite,g.x-sw/2,g.y-sh,sw,sh);
     // The rear view exposes the tread faces below the bumper. Roll their grooves
     // by metres travelled, keeping rubber motion tied to the replay through turns.
     for(const side of [-1,1]){

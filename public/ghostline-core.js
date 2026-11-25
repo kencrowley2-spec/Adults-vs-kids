@@ -12,9 +12,10 @@ export function drive(car,input){
  car.steer+=(input-car.steer)*.085;
  // Cornering demand grows with speed squared. A short lateral response time
  // lets an early turn-in settle the car before the apex.
- const outward=k*car.speed*car.speed*1.01;
- const desired=car.steer*12.8-outward;
- car.lateralSpeed+=(desired-car.lateralSpeed)*dt*4.8;
+ const edgeLoad=Math.max(0,Math.min(1,(Math.abs(car.x)-3.6)/1.5));
+ const outward=k*car.speed*car.speed*(1.12+.12*edgeLoad);
+ const desired=car.steer*(13.5-edgeLoad*1.3)-outward;
+ car.lateralSpeed+=(desired-car.lateralSpeed)*dt*4.35;
  car.x=Math.max(-7.4,Math.min(7.4,car.x+car.lateralSpeed*dt));
  const target=Math.abs(car.x)>5.2?32.5:40-Math.abs(car.steer)*1.3;
  car.speed+=(target-car.speed)*dt*(target<car.speed?2.4:1.5);
