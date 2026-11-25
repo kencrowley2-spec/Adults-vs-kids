@@ -5,7 +5,7 @@ import {mountPinball} from './arcade-pinball.js?v=2';
 import {createCaseReader} from './arcade-cases.js?v=3';
 import {mountFaces} from './arcade-faces.js?v=6';
 import {mountDraw} from './arcade-draw.js?v=3';
-import {mountLava} from './arcade-lava.js?v=9';
+import {mountLava} from './arcade-lava.js?v=10';
 import {mountClaw,clawPrizes,clawFireworks} from './arcade-claw.js?v=5';
 import {mountMole,molePlan,createMoleAudio} from './arcade-mole.js?v=5';
 import {mountFrog,frogCourses,frogRoundWinner} from './arcade-frog.js?v=3';
@@ -13,7 +13,7 @@ import {mountTreasure,treasurePlan} from './arcade-treasure.js?v=1';
 import {mountBlocks} from './arcade-blocks.js?v=1';
 import {mountBasketball} from './arcade-basketball.js?v=1';
 import {coverMarkup,recentGames,BROWSE_SHELVES} from './arcade-library.js?v=25';
-import {GAMES, ANIMALS, TRIVIA, PICTURES, CHALLENGES} from './arcade-data.js?v=35';
+import {GAMES, ANIMALS, TRIVIA, PICTURES, CHALLENGES} from './arcade-data.js?v=36';
 import {shuffle, roundWinner, awardRound, lineWinner} from './arcade-core.js';
 
 import {makeMaze, codeClues, rpsWinner, GOLF_COURSES, golfStep} from './arcade-new-core.js?v=5';

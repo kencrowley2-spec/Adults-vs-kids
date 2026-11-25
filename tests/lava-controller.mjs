@@ -35,13 +35,13 @@ for(const [w,h] of [[844,390],[740,360],[932,430]]){
  f.tap(TRAP_LAYOUT[4]);assert.match(f.$('.lava-overlay').textContent,/PASS THE PHONE/,'Fifth trap immediately hands off');f.advance(.02);
  assert.ok(!f.draws().some(a=>a[1]===512&&a[2]===0),'Handoff hides every trap');
  f.advance(7.1);assert.match(f.phase(),/ESCAPE THE LAVA/);assert.ok(!f.draws().some(a=>a[1]===512&&a[2]===0),'Runner sees blue blocks');
- for(let n=0;n<6;n++){
+ for(let n=0;n<2;n++){
   const round=Math.floor(n/2);if(n>0){assert.match(f.phase(),/BUILD/);fillTraps(f,round);f.advance(7.1);assert.match(f.phase(),/ESCAPE/);}
   if(n%2)f.advance(1.1);
   for(const id of [1,3,5,7,9,11,13,15,16,18,20,22,24,26,28,30]){f.tap(id,round);f.advance(.65);}
-  assert.match(f.$('.lava-overlay').textContent,/THEY MADE IT/);f.advance(4.6);
+  if(n===0){assert.match(f.$('.lava-overlay').textContent,/SWITCH SIDES/);f.advance(4.6);}
  }
- assert.equal(f.speech.spoken.length,0);assert.equal(f.complete.length,1);assert.equal(f.complete[0].attempts.length,6);assert.match(f.$('.lava-overlay').textContent,/LAVA CHAMPION/);
+ assert.equal(f.speech.spoken.length,0);assert.equal(f.complete.length,1);assert.equal(f.complete[0].attempts.length,2);assert.match(f.$('.lava-overlay').textContent,/LAVA CHAMPION/);
  f.advance(5);assert.equal(f.complete.length,1);f.click('[data-action=rematch]');f.advance(3.1);assert.match(f.phase(),/BUILD/);assert.match(f.$('.lava-phase b').textContent,/0\/5 TRAPS.*NO TIMER/);
  f.click('[data-action=exit]');assert.equal(f.exits(),1);assert.equal(f.$('.lava-game'),null);assert.equal(f.audio().closed,1);
 }
@@ -51,7 +51,7 @@ for(const [w,h] of [[844,390],[740,360],[932,430]]){
  f.advance(.35);assert.match(f.$('.lava-toast').textContent,/CRACKING/);assert.ok(f.draws().some(a=>a[1]===512&&a[2]===0));
  f.advance(1);assert.match(f.phase(),/INTO THE LAVA/);assert.equal(f.$('.lava-overlay').innerHTML,'');assert.doesNotMatch(f.$('.lava-score').textContent,/50/);
  f.click('[data-action=pause]');f.advance(3);f.click('[data-action=resume]');f.advance(.6);assert.equal(f.$('.lava-overlay').innerHTML,'');
- assert.ok(f.draws().some(a=>a[1]===1024&&a[2]===512));f.advance(1.3);assert.match(f.$('.lava-overlay').textContent,/LAVA GOT YOU/);assert.match(f.$('.lava-score').textContent,/50/);f.cleanup();
+ assert.ok(f.draws().some(a=>a[1]===1024&&a[2]===512));f.advance(1.3);assert.match(f.$('.lava-overlay').textContent,/LAVA GOT YOU/);assert.match(f.$('.lava-score').textContent,/2\/16/);f.cleanup();
 }
 {
  const f=fixture();f.click('[data-action=start]');f.advance(3.1);fillTraps(f);f.advance(37.2);assert.match(f.phase(),/INTO THE LAVA/);f.advance(1.9);assert.match(f.$('.lava-overlay').textContent,/Time expired/);f.cleanup();
@@ -67,7 +67,7 @@ for(const [w,h] of [[844,390],[740,360],[932,430]]){
  fillTraps(f);f.advance(7.1);assert.equal(track.volume,.48);assert.equal(f.speech.spoken.length,0);assert.equal(f.tracks.length,1);
  f.cleanup();assert.equal(track.paused,true);assert.equal(track.src,'');assert.equal(track.loaded,true);
 }
-console.log('PASS: untimed setup survives 65 seconds; first pair protected; fifth trap immediately hides and passes; all six escape turns, rematch, hidden traps, splash, escape timeout, pause and soundtrack remain functional.');
+console.log('PASS: untimed setup survives 65 seconds; first pair protected; fifth trap immediately hides and passes; both escape turns, rematch, hidden traps, splash, escape timeout, pause and soundtrack remain functional.');
 
 {
  const f=fixture();f.click('[data-action=start]');f.advance(3.1);fillTraps(f);f.advance(7.1);

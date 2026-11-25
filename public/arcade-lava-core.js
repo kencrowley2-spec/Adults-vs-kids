@@ -48,18 +48,22 @@ export function placeTrap(tiles,id,type){
  if(!validateCourse(next))return {ok:false,reason:'That course has no safe escape route.'};
  return {ok:true,tiles:next};
 }
-export function suddenWinner(a,b){if(a.success!==b.success)return a.success?0:1;if(!a.success)return null;return Math.abs(a.elapsed-b.elapsed)<.001?null:a.elapsed<b.elapsed?0:1;}
-export function advanceTurn(round,leg){return leg===0?{round,leg:1,complete:false}:{round:round+1,leg:0,complete:round>=2};}
 export class LavaMatch{
- constructor(first=0){this.first=first;this.round=0;this.leg=0;this.scores=[0,0];this.attempts=[];this.sudden=false;this.suddenResults=[];this.complete=false;this.winner=null;this.easy=false;}
- get builder(){return (this.first+this.round+this.leg)%2;}
+ constructor(first=0){this.first=first;this.leg=0;this.scores=[0,0];this.attempts=[];this.complete=false;this.winner=null;this.coinFlip=false;}
+ get builder(){return (this.first+this.leg)%2;}
  get runner(){return 1-this.builder;}
- finishAttempt(success,elapsed){
+ finishAttempt(success,elapsed,distance=0,reachedAt=0){
   if(this.complete)throw new Error('Match already completed');
-  if(this.sudden){this.suddenResults.push({success,elapsed});if(this.suddenResults.length===2){const w=suddenWinner(...this.suddenResults);if(w!==null){this.winner=w===0?1-this.first:this.first;this.complete=true;}else{this.suddenResults=[];this.leg=0;this.easy=true;}}else this.leg=1;return;}
-  const points=scoreAttempt(success,elapsed);this.scores[this.runner]+=points.escape;this.scores[this.builder]+=points.trap;
-  this.attempts.push({round:this.round,runner:this.runner,success,elapsed,...points});
-  const next=advanceTurn(this.round,this.leg);this.round=next.round;this.leg=next.leg;
-  if(next.complete){if(this.scores[0]===this.scores[1]){this.sudden=true;this.round=0;this.leg=0;}else{this.complete=true;this.winner=this.scores[0]>this.scores[1]?0:1;}}
+  const points=scoreAttempt(success,elapsed);
+  this.scores[this.runner]+=points.escape;this.scores[this.builder]+=points.trap;
+  this.attempts.push({round:0,runner:this.runner,success,elapsed,distance,reachedAt,...points});
+  if(this.leg===0){this.leg=1;return;}
+  const [a,b]=this.attempts;
+  const difference=Number(a.success)-Number(b.success) ||
+   (a.success ? Math.round(b.elapsed*1000)-Math.round(a.elapsed*1000) :
+    a.distance-b.distance || Math.round(b.reachedAt*1000)-Math.round(a.reachedAt*1000));
+  this.coinFlip=difference===0;
+  this.winner=this.coinFlip?(Math.random()<.5?a.runner:b.runner):difference>0?a.runner:b.runner;
+  this.complete=true;
  }
 }
