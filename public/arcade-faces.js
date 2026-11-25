@@ -15,7 +15,64 @@ export function mountFaces({players=['Adults','Kids'],onExit=()=>{},onComplete=(
  function card(c,mode){const down=mode==='play'&&match.down[match.turn].has(c.id);return `<button class="face-slot ${down?'face-down':''} ${selected===c.id?'face-selected':''}" data-face="${c.id}" aria-label="${esc(c.name)}${mode==='play'?(down?', folded down. Tap to reopen':guessMode?', choose as final guess':', tap to fold down'):''}" aria-pressed="${mode==='pick'?selected===c.id:down}"><span class="face-panel">${portrait(c)}<b>${c.name}</b></span><span class="face-fold" aria-hidden="true"><small>RULED OUT</small></span></button>`;}
  function grid(mode){return `<div class="faces-board" aria-label="All 24 mystery face cards">${FACES.map(c=>card(c,mode)).join('')}</div>`;}
  function optionArt(g,o){const color={blue:'#2e9ee2',green:'#4eaa65',brown:'#98602d',black:'#171923',blond:'#f5cc4b',red:'#c9592d',gray:'#bbc1d4'}[o.value];if(g.key==='eyes')return `<svg class="face-option-icon" viewBox="0 0 72 42" aria-hidden="true"><path d="M3 21Q36-12 69 21Q36 54 3 21" fill="#fff" stroke="#aaabae" stroke-width="3"/><circle cx="36" cy="21" r="16" fill="${color}"/><circle cx="36" cy="21" r="7" fill="#171923"/><circle cx="31" cy="15" r="4" fill="#fff"/></svg>`;return `<span class="face-option-icon" aria-hidden="true" style="${color?'color:'+color:''}">${g.icon}</span>`;}
- function intro(){phase='intro';page(`<div class="faces-intro"><p class="face-kicker">THE FAMILY DETECTIVE CHALLENGE</p><h1>Big faces.<br><em>Bigger mystery.</em></h1><div class="faces-sample">${[FACES[0],FACES[7],FACES[14]].map(c=>`<div>${portrait(c)}<b>${c.name}</b></div>`).join('')}</div><p>Ask it. Hear it. Flip it. Solve it.</p><ol><li>Choose your secret person. Pass the device without peeking.</li><li>Tap a feature or tap the mic and ask one question.</li><li>The host answers and tells you which faces to fold. Flip every face ruled out by the answer to pass the turn automatically. A mistaken flip reopens in 5 seconds.</li><li>Ask at least one question before guessing. <b>A correct guess wins. A miss passes the turn.</b></li></ol>${button('LET’S CRACK THE CASE →','start')}<small>2 players · 24 original faces · Tap-to-talk where supported</small></div>`);}
+ function intro(){
+  phase='intro';
+  page(`<section class="face-case" aria-labelledby="face-case-title">
+   <header class="face-case-title">
+    <p>2 PLAYERS <span aria-hidden="true">◆</span> 24 FACES</p>
+    <h1 id="face-case-title">Mystery Face<br><em>Showdown</em></h1>
+   </header>
+   <div class="face-case-stage" aria-hidden="true">
+    <div class="face-case-cards">${[FACES[0],FACES[7],FACES[14]].map(c=>`<div class="face-case-card">${portrait(c)}<b>${c.name}</b></div>`).join('')}</div>
+    <div class="face-case-track">
+     <div class="face-case-walk">
+      <svg class="face-case-detective" viewBox="0 0 126 116" fill="none" stroke="#182333" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+       <ellipse cx="56" cy="109" rx="30" ry="4" fill="#02070d" stroke="none" opacity=".65"/>
+       <g class="face-case-leg face-case-leg-back">
+        <path d="M58 79L63 94l-2 11-12 1" stroke="#111c28" stroke-width="9"/>
+        <path d="M61 104l-12 2" stroke="#4c5963" stroke-width="5"/>
+       </g>
+       <g class="face-case-leg">
+        <path d="M49 78l-5 15 5 12 12 1" stroke="#253947" stroke-width="10"/>
+        <path d="M49 104l12 2" stroke="#647580" stroke-width="5"/>
+       </g>
+       <g class="face-case-body">
+        <path d="M44 47q-13 2-12 30l-5 14q16 8 41-3l-5-24 2-13Z" fill="#bd813f"/>
+        <path d="M45 50l9 17 9-14M47 83l-3 9M33 75l29-2" stroke="#714323"/>
+        <path d="M51 33q-4-9 6-14 16-7 23 10l1 8 7 5-8 4-2 6q-12 8-23-4Z" fill="#f2b982"/>
+        <path d="M63 31l-1 12-6-1-4-8" fill="#59352f"/>
+        <path d="M74 37v2" stroke-width="3.5"/>
+        <path d="M73 48q3 2 6 0" stroke="#9a553f" stroke-width="2"/>
+        <path d="M42 26l6-3 6-15 11 3 10-3 7 17 8 2q4 4-7 6-25 4-41-2-5-2 0-5Z" fill="#d4a157"/>
+        <path d="M48 23q15 5 32 0" stroke="#594267" stroke-width="5"/>
+        <path d="M42 52q-7 7 3 17l24 3 11-11-7-8-10 9-12-3" fill="#d79d55"/>
+        <g class="face-case-lens">
+         <path d="M77 58L93 41" stroke="#182333" stroke-width="10"/>
+         <path d="M77 58L93 41" stroke="#d29c4a" stroke-width="5"/>
+         <circle cx="102" cy="32" r="16" fill="#ffca58"/>
+         <circle cx="102" cy="32" r="12" fill="#8fe9eb"/>
+         <path d="M96 31q1-5 6-5m-3 12 9-9" stroke="#e7ffff" stroke-width="2.5"/>
+         <path d="M72 56q3-7 10-5l3 5-7 6Z" fill="#f2b982"/>
+        </g>
+       </g>
+      </svg>
+     </div>
+    </div>
+   </div>
+   <div class="face-case-actions">
+    ${button('LET’S PLAY','start','face-case-start')}
+    <details class="face-case-rules">
+     <summary>How to play</summary>
+     <ol>
+      <li>Pick a secret face. Pass the device without peeking.</li>
+      <li>Tap a feature or use the mic, where supported, to ask one question.</li>
+      <li>Follow the host’s clue. Flip every face it rules out to pass the turn. A mistaken flip reopens in 5 seconds.</li>
+      <li>Ask at least one question before guessing. A correct guess wins. A miss passes the turn.</li>
+     </ol>
+    </details>
+   </div>
+  </section>`);
+ }
  function handoff(player,next,announceName=false,missed=false){stopVoice();clearTimers();phase='handoff';namedHandoff=announceName;if(announceName){if(sound)announcer.backTo(players[player]);}else speak('pass');page(`<div class="face-private"><div class="face-lock">🔒</div><p class="face-kicker">TOP SECRET · NO PEEKING</p><h1>${missed?'Wrong guess. ':''}Pass to ${name(player)}</h1><p>${next==='pick'?'Choose your mystery person. Everyone else, look away!':'Your detective board is ready. Keep it hidden from your rival.'}</p>${button(`I’M ${name(player)} — READY!`,next==='pick'?'ready-pick':'ready-turn')}</div>`);}
  function pick(){phase='pick';page(`<div class="face-heading"><p class="face-kicker">SECRET PICK · ${name(picker)}</p><h1>Choose your mystery face</h1><p>All 24 faces. Pick one and lock it in.</p></div>${grid('pick')}<div class="faces-actions">${button(selected===null?'TAP A FACE TO CHOOSE':`LOCK IN ${FACES[selected].name.toUpperCase()} 🔒`,'lock')}</div>`);host.querySelector('[data-action="lock"]').disabled=selected===null;}
  function board(){phase='play';page(`<div class="face-heading"><p class="face-kicker">${name(match.turn)} · YOUR TURN</p><h1>${guessMode?'Crack the case!':answered?'Follow the clue. Flip the cards.':'Who’s hiding in plain sight?'}</h1></div><div class="face-tools"><span>${24-match.down[match.turn].size} / 24 standing</span>${button(zoomMode?'🔎 Zoom ON':'🔎 Zoom','zoom','face-small')}${button('Clues','clues','face-small')}${button('🔒 My face','secret','face-small')}</div>${grid('play')}<div class="face-clue" data-answer="${lastClue?lastClue.answer?'yes':'no':'ready'}" role="status" aria-live="polite"><b>${lastClue?lastClue.answer?'✓ YES!':'✕ NO!':'YOUR MOVE'}</b><span>${lastClue?esc(guidance(lastClue.key,lastClue.value,lastClue.answer).replace(/^(Yes|No)! /,'')):guessMode?'Tap the face you think your opponent picked.':zoomMode?'Tap any card for a closer look.':'Tap a feature or ask aloud. Tap cards to flip them.'}</span></div><div class="face-features" ${answered?'hidden':''} aria-label="Question features">${FEATURES.map(g=>`<button data-feature="${g.key}" ${answered||guessMode?'disabled':''}><span>${g.icon}</span>${g.label}</button>`).join('')}</div><div class="faces-actions">${guessMode?button('← KEEP INVESTIGATING','cancel','face-secondary'):answered?`${button('PASS DEVICE →','pass')}${button('🎯 GUESS NOW','guess','face-secondary')}`:`${button('🎙 ASK ALOUD','listen')}${button('🎯 GUESS NOW','guess','face-secondary')}`}</div>`);const guess=host.querySelector('[data-action="guess"]');
