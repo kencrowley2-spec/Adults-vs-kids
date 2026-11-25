@@ -1,5 +1,6 @@
 import {wheelControl} from './ghostline-wheel.js';
 import {gtEngine} from './ghostline-engine.js';
+import {gtMusic} from './ghostline-music.js?v=1';
 import {LENGTH,STEP,grid,drive,rivalAt,wakeStrength,paceRun} from './ghostline-core.js?v=6';
 import {paint} from './ghostline-view.js?v=7';
 import {loadRaceArt} from './ghostline-scenery.js?v=5';
@@ -17,12 +18,13 @@ export function mountGhostline({players,onExit,onComplete,beforeRematch,soundEna
  let phase='ready',leg=0,car=grid(),trace=[],times=[],frame=0,last=0,debt=0,action=null,width=1,height=1,dirty=true;
  const wheel=wheelControl(canvas,()=>phase==='race',()=>car.steer);
  let round=1,tunnel=false,pace=paceRun();
- let audio,engine,voiceGain,voiceBuffer=null,voice=null,muted=!soundEnabled,rival=null;
+ let audio,engine,music,voiceGain,voiceBuffer=null,voice=null,muted=!soundEnabled,rival=null;
  let loadingVoice=true,signalAt=null,waitUntil=0;
  // Preload the track while the driver reads the grid panel. Each call starts one second apart.
  try{
   audio=new (window.AudioContext||window.webkitAudioContext)();
   voiceGain=audio.createGain();voiceGain.connect(audio.destination);
+  music=gtMusic(audio);
   fetch('/assets/ghostline/start-announcer.mp3').then(response=>{
    if(!response.ok)throw Error('Announcer unavailable');
    return response.arrayBuffer();
@@ -33,7 +35,9 @@ export function mountGhostline({players,onExit,onComplete,beforeRematch,soundEna
  function updateSound(){
   mute.textContent=muted?'♫ off':'♫';mute.setAttribute('aria-label',muted?'Enable race sound':'Mute race sound');
   if(voiceGain)voiceGain.gain.value=muted?0:1;
-  engine?.volume(!muted&&phase==='race');
+  const racing=!muted&&phase==='race';
+  engine?.volume(racing);
+  if(racing)music?.play(()=>car.time);else music?.pause();
  }
  function unlockSound(){
   if(!audio)return;
@@ -41,7 +45,7 @@ export function mountGhostline({players,onExit,onComplete,beforeRematch,soundEna
   if(!engine){try{engine=gtEngine(audio);}catch{}}
  }
  updateSound();
- function quiet(){engine?.volume(false);}
+ function quiet(){engine?.volume(false);music?.pause();}
  mute.onclick=()=>{muted=!muted;if(!muted)unlockSound();updateSound();};
  const held=new Map(),format=n=>n.toFixed(2)+' s';
  function size(){wheel.reset();const r=canvas.getBoundingClientRect(),dpr=Math.min(1.75,window.devicePixelRatio||1);width=r.width;height=r.height;canvas.width=Math.round(width*dpr);canvas.height=Math.round(height*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);dirty=true;}
@@ -115,7 +119,7 @@ export function mountGhostline({players,onExit,onComplete,beforeRematch,soundEna
  const keys={ArrowLeft:-1,a:-1,ArrowRight:1,d:1};
  function key(e){const k=e.key.length===1?e.key.toLowerCase():e.key;if(!(k in keys)||phase!=='race')return;e.preventDefault();if(e.type==='keydown')held.set(k,keys[k]);else held.delete(k);}
  function visibility(){if(document.hidden)pause();}
- function close(){clearSignal();stopLoading();cancelAnimationFrame(frame);if(audio)audio.close().catch(()=>{});observer.disconnect();document.removeEventListener('visibilitychange',visibility);window.removeEventListener('blur',pause);host.close();host.remove();onExit();}
+ function close(){clearSignal();stopLoading();cancelAnimationFrame(frame);music?.dispose();if(audio)audio.close().catch(()=>{});observer.disconnect();document.removeEventListener('visibilitychange',visibility);window.removeEventListener('blur',pause);host.close();host.remove();onExit();}
  for(const [i,b] of [...arrows.children].entries()){
   b.onpointerdown=e=>{if(phase!=='race')return;e.preventDefault();b.setPointerCapture(e.pointerId);held.set(e.pointerId,i?1:-1);};
   b.onpointerup=b.onpointercancel=b.onlostpointercapture=e=>held.delete(e.pointerId);

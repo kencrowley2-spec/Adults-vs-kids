@@ -37,6 +37,6 @@ export async function GET(request:Request){
 <a href="/club-checkout?plan=year">Yearly · ${membership.annual}</a>
 </div>
 <form method="dialog"><button type="submit" data-voice-return autofocus>Return to Game</button></form>
-</dialog><script src="/arcade.js?v=115" type="module"></script></body></html>`;
+</dialog><script src="/arcade.js?v=116" type="module"></script></body></html>`;
  return memberReply(html,200,auth.headers);
 }
