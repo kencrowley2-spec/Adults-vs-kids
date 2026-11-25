@@ -13,7 +13,7 @@ import {mountFrog,frogCourses,frogRoundWinner} from './arcade-frog.js?v=3';
 import {mountTreasure,treasurePlan} from './arcade-treasure.js?v=1';
 import {mountBlocks} from './arcade-blocks.js?v=1';
 import {mountBasketball} from './arcade-basketball.js?v=1';
-import {coverMarkup,recentGames,BROWSE_SHELVES} from './arcade-library.js?v=26';
+import {coverMarkup,recentGames,BROWSE_SHELVES} from './arcade-library.js?v=27';
 import {GAMES, ANIMALS, TRIVIA, PICTURES, CHALLENGES} from './arcade-data.js?v=38';
 import {shuffle, roundWinner, awardRound, lineWinner} from './arcade-core.js';
 

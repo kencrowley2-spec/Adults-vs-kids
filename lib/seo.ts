@@ -54,7 +54,7 @@ export function enrichPublicHtml(html:string,path:string,extra:object[]=[]){
   let srcset='',displaySize='';
   if(name==='brand-logo.jpg'){srcset='/assets/brand-logo-320.webp 320w, /assets/brand-logo-640.webp 640w, /assets/brand-logo.jpg 1536w';displaySize='240px';}
   else if(name==='all-access-club-dashboard.webp'){srcset='/assets/all-access-club-dashboard-384.webp 384w, /assets/all-access-club-dashboard-768.webp 768w, /assets/all-access-club-dashboard.webp 1536w';displaySize='(max-width: 700px) calc(100vw - 32px), 1112px';}
-  else if(name&&/^web-.*-cover.*\.webp$/.test(name)&&name in sizes){const stem=name.replace(/\.webp$/,'');srcset='/assets/'+stem+'-170.webp 170w, /assets/'+stem+'-340.webp 340w, /assets/'+name+' 680w';displaySize=canonicalPath==='/'?'(max-width: 700px) 23vw, 180px':'(max-width: 700px) 45vw, 340px';}
+  else if(name&&/^web-.*-cover.*\.webp$/.test(name)&&name in sizes){const stem=name.replace(/\.webp$/,'');srcset='/assets/'+stem+'-170.webp 170w, /assets/display/'+stem.slice(4)+'-340.webp 340w, /assets/display/'+stem.slice(4)+'-440.webp 440w, /assets/'+name+' 680w';displaySize=(canonicalPath==='/downloads'||/class="book-cover"/.test(tag))?'170px':canonicalPath==='/'?'(max-width: 700px) 23vw, 180px':'(max-width: 700px) 45vw, 340px';}
   return srcset?tag.replace('<img','<img srcset="'+srcset+'" sizes="'+displaySize+'"'):tag;
  });
  return addSocialLinks(html.replace('</head>',head+'</head>'));

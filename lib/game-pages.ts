@@ -23,7 +23,7 @@ const tips:Record<string,string>={
  pinball:'Trade the controls after a full game. Have the waiting player call out the star while the player at the flippers watches the ball.'
 };
 const pinball={id:'pinball',name:'Arcade Pinball',description:'Open the Arcade cabinet and choose Play Pinball. Launch the ball and use the left and right flippers to keep it in play. Bumpers earn 100 points and the star earns 250.'};
-const artwork:Record<string,string>={ghostline:'/assets/ghostline-gt.webp',flex:'/assets/flex-off-cover-480.webp',hexgl:'/games/hexgl/css/title.png',pinball:'/assets/avk-pinball-cabinet.webp'};
+const artwork:Record<string,string>={ghostline:'/assets/display/ghostline-cover.webp',flex:'/assets/flex-off-cover-480.webp',hexgl:'/assets/display/hexgl-title.webp',pinball:'/assets/avk-pinball-cabinet.webp'};
 for(const id of ['memory','claw','lava','faces','mole'])artwork[id]='/assets/featured/'+id+'-480.webp';
 export const gamePages=[...GAMES.filter(g=>g.id!=='neighborhood'),pinball].map(g=>({
  ...g,path:'/games/'+g.name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/-$/,''),

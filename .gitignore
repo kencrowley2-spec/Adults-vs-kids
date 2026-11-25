@@ -48,3 +48,6 @@ yarn-error.log*
 
 # Supabase CLI local state
 /supabase/.temp/
+
+# Display copies generated for production and development
+/public/assets/display/

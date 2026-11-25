@@ -1,3 +1,5 @@
+:root{--dashboard-arcade-photo:url('/assets/dashboard-arcade-photo.webp')}@media(max-width:700px){:root{--dashboard-arcade-photo:url('/assets/display/arcade-room-mobile.webp')}}
+:root{--avk-gold-cabinet:url('/assets/avk-gold-cabinet.webp')}@media(max-width:700px){:root{--avk-gold-cabinet:url('/assets/display/cabinet-mobile.webp')}}
 /* Upright cabinet: the screen is a live game library, sized with the whole machine. */
 body:has(#arcade-lobby:not([hidden])){background:radial-gradient(ellipse at 50% 40%,#45464a,#191a1c 70%);height:100svh;overflow:hidden;padding:0}
 body:has(#arcade-lobby:not([hidden]))>main{height:calc(100svh - 76px - env(safe-area-inset-bottom,0px));padding:10px 12px;max-width:none;display:flex;justify-content:center;align-items:center}
@@ -178,7 +180,7 @@ body:has(#arcade-lobby:not([hidden]))>main{
  background:#ffd522 url('/assets/arcade-gold-burst.svg') center/100% 100% no-repeat
 }
 .arcade-cabinet.upright-cabinet{
- background-image:url('/assets/avk-gold-cabinet.webp');
+ background-image:var(--avk-gold-cabinet);
  background-size:131.8919% 137.4557%;
  background-position:47.4576% 32.4763%;
  background-repeat:no-repeat;
@@ -228,7 +230,7 @@ body:has(#arcade-lobby:not([hidden]))>main{height:calc(100svh - 76px - env(safe-
 
 /* Neon game room and the HD Spotlight collection. Scoped to the browsing cabinet. */
 body:has(#arcade-lobby:not([hidden])){background:#08060c}
-body:has(#arcade-lobby:not([hidden]))>main{background:radial-gradient(ellipse at 50% 40%,#ffc93820,transparent 65%),linear-gradient(90deg,#080610b8,#08061080 50%,#080610b8),url('/assets/dashboard-arcade-photo.webp') center/cover no-repeat}
+body:has(#arcade-lobby:not([hidden]))>main{background:radial-gradient(ellipse at 50% 40%,#ffc93820,transparent 65%),linear-gradient(90deg,#080610b8,#08061080 50%,#080610b8),var(--dashboard-arcade-photo) center/cover no-repeat}
 .upright-cabinet .cabinet-screen-frame{background:radial-gradient(ellipse at 50% 0,#47341666,transparent 65%),#08090e;border:1px solid #e9c45b60;box-shadow:inset 0 0 18px #000,0 0 15px #e5aa1722;border-radius:1.5cqw;padding:2% 1.8%}
 .upright-cabinet .cabinet-screen-bar{color:#e1c677;font-size:1.7cqw;letter-spacing:.08em;padding-bottom:2cqw}
 .upright-cabinet .cabinet-playfield{gap:3cqw}
