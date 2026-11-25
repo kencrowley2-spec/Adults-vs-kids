@@ -36,7 +36,7 @@ const images=[
  ['assets/holiday-gift-basket-1536.webp','basket-main',800],
  ['assets/flex-off-cover.webp','flex-cover',480],
 ];
-for(const id of ['lava','claw','memory','faces','mole']){
+for(const id of ['lava','claw','memory','draw','faces','mole']){
   images.push(['assets/featured/'+id+'-480.webp','featured-'+id,480]);
 }
 for(const stem of ['coloring-cover-final','family-cover-final','make-play-cover-final','young-adult-cover-final','young-adult-official-cover']){

@@ -24,7 +24,7 @@ const tips:Record<string,string>={
 };
 const pinball={id:'pinball',name:'Arcade Pinball',description:'Open the Arcade cabinet and choose Play Pinball. Launch the ball and use the left and right flippers to keep it in play. Bumpers earn 100 points and the star earns 250.'};
 const artwork:Record<string,string>={ghostline:'/assets/display/ghostline-cover.webp',flex:'/assets/flex-off-cover-480.webp',hexgl:'/assets/display/hexgl-title.webp',pinball:'/assets/avk-pinball-cabinet.webp'};
-for(const id of ['memory','claw','lava','faces','mole'])artwork[id]='/assets/featured/'+id+'-480.webp';
+for(const id of ['memory','claw','lava','faces','mole','draw'])artwork[id]='/assets/featured/'+id+'-480.webp';
 export const gamePages=[...GAMES.filter(g=>g.id!=='neighborhood'),pinball].map(g=>({
  ...g,path:'/games/'+g.name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/-$/,''),
  tip:tips[g.id],image:artwork[g.id],play:g.id==='pinball'?'/family/arcade#cabinet-pinball':'/family/arcade?game='+g.id

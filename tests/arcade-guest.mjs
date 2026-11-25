@@ -28,11 +28,13 @@ assert.equal(dom.window.document.querySelector('[data-guest-login]').getAttribut
 assert.equal(mountGuestGate({document:dom.window.document}).allow('memory'),false,'reload does not restore free plays');
 const member=mountGuestGate({signedIn:true,document:dom.window.document});
 for(let i=0;i<5;i++)assert.equal(member.allow('memory'),true,'members bypass trial limit');
-let user=null,queries=0;
+let user=null,queries=0,clubLookups=0,clubPaid=false;
 const exports={};
 vm.runInNewContext(ts.transpileModule(readFileSync('app/family/arcade/route.ts','utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS}}).outputText,{
- exports,Request,Response,Headers,URL,require:name=>{
+ exports,Request,Response,Headers,URL,process:{env:{}},require:name=>{
   if(name.includes('arcade-data'))return {GAMES};
+  if(name.includes('config/offers'))return {membership:{monthly:'$2.99/month',annual:'$24.95/year'}};
+  if(name.includes('payments/subscriptions'))return {clubSubscriptions:async()=>{clubLookups++;return {legacy:false,paidActive:clubPaid?[{}]:[]};}};
   if(name.includes('family-roster'))return {cleanRoster:r=>({...r,playingAdults:[],playingKids:[]})};
   if(name.includes('auth/session'))return {
    verifiedMember:async()=>({user,client:{from(){queries++;return {select:()=>({eq:()=>({maybeSingle:async()=>({data:null})})})};}},headers:new Headers()}),
@@ -44,11 +46,18 @@ vm.runInNewContext(ts.transpileModule(readFileSync('app/family/arcade/route.ts',
 let response=await exports.GET(new Request('https://adultsvskids.com/family/arcade?game=memory'));
 let html=await response.text();
 assert.equal(response.status,200);assert.equal(queries,0,'guest never reads a family roster');
+assert.equal(clubLookups,0);
+assert.match(html,/id="arcade-voice" data-access="offer"/);
 assert.match(html,/data-account-id=""/);assert.match(html,/id="arcade-guest-status"/);
 user={id:'verified-fixture'};
 response=await exports.GET(new Request('https://adultsvskids.com/family/arcade'));
 html=await response.text();assert.equal(response.status,200);assert.equal(queries,1);
 assert.match(html,/data-account-id="verified-fixture"/);assert.doesNotMatch(html,/id="arcade-guest-status"/);
+assert.equal(clubLookups,1);
+assert.match(html,/id="arcade-voice" data-access="offer"/);
+clubPaid=true;
+response=await exports.GET(new Request('https://adultsvskids.com/family/arcade'));
+assert.match(await response.text(),/id="arcade-voice" data-access="member"/);
 for(const file of ['public/arcade.js','public/arcade-faces.js','public/arcade-draw.js','public/arcade-lava.js','public/arcade-pinball.js','public/games/hexgl/avk.js']){
  const source=readFileSync(file,'utf8').replace(/^import .*;$/gm,'').replace(/^export /gm,'');
  new vm.Script(source,{filename:file});
