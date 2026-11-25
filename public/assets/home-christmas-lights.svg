@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="100" viewBox="0 0 1200 100">
+  <style>
+    .lamp { color: var(--holiday); }
+    .light { fill: currentColor; }
+    @media (prefers-reduced-motion: no-preference) {
+      .lamp { animation: christmas-glow 12s ease-in-out infinite; }
+      @keyframes christmas-glow {
+        0%, 10%, 90%, 100% { color: #fff6de; opacity: 1; }
+        28%, 72% { opacity: .55; }
+        45%, 55% { color: var(--holiday); opacity: 1; }
+      }
+    }
+  </style>
+  <defs>
+    <radialGradient id="halo">
+      <stop stop-color="white" stop-opacity=".8"/>
+      <stop offset=".46" stop-color="white" stop-opacity=".32"/>
+      <stop offset="1" stop-color="white" stop-opacity="0"/>
+    </radialGradient>
+    <mask id="glow" maskUnits="userSpaceOnUse" x="-42" y="-42" width="84" height="84">
+      <circle r="42" fill="url(#halo)"/>
+    </mask>
+    <g id="bulb">
+      <circle class="light" r="42" mask="url(#glow)"/>
+      <ellipse class="light" rx="7" ry="10"/>
+      <path d="M-2 -4v5" stroke="white" stroke-width="2" stroke-linecap="round" opacity=".85"/>
+    </g>
+  </defs>
+  <path d="M0 6Q600 64 1200 6" fill="none" stroke="#656253" stroke-width="2"/>
+  <path d="M50 13.8v11" stroke="#646255" stroke-width="2"/><rect x="45" y="22.8" width="10" height="8" rx="2" fill="#8a8166"/>
+  <use class="lamp" href="#bulb" x="50" y="34.8" style="--holiday:#ff4046"/>
+  <path d="M160 21.1v14" stroke="#646255" stroke-width="2"/><rect x="155" y="33.1" width="10" height="8" rx="2" fill="#8a8166"/>
+  <use class="lamp" href="#bulb" x="160" y="45.1" style="--holiday:#38eb72"/>
+  <path d="M270 26.7v17" stroke="#646255" stroke-width="2"/><rect x="265" y="41.7" width="10" height="8" rx="2" fill="#8a8166"/>
+  <use class="lamp" href="#bulb" x="270" y="53.7" style="--holiday:#529dff"/>
+  <path d="M380 30.8v11" stroke="#646255" stroke-width="2"/><rect x="375" y="39.8" width="10" height="8" rx="2" fill="#8a8166"/>
+  <use class="lamp" href="#bulb" x="380" y="51.8" style="--holiday:#ffc649"/>
+  <path d="M490 33.2v14" stroke="#646255" stroke-width="2"/><rect x="485" y="45.2" width="10" height="8" rx="2" fill="#8a8166"/>
+  <use class="lamp" href="#bulb" x="490" y="57.2" style="--holiday:#ff4046"/>
+  <path d="M600 34.0v17" stroke="#646255" stroke-width="2"/><rect x="595" y="49.0" width="10" height="8" rx="2" fill="#8a8166"/>
+  <use class="lamp" href="#bulb" x="600" y="61.0" style="--holiday:#38eb72"/>
+  <path d="M710 33.2v11" stroke="#646255" stroke-width="2"/><rect x="705" y="42.2" width="10" height="8" rx="2" fill="#8a8166"/>
+  <use class="lamp" href="#bulb" x="710" y="54.2" style="--holiday:#529dff"/>
+  <path d="M820 30.8v14" stroke="#646255" stroke-width="2"/><rect x="815" y="42.8" width="10" height="8" rx="2" fill="#8a8166"/>
+  <use class="lamp" href="#bulb" x="820" y="54.8" style="--holiday:#ffc649"/>
+  <path d="M930 26.7v17" stroke="#646255" stroke-width="2"/><rect x="925" y="41.7" width="10" height="8" rx="2" fill="#8a8166"/>
+  <use class="lamp" href="#bulb" x="930" y="53.7" style="--holiday:#ff4046"/>
+  <path d="M1040 21.1v11" stroke="#646255" stroke-width="2"/><rect x="1035" y="30.1" width="10" height="8" rx="2" fill="#8a8166"/>
+  <use class="lamp" href="#bulb" x="1040" y="42.1" style="--holiday:#38eb72"/>
+  <path d="M1150 13.8v14" stroke="#646255" stroke-width="2"/><rect x="1145" y="25.8" width="10" height="8" rx="2" fill="#8a8166"/>
+  <use class="lamp" href="#bulb" x="1150" y="37.8" style="--holiday:#529dff"/>
+</svg>
