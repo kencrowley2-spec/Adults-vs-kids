@@ -3,14 +3,16 @@ export const RULES=Object.freeze({escape:30,jump:.62,range:163,crack:.95,maxTrap
 export const TRAPS=['crack'];
 export function course(round=0,easy=false){
  const tiles=[{id:0,x:65,y:230,type:'start',locked:true}];
- for(let c=1;c<=7;c++){
+ const columns=easy?7:15;
+ for(let c=1;c<=columns;c++){
   const x=65+c*112;
+  if(c===8){tiles.push({id:tiles.length,column:c,x,y:230,type:'safe',bridge:true,locked:true});continue;}
   tiles.push({id:tiles.length,column:c,row:0,x,y:easy?230:270+[0,-12,10][(c+round)%3],type:'safe',locked:c===1});
-  tiles.push({id:tiles.length,column:c,row:1,x,y:140+[0,18,-14][(c+round)%3],type:'safe',locked:c===1});
+  tiles.push({id:tiles.length,column:c,row:1,x,crystal:c===4||c===12,y:158+[0,18,-14][(c+round)%3],type:'safe',locked:c===1});
  }
- tiles.push({id:tiles.length,x:961,y:230,type:'finish',locked:true});return tiles;
+ tiles.push({id:tiles.length,x:65+(columns+1)*112,y:230,type:'finish',locked:true});return tiles;
 }
-export function reachable(tiles,from,to){if(from===to)return false;const a=tiles[from],b=tiles[to];return !!a&&!!b&&Math.hypot(a.x-b.x,a.y-b.y)<=RULES.range;}
+export function reachable(tiles,from,to){if(from===to)return false;const a=tiles[from],b=tiles[to];return !!a&&!!b&&!(a.bridge&&b.x<a.x)&&Math.hypot(a.x-b.x,a.y-b.y)<=RULES.range;}
 export function flight(tile){return RULES.jump;}
 // Only the builder sees sabotaged blocks before the runner lands on them.
 export function platformAppearance(tile,phase){return tile.type==='crack'&&phase!=='build'&&!tile.revealed?'safe':tile.type;}
@@ -19,23 +21,22 @@ export function danger(tile,t,landedAt=t){
  return null;
 }
 export function scoreAttempt(success,elapsed){return success?{escape:100+2*Math.floor(Math.max(0,RULES.escape-elapsed)),trap:0}:{escape:0,trap:50};}
-// Time-expanded search with the exact jump durations and trap danger predicates.
-// Waiting is allowed only when the platform remains safe throughout the wait.
 export function trapSpacingValid(tiles){
  const traps=tiles.filter(t=>TRAPS.includes(t.type));
  return traps.every((a,i)=>traps.slice(i+1).every(b=>Math.abs(a.column-b.column)+Math.abs(a.row-b.row)!==1));
 }
 export function validateCourse(tiles){
  if(tiles.some(t=>t.locked&&TRAPS.includes(t.type))||tiles.filter(t=>TRAPS.includes(t.type)).length>RULES.maxTraps||!trapSpacingValid(tiles))return false;
- const step=.05,queue=[{id:0,t:0,landed:0}],seen=new Set();
- for(let q=0;q<queue.length;q++){
-  const s=queue[q];if(tiles[s.id].type==='finish')return true;
-  const key=`${s.id}:${Math.round(s.t/step)}:${tiles[s.id].type==='crack'?Math.round(s.landed/step):0}`;
-  if(seen.has(key)||s.t>RULES.escape)continue;seen.add(key);
-  if(danger(tiles[s.id],s.t,s.landed))continue;
-  const wait=+(s.t+step).toFixed(2);
-  if(!danger(tiles[s.id],wait,s.landed))queue.push({...s,t:wait});
-  for(const tile of tiles){if(!reachable(tiles,s.id,tile.id))continue;const arrival=s.t+flight(tiles[s.id]);if(arrival<=RULES.escape&&!danger(tile,arrival,arrival))queue.push({id:tile.id,t:arrival,landed:arrival});}
+ // Breaking blocks permit immediate departure. Waiting cannot open a new route.
+ const queue=[{id:0,time:0}],seen=new Set([0]);
+ for(const {id,time} of queue){
+  if(tiles[id].type==='finish')return true;
+  const arrival=time+flight(tiles[id]);
+  if(arrival>RULES.escape)continue;
+  for(const next of tiles){
+   if(seen.has(next.id)||!reachable(tiles,id,next.id)||danger(next,arrival,arrival))continue;
+   seen.add(next.id);queue.push({id:next.id,time:arrival});
+  }
  }
  return false;
 }

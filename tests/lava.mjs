@@ -4,7 +4,7 @@ for(let round=0;round<3;round++){
  let tiles=course(round);assert.ok(validateCourse(tiles));
  for(const [id,type] of [[4,'crack'],[8,'crack'],[12,'crack']]){const p=placeTrap(tiles,id,type);assert.ok(p.ok);tiles=p.tiles;}
  assert.equal(placeTrap(tiles,14,'crack').ok,false);assert.equal(placeTrap(tiles,0,'crack').ok,false);assert.ok(validateCourse(tiles));
- let t=0,id=0;for(const to of [1,3,5,7,9,11,13,15]){assert.ok(reachable(tiles,id,to));t+=flight(tiles[id]);assert.equal(danger(tiles[to],t,t),null);id=to;}assert.ok(t<30);
+ let t=0,id=0;for(const to of [1,3,5,7,9,11,13,15,16,18,20,22,24,26,28,30]){assert.ok(reachable(tiles,id,to));t+=flight(tiles[id]);assert.equal(danger(tiles[to],t,t),null);id=to;}assert.equal(tiles[id].type,'finish');assert.ok(t<30);assert.equal(tiles.filter(t=>t.crystal).length,2);
 
 }
 assert.equal(validateCourse([{id:0,x:0,y:0,type:'start'},{id:1,x:999,y:0,type:'finish'}]),false);

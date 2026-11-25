@@ -14,7 +14,7 @@ function fixture(width=844,height=390){
  const $=s=>document.querySelector(s),phase=()=>$('.lava-phase strong').textContent,host=()=>$('.lava-game');
  function advance(sec){const end=now+sec*1000;while(now<end&&raf){now=Math.min(end,now+10);const fn=raf;raf=null;fn(now);}}
  function click(s){const b=$(s);assert.ok(b,`Missing ${s}`);b.click();}
- function point(id,round=0){const t=core.course(round)[id],h=height-104,scale=Math.min(width/1030,h/360),ox=(width-1030*scale)/2,oy=(h-360*scale)/2;return {clientX:ox+t.x*scale,clientY:46+oy+t.y*scale};}
+ function point(id,round=0){const t=core.course(round)[id],h=height-104,scale=Math.min(width/1030,h/360),ox=(width-1030*scale)/2,oy=(h-360*scale)/2;return {clientX:ox+(t.x-(t.column>8||t.type==='finish'?896:0))*scale,clientY:46+oy+t.y*scale};}
  function tap(id,round=0){const e=new window.MouseEvent('pointerdown',{bubbles:true,...point(id,round)});$('canvas').dispatchEvent(e);}
  function trap(type,id,round=0,drag=false){const b=$(`[data-trap=${type}]`);b.dispatchEvent(new window.MouseEvent('pointerdown',{bubbles:true,clientX:10,clientY:height-20}));host().dispatchEvent(new window.MouseEvent('pointerup',{bubbles:true,...(drag?point(id,round):{clientX:10,clientY:height-20})}));if(!drag)tap(id,round);}
  advance(.02);return {tracks,draws:()=>draws,$,click,advance,tap,trap,phase,complete,exits:()=>exits,cleanup:c.cleanup,speech,audio:()=>({resumes,suspends,closed}),document};
@@ -27,7 +27,7 @@ for(const [w,h] of [[844,390],[740,360],[932,430]]){
  const f=fixture(w,h);f.click('[data-action=start]');f.advance(3.1);assert.match(f.phase(),/BUILD YOUR TRAP/);
  assert.equal(f.document.querySelectorAll('[data-trap]').length,0);assert.equal(f.$('[data-action=attack]'),null);
  for(const id of [1,2]){f.tap(id);assert.match(f.$('.lava-toast').textContent,/first two blocks/);}assert.match(f.$('.lava-phase b').textContent,/0\/5 TRAPS/);
- f.tap(4);f.advance(.02);assert.ok(f.draws().some(a=>a[1]===512&&a[2]===0),'Builder sees sabotage');f.tap(4);
+ f.click('[data-action=room-1]');f.tap(16);assert.match(f.$('.lava-phase b').textContent,/1\/5 TRAPS/);f.tap(16);f.click('[data-action=room-0]');f.tap(4);f.advance(.02);assert.ok(f.draws().some(a=>a[1]===512&&a[2]===0),'Builder sees sabotage');f.tap(4);
  f.tap(3);f.tap(5);assert.match(f.$('.lava-toast').textContent,/safe block between/);f.tap(3);
  for(const id of TRAP_LAYOUT.slice(0,4))f.tap(id);assert.match(f.$('.lava-phase b').textContent,/4\/5 TRAPS.*NO TIMER/);
  f.click('[data-action=pause]');f.advance(8);f.click('[data-action=resume]');
@@ -38,7 +38,7 @@ for(const [w,h] of [[844,390],[740,360],[932,430]]){
  for(let n=0;n<6;n++){
   const round=Math.floor(n/2);if(n>0){assert.match(f.phase(),/BUILD/);fillTraps(f,round);f.advance(7.1);assert.match(f.phase(),/ESCAPE/);}
   if(n%2)f.advance(1.1);
-  for(const id of [1,3,5,7,9,11,13,15]){f.tap(id,round);f.advance(.65);}
+  for(const id of [1,3,5,7,9,11,13,15,16,18,20,22,24,26,28,30]){f.tap(id,round);f.advance(.65);}
   assert.match(f.$('.lava-overlay').textContent,/THEY MADE IT/);f.advance(4.6);
  }
  assert.equal(f.speech.spoken.length,0);assert.equal(f.complete.length,1);assert.equal(f.complete[0].attempts.length,6);assert.match(f.$('.lava-overlay').textContent,/LAVA CHAMPION/);
@@ -68,3 +68,12 @@ for(const [w,h] of [[844,390],[740,360],[932,430]]){
  f.cleanup();assert.equal(track.paused,true);assert.equal(track.src,'');assert.equal(track.loaded,true);
 }
 console.log('PASS: untimed setup survives 65 seconds; first pair protected; fifth trap immediately hides and passes; all six escape turns, rematch, hidden traps, splash, escape timeout, pause and soundtrack remain functional.');
+
+{
+ const f=fixture();f.click('[data-action=start]');f.advance(3.1);fillTraps(f);f.advance(7.1);
+ for(const id of [2,4,6,8]){f.tap(id);f.advance(.65);}
+ assert.match(f.$('.lava-tools').textContent,/SHIELD/);
+ f.tap(10);f.advance(1.7);
+ assert.match(f.phase(),/ESCAPE/);assert.match(f.$('.lava-toast').textContent,/Shield saved/);
+ assert.doesNotMatch(f.$('.lava-tools').textContent,/SHIELD/);f.cleanup();
+}

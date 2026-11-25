@@ -1,4 +1,4 @@
-import {RULES,TRAPS,course,reachable,flight,danger,placeTrap,LavaMatch,platformAppearance} from './arcade-lava-core.js?v=6';
+import {RULES,TRAPS,course,reachable,flight,danger,placeTrap,LavaMatch,platformAppearance} from './arcade-lava-core.js?v=7';
 const COLORS={safe:'#2bd8ff',start:'#3ee4ff',finish:'#ffe14f',crack:'#ff5058'};
 const LABELS={crack:'Breaking Block'};
 const SYMBOLS={crack:'ϟ'};
@@ -10,7 +10,10 @@ export function mountLava({players=['Adults','Kids'],onExit,onComplete=()=>{},be
  document.body.appendChild(host);const bodyOverflow=document.body.style.overflow;document.body.style.overflow='hidden';
  const canvas=host.querySelector('canvas'),ctx=canvas.getContext('2d'),overlay=host.querySelector('.lava-overlay'),score=host.querySelector('.lava-score'),tools=host.querySelector('.lava-tools'),hint=host.querySelector('.lava-hint'),title=host.querySelector('.lava-phase strong'),timer=host.querySelector('.lava-phase b'),roundLabel=host.querySelector('.lava-round'),toast=host.querySelector('.lava-toast');
  const background=new Image();background.src='/assets/lava-room.webp';const atlas=new Image();atlas.src='/assets/lava-sprites.webp';let cw=1000,ch=500,scale=1,ox=0,oy=0,targetId=1;
- let soundtrack=null;
+ let soundtrack=null,room=0,shield=false;
+ const rooms=['Ember Alley','Volcano Vault'];
+ function viewRoom(index){room=index;cameraX=index?-896:0;}
+ function resetRun(){viewRoom(0);shield=false;targetId=1;}
  const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
  function tone(freq,dur=.15,type='triangle',level=.05,end=freq){if(!audio||audio.state!=='running')return;const o=audio.createOscillator(),g=audio.createGain(),t=audio.currentTime;o.type=type;o.frequency.setValueAtTime(freq,t);o.frequency.exponentialRampToValueAtTime(Math.max(20,end),t+dur);g.gain.setValueAtTime(level,t);g.gain.exponentialRampToValueAtTime(.001,t+dur);o.connect(g);g.connect(audio.destination);o.start(t);o.stop(t+dur+.01);o.onended=()=>{o.disconnect();g.disconnect();};}
  function sound(kind){if(!sfx||paused)return;if(kind==='jump')tone(330,.2,'sine',.065,700);else if(kind==='fall'){tone(450,.5,'sawtooth',.06,45);noise(.4,.12);}else if(kind==='land')tone(120,.09,'sine',.1,70);else if(kind==='crack'){noise(.12,.07);tone(100,.12,'sawtooth',.04,40);}else if(kind==='win'){[523,659,784,1046].forEach((f,i)=>{if(audio){const o=audio.createOscillator(),g=audio.createGain(),t=audio.currentTime+i*.13;o.frequency.value=f;g.gain.setValueAtTime(.05,t);g.gain.exponentialRampToValueAtTime(.001,t+.25);o.connect(g);g.connect(audio.destination);o.start(t);o.stop(t+.26);o.onended=()=>{o.disconnect();g.disconnect();};}});noise(.8,.05);}else tone(650,.08,'triangle',.04);}
@@ -32,13 +35,13 @@ export function mountLava({players=['Adults','Kids'],onExit,onComplete=()=>{},be
  function show(html){overlay.innerHTML=html;overlay.querySelector('button')?.focus({preventScroll:true});}
  function screen(titleText,detail,actionLabel,action){show(`<p class="lava-eyebrow">ADULTS vs. KIDS™ · FLOOR IS LAVA</p><h1>${titleText}</h1><p>${detail}</p>${actionLabel?`<button class="lava-primary" data-action="continue">${actionLabel}</button>`:''}`);if(action)overlay.querySelector('[data-action=continue]').onclick=action;}
  function welcome(){phase='welcome';phaseTime=0;updateScore();title.textContent='TRAP MASTER';timer.textContent='3 COMPLETE ROUNDS';tools.innerHTML='';hint.textContent='Build clever traps. Then survive theirs. One phone. Two rivals.';
- show(`<p class="lava-eyebrow">ADULTS vs. KIDS™ PRESENTS</p><h1>FLOOR IS LAVA</h1><h2>TRAP MASTER</h2><p>${esc(players[0])} <b style="color:#ffdc43">VS.</b> ${esc(players[1])}</p><p>Place all 5 hidden traps, then pass the phone.<br>No setup timer · 30 seconds to escape.<br>Tap glowing platforms to jump. Watch the traps!</p><div class="lava-actions"><button class="lava-primary" data-action="start">LET’S PLAY!</button><button data-action="tutorial">Try a practice jump</button></div>`);
+ show(`<p class="lava-eyebrow">ADULTS vs. KIDS™ PRESENTS</p><h1>FLOOR IS LAVA</h1><h2>TRAP MASTER</h2><p>${esc(players[0])} <b style="color:#ffdc43">VS.</b> ${esc(players[1])}</p><p>Two lava rooms. Five hidden traps. One escape.<br>No setup timer · 30 seconds to escape.<br>Cross the bridge to Volcano Vault. Grab a crystal to survive one collapse.</p><div class="lava-actions"><button class="lava-primary" data-action="start">LET’S PLAY!</button><button data-action="tutorial">Try a practice jump</button></div>`);
  }
  function intro(){unlock();phase='intro';phaseTime=0;syncMusic();screen('WHO WILL SURVIVE THE LAVA?!',`${esc(players[match.builder])} builds first! Get ready…`);transition={at:3,fn:beginBuild};}
- function beginBuild(){phase='build';phaseTime=0;syncMusic();elapsed=0;fallEffect=null;tiles=course(match.round,match.easy);current=0;landed=0;jump=null;overlay.innerHTML='';updateScore();title.textContent=`${players[match.builder]} · BUILD YOUR TRAP!`;updateBuildProgress();tools.innerHTML='<span style="color:#ffdc43">ϟ BREAKING BLOCKS</span>';hint.textContent='RUNNER: look away! Place 5 traps · No setup timer · First two blocks stay safe · Tap again to remove.';}
+ function beginBuild(){phase='build';phaseTime=0;syncMusic();elapsed=0;fallEffect=null;tiles=course(match.round,match.easy);resetRun();current=0;landed=0;jump=null;overlay.innerHTML='';updateScore();title.textContent=`${players[match.builder]} · BUILD YOUR TRAP!`;updateBuildProgress();tools.innerHTML=rooms.map((name,i)=>`<button data-action="room-${i}" aria-pressed="${i===0}">${i+1} · ${name}</button>`).join('');hint.textContent='RUNNER: look away! Choose a room and tap blocks to hide 5 traps. Tap again to remove.';}
  function lockBuild(){if(phase!=='build')return;phase='handoff';phaseTime=0;tools.innerHTML='';toast.textContent='';toastUntil=0;screen('PASS THE PHONE!',`${esc(players[match.runner])}, your turn!<br>All blocks look blue. Hidden breaking blocks turn red when you land. Jump away before they collapse!`);transition={at:4,fn:()=>{phase='countdown';phaseTime=0;screen('3','Get ready to jump!');lastTick=-1;}};}
- function beginEscape(){phase='escape';phaseTime=0;syncMusic();elapsed=0;overlay.innerHTML='';current=0;landed=0;jump=null;title.textContent=`${players[match.runner]} · ESCAPE THE LAVA!`;hint.textContent='Tap glowing blocks to jump. If one turns red, jump again quickly!';sound('jump');}
- function tutorialStart(){unlock();tutorial=true;phase='practice';phaseTime=0;syncMusic();elapsed=0;fallEffect=null;tiles=course();current=0;landed=0;jump=null;overlay.innerHTML='';title.textContent='PRACTICE · TAP A GLOWING PLATFORM';timer.textContent='NO TIMER';hint.textContent='Tap a glowing ring. You only need one finger. Practice is not scored.';notify('Tap the next blue platform with a glowing ring.',30);}
+ function beginEscape(){resetRun();tools.textContent=rooms[0];phase='escape';phaseTime=0;syncMusic();elapsed=0;overlay.innerHTML='';current=0;landed=0;jump=null;title.textContent=`${players[match.runner]} · ESCAPE THE LAVA!`;hint.textContent='Tap glowing blocks to jump. Gold crystals shield you from one collapse.';sound('jump');}
+ function tutorialStart(){unlock();resetRun();tutorial=true;phase='practice';phaseTime=0;syncMusic();elapsed=0;fallEffect=null;tiles=course();current=0;landed=0;jump=null;overlay.innerHTML='';title.textContent='PRACTICE · TAP A GLOWING PLATFORM';timer.textContent='NO TIMER';hint.textContent='Tap a glowing ring. You only need one finger. Practice is not scored.';notify('Tap the next blue platform with a glowing ring.',30);}
  function startJump(id){if(!['escape','practice'].includes(phase)||jump||paused||!reachable(tiles,current,id))return;const duration=flight(tiles[current]);jump={from:current,to:id,start:elapsed,duration};sound('jump');}
  function splash(x,y,color='#ffc22f',n=24){for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2,s=50+Math.random()*130;particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-100,life:1+Math.random(),color,size:3+Math.random()*5});}}
  function endAttempt(success,reason){
@@ -55,15 +58,18 @@ export function mountLava({players=['Adults','Kids'],onExit,onComplete=()=>{},be
  const lead=match.scores[0]===match.scores[1]?'The scores are tied!':`${esc(players[match.scores[0]>match.scores[1]?0:1])} leads!`;
  screen(success?'THEY MADE IT!':'LAVA GOT YOU!',`${detail}<br>${oldRound!==match.round&&!oldSudden?`ROUND COMPLETE · ${lead}<br>`:''}${match.complete?'Meet your lava champion…':match.sudden?'SUDDEN DEATH · Both players run the same preset.':'SWITCH SIDES! Now it’s your turn to build!'}`);
  transition={at:4.5,fn:()=>match.complete?finish():match.sudden?beginSudden():beginBuild()};}
- function beginSudden(){tiles=course(0,match.easy);if(!match.easy){tiles[4].type='crack';tiles[8].type='crack';}fallEffect=null;jump=null;current=0;elapsed=0;landed=0;phase='handoff';phaseTime=0;updateScore();screen('SUDDEN DEATH',`${esc(players[match.runner])}, your turn!<br>Identical course. Fastest successful escape wins.${match.easy?' Easier course this time!':''}`);transition={at:4,fn:()=>{phase='countdown';phaseTime=0;lastTick=-1;}};}
+ function beginSudden(){resetRun();tiles=course(0,match.easy);if(!match.easy){tiles[4].type='crack';tiles[8].type='crack';}fallEffect=null;jump=null;current=0;elapsed=0;landed=0;phase='handoff';phaseTime=0;updateScore();screen('SUDDEN DEATH',`${esc(players[match.runner])}, your turn!<br>Identical course. Fastest successful escape wins.${match.easy?' Easier course this time!':''}`);transition={at:4,fn:()=>{phase='countdown';phaseTime=0;lastTick=-1;}};}
  function finish(){phase='final';phaseTime=0;syncMusic();title.textContent='LAVA CHAMPION!';timer.textContent='SHOWDOWN COMPLETE';show(`<p class="lava-eyebrow">THREE ROUNDS · ONE LAVA LEGEND</p><h1>🏆 ${esc(players[match.winner])}!</h1><h2>YOUR LAVA CHAMPION</h2><div class="lava-recap">${players.map((p,i)=>`<div>${esc(p)}<b>${match.scores[i]}</b></div>`).join('')}</div><p>Escape = 100 + 2 per whole second left · Failed escape = 50 to Trap Master</p><div class="lava-actions"><button class="lava-primary" data-action="rematch">PLAY AGAIN!</button><button data-action="exit">Return to Arcade</button></div>`);sound('win');if(!completed){completed=true;onComplete({winner:match.winner,scores:[...match.scores],attempts:[...match.attempts]});}splash(500,120,'#ffdd34',90);}
  function pause(value=true){if(paused===value||disposed)return;paused=value;syncMusic();host.querySelector('[data-action=pause]').textContent=paused?'▶':'Ⅱ';if(paused){audio?.suspend().catch(()=>{});window.speechSynthesis?.cancel();const p=document.createElement('div');p.className='lava-pause lava-overlay';p.innerHTML='<h1>PAUSED</h1><p>Your clock is stopped. Ready when you are.</p><div class="lava-actions"><button class="lava-primary" data-action="resume">RESUME</button><button data-action="exit">Return to Arcade</button></div>';host.querySelector('.lava-playfield').appendChild(p);}else{host.querySelector('.lava-pause')?.remove();unlock();last=performance.now();}}
- function action(e){const b=e.target.closest('[data-action]');if(!b)return;const a=b.dataset.action;if(a==='exit')return exit();if(a==='resume')return pause(false);if(a==='pause')return pause(!paused);if(paused)return;if(a==='music'){music=!music;b.setAttribute('aria-pressed',String(music));b.textContent=music?'♫ Music':'♫ Off';unlock();syncMusic();}if(a==='sfx'){sfx=!sfx;b.setAttribute('aria-pressed',String(sfx));b.textContent=sfx?'♪ Effects':'♪ Off';if(!sfx)window.speechSynthesis?.cancel();}if(a==='start')intro();if(a==='tutorial')tutorialStart();if(a==='rematch'){if(!beforeRematch())return;match=new LavaMatch(Math.random()<.5?0:1);completed=false;transition=null;intro();}}
+ function action(e){const b=e.target.closest('[data-action]');if(!b)return;const a=b.dataset.action;if(a==='exit')return exit();if(a==='resume')return pause(false);if(a==='pause')return pause(!paused);if(paused)return;if(a==='music'){music=!music;b.setAttribute('aria-pressed',String(music));b.textContent=music?'♫ Music':'♫ Off';unlock();syncMusic();}if(a==='sfx'){sfx=!sfx;b.setAttribute('aria-pressed',String(sfx));b.textContent=sfx?'♪ Effects':'♪ Off';if(!sfx)window.speechSynthesis?.cancel();}if(phase==='build'&&(a==='room-0'||a==='room-1')){
+   viewRoom(a==='room-1'?1:0);
+   for(const button of tools.querySelectorAll('button'))button.setAttribute('aria-pressed',String(button===b));
+  }if(a==='start')intro();if(a==='tutorial')tutorialStart();if(a==='rematch'){if(!beforeRematch())return;match=new LavaMatch(Math.random()<.5?0:1);completed=false;transition=null;intro();}}
  host.addEventListener('click',action);
  function world(e){const r=canvas.getBoundingClientRect();return {x:((e.clientX-r.left)*cw/r.width-ox)/scale-cameraX,y:((e.clientY-r.top)*ch/r.height-oy)/scale};}
  function tileAt(p){return tiles.filter(t=>Math.abs(t.x-p.x)<49&&Math.abs(t.y-p.y)<37).sort((a,b)=>Math.hypot(a.x-p.x,a.y-p.y)-Math.hypot(b.x-p.x,b.y-p.y))[0];}
  function updateBuildProgress(){timer.textContent=`${tiles.filter(t=>TRAPS.includes(t.type)).length}/${RULES.maxTraps} TRAPS · NO TIMER`;}
- function buildAt(id,type='crack'){if(phase!=='build'||paused)return;if(tiles[id]?.locked){notify('The first two blocks, start and finish stay safe. Choose a later block.');return;}if(TRAPS.includes(tiles[id]?.type)&&tiles[id].type===type){tiles[id].type='safe';sound('land');notify('Trap removed. Choose another platform.');updateBuildProgress();return;}const result=placeTrap(tiles,id,type);if(result.ok){tiles=result.tiles;sound('land');notify(`${LABELS[type]} placed · ${tiles.filter(t=>TRAPS.includes(t.type)).length}/${RULES.maxTraps} traps`);updateBuildProgress();if(tiles.filter(t=>TRAPS.includes(t.type)).length===RULES.maxTraps)lockBuild();}else notify(result.reason);}
+ function buildAt(id,type='crack'){if(phase!=='build'||paused)return;if(tiles[id]?.bridge){notify('The bridge stays safe. Choose a blue block.');return;}if(tiles[id]?.locked){notify('The first two blocks, start and finish stay safe. Choose a later block.');return;}if(TRAPS.includes(tiles[id]?.type)&&tiles[id].type===type){tiles[id].type='safe';sound('land');notify('Trap removed. Choose another platform.');updateBuildProgress();return;}const result=placeTrap(tiles,id,type);if(result.ok){tiles=result.tiles;sound('land');notify(`${LABELS[type]} placed · ${tiles.filter(t=>TRAPS.includes(t.type)).length}/${RULES.maxTraps} traps`);updateBuildProgress();if(tiles.filter(t=>TRAPS.includes(t.type)).length===RULES.maxTraps)lockBuild();}else notify(result.reason);}
  host.addEventListener('pointerdown',unlock);
  canvas.addEventListener('pointerdown',e=>{e.preventDefault();if(paused)return;const t=tileAt(world(e));if(!t)return;if(phase==='build')buildAt(t.id);else startJump(t.id);});
  function key(e){if(e.key.toLowerCase()==='p'){pause(!paused);return;}if(paused)return;if(!['ArrowRight','ArrowLeft','ArrowUp','ArrowDown','Enter',' '].includes(e.key))return;if(e.target.tagName==='BUTTON')return;e.preventDefault();const options=tiles.filter(t=>reachable(tiles,current,t.id));if(!options.length)return;if(e.key==='Enter'||e.key===' ')startJump(targetId);else{let i=options.findIndex(t=>t.id===targetId);i=(i+(e.key==='ArrowLeft'||e.key==='ArrowUp'?-1:1)+options.length)%options.length;targetId=options[i].id;}}
@@ -82,10 +88,21 @@ export function mountLava({players=['Adults','Kids'],onExit,onComplete=()=>{},be
    elapsed+=dt;if(phase==='escape'){timer.textContent=`0:${String(Math.max(0,Math.ceil(30-elapsed))).padStart(2,'0')}`;const n=Math.ceil(30-elapsed);if(n<=5&&n!==lastTick){lastTick=n;sound('tick');}if(elapsed>=30){endAttempt(false,'Time expired');return;}}
    if(jump&&elapsed-jump.start>=jump.duration){current=jump.to;jump=null;landed=elapsed;sound('land');if(tiles[current].type==='crack'){tiles[current].revealed=true;tiles[current].triggeredAt??=elapsed;}splash(tiles[current].x,tiles[current].y,COLORS[tiles[current].type],6);targetId=tiles.find(t=>t.x>tiles[current].x&&reachable(tiles,current,t.id))?.id??0;
     if(phase==='practice'){if(current!==0){tutorial=false;phase='practiceDone';phaseTime=0;screen('NICE JUMP!','Blue rings show where you can land.<br>Hidden breaking blocks turn red only when you land. Jump again before they collapse!<br>Escape: 100 + time bonus. Catch the runner: 50.','START SHOWDOWN',intro);}return;}
+    const tile=tiles[current];
+    if(tile.bridge&&room===0){
+     viewRoom(1);tools.textContent=rooms[1]+(shield?' · SHIELD':'');notify('Volcano Vault! Race to the flag!',2);
+     sound('tick');splash(tile.x,tile.y,'#ffd54c',18);
+    }
+    if(tile.crystal&&!tile.collected){
+     tile.collected=true;shield=true;tools.textContent=rooms[room]+' · SHIELD';
+     notify('Heat shield! It saves you from one collapse.',2);sound('tick');
+    }
     if(tiles[current].type==='finish'){endAttempt(true);return;}
     if(tiles[current].type==='crack'){sound('crack');notify('CRACKING! Jump again quickly!',1);}
    }
-   if(!jump){const hit=danger(tiles[current],elapsed,landed);if(hit&&phase==='escape'){endAttempt(false,'Breaking block collapsed');return;}}
+   if(!jump){const hit=danger(tiles[current],elapsed,landed);if(hit&&phase==='escape'&&shield){
+     shield=false;tiles[current].type='safe';tools.textContent=rooms[room];splash(tiles[current].x,tiles[current].y,'#82fff6',18);notify('Shield saved you! Keep jumping!',2);
+    }else if(hit&&phase==='escape'){endAttempt(false,'Breaking block collapsed');return;}}
   }
   if(phase==='falling'&&fallEffect&&!fallEffect.splashed&&phaseTime>=.4){fallEffect.splashed=true;splash(fallEffect.x,fallEffect.y+46,'#ffb428',65);sound('fall');}
   if(phase==='final'&&Math.floor(phaseTime*2)!==Math.floor((phaseTime-dt)*2))splash(150+Math.random()*700,80+Math.random()*150,['#ffe34e','#55dcff','#ff7cd5'][Math.floor(Math.random()*3)],20);
@@ -112,6 +129,11 @@ export function mountLava({players=['Adults','Kids'],onExit,onComplete=()=>{},be
   }
   if(type==='safe'&&!tile.locked&&phase==='build'){ctx.setLineDash([5,4]);ctx.strokeStyle='#e5b4ff';ctx.lineWidth=3;path([[x,y-32],[x+52,y],[x,y+32],[x-52,y]]);ctx.stroke();ctx.setLineDash([]);text('+',x,y+6,20,'#fff');}
   if(type==='crack'){ctx.strokeStyle='#ffdb6c';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x-28,y-8);ctx.lineTo(x-8,y-2);ctx.lineTo(x-2,y-15);ctx.lineTo(x+3,y);ctx.lineTo(x+27,y+10);ctx.moveTo(x+3,y);ctx.lineTo(x-5,y+16);ctx.stroke();if(current===tile.id&&!jump){ctx.strokeStyle='#fff';ctx.lineWidth=4;ctx.beginPath();ctx.arc(x,y,32,-Math.PI/2,-Math.PI/2+Math.PI*2*Math.max(0,1-(elapsed-landed)/RULES.crack));ctx.stroke();}}
+  if(tile.bridge)text('BRIDGE',x,y+5,14,'#fff19b');
+  if(tile.crystal&&phase!=='handoff'&&!tile.collected){
+   const cy=y-48+(reduced?0:Math.sin(phaseTime*3)*3);
+   path([[x,cy-12],[x+9,cy],[x,cy+12],[x-9,cy]]);ctx.fillStyle='#ffd54c';ctx.fill();ctx.strokeStyle='#fff4b1';ctx.lineWidth=2;ctx.stroke();
+  }
   if(type==='finish'){text('★',x,y+5,25,'#fffac2');ctx.fillStyle='#fff';ctx.fillRect(x+17,y-60,3,47);path([[x+20,y-61],[x+46,y-52],[x+20,y-42]]);ctx.fillStyle='#ffd737';ctx.fill();}
   if(type==='start')text('GO',x,y+4,12,'#fff');
   if(can){ctx.shadowBlur=15;ctx.shadowColor='#98ffee';ctx.strokeStyle=targetId===tile.id?'#fff':'#82fff6';ctx.lineWidth=targetId===tile.id?5:3;ctx.beginPath();ctx.ellipse(x,y+1,50+Math.sin(phaseTime*5)*2,30,0,0,Math.PI*2);ctx.stroke();ctx.shadowBlur=0;text('TAP',x,y+66,11,'#e1ffff');}
@@ -128,13 +150,14 @@ export function mountLava({players=['Adults','Kids'],onExit,onComplete=()=>{},be
   ctx.fillStyle=match.runner===1?'#5866eb':'#218bdf';ctx.beginPath();ctx.arc(-1,-51,18,Math.PI,0);ctx.lineTo(17,-49);ctx.lineTo(-19,-49);ctx.fill();ctx.strokeStyle='#a8d8ff';ctx.lineWidth=2;ctx.stroke();ellipse(10,-51,20,4,'#3a63c8');ctx.restore();
  }
  function draw(){
-  const cameraTarget=reduced?0:(500-tiles[jump?.to??current].x)*.025;cameraX+=(cameraTarget-cameraX)*.08;
+  
   ctx.clearRect(0,0,cw,ch);if(background.complete&&background.naturalWidth)ctx.drawImage(background,0,0,cw,ch);else{const bg=ctx.createLinearGradient(0,0,0,ch);bg.addColorStop(0,'#5c2745');bg.addColorStop(.4,'#da4c11');bg.addColorStop(1,'#ff971b');ctx.fillStyle=bg;ctx.fillRect(0,0,cw,ch);}
+  if(room===1){ctx.fillStyle='rgba(109,24,93,.25)';ctx.fillRect(0,0,cw,ch);}
   ctx.save();ctx.translate(ox+cameraX*scale,oy);ctx.scale(scale,scale);
   // Camera tracking uses the same inverse transform as pointer hit testing.
-  for(let i=0;i<28;i++){const bx=(i*173.3)%1020,by=160+(i*51.7)%190,rad=2+(Math.sin(phaseTime*1.8+i)+1)*3;ellipse(bx,by,rad*1.6,rad*.6,`rgba(255,244,116,${.1+.15*Math.sin(phaseTime+i)**2})`);}
+  for(let i=0;i<28;i++){const bx=(i*173.3)%1020-cameraX,by=160+(i*51.7)%190,rad=2+(Math.sin(phaseTime*1.8+i)+1)*3;ellipse(bx,by,rad*1.6,rad*.6,`rgba(255,244,116,${.1+.15*Math.sin(phaseTime+i)**2})`);}
   if(['escape','practice'].includes(phase)&&!jump){ctx.strokeStyle='#9affef44';ctx.setLineDash([5,8]);ctx.lineWidth=2;tiles.filter(t=>reachable(tiles,current,t.id)&&t.x>tiles[current].x).forEach(t=>{ctx.beginPath();ctx.moveTo(tiles[current].x,tiles[current].y);ctx.quadraticCurveTo((t.x+tiles[current].x)/2,Math.min(t.y,tiles[current].y)-50,t.x,t.y);ctx.stroke();});ctx.setLineDash([]);}
-  [...tiles].sort((a,b)=>a.y-b.y).forEach(platform);
+  [...tiles].filter(t=>t.x+cameraX>=0&&t.x+cameraX<=1030).sort((a,b)=>a.y-b.y).forEach(platform);
   let p=tiles[current],x=p.x,y=p.y,z=0;if(jump){const raw=Math.min(1,(elapsed-jump.start)/jump.duration),t=reduced?raw:raw+Math.sin(raw*Math.PI*2)*.09,a=tiles[jump.from],b=tiles[jump.to];x=a.x+(b.x-a.x)*t;y=a.y+(b.y-a.y)*t;z=Math.sin(t*Math.PI)*75;ctx.strokeStyle='#fff9';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(a.x,a.y-30);ctx.quadraticCurveTo((a.x+b.x)/2,Math.min(a.y,b.y)-140,x,y-z-25);ctx.stroke();}
   if(phase==='falling'&&fallEffect){
    const t=Math.min(1,phaseTime/1.5),surface=fallEffect.y+48;
