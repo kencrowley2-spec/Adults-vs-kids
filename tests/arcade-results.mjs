@@ -69,3 +69,13 @@ assert.throws(()=>completedResult({...single,gameIds:['claw'],roundWinners:[0,0,
 
 assert.equal(completedResult({...single,gameIds:['lava'],roundWinners:[1]}).roundWinners.length,1);
 assert.throws(()=>completedResult({...single,gameIds:['lava'],roundWinners:[0,0,0]}));
+
+for(const name of ['ghostline','faces','flex','draw']){
+ const result={...single,gameIds:[name],roundWinners:[1]};
+ assert.deepEqual(completedResult(result),result);
+}
+for(const name of ['hexgl','pinball','ghostline','mole']){
+ const play={...single,mode:'play',gameIds:[name],roundWinners:[]};
+ assert.deepEqual(completedResult(play),play);
+ assert.throws(()=>completedResult({...play,roundWinners:[0]}));
+}

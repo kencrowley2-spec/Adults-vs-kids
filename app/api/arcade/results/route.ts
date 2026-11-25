@@ -28,12 +28,17 @@ export async function POST(request:Request){
   result=completedResult(data);
  }catch{return memberReply({error:'Only completed Arcade matches and three-game series can be recorded.'},400,auth.headers);}
  try{
+  if(result.mode==='play'){
+   const play=await auth.client.from('arcade_plays').upsert({id:result.id,user_id:auth.user.id,game:result.gameIds[0]},{onConflict:'user_id,id',ignoreDuplicates:true});
+   if(play.error)throw new Error('Play not saved');
+   return memberReply({saved:true,id:result.id},200,auth.headers);
+  }
   const inserted=await auth.client.from('arcade_results').upsert({id:result.id,user_id:auth.user.id,mode:result.mode,game_ids:result.gameIds,round_winners:result.roundWinners},{onConflict:'id',ignoreDuplicates:true});
   if(inserted.error)throw new Error('Save failed');
   const existing=await auth.client.from('arcade_results').select('mode,game_ids,round_winners').eq('id',result.id).eq('user_id',auth.user.id).maybeSingle();
   if(existing.error)throw new Error('Read failed');
   if(!existing.data||!sameResult(existing.data,result))return memberReply({error:'This match ID already belongs to a different result.'},409,auth.headers);
-  await completionAnalytics(request,auth.headers,auth.user,auth.isAdmin,result.id,result.mode==='series'?'series':result.gameIds[0]);
+  if(result.mode==='single')await completionAnalytics(request,auth.headers,auth.user,auth.isAdmin,result.id,result.gameIds[0]);
   return memberReply({saved:true,id:result.id},200,auth.headers);
  }catch{return memberReply({error:'Result not saved yet. Please retry.'},503,auth.headers);}
 }

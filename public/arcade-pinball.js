@@ -1,5 +1,5 @@
 import {PINBALL,createPinball,launchPinball,stepPinball} from './arcade-pinball-core.js?v=1';
-export function mountPinball({document:doc=globalThis.document,getAudioContext,soundEnabled=()=>true,accountId='family',beforeStart=()=>true}){
+export function mountPinball({document:doc=globalThis.document,getAudioContext,soundEnabled=()=>true,accountId='family',onStart=()=>{},onFinish=()=>{},beforeStart=()=>true}){
  const win=doc.defaultView,$=id=>doc.getElementById(id),dialog=$('pinball-dialog'),canvas=$('pinball-canvas'),ctx=canvas.getContext('2d');
  if(!ctx)return;
  const key=`avk:pinball-best:${accountId}`;let best=0;try{best=Math.max(0,Number(win.localStorage.getItem(key))||0);}catch{}
@@ -20,10 +20,11 @@ export function mountPinball({document:doc=globalThis.document,getAudioContext,s
   $('pinball-score').textContent=String(state.score).padStart(5,'0');$('pinball-balls').textContent=String(state.balls);$('pinball-best').textContent=String(best).padStart(5,'0');
   $('pinball-launch').disabled=state.phase==='live';$('pinball-launch').textContent=state.phase==='over'?'PLAY AGAIN':'LAUNCH';
  }
+ let playId=null;
  function launch(){
   if(paused){paused=false;message('Back in play!');return;}
   if(state.phase==='over'){if(!beforeStart())return;state=createPinball();}
-  if(launchPinball(state)){fx('launch');state.events=[];message('Keep it alive! Bumpers +100 · Star +250');update();}
+  if(launchPinball(state)){if(!playId){playId=crypto.randomUUID();onStart(playId);}fx('launch');state.events=[];message('Keep it alive! Bumpers +100 · Star +250');update();}
  }
  function rounded(x,y,w,h,r){ctx.beginPath();ctx.roundRect(x,y,w,h,r);}
  function rail(ax,ay,bx,by){ctx.beginPath();ctx.moveTo(ax,ay);ctx.lineTo(bx,by);ctx.lineWidth=9;ctx.strokeStyle='#050811';ctx.stroke();ctx.lineWidth=5;ctx.strokeStyle='#9eafc9';ctx.stroke();ctx.lineWidth=1;ctx.strokeStyle='#fff';ctx.stroke();}
@@ -53,12 +54,12 @@ export function mountPinball({document:doc=globalThis.document,getAudioContext,s
  }
  function tick(now){
   if(!active)return;const dt=last?Math.min((now-last)/1000,.035):0;last=now;
-  if(!paused&&!doc.hidden){stepPinball(state,inputs,dt);for(const event of state.events){fx(event.kind);if(event.kind==='drain')message(`Ball lost! ${state.balls} ${state.balls===1?'ball':'balls'} left. Launch again.`);if(event.kind==='over')message(`Final score ${state.score}! Press Play Again for a rematch.`);}
+  if(!paused&&!doc.hidden){stepPinball(state,inputs,dt);for(const event of state.events){fx(event.kind);if(event.kind==='drain')message(`Ball lost! ${state.balls} ${state.balls===1?'ball':'balls'} left. Launch again.`);if(event.kind==='over'&&playId){onFinish(playId);playId=null;}if(event.kind==='over')message(`Final score ${state.score}! Press Play Again for a rematch.`);}
    if(state.events.length){if(state.score>best){best=state.score;try{win.localStorage.setItem(key,String(best));}catch{}}update();state.events=[];}}
   draw();frame=win.requestAnimationFrame(tick);
  }
  function open(){
-  if(dialog.open||!beforeStart())return;state=createPinball();active=true;paused=false;last=0;release();dialog.showModal();doc.body.classList.add('pinball-active');message('Tap the silver ball or Launch. Hold the flipper buttons to hit it.');update();draw();frame=win.requestAnimationFrame(tick);
+  if(dialog.open||!beforeStart())return;playId=null;state=createPinball();active=true;paused=false;last=0;release();dialog.showModal();doc.body.classList.add('pinball-active');message('Tap the silver ball or Launch. Hold the flipper buttons to hit it.');update();draw();frame=win.requestAnimationFrame(tick);
  }
  function close(){dialog.close();}
  $('cabinet-pinball').addEventListener('click',open);$('pinball-ball-launch').addEventListener('click',open);$('pinball-close').addEventListener('click',close);$('pinball-launch').addEventListener('click',launch);

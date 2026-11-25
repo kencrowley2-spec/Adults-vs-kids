@@ -2,10 +2,19 @@
 (function () {
   'use strict';
   // Check each race at the real Start action, including direct links and rematches.
+  var accountId=null,recorder=null,matchId=null;
+  function event(type){window.dispatchEvent(new CustomEvent('avk:game-'+type,{detail:{game:'hexgl',id:matchId}}));}
   var gateReady=Promise.all([
     import('/arcade-guest.js?v=1'),
-    fetch('/auth/status',{credentials:'same-origin',cache:'no-store'}).then(function(r){return r.ok?r.json():{signedIn:false};}).catch(function(){return {signedIn:false};})
-  ]).then(function(parts){return parts[0].mountGuestGate({signedIn:parts[1].signedIn===true});});
+    fetch('/auth/status',{credentials:'same-origin',cache:'no-store'}).then(function(r){return r.ok?r.json():{signedIn:false};}).catch(function(){return {signedIn:false};}),
+    import('/arcade-results.js?v=2')
+  ]).then(function(parts){
+    accountId=parts[1].accountId;
+    if(accountId){
+     recorder=parts[2].createResultRecorder({accountId:accountId,storage:localStorage,send:function(result){return fetch('/api/arcade/results',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify(Object.assign({accountId:accountId},result))});}});
+     recorder.drain();window.addEventListener('online',function(){recorder.drain();});
+    }
+    return parts[0].mountGuestGate({signedIn:parts[1].signedIn===true});});
   var starting=false,approved=false;
   document.getElementById('step-2').addEventListener('click',function(event){
     if(approved)return;
@@ -67,6 +76,7 @@
   });
   var originalScore = bkcore.hexgl.HexGL.prototype.displayScore;
   bkcore.hexgl.HexGL.prototype.displayScore = function (time, laps) {
+    if(matchId){event('complete');if(recorder)recorder.capture({id:matchId,mode:'play',gameIds:['hexgl'],roundWinners:[]});matchId=null;}
     originalScore.call(this, time, laps);
     releaseAll(); controls.hidden = true;
     var finished = this.gameplay.result === this.gameplay.results.FINISH;
@@ -76,7 +86,7 @@
     bkcore.Audio.stop('bg'); bkcore.Audio.stop('wind');
   };
   var ready = false;
-  window.addEventListener('hexgl-ready', function () { ready = true; if (muted && bkcore.Audio._ctx) bkcore.Audio._ctx.suspend(); });
+  window.addEventListener('hexgl-ready', function () { ready = true;matchId=crypto.randomUUID();event('start'); if (muted && bkcore.Audio._ctx) bkcore.Audio._ctx.suspend(); });
   // Keep the original camera's aspect ratio on device rotation without losing a race.
   function resize() {
     if (!ready) return;

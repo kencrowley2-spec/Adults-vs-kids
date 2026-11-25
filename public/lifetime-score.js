@@ -1,6 +1,6 @@
 import {createResultRecorder} from './arcade-results.js?v=1';
 const $=id=>document.getElementById(id),panel=$('lifetime-score');
-const gameNames={claw:'THE CLAW',mole:'Whack-a-Mole',memory:'Memory Match',tic:'Tic-Tac-Toe',spot:'Spot the Difference',trivia:'Trivia Showdown',word:'Word Scramble',frog:'Frog Hop Showdown',tap:'Quick Tap',treasure:'Treasure Shuffle',picture:'Guess the Picture',number:'Number Battle',challenge:'Family Challenge',maze:'Maze Dash',rps:'Rock Paper Scissors',code:'Code Breaker',golf:'Mini Golf'};
+const gameNames={ghostline:'Ghostline GT',faces:'Mystery Face Showdown',flex:'FLEX OFF!',lava:'Floor Is Lava',draw:'DRAW IT!',claw:'THE CLAW',mole:'Whack-a-Mole',memory:'Memory Match',tic:'Tic-Tac-Toe',spot:'Spot the Difference',trivia:'Trivia Showdown',word:'Word Scramble',frog:'Frog Hop Showdown',tap:'Quick Tap',treasure:'Treasure Shuffle',picture:'Guess the Picture',number:'Number Battle',challenge:'Family Challenge',maze:'Maze Dash',rps:'Rock Paper Scissors',code:'Code Breaker',golf:'Mini Golf'};
 if(panel){
  let loading=false;
  async function load(){
@@ -11,10 +11,10 @@ if(panel){
    const queue=createResultRecorder({accountId:data.accountId,storage:{getItem:k=>localStorage.getItem(k),setItem:(k,v)=>localStorage.setItem(k,v)},send:result=>fetch('/api/arcade/results',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({...result,accountId:data.accountId})})});
    const waiting=queue.pendingCount();if(waiting){await queue.drain();data=await read();}
    const {adults,kids,total}=data.score;
-   if(![adults,kids,total].every(Number.isSafeInteger)||adults<0||kids<0||adults+kids!==total)throw new Error('Invalid score');
+   if(![adults,kids,total].every(Number.isSafeInteger)||adults<0||kids<0||adults+kids>total)throw new Error('Invalid score');
    $('lifetime-adults').textContent=adults;$('lifetime-kids').textContent=kids;
    const leader=adults>kids?'Adults':'Kids',loser=adults>kids?'Kids':'Adults';
-   const lead=total===0?'The rivalry starts here. Your first completed match makes the headlines.':adults===kids?`The family series is all square through ${total} completed matches.`:`${leader} lead by ${Math.abs(adults-kids)} in the family series through ${total} completed ${total===1?'match':'matches'}.`;
+   const lead=total===0?'The rivalry starts here. Your first completed match makes the headlines.':adults===kids?`The family series is all square through ${total} completed games.`:`${leader} lead by ${Math.abs(adults-kids)} in the family series through ${total} completed ${total===1?'game':'games'}.`;
    $('lifetime-status').textContent=lead+(queue.pendingCount()?' A result on this device is still waiting to save.':'');
    const challenges={
     Adults:["Adults, you’re not going to take that, are you? Time for a comeback!","Adults, the kids have the bragging rights. Ready to earn them back?","Adults, all that life experience… and the kids are ahead? Rematch time!"],

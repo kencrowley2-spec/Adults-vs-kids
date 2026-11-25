@@ -2,7 +2,7 @@ import {mountGhostline} from './ghostline.js?v=7';
 import {mountFlex} from './arcade-flex.js?v=1';
 import {mountGuestGate} from './arcade-guest.js?v=1';
 import {mountFeaturedGames} from './arcade-featured.js?v=4';
-import {mountPinball} from './arcade-pinball.js?v=2';
+import {mountPinball} from './arcade-pinball.js?v=3';
 import {createCaseReader} from './arcade-cases.js?v=4';
 import {mountFaces} from './arcade-faces.js?v=6';
 import {mountDraw} from './arcade-draw.js?v=3';
@@ -34,7 +34,7 @@ const recorder=resultRecorder({
  accountId:arcadeAccountId,
  storage:{getItem:key=>localStorage.getItem(key),setItem:(key,value)=>localStorage.setItem(key,value)},
  send:result=>fetch('/api/arcade/results',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:JSON.stringify({...result,accountId:arcadeAccountId})}),
- changed:({pending,storageFailed})=>{const el=$('arcade-save-status');if(el)el.textContent=pending?`A completed result is waiting to save. ${storageFailed?'Keep this page open and retry.':'It will retry when you’re connected.'}`:(kidsOnly?'Kids vs. Kids · scores count for this match.':'Completed matches update your family’s lifetime score.');}
+ changed:({pending,storageFailed})=>{const el=$('arcade-save-status');if(el)el.textContent=pending?`A completed result is waiting to save. ${storageFailed?'Keep this page open and retry.':'It will retry when you’re connected.'}`:(kidsOnly?'Kids vs. Kids · completed games count toward family plays.':'Completed matches update your family’s lifetime score.');}
 });
 // Keep pending DRAW IT results independent while its database rollout is pending.
 const drawRecorder=resultRecorder({
@@ -62,11 +62,20 @@ function recordFeatured(game,score){
  timeRecorder.capture({id:crypto.randomUUID(),game,score});
 }
 function startRecording(mode,gameIds){recording={id:crypto.randomUUID(),mode,gameIds,roundWinners:[],complete:false};}
+function capturePlay(id,game){recorder.capture({id,mode:'play',gameIds:[game],roundWinners:[]});}
+function captureHeadToHead(id,game,winner,mixed=true){
+ if(kidsOnly||!mixed||winner!==0&&winner!==1){capturePlay(id,game);return;}
+ recorder.capture({id,mode:'single',gameIds:[game],roundWinners:[winner]});
+}
+function seriesLegId(id,index){
+ // Match the database projection of a completed three-game series.
+ return id.slice(0,-1)+(parseInt(id.slice(-1),16)^(index+1)).toString(16);
+}
 function saveCompleted(){
  if(!recording||recording.complete)return;
  recording.complete=true;
- dispatchArcadeAnalytics(new CustomEvent('avk:game-complete',{detail:{game:recording.mode==='series'?'series':recording.gameIds[0],id:recording.id}}));
- if(kidsOnly)return;
+ if(recording.mode==='single')dispatchArcadeAnalytics(new CustomEvent('avk:game-complete',{detail:{game:recording.gameIds[0],id:recording.id}}));
+ if(kidsOnly||recording.roundWinners.length===0){if(recording.mode==='single')capturePlay(recording.id,recording.gameIds[0]);return;}
  const {id,mode,gameIds,roundWinners}=recording;
  recorder.capture({id,mode,gameIds:[...gameIds],roundWinners:[...roundWinners]});
 }
@@ -84,7 +93,7 @@ function setLineup(adults,kids){
 }
 if(lineup)setLineup(JSON.parse(lineup.getAttribute('data-adults')),JSON.parse(lineup.getAttribute('data-kids')));
 function teamName(team){return names[team];}
-if(kidsOnly)$('arcade-save-status').textContent='Kids vs. Kids · scores count for this match.';
+if(kidsOnly)$('arcade-save-status').textContent='Kids vs. Kids · completed games count toward family plays.';
 function teamLabel(team,uppercase=false){return escapePlayer(uppercase?teamName(team).toUpperCase():teamName(team));}
 $('choose-arcade-players')?.addEventListener('click',async()=>{
  const {chooseArcadePlayers}=await import('./arcade-players.js?v=1');
@@ -93,7 +102,7 @@ $('choose-arcade-players')?.addEventListener('click',async()=>{
   setLineup(adults,kids);
   $('lineup-adults').textContent=adults.join(' · ')||'No adults selected';
   $('lineup-kids').textContent=kids.join(' · ')||'No kids selected';
-  $('arcade-save-status').textContent=kidsOnly?'Kids vs. Kids · scores count for this match.':'Completed matches update your family’s lifetime score.';
+  $('arcade-save-status').textContent=kidsOnly?'Kids vs. Kids · completed games count toward family plays.':'Completed matches update your family’s lifetime score.';
  });
 });
 const escapePlayer=value=>value.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -407,7 +416,7 @@ function openGhostline(){
   beforeRematch:()=>{if(!guestGate.allow('ghostline'))return false;announce();return true;},
   onExit:()=>{lobby.hidden=false;document.querySelector('[data-game="ghostline"]')?.focus();},
   onComplete:result=>{
-   if(result.winner!==null&&!kidsOnly)recorder.capture({id:matchId,mode:'single',gameIds:['ghostline'],roundWinners:[result.winner]});
+   captureHeadToHead(matchId,'ghostline',result.winner);
    dispatchArcadeAnalytics(new CustomEvent('avk:game-complete',{detail:{game:'ghostline',id:matchId,...result}}));
   }
  });
@@ -422,7 +431,7 @@ function openLava(){
  dispatchArcadeAnalytics(new CustomEvent('avk:game-start',{detail:{game:'lava',id:matchId}}));
  stopLava=mountLava({beforeRematch:()=>{if(!guestGate.allow('lava'))return false;dispatchArcadeAnalytics(new CustomEvent('avk:game-start',{detail:{game:'lava',id:matchId}}));return true;},players:lavaNames,onExit:()=>{stopLava=null;arena.hidden=true;lobby.hidden=false;game=null;document.querySelector('[data-game="lava"]')?.focus();},onComplete:result=>{
   recordFeatured('lava',Math.max(...result.scores));
-  if(!kidsOnly&&!adultsOnly)recorder.capture({id:matchId,mode:'single',gameIds:['lava'],roundWinners:[result.winner]});
+  captureHeadToHead(matchId,'lava',result.winner,!adultsOnly);
   dispatchArcadeAnalytics(new CustomEvent('avk:game-complete',{detail:{game:'lava',winner:result.winner,scores:result.scores,id:matchId}}));
   matchId=crypto.randomUUID();
  }});
@@ -430,7 +439,7 @@ function openLava(){
 function openFlex(){
  clearTimers();let matchId=crypto.randomUUID();rememberGame('flex');arena.hidden=true;lobby.hidden=true;
  const announce=()=>dispatchArcadeAnalytics(new CustomEvent('avk:game-start',{detail:{game:'flex',id:matchId}}));announce();
- mountFlex({initialSound:soundOn,players:selectedPlayers.map((list,i)=>list.join(' & ')||names[i]),beforeRematch:()=>{if(!guestGate.allow('flex'))return false;announce();return true;},onExit:()=>{arena.hidden=true;lobby.hidden=false;game=null;document.querySelector('[data-game="flex"]')?.focus();},onComplete:result=>{dispatchArcadeAnalytics(new CustomEvent('avk:game-complete',{detail:{game:'flex',winner:result.winner,scores:result.scores,id:matchId}}));matchId=crypto.randomUUID();}});
+ mountFlex({initialSound:soundOn,players:selectedPlayers.map((list,i)=>list.join(' & ')||names[i]),beforeRematch:()=>{if(!guestGate.allow('flex'))return false;announce();return true;},onExit:()=>{arena.hidden=true;lobby.hidden=false;game=null;document.querySelector('[data-game="flex"]')?.focus();},onComplete:result=>{captureHeadToHead(matchId,'flex',result.winner);dispatchArcadeAnalytics(new CustomEvent('avk:game-complete',{detail:{game:'flex',winner:result.winner,scores:result.scores,id:matchId}}));matchId=crypto.randomUUID();}});
 }
 function openFaces(){
  clearTimers();
@@ -440,6 +449,7 @@ function openFaces(){
  const adultsOnly=selectedPlayers[1].length===0&&selectedPlayers[0].length>=2;
  const faceNames=adultsOnly?[selectedPlayers[0].filter((_,i)=>i%2===0).join(' & '),selectedPlayers[0].filter((_,i)=>i%2===1).join(' & ')]:selectedPlayers.map((list,i)=>list.join(' & ')||names[i]);
  mountFaces({beforeRematch:()=>{if(!guestGate.allow('faces'))return false;dispatchArcadeAnalytics(new CustomEvent('avk:game-start',{detail:{game:'faces',id:matchId}}));return true;},players:faceNames,onExit:()=>{arena.hidden=true;lobby.hidden=false;game=null;document.querySelector('[data-game="faces"]')?.focus();},onComplete:result=>{
+  captureHeadToHead(matchId,'faces',result.winner,!adultsOnly);
   if(result.correct)recordFeatured('faces',result.questions);
   dispatchArcadeAnalytics(new CustomEvent('avk:game-complete',{detail:{game:'faces',winner:result.winner,id:matchId}}));
   matchId=crypto.randomUUID();
@@ -450,7 +460,7 @@ function openDraw(){
  let matchId=crypto.randomUUID();rememberGame('draw');arena.hidden=true;lobby.hidden=true;
  dispatchArcadeAnalytics(new CustomEvent('avk:game-start',{detail:{game:'draw',id:matchId}}));
  mountDraw({beforeRematch:()=>{if(!guestGate.allow('draw'))return false;dispatchArcadeAnalytics(new CustomEvent('avk:game-start',{detail:{game:'draw',id:matchId}}));return true;},players:selectedPlayers.map((list,i)=>list.join(' & ')||names[i]),onExit:()=>{arena.hidden=true;lobby.hidden=false;game=null;document.querySelector('[data-game="draw"]')?.focus();},onComplete:result=>{
-  if(!kidsOnly&&result.winner!==null)drawRecorder.capture({id:matchId,mode:'single',gameIds:['draw'],roundWinners:[result.winner]});
+  if(kidsOnly||result.winner===null)capturePlay(matchId,'draw');else drawRecorder.capture({id:matchId,mode:'single',gameIds:['draw'],roundWinners:[result.winner]});
   dispatchArcadeAnalytics(new CustomEvent('avk:game-complete',{detail:{game:'draw',winner:result.winner,scores:result.scores,id:matchId}}));
   matchId=crypto.randomUUID();
  }});
@@ -501,11 +511,12 @@ async function startSeriesGame(){
   if(clubIntroPending)return;
   clearTimers(); game=series.games[series.index];
   if(clubEntry){clubIntroPending=true;try{await clubReveal(game.name)}finally{clubIntroPending=false}}
-  dispatchArcadeAnalytics(new CustomEvent('avk:game-start',{detail:{game:game.id,id:crypto.randomUUID()}})); round=series.index+1; attempt=0;
+  dispatchArcadeAnalytics(new CustomEvent('avk:game-start',{detail:{game:game.id,id:seriesLegId(recording.id,series.index)}})); round=series.index+1; attempt=0;
   starter=(series.first+series.index)%2; turn=starter;
   $('game-title').textContent=game.id==='claw'?'THE CLAW':`${game.icon} ${game.name}`; beginRound();
 }
 function finishSeriesGame(winner,detail){
+  if(winner!==null){const id=seriesLegId(recording.id,series.index);capturePlay(id,game.id);dispatchArcadeAnalytics(new CustomEvent('avk:game-complete',{detail:{game:game.id,id}}));}
   if(winner!==null){wins[winner]++;series.winners.push(winner);}
   const complete=series.winners.length===3;
   champion=complete?(wins[0]>wins[1]?0:1):-1; scoreboard();
@@ -651,7 +662,7 @@ function finishTurn(result){
   }
 }
 function finishBasketballMatch(winner,detail){
- if(winner!==null){wins[winner]=1;champion=winner;if(recording)recording.roundWinners.push(winner);saveCompleted();}
+ if(winner!==null){wins[winner]=1;champion=winner;if(recording)recording.roundWinners.push(winner);}saveCompleted();
  scoreboard();
  screen(`<div class="result"><span class="giant-icon">${winner===null?'🤝':'🏆'}</span><p class="eyebrow">BASKETBALL SHOWDOWN</p><h3>${winner===null?'It’s a tie!':`${teamLabel(winner)} win!`}</h3><p>${escapePlayer(detail)}</p><div class="final-score">${results[0].score} <span>–</span> ${results[1].score}</div><p>30 seconds each. Every basket counts for two.</p></div>`);
  button(winner===null?'Play again →':'Rematch →',()=>openGame('basketball'));
@@ -660,7 +671,7 @@ function finishBasketballMatch(winner,detail){
  status(winner===null?'Tie game. Share a high five and play again!':`${teamName(winner)} win the basketball showdown!`);focusFirst();
 }
 function finishBlockMatch(winner,detail){
- if(winner!==null){wins[winner]=1;champion=winner;if(recording)recording.roundWinners.push(winner);saveCompleted();}
+ if(winner!==null){wins[winner]=1;champion=winner;if(recording)recording.roundWinners.push(winner);}saveCompleted();
  scoreboard();
  screen(`<div class="result"><span class="giant-icon">${winner===null?'🤝':'🏆'}</span><p class="eyebrow">BLOCK SHOWDOWN · MATCH COMPLETE</p><h3>${winner===null?'It’s a tie!':`${teamLabel(winner)} win!`}</h3><p>${escapePlayer(detail)}</p><div class="final-score">${results[0].score} <span>–</span> ${results[1].score}</div><p>One round. 60 seconds each. Every placed piece earns one point.</p></div>`);
  button('Rematch →',()=>openGame('blocks'));button('Return to Arcade',()=>$('arcade-return').click(),stage,'text-button');
@@ -889,7 +900,7 @@ function frogHop(){
  stopFrog=mountFrog({canvas:$('frog-pond'),chargeButton:$('frog-jump'),musicButton:$('frog-music'),volumeInput:$('frog-volume'),progress:$('frog-progress'),later,team:teamName(turn),courses:game.frogCourses,onStatus:status,opponent:results[1-turn]?{name:contender(1-turn),...results[1-turn]}:null,onProgress:progress=>competitionUpdate(progress),onScore:points=>{game.frogPoints??=[0,0];game.frogPoints[turn]=points;competitionUpdate({score:points});},getAudioContext:()=>audioContext,isSoundOn:()=>soundOn,onEnd:result=>{timed=false;finishTurn(result);}});
 }
 function finishTreasureMatch(winner,detail){
- if(winner!==null){wins[winner]=1;champion=winner;if(recording)recording.roundWinners.push(winner);saveCompleted();}
+ if(winner!==null){wins[winner]=1;champion=winner;if(recording)recording.roundWinners.push(winner);}saveCompleted();
  scoreboard();
  screen(`<div class="result"><span class="giant-icon">${winner===null?'🤝':'🏆'}</span><p class="eyebrow">TREASURE SHUFFLE · SHOWDOWN COMPLETE</p><h3>${winner===null?'It’s a draw!':`${teamLabel(winner)} win the Showdown!`}</h3><p>${escapePlayer(detail)}</p><div class="final-score">${results[0].score} <span>–</span> ${results[1].score}</div><p>Five guesses each. One point per treasure. High fives all around!</p></div>`);
  button('Rematch →',()=>openGame('treasure'));button('Return to Arcade',()=>$('arcade-return').click(),stage,'text-button');
@@ -1123,7 +1134,7 @@ function whackAMole(){
 }
 function finishMoleMatch(winner,detail){
  if(winner!==null)defendingCrowns.set('mole',winner);
- if(winner!==null){wins[winner]=1;champion=winner;if(recording)recording.roundWinners.push(winner);saveCompleted();}
+ if(winner!==null){wins[winner]=1;champion=winner;if(recording)recording.roundWinners.push(winner);}saveCompleted();
  scoreboard();
  screen(`<div class="result mole-victory"><span class="mole-fireworks" aria-hidden="true"></span><div class="mole-confetti" aria-hidden="true">✦ · ★ · ✧ · ★ · ✦</div><span class="giant-icon mole-trophy">${winner===null?'🤝':'🏆'}</span><p class="eyebrow">WHACK-A-MOLE · SHOWDOWN COMPLETE</p><h3>${winner===null?'It’s a tie!':`${teamLabel(winner)} win!`}</h3><p>${winner===null?'HIGH FIVES ALL ROUND':`${contenderLabel(winner)} HAS THE CROWN!`}</p><p>${escapePlayer(detail)}</p><div class="final-score">${results[0].score} <span>–</span> ${results[1].score}</div><p>One hit = one point · 20 seconds each.</p><p>${winner===null?'Two teams. Two legends. The mole kingdom belongs to everyone!':kidsOnly?`${contenderLabel(winner)} rules the mole kingdom! ${contenderLabel(1-winner)}, your comeback awaits!`:winner===1?'BREAKING NEWS! The Kids have taken over the mole kingdom! Adults, your comeback awaits!':'UNBELIEVABLE! Adults rule the mole kingdom! Kids, demand a rematch!'}</p><span class="mole-dancer" aria-hidden="true">${winner===null?'🐹 🐹':'🐹'}</span></div>`);
  button('REMATCH!',()=>openGame('mole'));if(winner===null)button('Optional tiebreaker · 20 seconds each',()=>openGame('mole'),stage,'text-button');button('Return to Arcade',()=>$('arcade-return').click(),stage,'text-button');
@@ -1139,7 +1150,7 @@ function clawMachine(){
   onScore:points=>{game.clawPoints[turn]=points;scoreboard();competitionUpdate({score:points});},onEnd:result=>{timed=false;chime('buzzer');finishTurn(result);}});
 }
 function finishClawMatch(winner,detail){
- if(winner!==null){wins[winner]=1;champion=winner;if(recording)recording.roundWinners.push(winner);saveCompleted();}
+ if(winner!==null){wins[winner]=1;champion=winner;if(recording)recording.roundWinners.push(winner);}saveCompleted();
  scoreboard();
  screen(`<div class="result claw-result"><canvas id="claw-fireworks" aria-hidden="true"></canvas><span class="giant-icon">${winner===null?'🤝':'🏆'}</span><p class="eyebrow">CLAW MACHINE · SHOWDOWN COMPLETE</p><h3>${winner===null?'A tie! Congratulations to both players!':`Congratulations, ${teamLabel(winner)}!`}</h3><p>${winner===null?'Matching prize hauls!':'You win the Showdown!'}</p><p>${escapePlayer(detail)}</p><div class="final-score">${results[0].score} <span>–</span> ${results[1].score}</div><p>30 seconds each. Every toy retrieved earns 1 point.</p></div>`);
  clawFireworks($('claw-fireworks'),later,effectsOn);
@@ -1158,7 +1169,7 @@ window.addEventListener('pagehide',()=>{if(game?.id==='mole')clearTimers();});
 
 // Public game links enter the selected catalog game after account verification.
 
-mountPinball({beforeStart:()=>guestGate.allow(),getAudioContext:()=>{unlockAudio();return audioContext;},soundEnabled:()=>soundOn,accountId:arcadeAccountId});
+mountPinball({onStart:id=>dispatchArcadeAnalytics(new CustomEvent('avk:game-start',{detail:{game:'pinball',id}})),onFinish:id=>{capturePlay(id,'pinball');dispatchArcadeAnalytics(new CustomEvent('avk:game-complete',{detail:{game:'pinball',id}}));},beforeStart:()=>guestGate.allow(),getAudioContext:()=>{unlockAudio();return audioContext;},soundEnabled:()=>soundOn,accountId:arcadeAccountId});
 
 // Upright display shows every game at once; no rotating cover hides a game.
 

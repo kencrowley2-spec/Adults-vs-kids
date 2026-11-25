@@ -11,7 +11,7 @@ export async function POST(request:Request){
  try{const raw=await request.text();if(raw.length>2500)return reply(413);let d;try{d=JSON.parse(raw)}catch{return reply(400)}
  if(!d||!uuid(d.id)||!['page_view','game_start','game_complete','tool_start','outbound','checkout_click','download_click','heartbeat'].includes(d.type)||safePath(d.path)!==d.path)return reply(400);
  const detail=typeof d.detail==='string'?d.detail:'';if(detail.length>80)return reply(400);
- if(['game_start','game_complete'].includes(d.type)&&!ARCADE_GAMES.concat(['faces','hexgl','series']).includes(detail))return reply(400);
+ if(['game_start','game_complete'].includes(d.type)&&!ARCADE_GAMES.concat(['series']).includes(detail))return reply(400);
  const auth=await verifiedMember(request);for(const cookie of auth.headers.getSetCookie())headers.append('Set-Cookie',cookie);
  const c=await analyticsContext(request,headers,auth.user,auth.isAdmin,d);
  if(d.type!=='heartbeat'){const ua=request.headers.get('user-agent')||'',device=/ipad|tablet/i.test(ua)?'Tablet':/mobi|android|iphone/i.test(ua)?'Mobile':'Desktop';await emitAnalytics(c.id,d.type,d.id,auth.user?.id||null,detail,d.path,device);}
