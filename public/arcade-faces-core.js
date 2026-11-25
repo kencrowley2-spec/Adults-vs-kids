@@ -24,10 +24,36 @@ export class FaceMatch{
  guess(id){if(this.secrets.includes(null)||this.winner!==null||!FACES[id])throw Error('Invalid guess');this.winner=id===this.secrets[1-this.turn]?this.turn:1-this.turn;return this.winner;}
 }
 export function portrait(c){
- const skin=['#ffd0aa','#d99a67','#81503d'][c.skin],hair={red:'#ca592b',brown:'#643923',black:'#29243a',gray:'#c4c7df',blond:'#ffce45'}[c.hairTone||c.hair],eye={blue:'#319bd5',green:'#4c936a',brown:'#805332',black:'#191923'}[c.eyes],shirt=['#f36f82','#54b9c4','#9b80d7','#e9ad3d'][c.id%4];
- return `<svg viewBox="0 0 120 122" aria-hidden="true"><rect width="120" height="122" rx="12" fill="${['#fff0d1','#e5f6f2','#f2e7ff','#ffe5df'][c.id%4]}"/>${c.style==='long'?`<rect x="24" y="24" width="72" height="91" rx="33" fill="${hair}"/>`:''}<path d="M10 122Q14 91 60 92Q106 91 110 122" fill="${shirt}"/><path d="M47 88v14q13 14 26 0V88" fill="${skin}"/><circle cx="27" cy="62" r="9" fill="${skin}"/><circle cx="93" cy="62" r="9" fill="${skin}"/><rect x="29" y="22" width="62" height="76" rx="29" fill="${skin}"/>${c.style!=='bald'?`<path d="M27 49V35Q27 8 60 10Q99 10 94 51L82 37Q60 38 51 24Q45 43 27 49" fill="${hair}"/>`:''}<path d="M39 48q7-5 14 0M67 48q7-5 14 0" fill="none" stroke="${hair}" stroke-width="4" stroke-linecap="round"/>${[46,74].map(x=>`<ellipse cx="${x}" cy="60" rx="9" ry="10" fill="white"/><circle cx="${x}" cy="61" r="6" fill="${eye}"/><circle cx="${x}" cy="61" r="3" fill="#232338"/><circle cx="${x-2}" cy="58" r="2" fill="white"/>`).join('')}<path d="M59 64l-3 10h6" fill="none" stroke="#af705b" stroke-width="2" stroke-linecap="round"/><path d="M48 81q12 15 24 0" fill="white" stroke="#b96261" stroke-width="2" stroke-linejoin="round"/>${c.beard?`<path d="M30 73Q32 104 60 102Q88 104 90 73L78 83Q60 103 42 83Z" fill="${hair}"/><path d="M47 79q13-8 26 0l-3 5H50Z" fill="${hair}"/>`:''}${c.mustache&&!c.beard?`<path d="M43 78Q51 70 60 77Q69 70 77 78Q69 88 60 81Q51 88 43 78" fill="${hair}"/>`:''}${c.glasses?'<g fill="none" stroke="#433650" stroke-width="4"><rect x="32" y="49" width="27" height="24" rx="8"/><rect x="62" y="49" width="27" height="24" rx="8"/><path d="M59 56h3M27 53h5M89 53h5"/></g>':''}${c.earrings?'<circle cx="27" cy="75" r="5" fill="#ffcf42"/><circle cx="93" cy="75" r="5" fill="#ffcf42"/>':''}${c.hat?`<path d="M24 31Q24 3 60 3Q96 3 96 31" fill="${shirt}"/><rect x="17" y="26" width="86" height="12" rx="6" fill="#40334f"/><path d="M40 16h40" stroke="#fff4" stroke-width="6"/>`:''}</svg>`;
+ const skin=['#ffcca5','#d99a68','#955e49'][c.skin];
+ const shade=['#dc956f','#af6945','#6d4037'][c.skin];
+ const eyes={blue:'#279eea',green:'#319357',brown:'#97572e',black:'#24232b'}[c.eyes];
+ const hair={black:'#26232e',red:'#b94c27',blond:'#efbc53',brown:'#644034',gray:'#a9a9b2'}[c.hairTone];
+ const [shirt,bg]=[['#287779','#d1eddf'],['#aa4d45','#ffdec2'],['#5e5998','#e9def5'],['#36668c','#d6e8f5'],['#9a6234','#fff0c8'],['#a34c76','#f8dee9']][c.id%6];
+ const ink='#382e39',variant=c.id%4;
+ const jaws=['Q81 103 61 105Q36 105 25 75','Q86 99 62 108Q36 102 25 75','Q89 107 61 104Q32 106 25 75','Q80 105 58 105Q38 101 25 75'];
+ const fringes=['M22 51Q15 27 33 16Q47 4 67 12Q85 3 98 26L101 48Q80 43 74 29Q61 48 38 42L30 55Z','M21 55Q12 32 30 21Q35 7 48 14Q57 1 69 12Q86 6 89 20Q108 22 99 52L88 42Q83 29 71 31Q57 44 38 35L28 54Z','M22 53Q14 23 40 14Q62 5 83 16Q103 22 99 51L89 45L78 30Q53 52 33 44L28 56Z','M22 55Q12 28 33 19L31 12L47 15L54 6L63 13Q91 5 99 31L100 51L90 44L79 31Q66 41 57 41L61 34Q46 46 34 42L27 56Z'];
+ const smiles=['M47 82Q60 88 76 79Q68 101 52 91Z','M48 84Q62 93 77 81','M46 82Q61 88 75 82Q63 98 50 90Z','M48 84Q58 91 74 80'];
+ const eye=x=>`<g><path d="M${x-11} 62q9-17 22-2q-7 14-22 2Z" fill="#fffaf2" stroke="${ink}" stroke-width="1.5"/><ellipse cx="${x+1}" cy="60" rx="6.8" ry="7.4" fill="${eyes}"/><circle cx="${x+1}" cy="61" r="3.2" fill="#201e28"/><circle cx="${x-1}" cy="57" r="1.9" fill="white"/></g>`;
+ const glasses=c.id%3===0?'<circle cx="43" cy="61" r="15"/><circle cx="78" cy="61" r="15"/>':'<rect x="27" y="48" width="32" height="25" rx="8"/><rect x="63" y="48" width="32" height="25" rx="8"/>';
+ return `<svg viewBox="8 1 105 110" aria-hidden="true" stroke-linejoin="round" stroke-linecap="round">
+ <rect x="0" width="120" height="124" fill="${bg}"/><circle cx="84" cy="42" r="43" fill="#fff" opacity=".25"/>
+ ${c.style==='long'?`<path d="M19 108Q14 91 19 65Q10 12 55 9Q98 4 103 46Q101 81 111 100Q96 111 80 106L47 105Q30 117 17 113Z" fill="${hair}" stroke="${ink}" stroke-width="2.5"/><path d="M27 57Q27 95 22 103M97 56Q91 85 101 100" fill="none" stroke="white" opacity=".22" stroke-width="3"/>`:''}
+ <path d="M0 122Q7 108 43 99L78 98Q108 102 120 119V125H0Z" fill="${shirt}"/><path d="M48 88L47 101Q60 118 75 101L73 88" fill="${shade}" stroke="${ink}" stroke-width="2"/>
+ <g fill="${skin}" stroke="${shade}" stroke-width="2.5"><ellipse cx="24" cy="66" rx="9" ry="12"/><ellipse cx="96" cy="66" rx="9" ry="12"/></g>
+ <path d="M24 58Q21 17 56 15Q97 11 98 55L95 75${jaws[variant]}Z" fill="${skin}" stroke="${ink}" stroke-width="2.3"/>
+ <path d="M27 68Q30 92 49 99M93 68Q91 81 85 87" fill="none" stroke="${shade}" stroke-width="4" opacity=".6"/>
+ ${c.style==='bald'?'<path d="M34 35q6-13 21-15" fill="none" stroke="#fff" stroke-width="4" opacity=".32"/>':`<path d="${fringes[variant]}" fill="${hair}" stroke="${ink}" stroke-width="2.5"/><path d="M30 32Q44 14 64 17M70 18Q83 15 90 25" fill="none" stroke="white" opacity=".26" stroke-width="2.5"/>`}
+ <path d="M32 49q9-${6+variant} 19-2M69 47q11-${5-variant} 20 2" fill="none" stroke="${hair}" stroke-width="4"/>
+ ${eye(43)}${eye(77)}
+ <path d="M60 63q-1 7-4 10q4 4 10 0" fill="none" stroke="${shade}" stroke-width="2.6"/>
+ ${c.beard?`<path d="M25 72Q37 85 45 81Q59 74 75 81Q85 86 95 71L92 87Q80 104 61 107Q40 105 28 88Z" fill="${hair}" stroke="${ink}" stroke-width="1.8"/>`:''}
+ <path d="${smiles[variant]}" fill="${variant%2?'none':'#fff5df'}" stroke="${c.beard?'#f1bb98':'#884f47'}" stroke-width="2.3"/>
+ ${c.mustache?`<path d="M39 81Q45 83 52 77Q57 73 61 78Q65 72 72 77Q78 81 83 78Q78 89 65 83L61 81Q49 90 39 81Z" fill="${hair}" stroke="${ink}" stroke-width="1.6"/>`:''}
+ ${c.glasses?`<g fill="none" stroke="${ink}" stroke-width="3.7">${glasses}<path d="M58 57q3-3 6 0M27 55l-6-3M94 55l6-4"/></g>`:''}
+ ${c.earrings?'<g fill="#ffdb55" stroke="#6d4a2c" stroke-width="1.6"><path d="m22 72 4 5-4 6-4-6Z"/><path d="m97 72 4 5-4 6-4-6Z"/></g>':''}
+ ${c.hat?`<path d="M22 35Q25 9 43 8Q52 3 62 7Q84 4 94 26L96 34Z" fill="${shirt}" stroke="${ink}" stroke-width="2.5"/><path d="M21 31Q51 23 94 28L95 34Q53 30 20 39Z" fill="${ink}"/><path d="M16 37Q45 28 95 32L105 37Q68 35 23 43Z" fill="${shirt}" stroke="${ink}" stroke-width="2"/><path d="M30 25Q37 12 48 12" fill="none" stroke="#fff" opacity=".35" stroke-width="2.5"/>`:''}
+ </svg>`;
 }
-
 export const FEATURES=[
  {key:'eyes',label:'Eye color',icon:'◉',options:['blue','green','brown','black'].map(value=>({value,label:value+' eyes'}))},
  {key:'hair',label:'Hair color',icon:'✦',options:[...['black','brown','blond','red','gray'].map(value=>({value,label:value+' hair'})),{value:'none',label:'a bald head'}]},
