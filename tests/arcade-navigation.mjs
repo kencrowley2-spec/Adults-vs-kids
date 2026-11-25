@@ -47,4 +47,35 @@ $('arcade-menu-random').click();assert.equal(random,1);assert.equal($('arcade-mo
 $('arcade-more-toggle').click();document.querySelector('[data-close-arcade-menu]').click();assert.equal($('arcade-more').open,false);
 assert.equal(opened,4);assert.equal(closed,4);
 console.log('PASS: five Arcade tabs, direct family tools, 12-round navigation, persistent tool scores, modal close, More menu, and random challenge launch.');
+window.eval(read('public/arcade-voice.js').replace('export function', 'function'));
+const voice = $('arcade-voice');
+const purchase = voice.querySelector('[data-voice-purchase]');
+const plans = voice.querySelector('[data-voice-plans]');
+const returnButton = voice.querySelector('[data-voice-return]');
+voice.dataset.access = 'offer';
+assert.equal(window.allowArcadeVoice('USE FEATURE BUTTONS'), false);
+assert.equal(voice.open, true);
+assert.equal(returnButton.textContent, 'USE FEATURE BUTTONS');
+purchase.click();
+assert.equal(plans.hidden, false);
+assert.equal(purchase.hidden, true);
+assert.deepEqual([...plans.querySelectorAll('a')].map(link => link.getAttribute('href')), [
+ '/club-checkout?plan=month', '/club-checkout?plan=year'
+]);
+assert.equal(document.activeElement, plans.querySelector('a'));
+voice.close();
+assert.equal(window.allowArcadeVoice('RETURN TO GAME'), false);
+assert.equal(returnButton.textContent, 'RETURN TO GAME');
+assert.equal(plans.hidden, true);
+assert.equal(purchase.hidden, false);
+voice.close();
+voice.dataset.access = 'member';
+assert.equal(window.allowArcadeVoice('RETURN TO GAME'), true);
+assert.equal(voice.open, false);
+voice.dataset.access = 'unavailable';
+assert.equal(window.allowArcadeVoice('RETURN TO GAME'), false);
+assert.equal(purchase.hidden, true);
+assert.match(voice.textContent, /couldn’t check your Clubhouse membership/);
+assert.equal(returnButton.hidden, false);
+console.log('PASS: Clubhouse voice offer, recurring plan links, return to play, member bypass, and lookup failure.');
 dom.window.close();
