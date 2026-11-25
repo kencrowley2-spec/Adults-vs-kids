@@ -15,3 +15,9 @@ for(let i=0;i<clean.trace.length;i+=41){
 assert.deepEqual(replay(clean.trace,48),clean.trace.at(-1));
 assert.deepEqual(run(()=>1),wide);
 console.log('Clean lap',clean.time.toFixed(2),'s; grass-heavy lap',wide.time.toFixed(2),'s. Ghost position and timing verified.');
+
+const early=run(c=>Math.sign(bend(c.s+9)*c.speed*c.speed*.73-2*c.x-.55*c.lateralSpeed));
+const late=run(c=>Math.abs(c.x)>4.7?-Math.sign(c.x):0);
+assert.ok(early.trace.every(frame=>Math.abs(frame.x)<=5.2),'Early steering can hold the asphalt through every turn');
+assert.ok(late.trace.some(frame=>Math.abs(frame.x)>5.2),'Waiting until the edge carries the car onto grass');
+assert.ok(late.time>early.time+1,'Mistimed turn-ins cost time');

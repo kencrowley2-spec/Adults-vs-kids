@@ -1,4 +1,4 @@
-import {LENGTH,STEP,grid,drive,replay} from './ghostline-core.js';
+import {LENGTH,STEP,grid,drive,replay} from './ghostline-core.js?v=2';
 import {paint} from './ghostline-view.js?v=2';
 import {loadRaceArt} from './ghostline-scenery.js';
 export function mountGhostline({players,onExit,onComplete,beforeRematch}){
@@ -30,7 +30,7 @@ export function mountGhostline({players,onExit,onComplete,beforeRematch}){
   car=grid();if(!leg)trace=[{s:0,x:0}];driver.textContent=players[leg];gap.textContent=leg?'Ghost on track':'Setting the ghost';resume();
  }
  function ready(){phase='ready';leg=0;car=grid();dirty=true;times=[];trace=[];driver.textContent=players[0];clock.textContent='0.00 s';gap.textContent='Sunset Circuit';arrows.hidden=true;
-  show(players[0]+' drives first','The car accelerates for you. Hold ◀ or ▶ to steer, or use A/D or the arrow keys. The grass costs speed.','Start my run',start);
+  show(players[0]+' drives first','The car accelerates for you. Hold ◀ or ▶ to steer, or use A/D or the arrow keys. Steer into bends early. Running onto grass costs speed.','Start my run',start);
  }
  function finish(){
   quiet();times.push(car.time);phase='handoff';held.clear();arrows.hidden=true;
