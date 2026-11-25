@@ -1,4 +1,4 @@
-import {mountGhostline} from './ghostline.js?v=8';
+import {mountGhostline} from './ghostline.js?v=9';
 import {mountFlex} from './arcade-flex.js?v=1';
 import {mountGuestGate} from './arcade-guest.js?v=1';
 import {mountFeaturedGames} from './arcade-featured.js?v=4';
@@ -412,7 +412,7 @@ function openGhostline(){
  let matchId;
  function announce(){matchId=crypto.randomUUID();dispatchArcadeAnalytics(new CustomEvent('avk:game-start',{detail:{game:'ghostline',id:matchId}}));}
  announce();
- mountGhostline({players:[contender(0),contender(1)],
+ mountGhostline({players:[contender(0),contender(1)],soundEnabled:soundOn,
   beforeRematch:()=>{if(!guestGate.allow('ghostline'))return false;announce();return true;},
   onExit:()=>{lobby.hidden=false;document.querySelector('[data-game="ghostline"]')?.focus();},
   onComplete:result=>{

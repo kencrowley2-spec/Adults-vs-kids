@@ -6,3 +6,30 @@ dialog.ghostline[open]{position:fixed;inset:0;display:block;box-sizing:border-bo
 .gt-panel h2{font:italic 850 clamp(1.45rem,4vw,2.2rem)/1.1 system-ui;margin:.2rem;color:#ffe19a;overflow-wrap:anywhere}.gt-panel p{color:#e5ebec;margin:.7rem auto;line-height:1.45}.gt-panel button{width:100%;color:#171c21;background:#ffd458;border-color:#f2b733}
 .gt-steer{position:absolute;bottom:max(4%,env(safe-area-inset-bottom));left:4%;right:4%;display:flex;justify-content:space-between;pointer-events:none}.gt-steer button{pointer-events:auto;width:clamp(70px,19vw,150px);height:clamp(48px,11vh,82px);background:#151c20dc;border:2px solid #b4b3a6;border-bottom:4px solid #f4bd43;font-size:1.65rem;touch-action:none;user-select:none}.gt-steer button:active{background:#59451c}.ghostline [hidden]{display:none}
 .gt-hud{gap:.45rem}.gt-hud button{flex-shrink:0}.gt-hud span{margin-right:auto}.gt-exit{margin-left:0}@media(max-width:490px){.gt-hud{left:2%;right:2%;font-size:.76rem;gap:.3rem;padding:.22rem}.gt-hud button{min-width:40px}.gt-hud b{max-width:24%}}
+.gt-start {
+ position:absolute;top:max(3.9rem,18%);left:50%;transform:translateX(-50%);
+ display:grid;justify-items:center;gap:.3rem;pointer-events:none;
+}
+.gt-lights {
+ display:flex;gap:.48em;padding:.35em .55em;font-size:clamp(1.25rem,4vmin,2.6rem);
+ border:2px solid #879198;border-bottom-color:#313941;border-radius:.5em;
+ background:linear-gradient(#46505a,#11171b 56%,#242b30);box-shadow:0 .14em .25em #0009;
+}
+.gt-lights i {
+ width:1.15em;height:1.15em;border-radius:50%;background:#24292b;
+ box-shadow:inset 0 .12em .2em #080b0e,0 1px 0 #7b858a;
+}
+.gt-start[data-light="red"] {--lamp:#ff4037}
+.gt-start[data-light="yellow"] {--lamp:#ffd332}
+.gt-start[data-light="green"] {--lamp:#50f478}
+.gt-start[data-light="red"] i:nth-child(1),
+.gt-start[data-light="yellow"] i:nth-child(2),
+.gt-start[data-light="green"] i:nth-child(3) {
+ background:radial-gradient(circle at 38% 30%,#fff 0%,var(--lamp) 35%,var(--lamp) 62%,#1c282b 100%);
+ box-shadow:0 0 .32em var(--lamp),0 0 .8em color-mix(in srgb,var(--lamp) 50%,transparent);
+}
+.gt-start strong {
+ font:italic 950 clamp(2.8rem,10vmin,6.4rem)/1 system-ui,sans-serif;color:white;
+ text-shadow:0 2px 0 #141b20,0 0 .12em #10151b,0 .04em .12em #10151b;
+}
+.gt-start[data-light="green"] strong {color:#9bffad}
