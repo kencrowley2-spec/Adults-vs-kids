@@ -13,7 +13,7 @@ import {mountTreasure,treasurePlan} from './arcade-treasure.js?v=1';
 import {mountBlocks} from './arcade-blocks.js?v=1';
 import {mountBasketball} from './arcade-basketball.js?v=1';
 import {coverMarkup,recentGames,BROWSE_SHELVES,referenceCoverMarkup} from './arcade-library.js?v=25';
-import {GAMES, ANIMALS, TRIVIA, PICTURES, CHALLENGES} from './arcade-data.js?v=34';
+import {GAMES, ANIMALS, TRIVIA, PICTURES, CHALLENGES} from './arcade-data.js?v=35';
 import {shuffle, roundWinner, awardRound, lineWinner} from './arcade-core.js';
 
 import {makeMaze, codeClues, rpsWinner, GOLF_COURSES, golfStep} from './arcade-new-core.js?v=5';
@@ -135,7 +135,7 @@ function competitionUpdate(progress){
  else if(['memory','code'].includes(game.id)){
   const other=competitiveScore(opponent),gap=score-other;
   call=gap>0?`${name} LEADS ${score}–${other}!`:gap===0?`TIED ${score}–${other}!`:`CATCH ${rival}: ${other}–${score}!`;
-  detail=game.id==='memory'?'One pair = one point. Most pairs wins the round.':'One safe = one point. First to 3 wins the round.';
+  detail=game.id==='memory'?'Most pairs wins. A 6–6 tie goes to a three-pair playoff.':'One safe = one point. First to 3 wins the round.';
   cue=gap>0?'lead':gap===0?'tie':'';
  }
  else {
@@ -156,8 +156,8 @@ function competitionUpdate(progress){
 function competitionResult(){
  if(champion<0)return '';
  defendingCrowns.set(series?'series':game.id,champion);
- const singleRound=['claw','mole','treasure','blocks','basketball'].includes(game.id)&&!series;
- const scores=singleRound&&results[0]&&results[1]?results.map(r=>r.score):wins;
+ const singleRound=['memory','claw','mole','treasure','blocks','basketball'].includes(game.id)&&!series;
+ const scores=singleRound&&game.id==='memory'?[competitiveScore(0),competitiveScore(1)]:singleRound&&results[0]&&results[1]?results.map(r=>r.score):wins;
  return `<div class="competition-victory ${effectsOn?'with-effects':''}"><p class="competition-crown">👑</p><strong>${contenderLabel(champion)} HAS THE CROWN!</strong>${matchupMarkup()}<small>${series?'SERIES GAME WINS':singleRound?'FINAL POINTS':'ROUND WINS'}</small><div class="competition-result-scores">${[0,1].map(i=>`<span>${contenderLabel(i)}<b>${scores[i]}</b></span>`).join('')}</div><p>${contenderLabel(1-champion)}, the scoreboard checked twice! Your comeback starts with a rematch!</p><small>Winner gets bragging rights. Everyone gets a high five.</small></div>`;
 }
 
@@ -384,13 +384,13 @@ function focusFirst(){ stage.querySelector('button,input')?.focus({preventScroll
 function status(text){$('arcade-message').textContent=text;}
 function scoreboard(){
  if($('mole-volume-control'))$('mole-volume-control').hidden=game?.id!=='mole';
-  $('match-format').textContent=series?'3-GAME SERIES':game?.id==='claw'?'30 SECONDS EACH · ONE ROUND':game?.id==='mole'?'20 SECONDS EACH · ONE ROUND':game?.id==='frog'?'BEST OF THREE · 3 TRIES EACH':game?.id==='treasure'?'5 GUESSES EACH · ONE ROUND':game?.id==='blocks'?'60 SECONDS EACH · ONE ROUND':game?.id==='basketball'?'30 SECONDS EACH':'BEST OF FIVE';
+  $('match-format').textContent=series?'3-GAME SERIES':game?.id==='claw'?'30 SECONDS EACH · ONE ROUND':game?.id==='mole'?'20 SECONDS EACH · ONE ROUND':game?.id==='frog'?'BEST OF THREE · 3 TRIES EACH':game?.id==='treasure'?'5 GUESSES EACH · ONE ROUND':game?.id==='blocks'?'60 SECONDS EACH · ONE ROUND':game?.id==='basketball'?'30 SECONDS EACH':game?.id==='memory'?'BEST OF ONE':'BEST OF FIVE';
   $('arcade-reset').textContent=series?'Restart series ↻':'Restart match ↻';
   $('series-lineup').hidden=!series;
   if(series) $('series-lineup').innerHTML=series.games.map((g,i)=>`<div class="series-pick ${i===series.index?'active':''}"><small>GAME ${i+1}${series.winners[i]!==undefined?` · ${teamLabel(series.winners[i])} win`:''}</small><b>${g.icon} ${g.name}</b></div>`).join('');
-  $('arcade-score').innerHTML=names.map((name,i)=>`<div id="arcade-team-${i}" class="team-score ${turn===i&&champion<0?'current':''}" aria-current="${turn===i&&champion<0}" aria-label="${escapePlayer(name)}${turn===i&&champion<0?', current turn':''}"><span><span class="score-avatar" aria-hidden="true">${i===0?'🔥':'⚡'}</span> ${i===0?'★':'✦'} ${kidsOnly?'':'TEAM '}${escapePlayer(name.toUpperCase())}</span>${!kidsOnly&&selectedPlayers[i].length?`<small class="arcade-player-names">${selectedPlayers[i].map(escapePlayer).join(' · ')}</small>`:''}<strong>${game?.id==='claw'&&!series?(game.clawPoints?.[i]??0):game?.id==='mole'&&!series?(game.molePoints?.[i]??0):game?.id==='treasure'&&!series?(game.treasurePoints?.[i]??0):game?.id==='blocks'&&!series?(game.blockPoints?.[i]??0):game?.id==='basketball'&&!series?(game.basketballPoints?.[i]??0):game?.id==='code'&&champion<0?(game.safePoints?.[i]??0):wins[i]}</strong><div class="win-dots" ${['claw','mole','treasure'].includes(game?.id)&&!series?'hidden':''} aria-label="${wins[i]} ${series?'game':'round'} wins">${Array.from({length:game?.id==='frog'&&!series?2:3},(_,n)=>n).map(n=>`<i class="${n<wins[i]?'won':''}"></i>`).join('')}</div></div>`).join('');
+  $('arcade-score').innerHTML=names.map((name,i)=>`<div id="arcade-team-${i}" class="team-score ${turn===i&&champion<0?'current':''}" aria-current="${turn===i&&champion<0}" aria-label="${escapePlayer(name)}${turn===i&&champion<0?', current turn':''}"><span><span class="score-avatar" aria-hidden="true">${i===0?'🔥':'⚡'}</span> ${i===0?'★':'✦'} ${kidsOnly?'':'TEAM '}${escapePlayer(name.toUpperCase())}</span>${!kidsOnly&&selectedPlayers[i].length?`<small class="arcade-player-names">${selectedPlayers[i].map(escapePlayer).join(' · ')}</small>`:''}<strong>${game?.id==='memory'&&!series?competitiveScore(i):game?.id==='claw'&&!series?(game.clawPoints?.[i]??0):game?.id==='mole'&&!series?(game.molePoints?.[i]??0):game?.id==='treasure'&&!series?(game.treasurePoints?.[i]??0):game?.id==='blocks'&&!series?(game.blockPoints?.[i]??0):game?.id==='basketball'&&!series?(game.basketballPoints?.[i]??0):game?.id==='code'&&champion<0?(game.safePoints?.[i]??0):wins[i]}</strong><div class="win-dots" ${['memory','claw','mole','treasure'].includes(game?.id)&&!series?'hidden':''} aria-label="${wins[i]} ${series?'game':'round'} wins">${Array.from({length:game?.id==='frog'&&!series?2:3},(_,n)=>n).map(n=>`<i class="${n<wins[i]?'won':''}"></i>`).join('')}</div></div>`).join('');
   const rivalry=document.createElement('div');rivalry.className='competition-hud';rivalry.innerHTML='<strong id="competition-call" role="status" aria-live="polite"></strong><small id="competition-detail"></small>';$('arcade-score').appendChild(rivalry);competitionUpdate();
-  $('round-label').textContent=game?.id==='claw'&&!series?(results[0]&&results[1]?'SHOWDOWN COMPLETE':'1 TOY RETRIEVED = 1 POINT'):game?.id==='mole'&&!series?(results[0]&&results[1]?'SHOWDOWN COMPLETE':'1 HIT = 1 POINT · MOST HITS WINS'):game?.id==='treasure'&&!series?(results[0]&&results[1]?'SHOWDOWN COMPLETE':'1 TREASURE = 1 POINT · MOST POINTS WINS'):game?.id==='blocks'&&!series?(results[0]&&results[1]?'MATCH COMPLETE':'1 PIECE = 1 POINT · MOST POINTS WINS'):game?.id==='basketball'&&!series?(champion>=0?'MATCH COMPLETE':'2 POINTS PER BASKET · MOST POINTS WINS'):series?`${champion>=0?'SERIES COMPLETE':`GAME ${series.index+1} OF 3${attempt?' · TIE REPLAY':''}`} · SERIES SCORE` : champion>=0?'MATCH COMPLETE':`ROUND ${round} OF ${game?.id==='frog'?3:5}${attempt?' · TIE REPLAY':''} · FIRST TO ${game?.id==='frog'?2:3} WINS`;
+  $('round-label').textContent=game?.id==='claw'&&!series?(results[0]&&results[1]?'SHOWDOWN COMPLETE':'1 TOY RETRIEVED = 1 POINT'):game?.id==='mole'&&!series?(results[0]&&results[1]?'SHOWDOWN COMPLETE':'1 HIT = 1 POINT · MOST HITS WINS'):game?.id==='treasure'&&!series?(results[0]&&results[1]?'SHOWDOWN COMPLETE':'1 TREASURE = 1 POINT · MOST POINTS WINS'):game?.id==='blocks'&&!series?(results[0]&&results[1]?'MATCH COMPLETE':'1 PIECE = 1 POINT · MOST POINTS WINS'):game?.id==='basketball'&&!series?(champion>=0?'MATCH COMPLETE':'2 POINTS PER BASKET · MOST POINTS WINS'):series?`${champion>=0?'SERIES COMPLETE':`GAME ${series.index+1} OF 3${attempt?' · TIE REPLAY':''}`} · SERIES SCORE` : champion>=0?'MATCH COMPLETE':game?.id==='memory'?'ONE BOARD · MOST PAIRS WINS':`ROUND ${round} OF ${game?.id==='frog'?3:5}${attempt?' · TIE REPLAY':''} · FIRST TO ${game?.id==='frog'?2:3} WINS`;
 }
 function pick(key,source,n){
   if(!used[key] || used[key].length<n) used[key]=shuffle(source);
@@ -671,23 +671,31 @@ function startClock(seconds,onEnd){
 }
 function fitMemoryBoard(){
  const area=$('memory-play-area'),board=$('memory-cards');if(!area?.clientWidth||!area?.clientHeight||!board?.style)return;
- const width=area.clientWidth,height=Math.max(80,area.clientHeight-30),columns=window.matchMedia?.('(orientation: landscape) and (max-height:650px)')?.matches?6:4,rows=24/columns,gap=Math.max(5,Math.min(12,Math.round(width/90)));
+ const width=area.clientWidth,height=Math.max(80,area.clientHeight-30),columns=board.children.length===6?3:window.matchMedia?.('(orientation: landscape) and (max-height:650px)')?.matches?6:4,rows=(board.children.length||24)/columns,gap=Math.max(5,Math.min(12,Math.round(width/90)));
  const cardHeight=Math.max(24,Math.floor((height-gap*(rows-1))/rows)),cardWidth=Math.max(24,Math.floor(Math.min((width-gap*(columns-1))/columns,cardHeight*1.15)));
  board.style.width=(cardWidth*columns+gap*(columns-1))+'px';board.style.height=(cardHeight*rows+gap*(rows-1))+'px';
  board.style.gridTemplateColumns=`repeat(${columns},minmax(0,1fr))`;board.style.gridTemplateRows=`repeat(${rows},minmax(0,1fr))`;board.style.gap=gap+'px';
 }
+const memoryCharacters={
+ KOALA:'🐨', TIGER:'🐯', PENGUIN:'🐧', DOLPHIN:'🐬', OCTOPUS:'🐙', WHALE:'🐳',
+ UNICORN:'🦄', DRAGON:'🐉', ROBOT:'🤖', ALIEN:'👽', DINO:'🦖', BUTTERFLY:'🦋',
+ BEE:'🐝', SNAIL:'🐌', CRAB:'🦀', FLAMINGO:'🦩', HEDGEHOG:'🦔', SLOTH:'🦥',
+ OTTER:'🦦', GIRAFFE:'🦒', PARROT:'🦜', LADYBUG:'🐞', ELEPHANT:'🐘', ZEBRA:'🦓'
+};
 function memoryFace(symbol){
+ if(memoryCharacters[symbol])return `<span class="memory-shape"><svg viewBox="0 0 100 100" aria-hidden="true"><text x="50" y="78" font-size="72" text-anchor="middle">${memoryCharacters[symbol]}</text></svg></span>`;
  const animals=['FOX','OWL','RABBIT','BEAR','FROG','TURTLE','PANDA','LION'],index=animals.indexOf(symbol);
  if(index>=0)return `<span class="memory-art" style="background-position:${index%3*50}% ${Math.floor(index/3)*50}%"></span>`;
  const shape={STAR:'<path d="m50 9 12 27 30 3-23 20 7 31-26-16-26 16 7-31L8 39l30-3Z" fill="#ffe36b"/>',HEART:'<path d="M50 85 15 52C-7 28 23 4 50 28 77 4 107 28 85 52Z" fill="#ff778c"/>',DIAMOND:'<path d="m50 10 40 40-40 40L10 50Z" fill="#66d5f1"/><path d="m50 10 0 80M10 50h80" opacity=".3"/>',TRIANGLE:'<path d="M50 12 94 87H6Z" fill="#9bdf83"/>'}[symbol];
  return `<span class="memory-shape shape-${symbol.toLowerCase()}"><svg viewBox="0 0 100 100" aria-hidden="true"><g stroke="#213356" stroke-width="3" stroke-linejoin="round">${shape}</g><g fill="#213356"><ellipse cx="38" cy="53" rx="3" ry="4"></ellipse><ellipse cx="62" cy="53" rx="3" ry="4"></ellipse></g><path d="M43 63q7 9 14 0" fill="none" stroke="#213356" stroke-width="3" stroke-linecap="round"/></svg></span>`;
 }
-function memory(){
-  const SYMBOLS=['FOX','OWL','RABBIT','BEAR','FROG','TURTLE','PANDA','LION','STAR','HEART','DIAMOND','TRIANGLE'];
+function memory(playoff=false){
+  const fullSet=['FOX','OWL','RABBIT','BEAR','FROG','TURTLE','PANDA','LION','STAR','HEART','DIAMOND','TRIANGLE',...Object.keys(memoryCharacters)];
+  const SYMBOLS=shuffle(fullSet).slice(0,playoff?3:12);
   const deck=shuffle([...SYMBOLS,...SYMBOLS]);let revealed=[],matched=new Set(),points=[0,0],locked=true,preview=true,moves=0,best=null,elapsed=0,runningSince=null,clockStopped=false,complete=false;
   const bestKey=`avk:memory:best:24:${arcadeAccountId}`;
   try{const raw=localStorage.getItem(bestKey),value=Number(raw);if(raw!==null&&Number.isInteger(value)&&value>=SYMBOLS.length)best=value;}catch{}
-  screen(`<section id="memory-game" class="source-memory-game" aria-label="Memory Match"><div class="memory-heading"><span>ADULTS vs. KIDS™</span><h3>MEMORY MATCH</h3><p>Flip the cards · Match the pairs!</p></div><div class="source-memory-hud"><span class="memory-pairs-pill">★ Pairs found <b id="memory-pairs">0/12</b></span><span>◷ Time <b id="memory-time">0:00</b></span><span>Moves <b id="memory-moves">0</b></span></div><div class="memory-round-score"><div role="status" aria-live="polite" aria-atomic="true"><span id="memory-team-0">${contenderLabel(0)} <strong id="memory-adult-points">0</strong><em id="memory-team-0-turn"></em><small>${wins[0]} ROUND WINS</small></span><span id="memory-team-1">${contenderLabel(1)} <strong id="memory-kid-points">0</strong><em id="memory-team-1-turn"></em><small>${wins[1]} ROUND WINS</small></span></div></div><div class="memory-play-area" id="memory-play-area"><div class="turn-strip memory-turn-strip" id="turn-strip"></div><div id="memory-cards" class="source-memory-board" role="group" aria-label="24 cards, 12 matching pairs. Six rows of four cards, or four rows of six on wide screens."></div><div id="memory-praise" class="memory-praise" role="status" aria-live="polite"></div></div><div class="memory-footer"><div><p id="memory-rules" class="memory-quick-rules">Match = 1 point + go again. Miss = switch teams. Yellow team plays.</p><span class="memory-best-label">Best: <b id="memory-best">${best===null?'--':best+' moves'}</b></span></div><button type="button" class="source-memory-restart" id="memory-restart">↻ Restart round</button></div><div id="memory-action"></div></section>`);
+  screen(`<section id="memory-game" class="source-memory-game" aria-label="Memory Match"><div class="memory-heading"><span>ADULTS vs. KIDS™</span><h3>${playoff?'6–6! QUICK PLAYOFF':'MEMORY MATCH'}</h3><p>${playoff?'First to two pairs wins!':'One board. Most pairs wins!'}</p></div><div class="source-memory-hud"><span class="memory-pairs-pill">★ Pairs found <b id="memory-pairs">0/${SYMBOLS.length}</b></span><span>◷ Time <b id="memory-time">0:00</b></span><span>Moves <b id="memory-moves">0</b></span></div><div class="memory-round-score"><div role="status" aria-live="polite" aria-atomic="true"><span id="memory-team-0">${contenderLabel(0)} <strong id="memory-adult-points">0</strong><em id="memory-team-0-turn"></em><small>PAIRS</small></span><span id="memory-team-1">${contenderLabel(1)} <strong id="memory-kid-points">0</strong><em id="memory-team-1-turn"></em><small>PAIRS</small></span></div></div><div class="memory-play-area" id="memory-play-area"><div class="turn-strip memory-turn-strip" id="turn-strip"></div><div id="memory-cards" class="source-memory-board" role="group" aria-label="${deck.length} cards, ${SYMBOLS.length} matching pairs."></div><div id="memory-praise" class="memory-praise" role="status" aria-live="polite"></div></div><div class="memory-footer"><div><p id="memory-rules" class="memory-quick-rules">Match = 1 point + go again. Miss = switch teams. ${playoff?'First to two pairs wins.':'Tie? Play six cards for the win.'}</p><span class="memory-best-label" ${playoff?'hidden':''}>Best: <b id="memory-best">${best===null?'--':best+' moves'}</b></span></div><button type="button" class="source-memory-restart" id="memory-restart">↻ Restart match</button></div><div id="memory-action"></div></section>`);
   function clockText(){
     const seconds=Math.floor((elapsed+(runningSince===null?0:performance.now()-runningSince))/1000);
     return `${Math.floor(seconds/60)}:${String(seconds%60).padStart(2,'0')}`;
@@ -697,7 +705,7 @@ function memory(){
   function tickClock(){if(clockStopped||complete)return;const text=clockText();if($('memory-time').textContent!==text)$('memory-time').textContent=text;later(tickClock,250);}
   function draw(){
     $('memory-game').setAttribute('data-preview',String(preview));
-    $('turn-strip').textContent=preview?`${teamName(turn)} go first! Look closely — cards hide in five seconds.`:`${teamName(turn)}’ TURN · Highlighted yellow · Match a pair to go again!`;
+    $('turn-strip').textContent=preview?`${teamName(turn)} go first! Look closely — cards hide in ${playoff?'two':'five'} seconds.`:`${teamName(turn)}’ TURN · Highlighted yellow · Match a pair to go again!`;
     $('memory-pairs').textContent=`${matched.size/2}/${SYMBOLS.length}`;
     $('memory-adult-points').textContent=String(points[0]);$('memory-kid-points').textContent=String(points[1]);
     [0,1].forEach(team=>{$('memory-team-'+team).setAttribute('data-current',String(team===turn));$('memory-team-'+team).setAttribute('aria-current',String(team===turn));$('memory-team-'+team+'-turn').textContent=team===turn?'YOUR TURN':'WAITING';});
@@ -714,10 +722,26 @@ function memory(){
     });
   }
   function finishBoard(){
-    complete=true;recordFeatured('memory',moves);pauseClock();$('memory-time').textContent=clockText();
-    if(best===null||moves<best){best=moves;$('memory-best').textContent=`${best} moves`;try{localStorage.setItem(bestKey,String(best));}catch{}}
-    react('win',`${teamName(turn)} +1 POINT!`);
-    later(()=>finishRound(roundWinner({score:points[0]},{score:points[1]}),`Round points — ${teamName(0)} ${points[0]} · ${teamName(1)} ${points[1]}. Cleared in ${moves} moves (${clockText()}). One matching pair = one point. Most points wins the round.`),800);
+    complete=true;pauseClock();$('memory-time').textContent=clockText();
+    if(!playoff){
+      recordFeatured('memory',moves);
+      if(best===null||moves<best){best=moves;try{localStorage.setItem(bestKey,String(best));}catch{}$('memory-best').textContent=best+' moves';}
+      if(points[0]===points[1]){
+        status('Tied 6–6! Six-card playoff. First to two pairs wins.');
+        later(()=>{turn=1-starter;liveProgress=[null,null];scoreboard();memory(true);},800);
+        return;
+      }
+    }
+    const winner=points[0]>points[1]?0:1;
+    const detail=playoff?`Tied 6–6. ${contender(winner)} took the playoff ${points[winner]}–${points[1-winner]}!`:`Cleared in ${moves} moves (${clockText()}).`;
+    later(()=>{
+      if(series){finishRound(winner,detail);return;}
+      champion=winner;wins[winner]=1;recording.roundWinners.push(winner);saveCompleted();scoreboard();
+      screen(`<div class="result"><p>${escapePlayer(detail)}</p><h3>Play a rematch?</h3></div>`);
+      button('Play a rematch',()=>openGame('memory'));
+      button('Back to Arcade',()=>$('arcade-return').click(),stage,'text-button');
+      react('win','✦ MEMORY MATCH CHAMPION ✦');status(`${contender(winner)} wins Memory Match!`);focusFirst();
+    },800);
   }
   function flip(i){
     if(locked||document.hidden||complete||revealed.includes(i)||matched.has(i))return;
@@ -729,7 +753,7 @@ function memory(){
       if(document.hidden){later(resolvePair,250);return;}
       const match=deck[revealed[0]]===deck[revealed[1]];
       if(match){revealed.forEach(id=>matched.add(id));points[turn]++;competitionUpdate({score:points[turn]});$('memory-praise').innerHTML=`<span class="memory-match-burst">✦ PAIR FOUND! ✦<small>${contenderLabel(turn)} +1 · Go again!</small></span>`;const found=matched.size;later(()=>{if(matched.size===found)$('memory-praise').replaceChildren();},900);}
-      draw();if(matched.size===deck.length){finishBoard();return;}
+      draw();if(matched.size===deck.length||(playoff&&points[turn]===2)){finishBoard();return;}
       status(match?`${teamName(turn)} earn 1 point and go again!`:'No match. Remember those cards — next team coming up…');
       react(match?'match':'turn',match?`${teamName(turn)} +1 POINT!`:'Next team…');
       const next=()=>{if(document.hidden){later(next,250);return;}revealed=[];if(!match)turn=1-turn;locked=false;scoreboard();draw();status(`${teamName(turn)}: find a pair.`);};
@@ -737,10 +761,10 @@ function memory(){
     },650);
   }
   $('memory-restart').addEventListener('click',beginRound);
-  draw();if(typeof ResizeObserver!=='undefined'){memoryLayoutObserver=new ResizeObserver(fitMemoryBoard);memoryLayoutObserver.observe($('memory-play-area'));}scheduleGameFit();status('Five-second preview — both teams can look! Match = 1 point + go again. Miss = switch teams.');
-  readArcade('Match a pair: one point, go again. Miss: switch teams. Yellow team plays.',1);
+  draw();if(typeof ResizeObserver!=='undefined'){memoryLayoutObserver=new ResizeObserver(fitMemoryBoard);memoryLayoutObserver.observe($('memory-play-area'));}scheduleGameFit();status(playoff?'6–6! Study these six cards. First to two pairs wins.':'Five-second preview — both teams can look! Match = 1 point + go again. Miss = switch teams.');
+  readArcade(playoff?'Quick playoff! Six cards. First to two pairs wins.':'Match a pair: one point, go again. Miss: switch teams. Yellow team plays.',1);
   function hidePreview(){if(!preview)return;if(document.hidden){later(hidePreview,250);return;}preview=false;locked=false;runningSince=performance.now();draw();$('memory-action').replaceChildren();status(`${teamName(turn)}: find a pair.`);tickClock();}
-  later(hidePreview,5000);
+  later(hidePreview,playoff?2000:5000);
 }
 function tic(){
   let board=Array(9).fill(null),locked=false;

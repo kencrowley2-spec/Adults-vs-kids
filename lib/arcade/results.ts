@@ -11,7 +11,8 @@ export function completedResult(raw:unknown):CompletedResult{
  if(!Array.isArray(d.roundWinners)||d.roundWinners.some(w=>w!==0&&w!==1))throw new Error('Invalid outcomes');
  const rounds=d.roundWinners as number[];
  if(d.mode==='series') {if(rounds.length!==3)throw new Error('Series is incomplete');}
- else if(['basketball','blocks','treasure','mole','claw','lava','draw'].includes(games[0])){if(rounds.length!==1)throw new Error('One-round match is incomplete');}
+ // Accept legacy best-of-five Memory results from offline clients as well.
+ else if((games[0]==='memory'&&rounds.length===1)||['basketball','blocks','treasure','mole','claw','lava','draw'].includes(games[0])){if(rounds.length!==1)throw new Error('One-round match is incomplete');}
  else {
   const target=games[0]==='frog'?2:3;
   if(rounds.length<target||rounds.length>target*2-1)throw new Error('Match is incomplete');
