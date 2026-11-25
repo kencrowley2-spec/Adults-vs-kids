@@ -11,5 +11,5 @@
  if(dashboard.dataset.stadiumPreview==='true')return;
  const set=(selector,value)=>{const el=document.querySelector(selector);if(el)el.textContent=String(value)};
  fetch('/api/arcade/results',{credentials:'same-origin',cache:'no-store'}).then(r=>r.ok?r.json():null).then(data=>{const s=data?.score;if(!s||![s.adults,s.kids,s.total].every(n=>Number.isSafeInteger(n)&&n>=0)||s.adults+s.kids>s.total)return;set('[data-stadium-adults]',s.adults);set('[data-stadium-kids]',s.kids);set('[data-stadium-matches]',s.total)}).catch(()=>{});
- fetch('/api/arcade/leaderboard?game=maze',{credentials:'same-origin',cache:'no-store'}).then(r=>r.ok?r.json():null).then(data=>{const own=data?.rows?.find(row=>row.yours);if(own&&Number.isSafeInteger(own.place))set('[data-stadium-rank]','#'+own.place);const el=document.querySelector('[data-stadium-rank]');if(el)el.title='Maze Dash Top 100 ranking'}).catch(()=>{});
+ fetch('/api/arcade/leaderboard?game=ghostline',{credentials:'same-origin',cache:'no-store'}).then(r=>r.ok?r.json():null).then(data=>{const own=data?.rows?.find(row=>row.yours);if(own&&Number.isSafeInteger(own.place))set('[data-stadium-rank]','#'+own.place);const el=document.querySelector('[data-stadium-rank]');if(el)el.title='Ghostline GT Top 100 ranking'}).catch(()=>{});
 })();

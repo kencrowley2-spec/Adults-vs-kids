@@ -416,6 +416,8 @@ function openGhostline(){
   beforeRematch:()=>{if(!guestGate.allow('ghostline'))return false;announce();return true;},
   onExit:()=>{lobby.hidden=false;document.querySelector('[data-game="ghostline"]')?.focus();},
   onComplete:result=>{
+   const elapsedMs=Math.round(Math.min(...result.times)*100)*10;
+   timeRecorder.capture({id:matchId,game:'ghostline',score:1,elapsedMs});
    captureHeadToHead(matchId,'ghostline',result.winner);
    dispatchArcadeAnalytics(new CustomEvent('avk:game-complete',{detail:{game:'ghostline',id:matchId,...result}}));
   }

@@ -5,14 +5,14 @@ export const dynamic='force-dynamic';
 export async function GET(request:Request){
  const auth=await verifiedMember(request);
  if(!auth.user||!auth.client)return memberReply({error:'Sign in required.'},401,auth.headers);
- const game=new URL(request.url).searchParams.get('game')||'lava';
+ const game=new URL(request.url).searchParams.get('game')||'ghostline';
  const featured=featuredGame(game)?FEATURED_RANKING[game]:null;
  if(!featured&&!Object.hasOwn(TIMED_GAMES,game))return memberReply({error:'Unknown game.'},400,auth.headers);
  try{
   const [board,state,best,history]=await Promise.all([
    auth.client.from('arcade_leaderboard').select('place,user_id,family_name,elapsed_ms,score,achieved_at').eq('game',game).order('place').limit(100),
    auth.client.from('arcade_leaderboard_state').select('updated_at,next_update_at').eq('id',1).single(),
-   auth.client.from('arcade_timed_results').select('score,elapsed_ms').eq('user_id',auth.user.id).eq('game',game).order(featured?'score':'elapsed_ms',{ascending:featured?.lower??true}).limit(1).maybeSingle(),
+   auth.client.from('arcade_timed_results').select('score,elapsed_ms').eq('user_id',auth.user.id).eq('game',game).order(featured&&game!=='ghostline'?'score':'elapsed_ms',{ascending:featured?.lower??true}).limit(1).maybeSingle(),
    featured?auth.client.from('featured_match_standings').select('place,user_id,family_name,matches').eq('game',game).order('place').limit(100):Promise.resolve({data:[],error:null}),
   ]);
   if(board.error||state.error||best.error||history.error)throw new Error('Unavailable');

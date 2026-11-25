@@ -3,7 +3,7 @@ import {importDeviceBests} from './arcade-import-bests.js?v=1';
 const tabs=[...document.querySelectorAll('[data-game]')];
 let active=tabs[0];
 let game=active.dataset.game,nextUpdate=0,loading=false,sequence=0,lastAttempt=0;
-const displayScore=n=>n+' '+(n===1?active.dataset.unit.slice(0,-1):active.dataset.unit);
+const displayScore=n=>game==='ghostline'?(n/1000).toFixed(2)+' s':n+' '+(n===1?active.dataset.unit.slice(0,-1):active.dataset.unit);
 const date=value=>new Date(value).toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit',timeZoneName:'short'});
 function cell(row,value,className=''){const td=document.createElement('td');td.className=className;td.textContent=value;row.appendChild(td);return td;}
 async function load(){
@@ -34,12 +34,12 @@ async function load(){
    const emblem=document.createElement('span');emblem.className='team-emblem';emblem.setAttribute('aria-hidden','true');emblem.textContent=record.place<=3?'🏅':'⚑';
    const label=document.createElement('strong');label.textContent=`${record.family_name}`;name.append(emblem,label);
    if(record.yours){const badge=document.createElement('small');badge.textContent='YOUR FAMILY';name.appendChild(badge);}
-   cell(tr,displayScore(record.score),'time-col');cell(tr,date(record.achieved_at),'record-date');
+   cell(tr,displayScore(game==='ghostline'?record.elapsed_ms:record.score),'time-col');cell(tr,date(record.achieved_at),'record-date');
    $('lb-rows').appendChild(tr);
   }
   $('lb-empty').hidden=data.rows.length>0;
   $('lb-status').textContent=data.rows.length?`${active.textContent}: ${data.rows.length} ranked ${data.rows.length===1?'family':'families'}.`:'';
-  $('lb-best').textContent=data.bestScore===null?'NO RECORD YET':displayScore(data.bestScore);
+  $('lb-best').textContent=data.bestScore===null?'NO RECORD YET':displayScore(game==='ghostline'?data.bestMs:data.bestScore);
   const own=data.rows.find(r=>r.yours);
   $('lb-position').textContent=own?`Published rank #${own.place} · New personal bests enter the next daily update.`:data.bestScore===null?'Complete a qualifying turn to enter.':'Record saved · Check the next daily update for your ranking.';
   tick();
@@ -56,7 +56,7 @@ function tick(){
 for(const button of tabs)button.addEventListener('click',()=>{
  $('lb-history').hidden=true;
  active=button;game=button.dataset.game;
- $('lb-direction').textContent=(active.dataset.lower==='true'?'LOWER':'HIGHER')+' SCORE WINS';
+ $('lb-direction').textContent=game==='ghostline'?'FASTEST TIME WINS':(active.dataset.lower==='true'?'LOWER':'HIGHER')+' SCORE WINS';
  $('lb-unit').textContent=active.dataset.unit.toUpperCase();
  $('lb-teams').textContent='— / 100 TEAMS';
  for(const tab of document.querySelectorAll('[data-game]'))tab.setAttribute('aria-pressed',String(tab===button));
@@ -69,5 +69,6 @@ $('lb-retry').addEventListener('click',load);
 window.addEventListener('online',()=>{if(!loading)load();});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&!loading)load();});
 setInterval(tick,1000);
-const firstLoad=load();
+const requested=tabs.find(tab=>tab.dataset.game===new URLSearchParams(location.search).get('game'));
+const firstLoad=requested&&requested!==active?requested.click():load();
 importDeviceBests(document.body.dataset.accountId).then(async imported=>{if(imported){await firstLoad;load();}});

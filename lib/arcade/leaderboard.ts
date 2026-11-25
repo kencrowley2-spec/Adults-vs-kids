@@ -8,6 +8,10 @@ export function timedResult(raw:unknown){
  if(!raw||typeof raw!=='object')throw new Error('Invalid result');
  const d=raw as Record<string,unknown>;
  if(typeof d.id!=='string'||!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(d.id))throw new Error('Invalid ID');
+ if(d.game==='ghostline'){
+  if(d.score!==1||typeof d.elapsedMs!=='number'||!Number.isInteger(d.elapsedMs)||d.elapsedMs<20000||d.elapsedMs>600000)throw new Error('Invalid race time');
+  return {id:d.id,game:d.game,score:1,elapsedMs:d.elapsedMs};
+ }
  if(featuredGame(d.game)){
   const {min,max}=FEATURED_RANKING[d.game];
   if(typeof d.score!=='number'||!Number.isInteger(d.score)||d.score<min||d.score>max||d.elapsedMs!=null)throw new Error('Invalid score');
@@ -20,6 +24,7 @@ export function timedResult(raw:unknown){
 }
 
 export const FEATURED_RANKING={
+ ghostline:{unit:'seconds',lower:true,min:1,max:1,rule:'Finish both drives on Sunset Circuit. The faster time is your family’s entry.'},
  lava:{unit:'points',lower:false,min:1,max:630,rule:'Finish the showdown. The higher team score is your family’s entry.'},
  faces:{unit:'questions',lower:true,min:0,max:2147483647,rule:'Correctly guess the mystery face using the fewest questions.'},
  claw:{unit:'toys',lower:false,min:1,max:24,rule:'Collect the most toys in one 30-second turn.'},
