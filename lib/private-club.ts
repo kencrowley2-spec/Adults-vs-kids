@@ -15,7 +15,6 @@ export function privateClubPage(startedAt:number|null=null,section='home'){
  html=html.replace('HOURS : MINUTES : SECONDS</span>','HOURS : MINUTES : SECONDS · LIVE</span>');
  html=html.replace('</body>','<script src="/private-club.js?v=2" defer></script></body>');
  html=html.replace('<script src="/club-screen.js?v=2" defer></script>','');
- html=html.replace('/club-network.js?v=3','/club-network.js?v=4');
  html=html.replace(/<a class="club-key" href="\/admin\/app\/charlie"[^]*?<\/a>/, '<a class="club-key private-charlie-tile" href="/admin/app/charlie" aria-label="Charlie AI — coming January 2027"><img class="private-charlie-art" src="/assets/charlie-dashboard-tile.webp" alt="Meet Charlie, your Adults vs. Kids AI game host" width="1536" height="1033"><span class="private-charlie-label">Charlie AI</span></a>');
  return html.replace(/href="\/admin\/app(?=[/"#?])/g,'href="/admin/private-club');
 }
