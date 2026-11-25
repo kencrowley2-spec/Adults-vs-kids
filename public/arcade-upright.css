@@ -273,14 +273,45 @@ body:has(#arcade-lobby:not([hidden]))>main{background:radial-gradient(ellipse at
 /* Keep the rotating shelf within the cabinet glass and clear of the player controls. */
 .upright-cabinet .cabinet-screen-frame {height:47.1%}
 .upright-cabinet .cabinet-playfield {gap:1.2cqw}
-.upright-cabinet .cabinet-rotating {
+.upright-cabinet :is(.cabinet-featured,.cabinet-rotating) {
  --shelf-cyan:#58efff;
  --shelf-pink:#ef70d9;
- flex:1.45;min-width:0;box-sizing:border-box;padding:clamp(3px,1.25cqw,9px);
+ min-width:0;box-sizing:border-box;padding:clamp(3px,1.25cqw,9px);
  border:2px solid transparent;border-radius:clamp(7px,2.5cqw,16px);
  background:linear-gradient(120deg,#10282e,#111521 50%,#28172c) padding-box,
             linear-gradient(105deg,var(--shelf-cyan) 5%,#9abaff 54%,var(--shelf-pink)) border-box;
  box-shadow:-2px 0 7px #26e2ff63,2px 0 7px #ff49c952,inset 0 0 8px #67e5ff14;
+}
+.upright-cabinet .cabinet-rotating {flex:1.45}
+.upright-cabinet .cabinet-featured {flex:2.6}
+.upright-cabinet .cabinet-featured h2 {
+ margin:0 0 1.2cqw;color:#fff1c4;
+ font:900 clamp(9px,3cqw,17px)/1.1 Arial,sans-serif;letter-spacing:.065em;
+}
+.upright-cabinet #arcade-favorites {
+ gap:clamp(3px,1.35cqw,9px);margin:0;padding:0 0 clamp(2px,.65cqw,4px);overflow:visible;
+}
+#arcade-favorites .game-tile.featured-game {
+ --rim:clamp(1px,.56cqw,3px);
+ --depth:clamp(1px,.65cqw,4px);
+ display:grid;grid-template-rows:minmax(0,1fr) auto;box-sizing:border-box;
+ border:var(--rim) solid transparent;border-radius:clamp(5px,1.7cqw,11px);
+ background:linear-gradient(#251c18,#0d0b12) padding-box,
+   linear-gradient(145deg,#fff9d9,#ffcb60 21%,#895426 47%,#fff2b7 69%,#b37323 88%,#ffeab0) border-box;
+ box-shadow:0 var(--depth) 0 #654018,0 calc(var(--depth) + 2px) 5px #000a;
+}
+#arcade-favorites .game-tile .cover-art.cover-art-hd {
+ position:relative;inset:auto;grid-row:1;width:100%;height:100%;min-height:0;
+}
+#arcade-favorites .game-tile .cover-info {
+ position:static;grid-row:2;width:100%;height:auto;padding:.55cqw .45cqw;
+ border-top:1px solid #b19456;background:linear-gradient(#332c25,#141019);
+}
+#arcade-favorites .game-tile .cover-info b {
+ font:800 clamp(8px,2.7cqw,15px)/1.08 Arial,sans-serif;color:#fff8e8;
+}
+#arcade-favorites .game-tile.featured-game:active {
+ transform:translateY(1px);box-shadow:0 1px 0 #654018,0 2px 3px #0009;
 }
 .upright-cabinet .rotation-heading {
  display:flex;align-items:center;justify-content:space-between;flex:none;
@@ -359,7 +390,7 @@ body:has(#arcade-lobby:not([hidden]))>main{background:radial-gradient(ellipse at
 @container (max-width:260px) {
  .rotation-title {display:grid;gap:2px}
  .upright-cabinet .rotation-title h2 {font-size:9px}
- .upright-cabinet .cabinet-rotating {border-width:1px;padding:2px}
+ .upright-cabinet :is(.cabinet-featured,.cabinet-rotating) {border-width:1px;padding:2px}
  .upright-cabinet #arcade-rotating .game-tile {grid-template: minmax(0,1fr) / 42% minmax(0,1fr)}
  #arcade-rotating .game-tile .cover-info {grid-area:1/2;padding:1px;border-top:0;border-left:1px solid #4f687f}
  #arcade-rotating .game-tile .cover-construction {font-size:6px;max-width:42%}
