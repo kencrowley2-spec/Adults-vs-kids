@@ -13,6 +13,13 @@ if(panel){
    const {adults,kids,total}=data.score;
    if(![adults,kids,total].every(Number.isSafeInteger)||adults<0||kids<0||adults+kids>total)throw new Error('Invalid score');
    $('lifetime-adults').textContent=adults;$('lifetime-kids').textContent=kids;
+   for(const [id,wins] of [['mini-series-adults',adults],['mini-series-kids',kids]]){
+    const counter=$(id);
+    if(counter){
+     counter.textContent=String(wins);
+     if(counter.textContent.length>3)counter.style.fontSize=(44/counter.textContent.length)+'cqw';
+    }
+   }
    const leader=adults>kids?'Adults':'Kids',loser=adults>kids?'Kids':'Adults';
    const lead=total===0?'The rivalry starts here. Your first completed match makes the headlines.':adults===kids?`The family series is all square through ${total} completed games.`:`${leader} lead by ${Math.abs(adults-kids)} in the family series through ${total} completed ${total===1?'game':'games'}.`;
    $('lifetime-status').textContent=lead+(queue.pendingCount()?' A result on this device is still waiting to save.':'');

@@ -25,3 +25,12 @@ body.platform:has(.stadium-main){background:radial-gradient(ellipse at 50% 15%,#
 .board-shelf nav a:focus-visible{outline:3px solid white;outline-offset:2px}
 @media(hover:hover) and (prefers-reduced-motion:no-preference){.board-shelf nav a:hover{transform:translateY(-3px);border-color:#ffda62}}
 @media(max-width:700px){.board-shelf nav{grid-template-columns:repeat(3,minmax(0,1fr))}}
+
+.stadium-grid .stadium-series{container-type:inline-size}
+.series-mini{position:absolute;inset:0;display:grid;grid-template-rows:auto 1fr;gap:3cqw;padding:5cqw;box-sizing:border-box;border:2px solid #edbf42;border-radius:inherit;background:linear-gradient(#2b2416,#080808 65%);color:#ffe16c;text-align:center}
+.series-mini b{font-size:9cqw;line-height:1.05;text-transform:uppercase}
+.mini-board{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:stretch;gap:2cqw}
+.mini-board small{align-self:center;font-size:7cqw}
+.mini-side{display:flex;flex-direction:column;justify-content:center;align-items:center;border-radius:5cqw;background:#ffd526;color:#101010;font-size:8cqw;font-weight:800;line-height:1.15}
+.mini-side strong{font-size:16cqw;font-variant-numeric:tabular-nums;line-height:1.1}
+.mini-side.mini-kids{background:#fff}
