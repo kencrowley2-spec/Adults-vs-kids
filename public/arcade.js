@@ -14,11 +14,12 @@ import {mountFrog,frogCourses,frogRoundWinner} from './arcade-frog.js?v=3';
 import {mountTreasure,treasurePlan} from './arcade-treasure.js?v=1';
 import {mountBlocks} from './arcade-blocks.js?v=1';
 import {mountBasketball} from './arcade-basketball.js?v=1';
-import {coverMarkup,recentGames,BROWSE_SHELVES} from './arcade-library.js?v=29';
-import {GAMES, ANIMALS, TRIVIA, PICTURES, CHALLENGES} from './arcade-data.js?v=39';
+import {coverMarkup,recentGames,BROWSE_SHELVES} from './arcade-library.js?v=30';
+import {GAMES, ANIMALS, TRIVIA, PICTURES, CHALLENGES} from './arcade-data.js?v=40';
 import {shuffle, roundWinner, awardRound, lineWinner} from './arcade-core.js';
 
-import {makeMaze, codeClues, rpsWinner, GOLF_COURSES, golfStep} from './arcade-new-core.js?v=5';
+import {MAZE_BOARDS, MAZE_DIRECTIONS, mazeBoard, mazeWalls} from './arcade-maze.js?v=1';
+import {codeClues, rpsWinner, GOLF_COURSES, golfStep} from './arcade-new-core.js?v=5';
 
 import {createResultRecorder} from './arcade-results.js?v=2';
 
@@ -336,10 +337,10 @@ function startMazeMusic(){
   }
   updateMazeMusicUI();beat();
 }
-function mazeSoundbar(){
+function mazeSoundbar(parent=stage){
   const panel=document.createElement('div');panel.id='maze-soundbar';panel.className='maze-soundbar';
   panel.innerHTML=`<span class="maze-equalizer" aria-hidden="true"><i></i><i></i><i></i><i></i></span><div class="maze-music-copy"><strong>MAZE GROOVE</strong><small id="maze-music-status" role="status" aria-live="polite"></small></div><button type="button" id="maze-music-toggle" aria-pressed="false">Play music</button><label for="maze-music-volume">Music <span id="maze-music-volume-value">${Math.round(mazeMusicVolume*100)}%</span></label><input id="maze-music-volume" type="range" min="0" max="100" step="5" value="${Math.round(mazeMusicVolume*100)}" aria-label="Maze background music volume">`;
-  stage.appendChild(panel);
+  parent.appendChild(panel);
   $('maze-music-toggle').addEventListener('click',()=>{if(mazeMusicActive){mazeMusicOn=false;stopMazeMusic();}else{mazeMusicOn=true;startMazeMusic();}});
   $('maze-music-volume').addEventListener('input',()=>{mazeMusicVolume=Number($('maze-music-volume').value)/100;$('maze-music-volume-value').textContent=`${Math.round(mazeMusicVolume*100)}%`;if(mazeMusicBus)mazeMusicBus.gain.value=mazeMusicVolume;});
   startMazeMusic();
@@ -366,6 +367,7 @@ function button(label,action,parent=stage,className='primary'){
 function fitGameViewport(){
   const viewport=$('game-viewport');
   if(arena.hidden||!stage.style||!viewport?.clientHeight)return;
+  if(game?.id==='maze'&&$('maze-dash')){stage.style.setProperty('--game-scale','1');return;}
   if(game?.id==='memory'&&$('memory-game')){stage.style.setProperty('--game-scale','1');fitMemoryBoard();return;}
   // Measure the natural compact layout, then fit every control inside the arena.
   // A transform preserves the same hit targets and game state across resizes.
@@ -391,7 +393,7 @@ window.addEventListener('resize',updateArenaHeight);
 window.visualViewport?.addEventListener('resize',updateArenaHeight);
 updateArenaHeight();
 
-function focusFirst(){ stage.querySelector('button,input')?.focus({preventScroll:true}); }
+function focusFirst(){ ($('maze-board')||stage.querySelector('button,input'))?.focus({preventScroll:true}); }
 function status(text){$('arcade-message').textContent=text;}
 function scoreboard(){
  if($('mole-volume-control'))$('mole-volume-control').hidden=game?.id!=='mole';
@@ -597,14 +599,24 @@ function handoff(team,detail,action){
   }
   later(tick,1000);
 }
-function beginRound(){
+const mazeRotationKey='avk:maze-next-board';
+let nextMazeIndex=0;
+try{
+  const saved=Number(localStorage.getItem(mazeRotationKey));
+  if(Number.isInteger(saved)&&saved>=0&&saved<MAZE_BOARDS.length)nextMazeIndex=saved;
+}catch{}
+function beginRound(replayMaze=false){
   liveProgress=[null,null];competitionCue='';competitionPhase='play';
   results=[]; if(game.id==='claw'){game.clawPoints=[0,0];game.clawLayout=clawPrizes(1+Math.floor(Math.random()*2147483645));} if(game.id==='mole'){game.molePoints=[0,0];game.molePlan=molePlan(1+Math.floor(Math.random()*2147483645));} if(game.id==='treasure'){game.treasurePoints=[0,0];game.treasurePlan=[treasurePlan(),treasurePlan()];} if(game.id==='blocks'){game.blockPoints=[0,0];game.blockSeed=1+Math.floor(Math.random()*2147483645);} if(game.id==='basketball')game.basketballPoints=[0,0]; if(game.id==='code')game.safePoints=[0,0]; turn=starter; scoreboard(); status('');
   if(game.id==='memory') return memory();
   if(game.id==='tic') return handoff(turn,`${teamName(turn)} makes the first move. ${teamName(0)} use X; ${teamName(1)} use O.`,tic);
   if(game.id==='rps')return handoff(turn,'Keep your move secret. The other team should look away until you pass the device.',rockPaperScissors);
   if(game.id==='basketball')return teamReady(starter);
-  if(game.id==='maze')game.maze=makeMaze();
+  if(game.id==='maze'&&!replayMaze){
+    game.maze=mazeBoard(nextMazeIndex);
+    nextMazeIndex=(nextMazeIndex+1)%MAZE_BOARDS.length;
+    try{localStorage.setItem(mazeRotationKey,String(nextMazeIndex));}catch{}
+  }
   if(game.id==='code'){game.codes=[0,1].map(()=>Array.from({length:3},()=>1+Math.floor(Math.random()*4)));}
   if(game.id==='golf')game.course=shuffle(GOLF_COURSES).slice(0,3);
   if(game.id==='challenge') game.challenge=pick('challenge',CHALLENGES,1)[0];
@@ -616,6 +628,7 @@ function beginRound(){
 function teamReady(team,previous=''){
   competitionCue='';
   let detail=`Your turn starts after the countdown. ${game.description}`;
+  if(game.id==='maze')detail=`${game.maze.name} · Board ${game.maze.index+1} of ${MAZE_BOARDS.length}. You have 45 seconds to reach the flag.`;
   if(game.id==='mole')detail='20 seconds. One mole hit earns one point. Same pattern for both teams. Pass the device now!';
   if(game.id==='challenge') detail=`Pick ONE player per team. Same challenge, same 20 seconds. ${game.challenge[0]}: ${game.challenge[1]} The other team counts. You can play seated.`;
   handoff(team,(previous?previous+' ':'')+detail,()=>({claw:clawMachine,mole:whackAMole,blocks,basketball,spot, trivia:quiz,frog:frogHop,treasure:treasureShuffle,picture:quiz,number:quiz,challenge,maze:mazeDash,code:codeBreaker,golf:miniGolf}[game.id])());
@@ -695,9 +708,9 @@ function basketball(){
   onScore:points=>{game.basketballPoints[turn]=points;scoreboard();competitionUpdate({score:points});$('basketball-points').textContent=`${teamName(turn)}: ${points} points`;},
   onEnd:result=>{timed=false;chime('buzzer');finishTurn(result);}});
 }
-function startClock(seconds,onEnd){
+function startClock(seconds,onEnd,onTick){
   const deadline=performance.now()+seconds*1000; timed=true;
-  const tick=()=>{const left=Math.max(0,deadline-performance.now()); const el=$('game-clock'); if(el)el.textContent=`${Math.ceil(left/1000)}s`; if(left<=0){onEnd();}else later(tick,100);}; tick(); return deadline;
+  const tick=()=>{const left=Math.max(0,deadline-performance.now()); if(onTick?.(left)===false)return; const el=$('game-clock'); if(el)el.textContent=`${Math.ceil(left/1000)}s`; if(left<=0){onEnd();}else later(tick,100);}; tick(); return deadline;
 }
 function fitMemoryBoard(){
  const area=$('memory-play-area'),board=$('memory-cards');if(!area?.clientWidth||!area?.clientHeight||!board?.style)return;
@@ -957,34 +970,111 @@ function rockPaperScissors(){
   choose();
 }
 function mazeDash(){
-  const {size,cells}=game.maze;let position=0,settled=false,steps=0;
-  const started=performance.now(),delta=[-size,1,size,-1];
-  screen('<div class="turn-strip"><span id="maze-progress"></span><strong id="game-clock"></strong></div><p>Use the arrows to reach the flag. Solid black lines are walls.</p><div id="maze-board" class="maze-board" role="img" aria-label="Maze"></div><div id="maze-controls" class="maze-controls"></div>');
-  function finish(escaped){
-    if(settled)return;settled=true;
-    const elapsed=escaped?(performance.now()-started)/1000:45;
-    const result={score:escaped?1:0,elapsed,label:escaped?`Escaped in ${elapsed.toFixed(1)}s · ${steps} moves`:'No escape in 45 seconds'};
-    if(escaped&&turn===1){
-      screen('<div class="result maze-celebration"><div class="maze-confetti" aria-hidden="true"><i>★</i><i>✦</i><i>★</i><i>✦</i><i>★</i><i>✦</i></div><span class="giant-icon" role="img" aria-label="Celebration">🎉</span><p class="eyebrow">MAZE COMPLETE!</p><h3>WAY TO GO, '+teamLabel(turn,true)+'!</h3><p>You found the way out!</p><p>'+result.label+'</p></div>');
-      react('win','MAZE COMPLETE!');status(`Way to go, ${teamName(turn)}! You completed the maze!`);
-      later(()=>finishTurn(result),2000);
-    }else finishTurn(result);
-  }
+  const board=game.maze, {size,cells}=board, finishCell=cells.length-1;
+  const clockSeconds=45;
+  let position=0, steps=0, facing=0, settled=false, urgent=false;
+  const visited=new Set([0]);
+  const rival=results[1-turn];
+  const objective=rival?.score?`Beat ${rival.elapsed.toFixed(1)}s`:'Reach the checkered flag';
+  const walls=mazeWalls(board);
+  screen(`<section id="maze-dash" aria-label="Maze Dash" style="--maze-edge:${board.edge};--maze-wall:${board.wall};--maze-floor:${board.floor};--maze-tile:${board.tile};--maze-size:${size}">
+    <div class="maze-hud"><div><span class="maze-board-number">BOARD ${board.index+1} / ${MAZE_BOARDS.length}</span><h3>${board.name}</h3></div><strong id="game-clock" role="timer" aria-label="Time left">45s</strong></div>
+    <div id="maze-board" tabindex="0" role="img" aria-label="Maze" aria-describedby="maze-help">
+      <div class="maze-tiles" aria-hidden="true">${cells.map((_,i)=>`<span id="maze-tile-${i}" data-maze-cell="${i}" data-shade="${(i%size+Math.floor(i/size))%2}"></span>`).join('')}</div>
+      <span class="maze-start-pad" aria-hidden="true"></span><span class="maze-finish-flag" aria-hidden="true"></span>
+      <svg class="maze-walls" viewBox="0 0 ${size} ${size}" aria-hidden="true" focusable="false">
+        <defs><filter id="maze-wall-texture" x="-10%" y="-10%" width="120%" height="120%">
+          <feTurbulence baseFrequency="2.3 5.7" numOctaves="2" seed="5" result="grain"></feTurbulence>
+          <feColorMatrix in="grain" type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  .13 0 0 0 0" result="flecks"></feColorMatrix>
+          <feComposite in="flecks" in2="SourceAlpha" operator="in" result="surface"></feComposite>
+          <feMerge><feMergeNode in="SourceGraphic"></feMergeNode><feMergeNode in="surface"></feMergeNode></feMerge>
+        </filter></defs>
+        <path class="maze-wall-shadow" d="${walls}"></path><path class="maze-wall-face" d="${walls}"></path><path class="maze-wall-top" d="${walls}"></path><path class="maze-wall-edge" d="${walls}"></path>
+      </svg>
+      <span id="maze-runner" aria-hidden="true"></span><span id="maze-outcome" role="status" hidden></span>
+    </div>
+    <div id="maze-console" class="maze-console">
+      <div class="maze-run-info"><span>${objective}</span><strong id="maze-progress"></strong></div>
+      <div id="maze-controls" role="group" aria-label="Movement controls"></div>
+      <p id="maze-help">Tap an open tile or use the arrows.</p>
+    </div>
+  </section>`);
+  const dash=$('maze-dash'), playfield=$('maze-board'), runner=$('maze-runner');
+  const tiles=cells.map((_,i)=>$('maze-tile-'+i));
+  const clock=$('game-clock'), outcome=$('maze-outcome');
+  const controls=MAZE_DIRECTIONS.map(([arrow,label],d)=>{
+    const control=button(label,()=>move(d),$('maze-controls'),'answer');
+    control.innerHTML=`<span class="maze-direction-arrow" aria-hidden="true">${arrow}</span> <span class="maze-direction-label">${label}</span>`;
+    control.setAttribute('aria-label',label);
+    return control;
+  });
   function draw(){
-    $('maze-progress').textContent=`${teamName(turn)} · ${steps} moves`;
-    $('maze-board').innerHTML=cells.map((walls,i)=>`<span class="maze-cell ${i===position?'player':''}" style="border-top:${walls[0]?3:0}px solid #111;border-right:${walls[1]?3:0}px solid #111;border-bottom:${walls[2]?3:0}px solid #111;border-left:${walls[3]?3:0}px solid #111">${i===position?'●':i===cells.length-1?'⚑':''}</span>`).join('');
-    $('maze-board').setAttribute('aria-label',`Player row ${Math.floor(position/size)+1}, column ${position%size+1}. Goal row ${size}, column ${size}.`);
-    $('maze-controls').replaceChildren();
-    ['↑ Up','→ Right','↓ Down','← Left'].forEach((label,d)=>{
-      const b=button(label,()=>{
-        if(settled||cells[position][d])return;
-        chime('tap');
-        position+=delta[d];steps++;if(position===cells.length-1)return finish(true);draw();
-      },$('maze-controls'),'answer');b.innerHTML=`<span class="maze-direction-arrow" aria-hidden="true">${label[0]}</span> <span class="maze-direction-label">${label.slice(2)}</span>`;b.setAttribute('aria-label',label.slice(2));b.disabled=cells[position][d];
+    runner.setAttribute('style',`--maze-x:${position%size};--maze-y:${Math.floor(position/size)};--maze-facing:${facing}deg`);
+    $('maze-progress').textContent=`${steps} ${steps===1?'move':'moves'}`;
+    const neighbors=cells[position].map((wall,d)=>wall?-1:position+offset(d));
+    const open=[];
+    controls.forEach((control,d)=>{
+      control.disabled=settled||neighbors[d]===-1;
+      if(!control.disabled)open.push(MAZE_DIRECTIONS[d][1]);
     });
+    tiles.forEach((tile,i)=>{
+      tile.setAttribute('data-open',String(!settled&&neighbors.includes(i)));
+      tile.setAttribute('data-visited',String(visited.has(i)));
+    });
+    playfield.setAttribute('aria-label',`Row ${Math.floor(position/size)+1}, column ${position%size+1}. Goal row ${size}, column ${size}. ${open.length?'Open directions: '+open.join(', ')+'.':''}`);
   }
-  mazeSoundbar();
-  draw();startClock(45,()=>finish(false));status('Find the flag. You can only move through open paths.');
+  function offset(d){
+    const [,,x,y]=MAZE_DIRECTIONS[d];
+    return x+y*size;
+  }
+  function finish(escaped){
+    settled=true;timed=false;stopMazeMusic();
+    const elapsed=escaped?(performance.now()-started)/1000:clockSeconds;
+    const label=escaped?`Escaped in ${elapsed.toFixed(1)}s · ${steps} moves`:'No escape in 45 seconds';
+    const announcement=escaped?`WAY TO GO, ${teamName(turn).toUpperCase()}!`:'TIME’S UP!';
+    outcome.hidden=false;
+    outcome.textContent=announcement;
+    dash.setAttribute('data-result',escaped?'escaped':'timeout');
+    draw();
+    react(escaped?'win':'buzzer',escaped?'MAZE COMPLETE!':'TIME’S UP!');
+    status(`${announcement} ${label}`);
+    later(()=>finishTurn({score:escaped?1:0,elapsed,label}),escaped?2000:0);
+  }
+  function move(d){
+    if(settled||cells[position][d])return;
+    if(performance.now()-started>=clockSeconds*1000){finish(false);return;}
+    chime('tap');
+    position+=offset(d);facing=(d-1)*90;steps++;visited.add(position);
+    if(position===finishCell){finish(true);return;}
+    const hadButtonFocus=document.activeElement===controls[d];
+    draw();
+    if(hadButtonFocus&&controls[d].disabled)playfield.focus({preventScroll:true});
+  }
+  playfield.addEventListener('click',event=>{
+    const tile=event.target.closest?.('[data-maze-cell]');
+    if(!tile||tile.getAttribute('data-open')!=='true')return;
+    const next=Number(tile.getAttribute('data-maze-cell'));
+    const direction=MAZE_DIRECTIONS.findIndex((_,d)=>position+offset(d)===next&&!cells[position][d]);
+    if(direction>=0)move(direction);
+  });
+  dash.addEventListener('keydown',event=>{
+    const direction=['ArrowUp','ArrowRight','ArrowDown','ArrowLeft'].indexOf(event.key);
+    if(direction<0||event.altKey||event.ctrlKey||event.metaKey||event.target?.tagName==='INPUT')return;
+    event.preventDefault();
+    move(direction);
+  });
+  mazeSoundbar($('maze-console'));
+  draw();
+  const started=performance.now();
+  startClock(clockSeconds,()=>{if(!settled)finish(false);},ms=>{
+    if(settled)return false;
+    if(urgent||ms>10000||ms<=0)return;
+    urgent=true;
+    clock.setAttribute('data-urgent','true');
+    chime('tap');
+    status('Ten seconds left!');
+  });
+  status(`${teamName(turn)}, go! Reach the flag before time runs out.`);
 }
 function safeScoreMarkup(){
   return `<div class="safe-point-score" aria-label="Safe points this round"><span>${teamLabel(0,true)} <b>${game.safePoints[0]}</b></span><small>FIRST TO 3<br>1 SAFE = 1 POINT</small><span>${teamLabel(1,true)} <b>${game.safePoints[1]}</b></span></div>`;
@@ -1124,7 +1214,7 @@ $('arcade-reset').addEventListener('click',()=>{
 document.addEventListener('visibilitychange',()=>{
   memoryClock?.setPaused(document.hidden);
   if(document.hidden){stopTriviaVoice();moleAudio?.stop();}
-  if(document.hidden&&timed&&game){clearTimers();screen('<div class="result"><h3>Let’s give both teams a fair turn.</h3><p>The timed game was interrupted. Replay this round with no round win awarded.</p></div>');button('Replay this round →',beginRound);status('Round interrupted. Match score is unchanged.');}
+  if(document.hidden&&timed&&game){clearTimers();screen('<div class="result"><h3>Let’s give both teams a fair turn.</h3><p>The timed game was interrupted. Replay this round with no round win awarded.</p></div>');button('Replay this round →',()=>beginRound(game.id==='maze'));status('Round interrupted. Match score is unchanged.');}
 });
 
 function whackAMole(){
