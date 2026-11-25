@@ -1,4 +1,4 @@
-import {bend,LENGTH} from './ghostline-core.js';
+import {bend,LENGTH} from './ghostline-core.js?v=3';
 
 // Static centre line sampled in world metres. The same meshes are viewed by both drivers.
 const step=4, samples=[];
@@ -14,7 +14,7 @@ function at(s){
 const art={};
 export function loadRaceArt(onLoad){
  let active=true;
- for(const id of ['wheel','rival','sky','tree','dash']){
+ for(const id of ['wheel','rival','sky','tree','dash','hood']){
   if(art[id]){art[id].decode?.().then(()=>{if(active)onLoad();}).catch(()=>{});continue;}
   const img=new Image();img.onload=()=>{if(active)onLoad();};img.src='/assets/ghostline/'+id+'.webp';art[id]=img;
  }
@@ -97,6 +97,28 @@ export function scenery(ctx,w,h,car,ghost){
    const edge=side*8.5;
    polygon('#807d70',[point(a,edge,.7),point(b,edge,.7),point(b,edge,.27),point(a,edge,.27)]);
    strip(a,b,edge,edge+side*.25,'#d4c8af',.71);
+   // Fence panels and their angled tops sit between the racing surface and spectators.
+   if(a.s>120&&a.s<400||a.s>1140){
+    const edge=side*10,top=edge+side*.46;
+    ctx.beginPath();
+    const wire=(p,q)=>{ctx.moveTo(...p);ctx.lineTo(...q);};
+    for(const height of [.85,1.65,2.5])wire(point(a,edge,height),point(b,edge,height));
+    wire(point(a,edge,2.5),point(a,top,2.95));wire(point(a,top,2.95),point(b,top,2.95));
+    if(a.s-car.s<82){
+     for(let j=0;j<4;j++){
+      const t=j/4,baseA=point(a,edge,.8),baseB=point(b,edge,.8),topA=point(a,edge,2.5),topB=point(b,edge,2.5);
+      const mix=(p,q,t)=>[p[0]+(q[0]-p[0])*t,p[1]+(q[1]-p[1])*t];
+      wire(mix(baseA,baseB,t),mix(topA,topB,t+.25));wire(mix(topA,topB,t),mix(baseA,baseB,t+.25));
+     }
+    }
+    ctx.strokeStyle='#686b6188';ctx.lineWidth=Math.max(.45,Math.min(2,a.r*.035));ctx.stroke();
+    if(n%2===0){ctx.fillStyle='#656763';ctx.fillRect(a.x+edge*a.r,a.y-2.55*a.v,Math.max(.7,.085*a.r),2.55*a.v);}
+   }
+   if(side===1&&n%7===0&&a.s>1310&&a.s<LENGTH){
+    const pole=side*11.4;
+    ctx.fillStyle='#a9a69d';ctx.fillRect(a.x+pole*a.r,a.y-5*a.v,Math.max(1,.09*a.r),5*a.v);
+    polygon(n%2?'#d9a72d':'#1d788a',[point(a,pole,5),point(a,pole+1.55,4.8),point(a,pole+1.4,3.95),point(a,pole,4.1)]);
+   }
    if(n%3===0){ctx.fillStyle='#605d52';ctx.fillRect(a.x+edge*a.r,a.y-.62*a.v,Math.max(.5,.12*a.r),.62*a.v);}
    if((n%9+9)%9===(side===1?4:0)){
     const x=side*(14+n%6),y=4+n%3;
@@ -112,13 +134,16 @@ export function scenery(ctx,w,h,car,ghost){
     }
    }
   }
-  if(n%5===0&&((a.s>270&&a.s<365)||(a.s>1100&&a.s<1255)))stand(a,-1);
-  if(n%80===50||n===315){
+  if(n%5===0){
+   if((a.s>250&&a.s<400)||(a.s>1150&&a.s<1320)||a.s>1360&&a.s<LENGTH+16)stand(a,-1);
+   if(a.s>1348&&a.s<LENGTH+16)stand(a,1);
+  }
+  if(n%80===50||n===LENGTH/step){
    for(const x of [-6.8,6.8]){ctx.fillStyle='#636563';ctx.fillRect(a.x+x*a.r,a.y-5.4*a.v,.24*a.r,5.4*a.v);}
    polygon('#272d32',[point(a,-7,5.6),point(a,7,5.6),point(a,7,4.4),point(a,-7,4.4)]);
    strip(a,b,-7,7,'#bcb3a2',5.6);
    const font=Math.max(1,.8*a.v);
-   ctx.font='bold '+font+'px system-ui';ctx.textAlign='center';ctx.fillStyle='#ffd675';ctx.fillText(n===315?'FINISH':'GHOSTLINE   GT',a.x,a.y-4.66*a.v);
+   ctx.font='bold '+font+'px system-ui';ctx.textAlign='center';ctx.fillStyle='#ffd675';ctx.fillText(n===LENGTH/step?'FINISH':'GHOSTLINE   GT',a.x,a.y-4.66*a.v);
   }
   if(ghost&&ghostS>=a.s&&ghostS<b.s&&ghostS-car.s>=2.8){
    const g=project(ghostS,ghost.x),r=Math.min(g.r,w*.235),sprite=imageFor('rival');

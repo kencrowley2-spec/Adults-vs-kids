@@ -1,6 +1,6 @@
-export const LENGTH=1260, STEP=1/60;
+export const LENGTH=1460, STEP=1/60;
 // Curvature in radians per metre. Both drivers use exactly the same circuit.
-const bends=[[65,240,.007],[255,395,-.008],[415,550,.006],[590,785,-.009],[815,995,.008],[1020,1160,-.006]];
+const bends=[[65,240,.007],[255,395,-.008],[415,550,.006],[590,785,-.009],[815,995,.008],[1020,1160,-.006],[1176,1258,.0095],[1260,1348,-.0095]];
 export function bend(s){
  for(const [a,b,k] of bends)if(s>a&&s<b)return k*Math.sin(Math.PI*(s-a)/(b-a));
  return 0;
@@ -16,8 +16,8 @@ export function drive(car,input){
  const desired=car.steer*10.8-outward;
  car.lateralSpeed+=(desired-car.lateralSpeed)*dt*6;
  car.x=Math.max(-7.4,Math.min(7.4,car.x+car.lateralSpeed*dt));
- const target=Math.abs(car.x)>5.2?29:40-Math.abs(car.steer)*1.3;
- car.speed+=(target-car.speed)*dt*1.5;
+ const target=Math.abs(car.x)>5.2?32.5:40-Math.abs(car.steer)*1.3;
+ car.speed+=(target-car.speed)*dt*(target<car.speed?2.4:1.5);
  const travel=Math.min(LENGTH-car.s,car.speed*dt);
  car.s+=travel;car.time+=travel/car.speed;
 }

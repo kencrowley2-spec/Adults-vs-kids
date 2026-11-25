@@ -1,4 +1,4 @@
-import {scenery,imageFor} from './ghostline-scenery.js';
+import {scenery,imageFor} from './ghostline-scenery.js?v=2';
 export function paint(ctx,w,h,car,ghost){
  const mid=w*.5;
  const rect=(x,y,a,b,c)=>{ctx.fillStyle=c;ctx.fillRect(x,y,a,b);};
@@ -7,7 +7,12 @@ export function paint(ctx,w,h,car,ghost){
  function grad(y,z,...colors){const g=ctx.createLinearGradient(0,y,0,z);colors.forEach((c,i)=>g.addColorStop(i/(colors.length-1),c));return g;}
  scenery(ctx,w,h,car,ghost);
  // Hood, windshield pillars, stitched dashboard and a rotating three-spoke GT wheel.
- poly(grad(h*.65,h*.77,'#f6bf49','#8c5c12'),0,h*.75,w*.15,h*.70,w*.38,h*.67,w*.63,h*.67,w*.85,h*.70,w,h*.75,w,h,0,h);
+ const hood=imageFor('hood');
+ if(hood){
+  // In portrait the windshield shows a narrower slice of the same bonnet.
+  const hoodWidth=Math.max(w*1.035,h*1.02),hoodHeight=h*.17;
+  ctx.drawImage(hood,(w-hoodWidth)/2,h*.603,hoodWidth,hoodHeight);
+ }else poly(grad(h*.65,h*.77,'#f6bf49','#8c5c12'),0,h*.75,w*.15,h*.70,w*.38,h*.67,w*.63,h*.67,w*.85,h*.70,w,h*.75,w,h,0,h);
  for(const side of [0,1]){
   ctx.save();if(side){ctx.translate(w,0);ctx.scale(-1,1);}
   poly('#161b20',0,0,w*.035,0,w*.13,h*.70,w*.08,h*.8,0,h*.61);
