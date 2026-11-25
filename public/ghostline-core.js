@@ -12,9 +12,9 @@ export function drive(car,input){
  car.steer+=(input-car.steer)*.085;
  // Cornering demand grows with speed squared. A short lateral response time
  // lets an early turn-in settle the car before the apex.
- const outward=k*car.speed*car.speed*.73;
- const desired=car.steer*10.8-outward;
- car.lateralSpeed+=(desired-car.lateralSpeed)*dt*6;
+ const outward=k*car.speed*car.speed*1.01;
+ const desired=car.steer*12.8-outward;
+ car.lateralSpeed+=(desired-car.lateralSpeed)*dt*4.8;
  car.x=Math.max(-7.4,Math.min(7.4,car.x+car.lateralSpeed*dt));
  const target=Math.abs(car.x)>5.2?32.5:40-Math.abs(car.steer)*1.3;
  car.speed+=(target-car.speed)*dt*(target<car.speed?2.4:1.5);
@@ -24,4 +24,26 @@ export function drive(car,input){
 export function replay(trace,time){
  const pos=Math.min(time/STEP,trace.length-1),i=Math.floor(pos),a=trace[i],b=trace[i+1]||a,t=pos-i;
  return {s:a.s+(b.s-a.s)*t,x:a.x+(b.x-a.x)*t};
+}
+
+// A rolling start puts the benchmark in sight. It gives up speed at the apex,
+// leaving room for a clean human racing line to catch it.
+export function paceRun(){
+ const frames=[];let s=12;
+ while(s<LENGTH){
+  frames.push({s,x:-bend(s+10)*145});
+  s=Math.min(LENGTH,s+(38.6-310*Math.abs(bend(s)))*STEP);
+ }
+ frames.push({s:LENGTH,x:0});return frames;
+}
+export function rivalAt(frames,time){
+ const rival=replay(frames,time),behind=[];
+ for(let i=0;i<=8;i++)behind.push(replay(frames,Math.max(0,time-i*.075)));
+ return {...rival,behind,rolling:time<(frames.length-1)*STEP};
+}
+export function wakeStrength(car,rival){
+ const gap=rival.s-car.s;
+ if(!rival.rolling||gap<=0||gap>24)return 0;
+ const nearest=rival.behind.reduce((a,b)=>Math.abs(b.s-car.s)<Math.abs(a.s-car.s)?b:a);
+ return (1-gap/25)*Math.max(0,1-Math.abs(nearest.x-car.x)/2.1);
 }

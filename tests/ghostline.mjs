@@ -21,3 +21,13 @@ const late=run(c=>Math.abs(c.x)>4.7?-Math.sign(c.x):0);
 assert.ok(early.trace.every(frame=>Math.abs(frame.x)<=5.2),'Early steering can hold the asphalt through every turn');
 assert.ok(late.trace.some(frame=>Math.abs(frame.x)>5.2),'Waiting until the edge carries the car onto grass');
 assert.ok(late.time>early.time+1,'Mistimed turn-ins cost time');
+
+const {paceRun,rivalAt,wakeStrength}=await import('../public/ghostline-core.js');
+const pace=paceRun(),paceTime=(pace.length-1)*STEP;
+assert.ok(pace[0].s>0&&early.time<paceTime&&paceTime<wide.time);
+const rival=rivalAt(pace,2);
+assert.ok(wakeStrength({s:rival.s-6,x:rival.x},rival)>.4);
+assert.equal(wakeStrength({s:rival.s-6,x:rival.x+5},rival),0);
+assert.equal(wakeStrength({s:rival.s+2,x:rival.x},rival),0);
+assert.equal(rivalAt(pace,46).rolling,false);
+console.log('Pace target',paceTime.toFixed(2),'seconds; a clean line can catch it.');

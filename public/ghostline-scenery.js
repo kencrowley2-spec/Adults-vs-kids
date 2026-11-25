@@ -145,11 +145,42 @@ export function scenery(ctx,w,h,car,ghost){
    const font=Math.max(1,.8*a.v);
    ctx.font='bold '+font+'px system-ui';ctx.textAlign='center';ctx.fillStyle='#ffd675';ctx.fillText(n===LENGTH/step?'FINISH':'GHOSTLINE   GT',a.x,a.y-4.66*a.v);
   }
+  // Lay each ribbon on the recorded line so it bends with the rival's path.
+  if(ghost?.rolling&&a.s<ghostS&&b.s>ghost.behind.at(-1).s+3.6){
+   for(let j=1;j<ghost.behind.length;j++){
+    const tail=ghost.behind[j],head=ghost.behind[j-1],start=tail.s+3.6,end=head.s+3.6;
+    const lo=Math.max(a.s,start),hi=Math.min(b.s,end);
+    if(hi<=lo)continue;
+    const lane=s=>tail.x+(head.x-tail.x)*(s-start)/(end-start);
+    const fade=1-j/10;
+    for(const side of [-1,1]){
+     const edge=s=>lane(s)+side*(.78+(ghostS-s)*.055);
+     const near=project(lo,edge(lo)),far=project(hi,edge(hi));
+     const height=s=>.24+.075*Math.sin(car.time*7-(ghostS-s)*.28);
+     const low=height(lo),high=height(hi);
+     polygon('rgba(82,219,255,'+(.12+(.18+.36*(ghost.wake||0))*fade)+')',[
+      point(near,-.047,low),point(near,.047,low+.055),point(far,.047,high+.055),point(far,-.047,high)]);
+    }
+   }
+  }
   if(ghost&&ghostS>=a.s&&ghostS<b.s&&ghostS-car.s>=2.8){
    const g=project(ghostS,ghost.x),r=Math.min(g.r,w*.235),sprite=imageFor('rival');
    ctx.save();ctx.globalAlpha=.27;ctx.fillStyle='#14404c';ctx.beginPath();ctx.ellipse(g.x,g.y,r*1.08,r*.14,0,0,Math.PI*2);ctx.fill();
    ctx.globalAlpha=.68;
-   if(sprite){const sw=r*2.18,sh=sw*sprite.naturalHeight/sprite.naturalWidth;ctx.drawImage(sprite,g.x-sw/2,g.y-sh,sw,sh);}
+   if(sprite){const sw=r*2.18,sh=sw*sprite.naturalHeight/sprite.naturalWidth;ctx.drawImage(sprite,g.x-sw/2,g.y-sh,sw,sh);
+    // The rear view exposes the tread faces below the bumper. Roll their grooves
+    // by metres travelled, keeping rubber motion tied to the replay through turns.
+    for(const side of [-1,1]){
+     ctx.save();ctx.translate(g.x+side*sw*.40,g.y-sh*.078);ctx.scale(sw*.064,sh*.063);
+     ctx.beginPath();ctx.ellipse(0,0,1,1,0,0,Math.PI*2);ctx.clip();
+     const roll=(ghost.s/.42)%1;
+     ctx.lineWidth=.11;ctx.strokeStyle='rgba(143,172,179,.62)';ctx.beginPath();
+     for(let k=-3;k<3;k++){
+      const y=(k+roll)*.68;
+      ctx.moveTo(-1,y-.20);ctx.lineTo(-.18,y+.13);ctx.lineTo(.17,y-.05);ctx.lineTo(1,y+.24);
+     }
+     ctx.stroke();ctx.restore();
+    }}
    else polygon('#6bd6e5',[[g.x-r,g.y],[g.x-r,g.y-r*.45],[g.x-r*.6,g.y-r*.9],[g.x+r*.6,g.y-r*.9],[g.x+r,g.y-r*.45],[g.x+r,g.y]]);
    ctx.restore();
   }

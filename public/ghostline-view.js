@@ -1,4 +1,4 @@
-import {scenery,imageFor} from './ghostline-scenery.js?v=2';
+import {scenery,imageFor} from './ghostline-scenery.js?v=3';
 export function paint(ctx,w,h,car,ghost){
  const mid=w*.5;
  const rect=(x,y,a,b,c)=>{ctx.fillStyle=c;ctx.fillRect(x,y,a,b);};
