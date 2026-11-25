@@ -1,0 +1,47 @@
+#arcade-voice {
+ box-sizing: border-box;
+ width: min(34rem, calc(100% - 2rem));
+ max-height: calc(100dvh - 2rem);
+ margin: auto;
+ overflow: auto;
+ padding: clamp(1.25rem, 5vw, 2.25rem);
+ border: 1px solid #e6b84f;
+ border-radius: 1.25rem;
+ background: linear-gradient(145deg, #2a2c36, #171a22);
+ color: #fff8e6;
+ text-align: center;
+ font: 1rem/1.5 system-ui, sans-serif;
+}
+#arcade-voice::backdrop {
+ background: rgb(8 10 15 / 80%);
+ backdrop-filter: blur(5px);
+}
+#arcade-voice h2 {
+ margin: 0 0 .65rem;
+ font-size: clamp(1.45rem, 5vw, 2rem);
+ line-height: 1.15;
+}
+#arcade-voice p { margin: 0 0 1.25rem; color: #eee3cb; }
+#arcade-voice form { margin: .7rem 0 0; }
+#arcade-voice button, #arcade-voice a {
+ box-sizing: border-box;
+ display: block;
+ width: 100%;
+ padding: .7rem .8rem;
+ border: 1px solid #e6b84f;
+ border-radius: .65rem;
+ background: linear-gradient(#ffe397, #e8b746);
+ color: #221805;
+ font: inherit;
+ font-weight: 800;
+ text-decoration: none;
+ cursor: pointer;
+}
+#arcade-voice a + a { margin-top: .55rem; }
+#arcade-voice [data-voice-return] {
+ background: #232630;
+ color: #fff8e6;
+ border-color: #82704d;
+}
+#arcade-voice [hidden] { display: none; }
+#arcade-voice :is(a, button):focus-visible { outline: 2px solid #fff8e6; outline-offset: 3px; }

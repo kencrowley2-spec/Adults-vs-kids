@@ -4,8 +4,9 @@ import {mountGuestGate} from './arcade-guest.js?v=1';
 import {mountFeaturedGames} from './arcade-featured.js?v=5';
 import {mountPinball} from './arcade-pinball.js?v=3';
 import {createCaseReader} from './arcade-cases.js?v=4';
-import {mountFaces} from './arcade-faces.js?v=9';
-import {mountDraw} from './arcade-draw.js?v=3';
+import {mountFaces} from './arcade-faces.js?v=10';
+import {allowArcadeVoice} from './arcade-voice.js?v=1';
+import {mountDraw} from './arcade-draw.js?v=4';
 import {mountLava} from './arcade-lava.js?v=10';
 import {mountClaw,clawPrizes,clawFireworks} from './arcade-claw.js?v=5';
 import {mountMole,molePlan,createMoleAudio} from './arcade-mole.js?v=5';
@@ -450,7 +451,7 @@ function openFaces(){
  rememberGame('faces');arena.hidden=true;lobby.hidden=true;
  const adultsOnly=selectedPlayers[1].length===0&&selectedPlayers[0].length>=2;
  const faceNames=adultsOnly?[selectedPlayers[0].filter((_,i)=>i%2===0).join(' & '),selectedPlayers[0].filter((_,i)=>i%2===1).join(' & ')]:selectedPlayers.map((list,i)=>list.join(' & ')||names[i]);
- mountFaces({beforeRematch:()=>{if(!guestGate.allow('faces'))return false;dispatchArcadeAnalytics(new CustomEvent('avk:game-start',{detail:{game:'faces',id:matchId}}));return true;},players:faceNames,onExit:()=>{arena.hidden=true;lobby.hidden=false;game=null;document.querySelector('[data-game="faces"]')?.focus();},onComplete:result=>{
+ mountFaces({allowVoice:allowArcadeVoice,beforeRematch:()=>{if(!guestGate.allow('faces'))return false;dispatchArcadeAnalytics(new CustomEvent('avk:game-start',{detail:{game:'faces',id:matchId}}));return true;},players:faceNames,onExit:()=>{arena.hidden=true;lobby.hidden=false;game=null;document.querySelector('[data-game="faces"]')?.focus();},onComplete:result=>{
   captureHeadToHead(matchId,'faces',result.winner,!adultsOnly);
   if(result.correct)recordFeatured('faces',result.questions);
   dispatchArcadeAnalytics(new CustomEvent('avk:game-complete',{detail:{game:'faces',winner:result.winner,id:matchId}}));
@@ -461,7 +462,7 @@ function openDraw(){
  clearTimers();
  let matchId=crypto.randomUUID();rememberGame('draw');arena.hidden=true;lobby.hidden=true;
  dispatchArcadeAnalytics(new CustomEvent('avk:game-start',{detail:{game:'draw',id:matchId}}));
- mountDraw({beforeRematch:()=>{if(!guestGate.allow('draw'))return false;dispatchArcadeAnalytics(new CustomEvent('avk:game-start',{detail:{game:'draw',id:matchId}}));return true;},players:selectedPlayers.map((list,i)=>list.join(' & ')||names[i]),onExit:()=>{arena.hidden=true;lobby.hidden=false;game=null;document.querySelector('[data-game="draw"]')?.focus();},onComplete:result=>{
+ mountDraw({allowVoice:allowArcadeVoice,beforeRematch:()=>{if(!guestGate.allow('draw'))return false;dispatchArcadeAnalytics(new CustomEvent('avk:game-start',{detail:{game:'draw',id:matchId}}));return true;},players:selectedPlayers.map((list,i)=>list.join(' & ')||names[i]),onExit:()=>{arena.hidden=true;lobby.hidden=false;game=null;document.querySelector('[data-game="draw"]')?.focus();},onComplete:result=>{
   if(kidsOnly||result.winner===null)capturePlay(matchId,'draw');else drawRecorder.capture({id:matchId,mode:'single',gameIds:['draw'],roundWinners:[result.winner]});
   dispatchArcadeAnalytics(new CustomEvent('avk:game-complete',{detail:{game:'draw',winner:result.winner,scores:result.scores,id:matchId}}));
   matchId=crypto.randomUUID();

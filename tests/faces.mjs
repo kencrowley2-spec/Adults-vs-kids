@@ -14,7 +14,8 @@ window.SpeechSynthesisUtterance=class{constructor(text){this.text=text;}};
 window.speechSynthesis={getVoices:()=>[{lang:'en-US',name:'US English'}],speak:cue=>handoffs.push(cue.text),cancel(){}};
 let results=[],exits=0,timerFns=[];const oldTimer=globalThis.setTimeout;globalThis.setTimeout=(fn)=>{timerFns.push(fn);return 1;};
 const oldRandom=Math.random;Math.random=()=>0;
-const dispose=mountFaces({players:['<Dad>','Harper'],onComplete:r=>results.push(r),onExit:()=>exits++});
+let voiceAllowed=true;
+const dispose=mountFaces({allowVoice:label=>{assert.equal(label,'USE FEATURE BUTTONS');return voiceAllowed;},players:['<Dad>','Harper'],onComplete:r=>results.push(r),onExit:()=>exits++});
 const host=()=>document.querySelector('.faces-game');const click=a=>{const el=host().querySelector(`[data-action="${a}"]`);assert.ok(el,`Missing ${a}`);el.click();};const face=id=>{host().querySelector(`[data-face="${id}"]`).click();};
 click('start');assert.equal(host().querySelectorAll('[data-face]').length,0);assert.match(host().textContent,/<Dad>/);assert.equal(host().querySelector('dad'),null);
 click('ready-pick');assert.equal(host().querySelectorAll('[data-face]').length,24);assert.ok(host().querySelector('[data-action="lock"]').disabled);face(0);click('lock');assert.equal(host().querySelectorAll('[data-face]').length,0);assert.doesNotMatch(host().textContent,/Poppy/);
@@ -27,7 +28,7 @@ remaining.slice(0,-1).forEach(c=>face(c.id));assert.equal(host().querySelectorAl
 face(remaining.at(-1).id);assert.ok(host().querySelector('.faces-main').inert);timerFns.splice(0).forEach(f=>f());assert.equal(handoffs.at(-1),'Back to Harper!');
 assert.equal(host().querySelectorAll('[data-face]').length,0);click('ready-turn');assert.ok(!host().querySelector('[data-face="1"]').classList.contains('face-down'));
 click('listen');assert.match(host().textContent,/aren’t supported/);click('dismiss');
-let aborted=0;class MockSR{start(){this.onresult({results:[[{transcript:'Does your person have green eyes?'}]]});}abort(){aborted++;}}window.SpeechRecognition=MockSR;click('listen');assert.match(host().querySelector('.face-clue').textContent,/has green eyes.*Flip down everyone who does not have green eyes/);FACES.filter(c=>c.eyes!=='green').forEach(c=>face(c.id));timerFns.splice(0).forEach(f=>f());assert.equal(handoffs.at(-1),'Back to <Dad>!');
+let aborted=0;class MockSR{start(){this.onresult({results:[[{transcript:'Does your person have green eyes?'}]]});}abort(){aborted++;}}window.SpeechRecognition=MockSR;voiceAllowed=false;click('listen');assert.equal(host().querySelector('.face-overlay'),null);assert.equal(host().querySelector('[data-action=listen]').disabled,false);voiceAllowed=true;click('listen');assert.match(host().querySelector('.face-clue').textContent,/has green eyes.*Flip down everyone who does not have green eyes/);FACES.filter(c=>c.eyes!=='green').forEach(c=>face(c.id));timerFns.splice(0).forEach(f=>f());assert.equal(handoffs.at(-1),'Back to <Dad>!');
 click('ready-turn');assert.ok(host().querySelector('[data-face="1"]').classList.contains('face-down'));
 host().querySelector('[data-feature="eyes"]').click();host().querySelector('[data-question="eyes"][data-option="0"]').click();
 await new Promise(resolve=>setImmediate(resolve));assert.equal(handoffs.at(-1),'Back to Harper!');click('ready-turn');
