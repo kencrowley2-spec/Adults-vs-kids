@@ -20,7 +20,7 @@ export function createCaseReader({document:doc=globalThis.document,onPlay,player
  updateFx();fxButton.addEventListener('click',()=>{fx=!fx;try{win.localStorage.setItem('avk:case-fx',fx?'on':'off');}catch{}updateFx();if(fx)sound('open');});
  function open(entry){
   if(dialog.open||entry.comingSoon||doc.hidden||!by('arcade-game').hidden)return;
-  selection=entry;
+  selection=entry;dialog.dataset.game=entry.id;
   const [one,two]=players();
   by('book-game-title').textContent=entry.name;
   by('book-player-one').textContent=one;
