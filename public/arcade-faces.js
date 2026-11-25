@@ -1,9 +1,9 @@
-import {createFaceHost} from './arcade-faces-host.js?v=6';
+import {createFaceHost} from './arcade-faces-host.js?v=7';
 import {FACES,FaceMatch,portrait,FEATURES,question,guidance,parseQuestion} from './arcade-faces-core.js?v=6';
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-export function mountFaces({players=['Adults','Kids'],onExit=()=>{},onComplete=()=>{},beforeRematch=()=>true}={}){
+export function mountFaces({players=['Adults','Kids'],onExit=()=>{},onComplete=()=>{},beforeRematch=()=>true,initialSound=true}={}){
  const host=document.createElement('section');host.className='faces-game';host.setAttribute('aria-label','Mystery Face Showdown');document.body.append(host);const oldOverflow=document.body.style.overflow;document.body.style.overflow='hidden';
- let match,phase='intro',picker=0,selected=null,guessMode=false,answered=false,sound=true,audio,closed=false,recognition=null,lastClue=null,zoomMode=false,music=true,namedHandoff=false;
+ let match,phase='intro',picker=0,selected=null,guessMode=false,answered=false,sound=initialSound,audio,closed=false,recognition=null,lastClue=null,zoomMode=false,music=true,namedHandoff=false;
  const timers=new Set(),name=i=>esc(players[i]);const button=(label,action,kind='')=>`<button class="face-button ${kind}" data-action="${action}">${label}</button>`;
  function haptic(){try{window.navigator.vibrate?.(18);}catch{}}
  function fx(kind='tap'){haptic();if(!sound)return;try{audio??=new(window.AudioContext||window.webkitAudioContext)();audio.resume().catch(()=>{});const now=audio.currentTime;const notes=kind==='yes'?[784,988,1175]:kind==='no'?[115,90]:[380];notes.forEach((f,i)=>{const o=audio.createOscillator(),g=audio.createGain(),t=now+i*.16;o.type=kind==='no'?'sawtooth':'sine';o.connect(g);g.connect(audio.destination);o.frequency.setValueAtTime(f,t);if(kind==='flip'||kind==='tap')o.frequency.exponentialRampToValueAtTime(100,t+.09);g.gain.setValueAtTime(.001,t);g.gain.linearRampToValueAtTime(kind==='tap'?.045:.18,t+.008);g.gain.exponentialRampToValueAtTime(.001,t+(kind==='no'?.25:.14));o.start(t);o.stop(t+.28);});}catch{}}
@@ -11,7 +11,7 @@ export function mountFaces({players=['Adults','Kids'],onExit=()=>{},onComplete=(
  function speak(id){if(sound)announcer.say(id);}
  function stopVoice(){if(recognition){recognition.onend=recognition.onresult=recognition.onerror=null;recognition.abort();recognition=null;}announcer.stop();}
  function clearTimers(){timers.forEach(clearTimeout);timers.clear();}
- function page(content){host.innerHTML=`<header class="faces-top">${button('← Arcade','exit','face-small')}<div><small>ADULTS vs. KIDS™</small><strong>MYSTERY FACE <em>SHOWDOWN</em></strong></div><div class="face-audio">${button(music?'♫ Jazz':'♫ Off','music','face-small')}${button(sound?'🔊':'🔇','sound','face-small')}</div></header><main class="faces-main" data-phase="${phase}">${content}</main>`;}
+ function page(content){host.innerHTML=`<header class="faces-top">${button('← Arcade','exit','face-small')}<div><small>ADULTS vs. KIDS™</small><strong>MYSTERY FACE <em>SHOWDOWN</em></strong></div><div class="face-audio"><button type="button" class="face-button face-small" data-action="music" aria-label="Background music" aria-pressed="${music}">${music?'♫ Music':'♫ Off'}</button>${button(sound?'🔊':'🔇','sound','face-small')}</div></header><main class="faces-main" data-phase="${phase}">${content}</main>`;}
  function card(c,mode){const down=mode==='play'&&match.down[match.turn].has(c.id);return `<button class="face-slot ${down?'face-down':''} ${selected===c.id?'face-selected':''}" data-face="${c.id}" aria-label="${esc(c.name)}${mode==='play'?(down?', folded down. Tap to reopen':guessMode?', choose as final guess':', tap to fold down'):''}" aria-pressed="${mode==='pick'?selected===c.id:down}"><span class="face-panel">${portrait(c)}<b>${c.name}</b></span><span class="face-fold" aria-hidden="true"><small>RULED OUT</small></span></button>`;}
  function grid(mode){return `<div class="faces-board" aria-label="All 24 mystery face cards">${FACES.map(c=>card(c,mode)).join('')}</div>`;}
  function optionArt(g,o){const color={blue:'#2e9ee2',green:'#4eaa65',brown:'#98602d',black:'#171923',blond:'#f5cc4b',red:'#c9592d',gray:'#bbc1d4'}[o.value];if(g.key==='eyes')return `<svg class="face-option-icon" viewBox="0 0 72 42" aria-hidden="true"><path d="M3 21Q36-12 69 21Q36 54 3 21" fill="#fff" stroke="#aaabae" stroke-width="3"/><circle cx="36" cy="21" r="16" fill="${color}"/><circle cx="36" cy="21" r="7" fill="#171923"/><circle cx="31" cy="15" r="4" fill="#fff"/></svg>`;return `<span class="face-option-icon" aria-hidden="true" style="${color?'color:'+color:''}">${g.icon}</span>`;}
@@ -122,7 +122,7 @@ export function mountFaces({players=['Adults','Kids'],onExit=()=>{},onComplete=(
  timers.add(timer);
  }}}return;}
   const action=e.target.closest('[data-action]')?.dataset.action;if(!action)return;
-  if(action==='sound'){sound=!sound;if(!sound)stopVoice();announcer.setMusic(music&&sound);e.target.closest('button').textContent=sound?'🔊':'🔇';return;}if(action==='music'){music=!music;announcer.setMusic(music&&sound);e.target.closest('button').textContent=music?'♫ Jazz':'♫ Off';return;}fx();
+  if(action==='sound'){sound=!sound;if(!sound)stopVoice();announcer.setMusic(music&&sound);e.target.closest('button').textContent=sound?'🔊':'🔇';return;}if(action==='music'){music=!music;announcer.setMusic(music&&sound);const control=e.target.closest('button');control.textContent=music?'♫ Music':'♫ Off';control.setAttribute('aria-pressed',String(music));return;}fx();
   if(action==='exit'){stopVoice();if(['intro','result'].includes(phase)){dispose();onExit();}else overlay(`<h2>Leave this case?</h2><p>Your current game will end.</p>${button('LEAVE GAME','leave')}${button('KEEP PLAYING','dismiss','face-secondary')}`);}
   if(action==='leave'){dispose();onExit();}
   if(action==='start'){if(phase==='result'&&!beforeRematch())return;match=new FaceMatch(Math.random()<.5?0:1);picker=0;selected=null;guessMode=false;answered=false;zoomMode=false;lastClue=null;announcer.setMusic(music&&sound);handoff(0,'pick');}
@@ -138,5 +138,5 @@ export function mountFaces({players=['Adults','Kids'],onExit=()=>{},onComplete=(
   if(action==='dismiss'||action==='hide-secret'){stopVoice();host.querySelector('.face-overlay')?.remove();host.querySelector('[data-action="secret"]')?.focus();}
   if(action==='secret')overlay(`<p class="face-kicker">FOR ${name(match.turn)} ONLY</p><h2>Your mystery person</h2><div class="face-confirm-portrait">${portrait(FACES[match.secrets[match.turn]])}<b>${FACES[match.secrets[match.turn]].name}</b></div><p>Hide this before passing the device.</p>${button('HIDE MY PERSON 🔒','hide-secret')}`);
   if(action==='clues')overlay(`<h2>Your clue log</h2>${match.clues[match.turn].length?`<ul>${match.clues[match.turn].map(c=>`<li>${esc(question(c.key,c.value))} <b>${c.answer?'YES':'NO'}</b></li>`).join('')}</ul>`:'<p>No clues yet. Ask your first question!</p>'}${button('BACK TO MY BOARD','dismiss')}`);
- });intro();return dispose;
+ });intro();announcer.setMusic(music&&sound);return dispose;
 }
