@@ -50,7 +50,7 @@ user=null;assert.equal((await post(single)).status,401);assert.equal((await expo
 assert.equal((await post({...single,accountId:owner},{Origin:'https://elsewhere.test'})).status,403);
 assert.equal((await post({...single,accountId:other})).status,403);
 assert.equal((await post({...single,accountId:owner},{'Content-Type':'text/plain'})).status,415);
-assert.equal((await post({...single,roundWinners:[0],accountId:owner})).status,400);assert.equal(writes,0);
+assert.equal((await post({...single,roundWinners:[],accountId:owner})).status,400);assert.equal(writes,0);
 assert.equal((await post({...single,accountId:owner})).status,200);assert.equal((await post({...single,accountId:owner})).status,200);assert.equal(rows.size,1);assert.equal(completions.length,2);assert.equal(completions[0][2].id,owner);assert.equal(completions[0][4],id);
 assert.equal((await post({...series,accountId:owner})).status,409);assert.equal(rows.size,1);
 assert.equal(rows.get(id).user_id,owner);
