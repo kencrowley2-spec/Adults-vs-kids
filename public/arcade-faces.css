@@ -24,3 +24,26 @@
 .face-tools .face-button,.face-features button{font-size:clamp(10px,1.4vw,13px)}
 .face-clue{font-size:clamp(12px,1.6vw,15px)}
 @media(max-width:600px){.faces-board{gap:3px;padding:3px}.faces-main{padding-inline:4px}.face-heading h1{margin-block:2px}}
+
+/* The portrait tips away into its recessed slot on a fixed bottom hinge. */
+.faces-main[data-phase="play"] .face-panel{
+ transform-origin:50% 100%;
+ transform:rotateX(-5deg);
+ transition:transform .38s cubic-bezier(.32,.03,.65,1),filter .38s;
+}
+.faces-main[data-phase="play"] .face-down .face-panel{
+ transform:rotateX(-80deg);
+ filter:brightness(.58);
+}
+.face-slot::after{
+ content:"";position:absolute;z-index:3;pointer-events:none;
+ left:15%;right:15%;bottom:0;height:4px;border-radius:3px;
+ background:linear-gradient(#dfc993,#8d7954 45%,#312b20 90%);
+ box-shadow:0 1px 2px #000a;
+}
+.face-fold{
+ background:linear-gradient(160deg,#10151c,#293541);
+ box-shadow:inset 0 3px 7px #000a;
+}
+.face-fold small{font-size:clamp(7px,1.1vw,10px);letter-spacing:.06em}
+.faces-actions .face-button:disabled{opacity:.66;cursor:default}

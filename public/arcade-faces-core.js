@@ -21,7 +21,16 @@ export class FaceMatch{
  canEliminate(id){return this.clues[this.turn].some(c=>(FACES[id][c.key]===c.value)!==c.answer);}
  repair(){for(const id of this.down[this.turn])if(!this.canEliminate(id))this.down[this.turn].delete(id);}
  next(){if(this.secrets.includes(null)||this.winner!==null)throw Error('Match not ready');this.repair();this.questions[this.turn]++;this.turn=1-this.turn;}
- guess(id){if(this.secrets.includes(null)||this.winner!==null||!FACES[id])throw Error('Invalid guess');this.winner=id===this.secrets[1-this.turn]?this.turn:1-this.turn;return this.winner;}
+ canGuess(){return this.winner===null && !this.secrets.includes(null) && this.clues[this.turn].length>0;}
+ guess(id){
+  if(!this.canGuess()||!FACES[id])throw Error('Invalid guess');
+  if(id!==this.secrets[1-this.turn]){
+   this.next();
+   return null;
+  }
+  this.winner=this.turn;
+  return this.winner;
+ }
 }
 export function portrait(c){
  const skin=['#ffcca5','#d99a68','#955e49'][c.skin];
