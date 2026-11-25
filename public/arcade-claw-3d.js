@@ -37,7 +37,7 @@ export function createClawScene(canvas,prizes,effects=true){
   ctx.fillStyle='#04050c';ctx.beginPath();ctx.moveTo(34,y-1);ctx.lineTo(102,y-1);ctx.lineTo(95,y+23);ctx.lineTo(26,y+23);ctx.closePath();ctx.fill();
   ctx.fillStyle='#fff0b6';ctx.font='700 9px Arial';ctx.textAlign='center';ctx.fillText('PRIZE CHUTE',65,y+43);ctx.restore();
  }
- function render({x,caught,phase,age,now}){
+ function render({x,targetIndex,caught,phase,age,now}){
   if(disposed||!images)return;resize();ctx.setTransform(ratio,0,0,ratio,0,0);ctx.globalAlpha=1;ctx.fillStyle='#160c32';ctx.fillRect(0,0,440,H);
   // The chamber fills the available screen; there is no smaller cabinet inside it.
   ctx.drawImage(images.chamber,0,0,440,H);
@@ -48,10 +48,7 @@ export function createClawScene(canvas,prizes,effects=true){
   if(phase==='lift'){cy=mix(grabY,36,ease(age/420));cx=target?.x??x;}
   if(phase==='carry')cx=mix(target?.x??x,65,ease(age/400));
   if(phase==='release')cx=65;
-  let highlight=null;
-  if(phase==='aim'){
-   let distance=37;prizes.forEach(p=>{if(!p.taken&&Math.abs(p.x-x)<distance){highlight=p;distance=Math.abs(p.x-x);}});
-  }
+  const highlight=prizes[targetIndex];
   for(const p of prizes){
    if(p.taken)continue;shadow(p.x,p.y+p.size*.32,p.size);
    sprite(p.art,p.x,p.y,p.size,p.angle);

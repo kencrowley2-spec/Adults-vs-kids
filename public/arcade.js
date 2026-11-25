@@ -6,7 +6,7 @@ import {createCaseReader} from './arcade-cases.js?v=2';
 import {mountFaces} from './arcade-faces.js?v=5';
 import {mountDraw} from './arcade-draw.js?v=3';
 import {mountLava} from './arcade-lava.js?v=8';
-import {mountClaw,clawPrizes,clawFireworks} from './arcade-claw.js?v=4';
+import {mountClaw,clawPrizes,clawFireworks} from './arcade-claw.js?v=5';
 import {mountMole,molePlan,createMoleAudio} from './arcade-mole.js?v=5';
 import {mountFrog,frogCourses,frogRoundWinner} from './arcade-frog.js?v=3';
 import {mountTreasure,treasurePlan} from './arcade-treasure.js?v=1';
@@ -1093,7 +1093,7 @@ function finishMoleMatch(winner,detail){
 }
 
 function clawMachine(){
- screen('<div class="claw-cabinet"><div class="claw-window"><canvas id="claw-board" tabindex="0" role="application" aria-label="THE CLAW. Drag to aim, or use left and right arrows. Press Grab or Space. 30 seconds per player. Each toy delivered earns one point."></canvas><div class="claw-hud"><span id="claw-count">0 TOYS</span><strong id="claw-timer" class="claw-time">30s</strong></div><span id="claw-phase" class="claw-phase">AIM • GRAB • COLLECT</span></div><div class="claw-controls"><button id="claw-left" type="button" aria-label="Move claw left">◀</button><button id="claw-grab" type="button">GRAB</button><button id="claw-right" type="button" aria-label="Move claw right">▶</button></div><p class="mole-help">Drag or use arrows to aim · GRAB to collect · 1 toy = 1 point</p></div>');
+ screen('<div class="claw-cabinet"><div class="claw-window"><canvas id="claw-board" tabindex="0" role="application" aria-label="THE CLAW. Drag to aim, or use left and right arrows. Press Grab or Space. 30 seconds per player. Each toy delivered earns one point."></canvas><div class="claw-hud"><span id="claw-count">0 TOYS</span><strong id="claw-timer" class="claw-time">30s</strong></div><span id="claw-phase" class="claw-phase">AIM • GRAB • COLLECT</span></div><div class="claw-controls"><button id="claw-left" type="button" aria-label="Move claw left">◀</button><button id="claw-grab" type="button">GRAB</button><button id="claw-right" type="button" aria-label="Move claw right">▶</button></div><p class="mole-help">Drag or use arrows to aim · GRAB when the gold ring appears</p></div>');
  timed=true;
  stopClaw=mountClaw({canvas:$('claw-board'),timer:$('claw-timer'),counter:$('claw-count'),phaseLabel:$('claw-phase'),left:$('claw-left'),right:$('claw-right'),grab:$('claw-grab'),team:teamName(turn),prizes:game.clawLayout,later,sound:chime,onStatus:status,effects:effectsOn,
   onScore:points=>{game.clawPoints[turn]=points;scoreboard();competitionUpdate({score:points});},onEnd:result=>{timed=false;chime('buzzer');finishTurn(result);}});

@@ -19,14 +19,25 @@ function fixture(options={}){
  function advance(ms){const end=now+ms;for(;;){const next=[...jobs].sort((a,b)=>a[1].at-b[1].at)[0];if(!next||next[1].at>end)break;jobs.delete(next[0]);now=next[1].at;next[1].fn();}now=end;}
  return{...c.api,canvas,left,right,grab,timer,counter,layout,prizes,scores,ends,frames,statuses,stop,advance,disposed:()=>disposed,resolveLoading};
 }
+function aim(f,x){f.canvas.emit('pointerdown',{pointerId:1,clientX:x/2});}
+{
+ const f=fixture();aim(f,220);f.advance(16);assert.equal(f.frames.at(-1).targetIndex,undefined);
+ f.grab.click();f.advance(1600);assert.equal(f.scores.length,0);
+ assert.equal(f.frames.at(-1).x,65,'After visiting the chute the claw stays there');
+ assert.ok(f.statuses.at(-1).includes('gold ring'));
+}
+
 {
  const f=fixture();assert.equal(f.prizes.length,24);assert.deepEqual(f.layout,f.clawPrizes(123));
  for(const p of f.prizes)assert.equal(f.clawCatch(f.prizes,p.x).points,1);
  assert.equal(f.clawCatch(f.prizes,0),null);
  assert.equal(f.clawCatch(f.prizes.map(p=>({...p,taken:true})),220),null);
- // Well-aligned grabs do not require a grip timing meter.
- assert.equal(f.clawCatch(f.prizes,f.prizes[0].x+25).points,1);
+ // A centered grab and the edge of its window succeed. Just outside misses.
+ const toy=[{x:100,y:310}];
+ for(const offset of [-14,0,14])assert.equal(f.clawCatch(toy,100+offset).points,1);
+ for(const offset of [-15,15,25])assert.equal(f.clawCatch(toy,100+offset),null);
  for(let i=0;i<4;i++){
+  aim(f,f.layout[i].x);f.advance(16);assert.equal(f.frames.at(-1).targetIndex,i);
   f.grab.click();f.grab.click();f.advance(1000);assert.equal(f.scores.length,i);
   f.advance(600);assert.equal(f.scores.at(-1),i+1);
  }
@@ -38,7 +49,7 @@ function fixture(options={}){
  f.advance(60000);f.grab.click();assert.equal(f.ends.length,1);f.stop();assert.equal(f.disposed(),1);
 }
 {
- const f=fixture();f.advance(29900);f.grab.click();f.advance(200);
+ const f=fixture();aim(f,f.layout[2].x);f.advance(29900);f.grab.click();f.advance(200);
  assert.equal(f.ends.length,0,'An accepted grab finishes after the buzzer');
  f.advance(1500);assert.equal(f.ends.length,1);assert.equal(f.ends[0].score,1);
 }
@@ -55,14 +66,14 @@ function fixture(options={}){
 }
 {
  const f=fixture();f.canvas.emit('keydown',{key:' ',repeat:true});f.advance(1600);assert.equal(f.scores.length,0);
- f.canvas.emit('keydown',{key:'Enter',repeat:false});f.advance(1600);assert.equal(f.scores[0],1);
+ aim(f,f.layout[2].x);f.canvas.emit('keydown',{key:'Enter',repeat:false});f.advance(1600);assert.equal(f.scores[0],1);
 }
 {
  const f=fixture({loading:true});f.advance(12000);assert.equal(f.ends.length,0);assert.equal(f.grab.disabled,true);
  f.resolveLoading();await Promise.resolve();f.advance(29900);assert.equal(f.ends.length,0);
- f.grab.click();f.advance(1700);assert.equal(f.ends.length,1);assert.equal(f.ends[0].score,1);
+ aim(f,f.layout[2].x);f.grab.click();f.advance(1700);assert.equal(f.ends.length,1);assert.equal(f.ends[0].score,1);
 }
 {
  const f=fixture({loading:true});f.stop();f.resolveLoading();await Promise.resolve();f.advance(60000);assert.equal(f.ends.length,0);assert.equal(f.disposed(),1);
 }
-console.log('PASS: THE CLAW — 30 seconds, one point per delivered toy, forgiving grabs, unlimited attempts, late completion, deadline rejection, identical piles, input and cleanup.');
+console.log('PASS: THE CLAW — 30 seconds, one point per delivered toy, precise grabs and matching target cues, unlimited attempts, late completion, deadline rejection, identical piles, input and cleanup.');
