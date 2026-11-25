@@ -55,7 +55,7 @@ body:has(#arcade-lobby:not([hidden]))>main{height:calc(100svh - 76px - env(safe-
 .upright-cabinet .cabinet-featured .game-track,.upright-cabinet .cabinet-rotating .game-track{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:1cqw;flex:1;min-height:0}
 .upright-cabinet .cabinet-featured .game-track{grid-template-rows:repeat(2,minmax(0,1fr))}
 .upright-cabinet .game-track .game-tile,.upright-cabinet .game-track .game-tile:last-child{grid-column:auto;grid-row:auto}
-.upright-cabinet .cabinet-featured .game-tile[data-game="lava"]{grid-column:span 2}
+
 .upright-cabinet .game-track .game-tile.featured-game{border:2px solid #ffde39;box-shadow:0 0 5px #ffd52288,inset 0 0 0 1px #fff4}
 .rotation-heading{display:flex;align-items:center;justify-content:space-between;gap:1cqw;margin-bottom:1cqw;min-height:3cqw}
 .rotation-heading h2{margin:0;color:#e4eaff}
@@ -70,7 +70,7 @@ body:has(#arcade-lobby:not([hidden]))>main{height:calc(100svh - 76px - env(safe-
 /* Illustrated cabinet covers: large artwork above a dedicated title panel. */
 .upright-cabinet .cabinet-featured .game-track{grid-template-columns:repeat(6,minmax(0,1fr))}
 .upright-cabinet .cabinet-featured .game-tile,.upright-cabinet .cabinet-featured .game-tile:last-child{grid-column:span 2}
-.upright-cabinet .cabinet-featured .game-tile[data-game="lava"],.upright-cabinet .cabinet-featured .game-tile[data-game="treasure"]{grid-column:span 3}
+
 .upright-cabinet .game-track .game-tile{--cover-a:#214d9b;--cover-b:#101b4a;background:radial-gradient(ellipse at 50% 12%,#ffffff40,transparent 68%),linear-gradient(145deg,var(--cover-a),var(--cover-b));border-radius:6px;border-color:#a9c3ff80;box-shadow:inset 0 1px 0 #ffffff80,0 3px 6px #0009;isolation:isolate}
 .upright-cabinet .game-track .game-tile[data-game="lava"]{--cover-a:#ff8a16;--cover-b:#9c1e17}
 .upright-cabinet .game-track .game-tile[data-game="faces"]{--cover-a:#6e55d9;--cover-b:#241b64}
@@ -234,7 +234,7 @@ body:has(#arcade-lobby:not([hidden]))>main{background:radial-gradient(ellipse at
 .upright-cabinet .cabinet-playfield{gap:3cqw}
 .upright-cabinet .cabinet-featured h2,.upright-cabinet .cabinet-rotating h2{color:#ffe5a1;letter-spacing:.1em;font-size:2.3cqw}
 .upright-cabinet .cabinet-featured .game-track,.upright-cabinet .cabinet-rotating .game-track{gap:1.6cqw}
-.upright-cabinet .cabinet-featured .game-tile[data-game="lava"],.upright-cabinet .cabinet-featured .game-tile[data-game="faces"]{grid-column:span 3}
+.upright-cabinet .cabinet-featured .game-tile:nth-child(-n+2){grid-column:span 3}
 .upright-cabinet .game-track .game-tile,.upright-cabinet .game-track .game-tile:last-child{border:1px solid #c8a34d88;border-radius:1.6cqw;box-shadow:0 3px 8px #0008;background:#111018}
 .upright-cabinet .game-track .game-tile.featured-game{border:1px solid #ffe5a1;box-shadow:0 0 0 1px #7a571c,0 3px 9px #0008}
 .upright-cabinet .game-track .game-tile .cover-art.cover-art-hd{inset:0 0 31%;width:100%;height:69%;background:none;filter:none}
