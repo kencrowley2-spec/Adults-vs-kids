@@ -1,4 +1,4 @@
-import {createFaceHost} from './arcade-faces-host.js?v=5';
+import {createFaceHost} from './arcade-faces-host.js?v=6';
 import {FACES,FaceMatch,portrait,FEATURES,question,guidance,parseQuestion} from './arcade-faces-core.js?v=5';
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 export function mountFaces({players=['Adults','Kids'],onExit=()=>{},onComplete=()=>{},beforeRematch=()=>true}={}){

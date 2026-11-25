@@ -11,7 +11,7 @@ for(const [text,expected] of [['Does your person have blue eyes?',{key:'eyes',va
 const dom=new JSDOM('<!doctype html><html><body></body></html>',{url:'https://adultsvskids.com'});globalThis.document=dom.window.document;globalThis.window=dom.window;window.Audio=class {play(){return Promise.resolve();}pause(){}load(){}removeAttribute(){}};
 const handoffs=[];
 window.SpeechSynthesisUtterance=class{constructor(text){this.text=text;}};
-window.speechSynthesis={getVoices:()=>[],speak:cue=>handoffs.push(cue.text),cancel(){}};
+window.speechSynthesis={getVoices:()=>[{lang:'en-US',name:'US English'}],speak:cue=>handoffs.push(cue.text),cancel(){}};
 let results=[],exits=0,timerFns=[];const oldTimer=globalThis.setTimeout;globalThis.setTimeout=(fn)=>{timerFns.push(fn);return 1;};
 const oldRandom=Math.random;Math.random=()=>0;
 const dispose=mountFaces({players:['<Dad>','Harper'],onComplete:r=>results.push(r),onExit:()=>exits++});
