@@ -23,7 +23,7 @@ export function createFaceHost(){
   cue.onerror=()=>{if(nameCue===cue){nameCue=null;playSequence(['pass']);}};
   try{speech.speak(cue);}catch{cue.onerror();}
  }
- function setMusic(on){musicOn=on;if(disposed)return;if(!band&&on&&typeof window.Audio==='function'){band=new window.Audio('/assets/faces/showtime-jazz.mp3');band.loop=true;band.preload='auto';band.volume=.19;}if(!band)return;fadeMusic();if(on)band.play()?.catch(()=>{});else band.pause();}
+ function setMusic(on){musicOn=on;if(disposed)return;if(!band&&on&&typeof window.Audio==='function'){band=new window.Audio('/assets/faces/mystery-face-drum-score.mp3');band.loop=true;band.preload='auto';band.volume=.19;}if(!band)return;fadeMusic();if(on)band.play()?.catch(()=>{});else band.pause();}
  function dispose(){disposed=true;stop();band?.pause();if(band){band.removeAttribute('src');band.load();}context?.close().catch(()=>{});}
  return {backTo,say:id=>playSequence([id]),saySequence:playSequence,stop,setMusic,dispose};
 }

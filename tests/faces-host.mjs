@@ -7,10 +7,10 @@ for(const cue of spoken.cues){assert.ok(manifest.cues[cue.id],cue.id);const [sta
 let sources=[],band,fetches=0,closed=false;
 class Source {connect(){}start(...args){this.args=args;sources.push(this);}stop(){this.onended?.();}}
 class Context {currentTime=0;destination={};async resume(){}async decodeAudioData(){return {};}createBufferSource(){return new Source();}createGain(){return {connect(){},gain:{value:1}};}async close(){closed=true;}}
-globalThis.window={AudioContext:Context,Audio:class{constructor(){band=this;}play(){this.playing=true;return Promise.resolve();}pause(){this.playing=false;}load(){}removeAttribute(){}}};
+globalThis.window={AudioContext:Context,Audio:class{constructor(src){this.src=src;band=this;}play(){this.playing=true;return Promise.resolve();}pause(){this.playing=false;}load(){}removeAttribute(){}}};
 globalThis.fetch=async url=>{fetches++;return {ok:true,json:async()=>manifest,arrayBuffer:async()=>new ArrayBuffer(2)};};
 const flush=async()=>{for(let i=0;i<20;i++)await Promise.resolve();};
-const host=createFaceHost();host.setMusic(true);assert.ok(band.playing);const first=host.saySequence(['q-eyes-0','a-eyes-0-true']);await flush();assert.equal(sources.length,1);assert.equal(band.volume,.045);assert.equal(sources[0].args[1],manifest.cues['q-eyes-0'][0]);host.stop();await first;assert.equal(sources.length,1,'Cancelled question must not start answer');assert.equal(band.volume,.19);
+const host=createFaceHost();host.setMusic(true);assert.ok(band.playing);assert.equal(band.src,'/assets/faces/mystery-face-drum-score.mp3');assert.equal(band.loop,true);const first=host.saySequence(['q-eyes-0','a-eyes-0-true']);await flush();assert.equal(sources.length,1);assert.equal(band.volume,.045);assert.equal(sources[0].args[1],manifest.cues['q-eyes-0'][0]);host.stop();await first;assert.equal(sources.length,1,'Cancelled question must not start answer');assert.equal(band.volume,.19);
 const second=host.say('section-eyes');await flush();assert.equal(sources.length,2);sources.at(-1).onended();await second;assert.equal(band.volume,.19);assert.equal(fetches,2,'Reuse the loaded voice and cue map');host.setMusic(false);assert.equal(band.playing,false);host.dispose();assert.equal(closed,true);
 let announcement;
 const natural={lang:'en-US',name:'American Natural'};
