@@ -46,6 +46,7 @@ export function createClawScene(canvas,prizes,effects=true){
   const grabY=target?target.y-150:H*.59-150;
   if(phase==='drop'){cy=mix(36,grabY,ease(age/400));if(target)cx=mix(x,target.x,ease(age/400));}
   if(phase==='lift'){cy=mix(grabY,36,ease(age/420));cx=target?.x??x;}
+  if(phase==='slip')cx=target.x;
   if(phase==='carry')cx=mix(target?.x??x,65,ease(age/400));
   if(phase==='release')cx=65;
   const highlight=prizes[targetIndex];
@@ -57,6 +58,10 @@ export function createClawScene(canvas,prizes,effects=true){
    ctx.save();ctx.globalAlpha=effects?.65+.2*Math.sin(now/160):.8;ctx.strokeStyle='#ffe38d';ctx.lineWidth=2.5;ctx.shadowColor='#ffce4a';ctx.shadowBlur=effects?14:0;ctx.beginPath();ctx.ellipse(highlight.x,highlight.y+highlight.size*.17,highlight.size*.44,highlight.size*.20,highlight.angle,0,Math.PI*2);ctx.stroke();ctx.restore();
   }
   drawChute();
+  if(phase==='slip'&&target){
+   const fall=Math.min(1,age/400)**2;
+   sprite(target.art,target.x,mix(194,target.y,fall),mix(target.size*.92,target.size,fall),target.angle*fall);
+  }
   // The carried toy sits within the prongs, then physically travels to the chute.
   if(target&&['lift','carry','release'].includes(phase)){
    const released=phase==='release';const t=released?ease(age/300):0;

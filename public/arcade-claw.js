@@ -1,4 +1,4 @@
-import {createClawScene} from './arcade-claw-3d.js?v=3';
+import {createClawScene} from './arcade-claw-3d.js?v=4';
 // Identical seeded toy piles for both competitors. All toys are worth one point.
 export function clawPrizes(seed){
  const random=()=>{seed=seed*16807%2147483647;return (seed-1)/2147483646;};
@@ -7,13 +7,13 @@ export function clawPrizes(seed){
 export function clawCatch(prizes,x){
  // A centered grab always works. Keep the window wide enough for keyboard nudges.
  let closest = null;
- let bestDistance = 14;
+ let bestDistance = 8;
  prizes.forEach((prize, index) => {
   const distance = Math.abs(prize.x - x);
   if (prize.taken || distance > bestDistance) return;
   if (closest && distance === bestDistance && prize.y <= prizes[closest.index].y) return;
   bestDistance = distance;
-  closest = {index, points: 1};
+  closest = {index, points: 1, distance};
  });
  return closest;
 }
@@ -25,9 +25,13 @@ export function mountClaw({canvas,left,right,grab,team,prizes:layout,later,onSco
  const clamp=v=>Math.max(48,Math.min(392,v));
  function controls(disabled){grab.disabled=disabled;left.disabled=disabled;right.disabled=disabled;}
  function finish(){if(ended)return;ended=true;controls(true);visual.dispose();onEnd({score,elapsed:30,label:`${score} ${score===1?'toy':'toys'} retrieved in 30 seconds`});}
+ let weakGrip=false;
  function drop(){
   if(ended||!ready||phase!=='aim'||performance.now()>=deadline)return;
-  caught=clawCatch(prizes,x);phase='drop';phaseAt=performance.now();direction=0;drag=null;controls(true);sound('tap');onStatus('Claw dropping…');
+  caught=clawCatch(prizes,x);
+  // The innermost two units lock securely. At the lip only one in five grips holds.
+  weakGrip=caught && caught.distance>2 && Math.random() < .8*(caught.distance-2)/6;
+  phase='drop';phaseAt=performance.now();direction=0;drag=null;controls(true);sound('tap');onStatus('Claw dropping…');
  }
  function frame(){
   if(ended)return;if(!ready){later(frame,16);return;}const now=performance.now(),dt=Math.min(50,now-last);last=now;
@@ -35,10 +39,12 @@ export function mountClaw({canvas,left,right,grab,team,prizes:layout,later,onSco
   if(phase==='aim')x=clamp(x+direction*dt*.3);
   let age=now-phaseAt;
   if(phase==='drop'&&age>=400){phase='lift';phaseAt=now;if(caught){prizes[caught.index].taken=true;sound('match');}age=0;}
-  if(phase==='lift'&&age>=420){phase='carry';phaseAt=now;age=0;}
+  if(phase==='lift'&&age>=420){phase=weakGrip?'slip':'carry';phaseAt=now;age=0;
+   if(weakGrip)onStatus('It slipped! Aim closer to the middle of the toy.');}
+  if(phase==='slip'&&age>=400){prizes[caught.index].taken=false;caught=null;phase='release';phaseAt=now;age=0;}
   if(phase==='carry'&&age>=400){phase='release';phaseAt=now;age=0;}
   if(phase==='release'&&age>=300){
-   if(caught){score++;onScore(score);sound('win');onStatus(`Toy retrieved! ${score} ${score===1?'point':'points'}.`);}else onStatus('Missed! Center the claw until a gold ring appears.');
+   if(caught){score++;onScore(score);sound('win');onStatus(`Toy retrieved! ${score} ${score===1?'point':'points'}.`);}else if(!weakGrip)onStatus('Missed! Center the claw until a gold ring appears.');
    if(now>=deadline){finish();return;}
    phase='aim';phaseAt=now;caught=null;x=65;controls(false);age=0;
   }
@@ -46,22 +52,22 @@ export function mountClaw({canvas,left,right,grab,team,prizes:layout,later,onSco
   if(timer){timer.textContent=remaining+'s';timer.className=remaining<=5?'claw-time urgent':'claw-time';}
   if(counter)counter.textContent=score+(score===1?' TOY':' TOYS');
   const target = phase === 'aim' ? clawCatch(prizes,x) : null;
-  if(phaseLabel)phaseLabel.textContent=remaining===0?'FINISHING YOUR GRAB':phase==='aim'?(target?'ON TARGET • GRAB!':'AIM FOR THE CENTER'):'GRABBING…';
-  visual.render({x,targetIndex:target?.index,caught,phase,age,now,score,remaining});
+  if(phaseLabel)phaseLabel.textContent=remaining===0?'FINISHING YOUR GRAB':phase==='aim'?(target?(target.distance<=2?'CENTERED • GRAB!':'LOOSE GRIP'):'AIM FOR THE CENTER'):phase==='slip'?'IT SLIPPED!':'GRABBING…';
+  visual.render({x,targetIndex:target?.distance<=2?target.index:undefined,caught,phase,age,now,score,remaining});
   later(frame,16);
  }
  function hold(button,dir){
   button.addEventListener('pointerdown',e=>{if(ended||phase!=='aim'||e.isPrimary===false)return;e.preventDefault();direction=dir;button.setPointerCapture?.(e.pointerId);});
   for(const type of ['pointerup','pointercancel','lostpointercapture'])button.addEventListener(type,()=>{direction=0;});
-  button.addEventListener('click',e=>{if(!ended&&phase==='aim'&&e.detail===0)x=clamp(x+dir*22);});
+  button.addEventListener('click',e=>{if(!ended&&phase==='aim'&&e.detail===0)x=clamp(x+dir*4);});
  }
  hold(left,-1);hold(right,1);grab.addEventListener('click',drop);
  function aim(e){const r=canvas.getBoundingClientRect();x=clamp((e.clientX-r.left)*440/r.width);}
  canvas.addEventListener('pointerdown',e=>{if(ended||phase!=='aim'||e.isPrimary===false)return;e.preventDefault();drag=e.pointerId;canvas.setPointerCapture?.(e.pointerId);aim(e);});
  canvas.addEventListener('pointermove',e=>{if(!ended&&e.pointerId===drag&&phase==='aim')aim(e);});
  for(const type of ['pointerup','pointercancel','lostpointercapture'])canvas.addEventListener(type,()=>{drag=null;});
- canvas.addEventListener('keydown',e=>{if(ended||!['ArrowLeft','ArrowRight',' ','Enter'].includes(e.key)||phase!=='aim')return;e.preventDefault();if(e.key==='ArrowLeft')x=clamp(x-14);else if(e.key==='ArrowRight')x=clamp(x+14);else if(!e.repeat)drop();});
- if(visual.ready){controls(true);onStatus('Loading THE CLAW…');visual.ready.then(()=>{if(ended)return;started=performance.now();deadline=started+30000;last=started;ready=true;controls(false);onStatus(`${team}, 30 seconds! Aim for the center. Press GRAB when the gold ring appears.`);}).catch(error=>{if(!ended){ended=true;visual.dispose();onStatus('The artwork could not load. Return to Arcade and try again.');console.error(error);}});}
+ canvas.addEventListener('keydown',e=>{if(ended||!['ArrowLeft','ArrowRight',' ','Enter'].includes(e.key)||phase!=='aim')return;e.preventDefault();if(e.key==='ArrowLeft')x=clamp(x-4);else if(e.key==='ArrowRight')x=clamp(x+4);else if(!e.repeat)drop();});
+ if(visual.ready){controls(true);onStatus('Loading THE CLAW…');visual.ready.then(()=>{if(ended)return;started=performance.now();deadline=started+30000;last=started;ready=true;controls(false);onStatus(`${team}, 30 seconds! Aim for the center. Gold marks a secure grip. An off-center toy can slip.`);}).catch(error=>{if(!ended){ended=true;visual.dispose();onStatus('The artwork could not load. Return to Arcade and try again.');console.error(error);}});}
  if(!visual.ready)onStatus(`${team}, you have 30 seconds! Drag or use arrows to aim, then press GRAB when the gold ring appears. Each toy delivered earns 1 point.`);frame();
  return ()=>{if(!ended)visual.dispose();ended=true;direction=0;drag=null;};
 }

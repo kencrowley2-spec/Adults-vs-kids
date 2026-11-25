@@ -11,10 +11,10 @@ class Input{
 }
 function fixture(options={}){
  let now=0,id=0,disposed=0,prizes,resolveLoading;const loading=options.loading?new Promise(resolve=>{resolveLoading=resolve;}):undefined;const jobs=new Map(),scores=[],ends=[],frames=[],statuses=[];
- const c=vm.createContext({console,Math,performance:{now:()=>now},createClawScene:(canvas,p)=>{prizes=p;return{ready:loading,render:f=>frames.push({...f}),dispose:()=>disposed++};}});
+ const c=vm.createContext({console,Math: Object.assign(Object.create(Math),{random:()=>options.roll??.5}),performance:{now:()=>now},createClawScene:(canvas,p)=>{prizes=p;return{ready:loading,render:f=>frames.push({...f}),dispose:()=>disposed++};}});
  vm.runInContext(source+'\nthis.api={mountClaw,clawCatch,clawPrizes}',c);
  const canvas=new Input(),left=new Input(),right=new Input(),grab=new Input(),timer=new Input(),counter=new Input();
- const layout=c.api.clawPrizes(123);
+ const layout=options.layout??c.api.clawPrizes(123);
  const stop=c.api.mountClaw({canvas,left,right,grab,timer,counter,team:'Crowley',prizes:layout,later:(fn,delay)=>jobs.set(++id,{at:now+delay,fn}),onScore:n=>scores.push(n),onEnd:r=>ends.push(r),onStatus:s=>statuses.push(s),sound:()=>{}});
  function advance(ms){const end=now+ms;for(;;){const next=[...jobs].sort((a,b)=>a[1].at-b[1].at)[0];if(!next||next[1].at>end)break;jobs.delete(next[0]);now=next[1].at;next[1].fn();}now=end;}
  return{...c.api,canvas,left,right,grab,timer,counter,layout,prizes,scores,ends,frames,statuses,stop,advance,disposed:()=>disposed,resolveLoading};
@@ -34,8 +34,8 @@ function aim(f,x){f.canvas.emit('pointerdown',{pointerId:1,clientX:x/2});}
  assert.equal(f.clawCatch(f.prizes.map(p=>({...p,taken:true})),220),null);
  // A centered grab and the edge of its window succeed. Just outside misses.
  const toy=[{x:100,y:310}];
- for(const offset of [-14,0,14])assert.equal(f.clawCatch(toy,100+offset).points,1);
- for(const offset of [-15,15,25])assert.equal(f.clawCatch(toy,100+offset),null);
+ for(const offset of [-8,0,8])assert.equal(f.clawCatch(toy,100+offset).points,1);
+ for(const offset of [-9,9,25])assert.equal(f.clawCatch(toy,100+offset),null);
  for(let i=0;i<4;i++){
   aim(f,f.layout[i].x);f.advance(16);assert.equal(f.frames.at(-1).targetIndex,i);
   f.grab.click();f.grab.click();f.advance(1000);assert.equal(f.scores.length,i);
@@ -75,5 +75,15 @@ function aim(f,x){f.canvas.emit('pointerdown',{pointerId:1,clientX:x/2});}
 }
 {
  const f=fixture({loading:true});f.stop();f.resolveLoading();await Promise.resolve();f.advance(60000);assert.equal(f.ends.length,0);assert.equal(f.disposed(),1);
+}
+for(const [roll,expected] of [[.1,0],[.95,1]]){
+ const f=fixture({roll,layout:[{x:100,y:310}]});
+ aim(f,108);f.grab.click();f.advance(1650);
+ assert.equal(f.scores.length,expected);
+ assert.equal(Boolean(f.prizes[0].taken),Boolean(expected));
+ if(!expected){
+  assert.ok(f.frames.some(frame=>frame.phase==='slip'));
+  aim(f,100);f.grab.click();f.advance(1650);assert.deepEqual(f.scores,[1]);
+ }
 }
 console.log('PASS: THE CLAW — 30 seconds, one point per delivered toy, precise grabs and matching target cues, unlimited attempts, late completion, deadline rejection, identical piles, input and cleanup.');
