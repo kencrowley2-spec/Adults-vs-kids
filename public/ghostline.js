@@ -1,5 +1,6 @@
 import {LENGTH,STEP,grid,drive,replay} from './ghostline-core.js';
-import {paint} from './ghostline-view.js';
+import {paint} from './ghostline-view.js?v=2';
+import {loadRaceArt} from './ghostline-scenery.js';
 export function mountGhostline({players,onExit,onComplete,beforeRematch}){
  const host=document.createElement('dialog');host.className='ghostline';host.setAttribute('aria-label','Ghostline GT');
  host.innerHTML='<canvas aria-label="Driver’s view of the circuit"></canvas><div class="gt-hud"><b></b><output></output><span></span><button class="gt-exit" aria-label="Exit race">×</button></div><div class="gt-steer"><button aria-label="Steer left">◀</button><button aria-label="Steer right">▶</button></div><section class="gt-panel"><h2></h2><p></p><button></button></section>';
@@ -21,6 +22,7 @@ export function mountGhostline({players,onExit,onComplete,beforeRematch}){
  mute.onclick=()=>{muted=!muted;mute.textContent=muted?'♫ off':'♫';mute.setAttribute('aria-label',muted?'Enable engine sound':'Mute engine');if(phase==='race')engineOn();};
  const held=new Map(),format=n=>n.toFixed(2)+' s';
  function size(){const r=canvas.getBoundingClientRect(),dpr=Math.min(1.75,window.devicePixelRatio||1);width=r.width;height=r.height;canvas.width=Math.round(width*dpr);canvas.height=Math.round(height*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);dirty=true;}
+ const stopLoading=loadRaceArt(()=>{dirty=true;});
  const observer=new ResizeObserver(size);observer.observe(canvas);
  function show(title,copy,label,fn){heading.textContent=title;detail.textContent=copy;primary.textContent=label;action=fn;panel.hidden=false;primary.focus();}
  function resume(){held.clear();phase='race';engineOn();last=0;debt=0;panel.hidden=true;arrows.hidden=false;host.focus();}
@@ -56,7 +58,7 @@ export function mountGhostline({players,onExit,onComplete,beforeRematch}){
  const keys={ArrowLeft:-1,a:-1,ArrowRight:1,d:1};
  function key(e){const k=e.key.length===1?e.key.toLowerCase():e.key;if(!(k in keys)||phase!=='race')return;e.preventDefault();if(e.type==='keydown')held.set(k,keys[k]);else held.delete(k);}
  function visibility(){if(document.hidden)pause();}
- function close(){cancelAnimationFrame(frame);if(audio)audio.close().catch(()=>{});observer.disconnect();document.removeEventListener('visibilitychange',visibility);window.removeEventListener('blur',pause);host.close();host.remove();onExit();}
+ function close(){stopLoading();cancelAnimationFrame(frame);if(audio)audio.close().catch(()=>{});observer.disconnect();document.removeEventListener('visibilitychange',visibility);window.removeEventListener('blur',pause);host.close();host.remove();onExit();}
  for(const [i,b] of [...arrows.children].entries()){
   b.onpointerdown=e=>{if(phase!=='race')return;e.preventDefault();b.setPointerCapture(e.pointerId);held.set(e.pointerId,i?1:-1);};
   b.onpointerup=b.onpointercancel=b.onlostpointercapture=e=>held.delete(e.pointerId);

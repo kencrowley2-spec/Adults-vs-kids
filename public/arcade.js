@@ -1,4 +1,4 @@
-import {mountGhostline} from './ghostline.js';
+import {mountGhostline} from './ghostline.js?v=2';
 import {mountFlex} from './arcade-flex.js?v=1';
 import {mountGuestGate} from './arcade-guest.js?v=1';
 import {mountFeaturedGames} from './arcade-featured.js?v=3';
