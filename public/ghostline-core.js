@@ -1,0 +1,22 @@
+export const LENGTH=1260, STEP=1/60;
+// Curvature in radians per metre. Both drivers use exactly the same circuit.
+const bends=[[65,240,.007],[255,395,-.008],[415,550,.006],[590,785,-.009],[815,995,.008],[1020,1160,-.006]];
+export function bend(s){
+ for(const [a,b,k] of bends)if(s>a&&s<b)return k*Math.sin(Math.PI*(s-a)/(b-a));
+ return 0;
+}
+export function grid(){return {s:0,x:0,speed:31,steer:0,time:0};}
+export function drive(car,input){
+ if(car.s>=LENGTH)return;
+ const k=bend(car.s),dt=STEP;
+ car.steer+=(input-car.steer)*.09;
+ car.x=Math.max(-7.4,Math.min(7.4,car.x+(car.steer*8.6-k*car.speed*14)*dt));
+ const target=Math.abs(car.x)>5.2?29:40-Math.abs(car.steer)*1.3;
+ car.speed+=(target-car.speed)*dt*1.5;
+ const travel=Math.min(LENGTH-car.s,car.speed*dt);
+ car.s+=travel;car.time+=travel/car.speed;
+}
+export function replay(trace,time){
+ const pos=Math.min(time/STEP,trace.length-1),i=Math.floor(pos),a=trace[i],b=trace[i+1]||a,t=pos-i;
+ return {s:a.s+(b.s-a.s)*t,x:a.x+(b.x-a.x)*t};
+}
