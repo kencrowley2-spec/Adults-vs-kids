@@ -1,4 +1,5 @@
 import {shuffle} from './arcade-core.js';
+import {openJigsawGallery} from './arcade-jigsaw-gallery.js?v=1';
 
 const SAMPLE_PHOTO = '/assets/guide-family-patio.webp';
 const COUNTS = [12, 24, 48, 96, 192, 384, 768, 1024];
@@ -79,6 +80,16 @@ function newPieces(columns, rows) {
  });
 }
 
+function drawPiecePhoto(context, piece, photo, columns, rows) {
+ // Only sample the cell and neighboring tabs, especially during Auto Solve.
+ const left = Math.max(0, piece.column - .4), top = Math.max(0, piece.row - .4);
+ const width = Math.min(columns, piece.column + 1.4) - left;
+ const height = Math.min(rows, piece.row + 1.4) - top;
+ const cellWidth = photo.width / columns, cellHeight = photo.height / rows;
+ context.drawImage(photo, left * cellWidth, top * cellHeight, width * cellWidth, height * cellHeight,
+  left - piece.column, top - piece.row, width, height);
+}
+
 function drawPiece(context, piece, photo, columns, rows, x, y, width, height, loose) {
  context.save();
  context.translate(x, y);
@@ -108,7 +119,7 @@ function drawPiece(context, piece, photo, columns, rows, x, y, width, height, lo
  }
  context.save();
  context.clip(piece.path);
- context.drawImage(photo, -piece.column, -piece.row, columns, rows);
+ drawPiecePhoto(context, piece, photo, columns, rows);
  // Light catches the top-left bevel. The opposite rim falls into shadow.
  context.save();
  const bevel = loose ? .013 : .009;
@@ -187,14 +198,14 @@ function decodeImage(url) {
  });
 }
 
-export function mountJigsaw({onStart, onComplete, beforeReplay, onExit, onSnap}) {
+export function mountJigsaw({onStart, onComplete, beforeStart, onExit, onSnap}) {
  const dialog = document.createElement('dialog');
  dialog.className = 'jigsaw';
  dialog.setAttribute('aria-labelledby', 'jigsaw-title');
  dialog.innerHTML = `
   <header class="jigsaw-head">
    <div><p>ADULTS vs. KIDS™ ARCADE</p><h2 id="jigsaw-title">Family Jigsaw 3D</h2></div>
-   <button type="button" data-exit>Back to Arcade</button>
+   <div class="jigsaw-head-actions"><button type="button" data-gallery>Gallery</button><button type="button" data-exit>Back to Arcade</button></div>
   </header>
   <form class="jigsaw-setup">
    <figure class="jigsaw-photo">
@@ -206,7 +217,7 @@ export function mountJigsaw({onStart, onComplete, beforeReplay, onExit, onSnap})
     <p>Build it together on one screen.</p>
     <label class="jigsaw-button jigsaw-upload">Choose a photo<input type="file" accept="image/*"></label>
     <button type="button" data-sample hidden>Use sample photo</button>
-    <small>Your photo stays in this browser tab.</small>
+    <small>Your photo stays on this device.</small>
     <div class="jigsaw-count"><label for="jigsaw-count">Pieces</label><select id="jigsaw-count">${COUNTS.map(count => `<option value="${count}">${count.toLocaleString()}</option>`).join('')}</select></div>
     <button class="jigsaw-primary" type="submit" disabled>Start puzzle</button>
     <button type="button" data-resume hidden>Resume puzzle</button>
@@ -222,11 +233,16 @@ export function mountJigsaw({onStart, onComplete, beforeReplay, onExit, onSnap})
      <button type="button" data-new>New puzzle</button>
      <button type="button" class="jigsaw-primary" data-skip hidden>Skip to play</button>
     </div>
+    <div class="jigsaw-assist" role="group" aria-label="Puzzle assistance">
+     <button type="button" data-hints aria-pressed="false">Red hint</button>
+     <button type="button" data-auto>Auto Solve</button>
+    </div>
    </div>
    <div class="jigsaw-bed">
     <div class="jigsaw-scroll" aria-label="Scrollable puzzle board">
      <div class="jigsaw-board-wrap">
       <canvas class="jigsaw-board" tabindex="0" aria-label="Puzzle board. Pinch to zoom and swipe to pan. Choose a piece, then tap a spot or use the arrow keys and press Enter." aria-describedby="jigsaw-status"></canvas>
+      <canvas class="jigsaw-hint" width="176" height="176" hidden aria-hidden="true"></canvas>
       <canvas class="jigsaw-target" width="176" height="176" hidden aria-hidden="true"></canvas>
       <i class="jigsaw-cursor" hidden aria-hidden="true"></i>
       <i class="jigsaw-flash" aria-hidden="true"></i>
@@ -260,6 +276,7 @@ export function mountJigsaw({onStart, onComplete, beforeReplay, onExit, onSnap})
  const play = find('.jigsaw-play'), board = find('.jigsaw-board'), scroll = find('.jigsaw-scroll');
  const bed = find('.jigsaw-bed'), tools = find('.jigsaw-tools'), target = find('.jigsaw-target');
  const statusLine = find('#jigsaw-status');
+ const hint = find('.jigsaw-hint'), hintsButton = find('[data-hints]'), autoButton = find('[data-auto]');
  const wrap = find('.jigsaw-board-wrap'), tray = find('.jigsaw-tray'), pieceList = find('.jigsaw-pieces');
  const reference = find('.jigsaw-reference'), cursor = find('.jigsaw-cursor'), floating = find('.jigsaw-drag');
  const flash = find('.jigsaw-flash');
@@ -276,6 +293,9 @@ export function mountJigsaw({onStart, onComplete, beforeReplay, onExit, onSnap})
  let source, sample, sourceVersion = 0, blueprint, round, selected, drag, animation = 0, page = 0;
  let section = 'all', preview = false, zoom = 1, row = 0, column = 0, introTimer;
  let hovered, touchOrigin, movedBoard, pinch;
+ let hintsOn = false, autoSolving = false, autoTimer, autoFlight;
+ try { hintsOn = localStorage.getItem('avk.jigsaw.redHint') === '1'; } catch {}
+ hintsButton.setAttribute('aria-pressed', String(hintsOn));
  const status = message => {statusLine.textContent = message;};
 
  async function loadPhoto(file) {
@@ -325,8 +345,8 @@ export function mountJigsaw({onStart, onComplete, beforeReplay, onExit, onSnap})
   zoom = clamp(value, 1, maxZoom);
   wrap.style.setProperty('--zoom', zoom);
   play.toggleAttribute('data-zoomed', zoom > 1);
-  zoomOut.disabled = zoom <= 1;
-  zoomIn.disabled = zoom >= maxZoom;
+  zoomOut.disabled = autoSolving || zoom <= 1;
+  zoomIn.disabled = autoSolving || zoom >= maxZoom;
   fitBoard();
   const after = board.getBoundingClientRect();
   const focus = destination ?? centerOfBoardView();
@@ -364,7 +384,7 @@ export function mountJigsaw({onStart, onComplete, beforeReplay, onExit, onSnap})
    return;
   }
   const width = board.width / columns, height = board.height / rows;
-  context.strokeStyle = '#e9ecd132';
+  context.strokeStyle = '#37778f47';
   context.lineWidth = Math.max(1, board.width / 760);
   context.beginPath();
   for (let i = 1; i < columns; i++) {
@@ -393,33 +413,38 @@ export function mountJigsaw({onStart, onComplete, beforeReplay, onExit, onSnap})
    const label = button.dataset.label;
    button.textContent = `${label} ${count.toLocaleString()}`;
   }
-  pieceList.replaceChildren();
-  for (const piece of remaining.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)) {
-   const button = document.createElement('button');
-   const tile = document.createElement('canvas');
-   button.type = 'button';
-   button.setAttribute('aria-label', `${piece.section === 'corners' ? 'Corner piece' : piece.section === 'edges' ? 'Edge piece' : 'Center piece'} ${piece.label}`);
-   button.dataset.piece = String(piece.id);
+  const existing = new Map([...pieceList.querySelectorAll('button')].map(button => [Number(button.dataset.piece), button]));
+  const tiles = remaining.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE).map(piece => {
+   const button = existing.get(piece.id) ?? createPieceTile(piece);
    button.setAttribute('aria-pressed', String(piece === selected));
-   tile.width = tile.height = 192;
-   tile.setAttribute('aria-hidden', 'true');
-   tile.style.animationDelay = `${-(piece.id % 17) * .29}s`;
-   const aspect = round.photo.width * round.rows / (round.photo.height * round.columns);
-   const width = Math.min(108, 108 * aspect), height = Math.min(108, 108 / aspect);
-   drawPiece(tile.getContext('2d'), piece, round.photo, round.columns, round.rows, (192 - width) / 2, (192 - height) / 2, width, height, true);
-   button.append(tile);
-   button.addEventListener('pointerdown', event => grab(event, piece, button));
-   button.addEventListener('click', event => {
-    if (event.detail === 0) select(piece, true);
-   });
-   pieceList.append(button);
-  }
+   return button;
+  });
+  pieceList.replaceChildren(...tiles);
   if (!remaining.length && round.count < round.pieces.length) {
    const message = document.createElement('p');
    message.textContent = 'This section is complete. Pick another section to keep going.';
    pieceList.append(message);
   }
   progress.textContent = `${round.count.toLocaleString()} / ${round.pieces.length.toLocaleString()} placed`;
+ }
+ function createPieceTile(piece) {
+  const button = document.createElement('button');
+  const tile = document.createElement('canvas');
+  button.type = 'button';
+  button.setAttribute('aria-label', `${piece.section === 'corners' ? 'Corner piece' : piece.section === 'edges' ? 'Edge piece' : 'Center piece'} ${piece.label}`);
+  button.dataset.piece = String(piece.id);
+  tile.width = tile.height = 192;
+  tile.setAttribute('aria-hidden', 'true');
+  tile.style.animationDelay = `${-(piece.id % 17) * .29}s`;
+  const aspect = round.photo.width * round.rows / (round.photo.height * round.columns);
+  const width = Math.min(108, 108 * aspect), height = Math.min(108, 108 / aspect);
+  drawPiece(tile.getContext('2d'), piece, round.photo, round.columns, round.rows, (192 - width) / 2, (192 - height) / 2, width, height, true);
+  button.append(tile);
+  button.addEventListener('pointerdown', event => grab(event, piece, button));
+  button.addEventListener('click', event => {
+   if (event.detail === 0) select(piece, true);
+  });
+  return button;
  }
  function updateCursor(visible = false) {
   cursor.hidden = !selected || !visible;
@@ -433,10 +458,13 @@ export function mountJigsaw({onStart, onComplete, beforeReplay, onExit, onSnap})
   scroll.scrollTop += Math.max(0, focus.bottom - frame.top - scroll.clientHeight) + Math.min(0, focus.top - frame.top);
  }
  function select(piece, keyboard = false) {
+  if (autoSolving) return;
   selected = piece;
+  if (keyboard && hintsOn) ({column, row} = piece);
   pieceList.querySelectorAll('button').forEach(button => button.setAttribute('aria-pressed', String(Number(button.dataset.piece) === piece.id)));
   showTarget();
   updateCursor(keyboard);
+  showHint(piece, true);
   status('Piece selected. Tap its spot or use the arrow keys and Enter.');
   board.focus({preventScroll: true});
  }
@@ -476,13 +504,38 @@ export function mountJigsaw({onStart, onComplete, beforeReplay, onExit, onSnap})
    context.clip(piece.path);
    const {photo, columns, rows} = round;
    context.globalAlpha = .56;
-   context.drawImage(photo, -piece.column, -piece.row, columns, rows);
+   drawPiecePhoto(context, piece, photo, columns, rows);
    context.restore();
   }
   context.lineWidth = .027;
   context.strokeStyle = fits ? '#d4ffb8' : '#e2d5a19c';
   context.stroke(piece.path);
   context.restore();
+ }
+
+ function showHint(piece, reveal = false) {
+  hint.hidden = !hintsOn || !piece || autoSolving;
+  if (hint.hidden) return;
+  hint.style.setProperty('--column', piece.column);
+  hint.style.setProperty('--row', piece.row);
+  const context = hint.getContext('2d');
+  context.clearRect(0, 0, hint.width, hint.height);
+  context.save();
+  context.translate(38, 38);
+  context.scale(100, 100);
+  context.fillStyle = '#ff526b32';
+  context.strokeStyle = '#cd1639';
+  context.lineJoin = 'round';
+  context.lineWidth = .055;
+  context.fill(piece.path);
+  context.stroke(piece.path);
+  context.restore();
+  if (!reveal) return;
+  const marker = hint.getBoundingClientRect();
+  const view = scroll.getBoundingClientRect();
+  const x = marker.left + marker.width / 2, y = marker.top + marker.height / 2;
+  if (x < view.left || x >= view.left + scroll.clientWidth) scroll.scrollLeft += x - view.left - scroll.clientWidth / 2;
+  if (y < view.top || y >= view.top + scroll.clientHeight) scroll.scrollTop += y - view.top - scroll.clientHeight / 2;
  }
 
  function place(position) {
@@ -493,6 +546,7 @@ export function mountJigsaw({onStart, onComplete, beforeReplay, onExit, onSnap})
   }
   const piece = selected;
   showTarget();
+  showHint();
   piece.placed = true;
   selected = null;
   round.count++;
@@ -507,12 +561,15 @@ export function mountJigsaw({onStart, onComplete, beforeReplay, onExit, onSnap})
   updateTray();
   onSnap?.(complete);
   if (complete) {
+   stopAutoSolve();
    tray.hidden = true;
+   round.galleryId = crypto.randomUUID();
+   hintsButton.disabled = autoButton.disabled = true;
    previewButton.disabled = true;
    setPreview(false);
    setZoom(1);
    board.classList.add('jigsaw-solved');
-   status('Puzzle complete! High fives all around.');
+   status('Puzzle complete! Open Gallery to save your image.');
    onComplete?.({pieces: round.count});
   } else {
    flash.style.setProperty('--column', position.column);
@@ -521,22 +578,104 @@ export function mountJigsaw({onStart, onComplete, beforeReplay, onExit, onSnap})
    if (!motion.matches) {
     flash.animate([{opacity:1, transform:'scale(1.14)'},{opacity:0, transform:'scale(1)'}], {duration:280, easing:'ease-out'});
    }
-   status('Piece snapped into place. Choose another piece.');
+   if (!autoSolving) status('Piece snapped into place. Choose another piece.');
   }
+ }
+
+ function stopAutoSolve() {
+  if (!autoSolving) return;
+  autoSolving = false;
+  dialog.removeAttribute('data-auto-solving');
+  clearTimeout(autoTimer);
+  autoFlight?.cancel();
+  autoFlight = null;
+  floating.hidden = true;
+  const lifted = pieceList.querySelector('[data-lifted]');
+  if (lifted) delete lifted.dataset.lifted;
+  tray.inert = false;
+  hintsButton.disabled = false;
+  zoomOut.disabled = zoom <= 1;
+  zoomIn.disabled = zoom >= maxZoom;
+  autoButton.textContent = 'Auto Solve';
+ }
+ function flyNextPiece() {
+  if (!autoSolving || !dialog.open) return;
+  const piece = round.order.find(item => !item.placed);
+  if (!piece) return;
+  const pace = round.pieces.length <= 96 ? 195 : 105;
+  const finish = () => {
+   if (!autoSolving || !dialog.open) return;
+   autoFlight?.cancel();
+   autoFlight = null;
+   floating.hidden = true;
+   selected = piece;
+   place(piece);
+   if (autoSolving) flyNextPiece();
+  };
+  const slot = pieceList.querySelector(`[data-piece="${piece.id}"]`);
+  const tile = slot?.querySelector('canvas');
+  if (!motion.matches && tile) {
+   const from = tile.getBoundingClientRect(), to = board.getBoundingClientRect();
+   const size = Math.min(from.width, from.height);
+   const cellWidth = to.width / round.columns, cellHeight = to.height / round.rows;
+   const scale = Math.max(cellWidth, cellHeight) * 192 / (108 * size);
+   floating.width = floating.height = 192;
+   floating.style.width = floating.style.height = `${size}px`;
+   floating.getContext('2d').drawImage(tile, 0, 0);
+   floating.hidden = false;
+   slot.dataset.lifted = 'true';
+   const x = to.left + (piece.column + .5) * cellWidth - size / 2;
+   const y = to.top + (piece.row + .5) * cellHeight - size / 2;
+   autoFlight = floating.animate([
+    {transform:`translate3d(${from.left}px,${from.top}px,0)`},
+    {transform:`translate3d(${x}px,${y}px,0) scale(${scale})`}
+   ], {duration:pace,easing:'ease-in-out',fill:'both'});
+  }
+  autoTimer = setTimeout(finish, pace);
+ }
+ function toggleAutoSolve() {
+  if (autoSolving) {
+   stopAutoSolve();
+   status('Auto Solve paused. Place a piece or start Auto Solve again.');
+   return;
+  }
+  if (drag || contacts.size || !round || round.galleryId) return;
+  floating.getAnimations().forEach(flight => flight.cancel());
+  floating.hidden = true;
+  autoSolving = true;
+  dialog.setAttribute('data-auto-solving','');
+  selected = null;
+  section = 'all';
+  page = 0;
+  tray.inert = true;
+  hintsButton.disabled = true;
+  autoButton.textContent = 'Pause Auto Solve';
+  showHint();
+  updateCursor();
+  updateTray();
+  setZoom(1);
+  status('Auto Solve is placing pieces one at a time.');
+  flyNextPiece();
+ }
+ function dragCenter(x, y, size, lift) {
+  const radius = size * .45;
+  return [clamp(x, radius, innerWidth - radius), clamp(y - lift, radius, innerHeight - radius)];
  }
 
  function moveFloating() {
   animation = 0;
   if (!drag) return;
-  floating.style.transform = `translate3d(${drag.x - drag.size / 2}px, ${drag.y - drag.size / 2 - drag.lift}px, 0)`;
+  const [x,y] = dragCenter(drag.x, drag.y, drag.size, drag.lift);
+  floating.style.transform = `translate3d(${x - drag.size / 2}px, ${y - drag.size / 2}px, 0)`;
   showTarget(drag.piece, positionAt(drag.x, drag.y));
  }
  function grab(event, piece, button) {
-  if (drag || contacts.size || !event.isPrimary || event.button !== 0) return;
+  if (autoSolving || drag || contacts.size || !event.isPrimary || event.button !== 0) return;
   floating.getAnimations().forEach(animation => animation.cancel());
   floating.hidden = true;
   button.setPointerCapture(event.pointerId);
-  drag = {id:event.pointerId, piece, button, x:event.clientX, y:event.clientY, startX:event.clientX, startY:event.clientY, lifted:false};
+  showHint(piece, true);
+  drag = {id:event.pointerId, pointerType:event.pointerType, piece, button, x:event.clientX, y:event.clientY, startX:event.clientX, startY:event.clientY, lifted:false};
  }
  function move(event) {
   if (drag?.id !== event.pointerId) return;
@@ -548,11 +687,11 @@ export function mountJigsaw({onStart, onComplete, beforeReplay, onExit, onSnap})
    cursor.hidden = true;
    const rect = board.getBoundingClientRect();
    const cellWidth = rect.width / round.columns, cellHeight = rect.height / round.rows;
-   drag.size = clamp(Math.max(cellWidth, cellHeight) * 1.8, 40, 240);
-   drag.lift = clamp(drag.size * .19, 13, 34);
+   drag.size = clamp(Math.max(cellWidth, cellHeight) * 2.35, 118, 258);
+   drag.lift = drag.size * (drag.pointerType === 'touch' ? .55 : .27);
    floating.width = floating.height = 288;
    floating.style.width = floating.style.height = `${drag.size}px`;
-   const scale = Math.min(288 * 1.13 / drag.size, 162 / Math.max(cellWidth, cellHeight));
+   const scale = 162 / Math.max(cellWidth, cellHeight);
    const width = cellWidth * scale, height = cellHeight * scale;
    drawPiece(floating.getContext('2d'), drag.piece, round.photo, round.columns, round.rows, (288 - width) / 2, (288 - height) / 2, width, height, true);
    floating.hidden = false;
@@ -569,21 +708,22 @@ export function mountJigsaw({onStart, onComplete, beforeReplay, onExit, onSnap})
   cancelAnimationFrame(animation);
   animation = 0;
   showTarget();
-  if (cancelled) return;
+  if (cancelled) {showHint(selected);return;}
   select(piece);
   if (!lifted) return;
   const position = positionAt(event.clientX, event.clientY);
   place(position);
   if (!piece.placed || round.count === round.pieces.length || motion.matches) return;
   const rect = board.getBoundingClientRect();
-  const from = [event.clientX, event.clientY - lift];
+  const from = dragCenter(event.clientX, event.clientY, size, lift);
   const to = [rect.left + (piece.column + .5) * rect.width / round.columns,
    rect.top + (piece.row + .5) * rect.height / round.rows];
+  const scale = Math.max(rect.width / round.columns, rect.height / round.rows) * 288 / (162 * size);
   const transformAt = ([x, y]) => `translate3d(${x - size / 2}px, ${y - size / 2}px, 0)`;
   floating.hidden = false;
   const settling = floating.animate([
    {transform:transformAt(from), opacity:1},
-   {transform:transformAt(to), opacity:0}
+   {transform:`${transformAt(to)} scale(${scale})`, opacity:0}
   ], {duration:170, easing:'cubic-bezier(.2,.75,.25,1)'});
   settling.onfinish = () => {floating.hidden = true;};
  }
@@ -600,6 +740,7 @@ export function mountJigsaw({onStart, onComplete, beforeReplay, onExit, onSnap})
   else showTarget();
  });
  function tapBoard(x, y) {
+  if (autoSolving) return;
   const position = positionAt(x, y);
   if (position) ({column, row} = position);
   place(position);
@@ -615,7 +756,7 @@ export function mountJigsaw({onStart, onComplete, beforeReplay, onExit, onSnap})
    span:Math.hypot(first.x - second.x, first.y - second.y)};
  }
  scroll.addEventListener('pointerdown', event => {
-  if (event.pointerType !== 'touch' || drag || dialog.dataset.phase !== 'play' || contacts.size >= 2) return;
+  if (event.pointerType !== 'touch' || autoSolving || drag || dialog.dataset.phase !== 'play' || contacts.size >= 2) return;
   const point = {x:event.clientX, y:event.clientY};
   if (!contacts.size) {
    touchOrigin = point;
@@ -655,7 +796,7 @@ export function mountJigsaw({onStart, onComplete, beforeReplay, onExit, onSnap})
  }
  for (const event of ['pointerup','pointercancel','lostpointercapture']) scroll.addEventListener(event, endBoardTouch);
  board.addEventListener('keydown', event => {
-  if (!selected) return;
+  if (autoSolving || !selected) return;
   const shifts = {ArrowUp:[0,-1], ArrowDown:[0,1], ArrowLeft:[-1,0], ArrowRight:[1,0]};
   if (event.key === 'Enter' || event.key === ' ') {
    event.preventDefault();
@@ -690,6 +831,7 @@ export function mountJigsaw({onStart, onComplete, beforeReplay, onExit, onSnap})
   skip.hidden = true;
   find('[data-new]').hidden = false;
   previewButton.disabled = false;
+  hintsButton.disabled = autoButton.disabled = false;
   setZoom(1);
   drawBoard();
   status('Drag a piece into place, or select it and tap its spot.');
@@ -746,20 +888,23 @@ export function mountJigsaw({onStart, onComplete, beforeReplay, onExit, onSnap})
 
  setup.addEventListener('submit', event => {
   event.preventDefault();
-  if (!source || !blueprint || start.disabled || (round && beforeReplay && !beforeReplay())) return;
+  if (!source || !blueprint || start.disabled || (beforeStart && !beforeStart())) return;
   const {photo, columns, rows} = blueprint;
   const pieces = blueprint.pieces.map(piece => ({...piece, placed:false}));
   const scattered = shuffle(pieces);
   const order = SECTIONS.slice(1).flatMap(name => scattered.filter(piece => piece.section === name));
   order.forEach((piece, index) => {piece.label = index + 1;});
   round = {photo, columns, rows, pieces, order, count: 0};
+  pieceList.replaceChildren();
   row = column = page = 0;
   selected = null;
+  showHint();
   section = 'all';
   tray.hidden = false;
   tray.inert = true;
   dialog.dataset.phase = 'assembled';
   previewButton.disabled = true;
+  hintsButton.disabled = autoButton.disabled = true;
   find('[data-new]').hidden = true;
   skip.hidden = false;
   setPreview(false);
@@ -792,6 +937,7 @@ export function mountJigsaw({onStart, onComplete, beforeReplay, onExit, onSnap})
  });
  sampleButton.addEventListener('click', () => {void loadPhoto();});
  find('[data-new]').addEventListener('click', () => {
+  stopAutoSolve();
   play.hidden = true;
   dialog.insertBefore(statusLine, scatter);
   setup.hidden = false;
@@ -810,6 +956,7 @@ export function mountJigsaw({onStart, onComplete, beforeReplay, onExit, onSnap})
    page = 0;
    selected = null;
    showTarget();
+   showHint();
    updateCursor();
    updateTray();
   });
@@ -819,9 +966,25 @@ export function mountJigsaw({onStart, onComplete, beforeReplay, onExit, onSnap})
  previewButton.addEventListener('click', () => setPreview(!preview));
  zoomOut.addEventListener('click', () => setZoom(zoomLevels.findLast(level => level < zoom - .035) ?? 1));
  zoomIn.addEventListener('click', () => setZoom(zoomLevels.find(level => level > zoom + .035) ?? maxZoom));
+ hintsButton.addEventListener('click', () => {
+  hintsOn = !hintsOn;
+  hintsButton.setAttribute('aria-pressed', String(hintsOn));
+  try {localStorage.setItem('avk.jigsaw.redHint', hintsOn ? '1' : '0');} catch {}
+  showHint(selected, true);
+  status(hintsOn ? 'Pick up a piece to see its red outline on the board.' : 'Red placement hints are off.');
+ });
+ autoButton.addEventListener('click', toggleAutoSolve);
+ find('[data-gallery]').addEventListener('click', () => {
+  if (autoSolving) {
+   stopAutoSolve();
+   status('Auto Solve paused. Place a piece or start Auto Solve again.');
+  }
+  openJigsawGallery(round?.galleryId ? {id:round.galleryId, pieces:round.count, canvas:board} : null);
+ });
  find('[data-exit]').addEventListener('click', () => dialog.close());
  dialog.addEventListener('close', () => {
   sourceVersion++;
+  stopAutoSolve();
   observer.disconnect();
   clearTimeout(introTimer);
   cancelAnimationFrame(animation);

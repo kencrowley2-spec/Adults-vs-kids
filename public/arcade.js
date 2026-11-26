@@ -1,6 +1,6 @@
 import {mountGhostline} from './ghostline.js?v=10';
 import {mountFlex} from './arcade-flex.js?v=1';
-import {mountJigsaw} from './arcade-jigsaw.js?v=5';
+import {mountJigsaw} from './arcade-jigsaw.js?v=6';
 import {mountGuestGate} from './arcade-guest.js?v=1';
 import {mountFeaturedGames} from './arcade-featured.js?v=5';
 import {mountPinball} from './arcade-pinball.js?v=3';
@@ -508,7 +508,7 @@ function openJigsaw(){
  rememberGame('jigsaw');
  let matchId;
  mountJigsaw({
-  beforeReplay:()=>guestGate.allow('jigsaw'),
+  beforeStart:()=>guestGate.allow('jigsaw'),
   onStart:()=>{
    matchId=crypto.randomUUID();
    dispatchArcadeAnalytics(new CustomEvent('avk:game-start',{detail:{game:'jigsaw',id:matchId}}));
@@ -524,7 +524,7 @@ function openJigsaw(){
 async function openGame(id){
   if(clubIntroPending)return;
   const chosen=GAMES.find(g=>g.id===id);if(!chosen||chosen.comingSoon)return;
-  if(id!=='hexgl'&&!guestGate.allow(id))return;
+  if(id!=='hexgl'&&id!=='jigsaw'&&!guestGate.allow(id))return;
   if(clubEntry&&id!=='jigsaw'){clubIntroPending=true;try{await clubReveal(chosen.name)}finally{clubIntroPending=false}}
 
   if(id==='neighborhood'){window.location.assign('/defend-your-neighborhood');return;}
