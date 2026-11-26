@@ -11,7 +11,7 @@ export function accountGameLinks(html:string,value:unknown){
 // A purchase return carries only a catalog selection, never a URL or a price.
 export function purchaseSelection(value:unknown):string {
  if(typeof value!=='string')return '';
- if(['club-month','club-year','bundle','library','weekly'].includes(value))return value;
+ if(['club-month','club-year','bundle','library','weekly','coloring-checkout'].includes(value))return value;
  const ids=value.split(',');
  return ids.length<=4 && ids.every(id=>/^book-[1-4]$/.test(id)) && new Set(ids).size===ids.length ? ids.join(',') : '';
 }
@@ -20,6 +20,7 @@ export function accountDestination(game:unknown,selection:unknown){
  if(!key)return arcadeDestination(game);
  if(key==='weekly')return '/family/weekly-challenge';
  if(key==='library')return '/family/downloads';
+ if(key==='coloring-checkout')return '/downloads?checkout=book-1#book-1';
  if(key.startsWith('club-'))return '/club-checkout?plan='+key.slice(5);
  return '/downloads?cart='+encodeURIComponent(key)+'#pdfCart';
 }

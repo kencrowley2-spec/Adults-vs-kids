@@ -86,3 +86,61 @@ assert.deepEqual(Array.from(checkoutParams.line_items,i=>i.price),['price_fixtur
 assert.match(checkoutParams.success_url,/\/family\/downloads\?session_id=/);
 if(originalBundlePrice===undefined)delete process.env.STRIPE_PDF_BUNDLE_PRICE;else process.env.STRIPE_PDF_BUNDLE_PRICE=originalBundlePrice;
 console.log('PASS: PDF Checkout creation hides only Link while retaining dynamic payment methods, bundle price, account ownership and delivery URL.');
+
+// Exercise the actual store script with a DOM fixture and mocked navigation.
+const {JSDOM}=await import('jsdom');
+const {pdfPage}=moduleAt('lib/pdf-pages.ts',{'../config/pdfs':catalog});
+const {accountDestination}=moduleAt('lib/arcade-links.ts',{'../public/arcade-data.js':{GAMES:[]}});
+const storeScript=readFileSync(new URL('../public/pdfs.js',import.meta.url),'utf8');
+const storeUrl='https://adultsvskids.com/downloads';
+const stripeUrl='https://checkout.stripe.com/c/pay/cs_test_fixture';
+const resumePath=accountDestination(null,'coloring-checkout');
+assert.equal(resumePath,'/downloads?checkout=book-1#book-1');
+
+async function loadStore(url,reply){
+ const {window}=new JSDOM(pdfPage(),{url});
+ const {document,localStorage,history}=window;
+ localStorage.setItem('avk-cart-v2','["book-2"]');
+ const navigations=[],requests=[];
+ const location={href:url,search:new URL(url).search,assign:href=>navigations.push(href)};
+ const fetch=async(path,options)=>{
+  if(path==='/api/pdf/catalog')return Response.json({products:catalog.pdfProducts.map(p=>({...p,available:true}))});
+  assert.equal(path,'/api/pdf/checkout');
+  requests.push(JSON.parse(options.body));
+  return reply();
+ };
+ vm.runInNewContext(storeScript,{document,window,localStorage,location,history,fetch,URL,URLSearchParams});
+ await new Promise(resolve=>setImmediate(resolve));
+ const button=document.getElementById('pdfCheckoutColoring');
+ assert(button);
+ return {window,document,button,localStorage,navigations,requests};
+}
+
+const guest=await loadStore(storeUrl,()=>Response.json({error:'Sign in required.'},{status:401}));
+assert.equal(guest.button.textContent,'Buy PDF · $2.99');
+await guest.button.onclick();
+assert.deepEqual(guest.requests,[{products:['book-1']}]);
+assert.deepEqual(guest.navigations,['/login?purchase=coloring-checkout']);
+guest.window.close();
+
+let attempt=0;
+const signedIn=await loadStore(new URL(resumePath,storeUrl).href,()=>{
+ attempt++;
+ return attempt===1?Response.json({error:'Checkout is temporarily unavailable. Please try again.'},{status:503}):Response.json({url:stripeUrl});
+});
+assert.equal(signedIn.button.textContent,'Continue to checkout · $2.99');
+assert.equal(signedIn.document.activeElement,signedIn.button);
+await signedIn.button.onclick();
+assert.match(signedIn.button.nextElementSibling.textContent,/try again/);
+assert.equal(signedIn.button.disabled,false);
+await signedIn.button.onclick();
+assert.deepEqual(signedIn.requests,[{products:['book-1']},{products:['book-1']}]);
+assert.deepEqual(signedIn.navigations,[stripeUrl]);
+assert.equal(signedIn.localStorage.getItem('avk-cart-v2'),'["book-2"]');
+signedIn.window.dispatchEvent(new signedIn.window.PageTransitionEvent('pageshow',{persisted:true}));
+assert.equal(signedIn.button.disabled,false);
+signedIn.document.querySelector('#book-1 .pdf-secondary-action').click();
+assert.match(signedIn.document.getElementById('pdfCart').textContent,/The Ultimate Coloring Challenge/);
+assert.equal(signedIn.document.querySelector('#book-1 a[href="#pdfCart"]').textContent,'View cart');
+signedIn.window.close();
+console.log('PASS: Coloring PDF direct checkout, guest sign-in and return, existing cart preservation, visible errors, retry, and browser back.');
