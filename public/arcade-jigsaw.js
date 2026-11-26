@@ -176,17 +176,12 @@ function decodeImage(url) {
  const image = new Image();
  image.src = url;
  return image.decode().then(() => {
-  const ratio = clamp(image.naturalWidth / image.naturalHeight, .4, 2.5);
   const scale = Math.min(MAX_IMAGE_SIZE / Math.max(image.naturalWidth, image.naturalHeight), 1);
   const canvas = document.createElement('canvas');
-  canvas.width = Math.max(1, Math.round(Math.max(image.naturalWidth, image.naturalHeight * ratio) * scale));
-  canvas.height = Math.max(1, Math.round(canvas.width / ratio));
-  const fit = Math.min(canvas.width / image.naturalWidth, canvas.height / image.naturalHeight);
-  const width = image.naturalWidth * fit, height = image.naturalHeight * fit;
+  canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+  canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
   const context = canvas.getContext('2d');
-  context.fillStyle = '#151823';
-  context.fillRect(0, 0, canvas.width, canvas.height);
-  context.drawImage(image, (canvas.width - width) / 2, (canvas.height - height) / 2, width, height);
+  context.drawImage(image, 0, 0, canvas.width, canvas.height);
   addPaperGrain(context, canvas.width, canvas.height);
   return canvas;
  });
@@ -311,8 +306,8 @@ export function mountJigsaw({onStart, onComplete, beforeReplay, onExit, onSnap})
   const {columns, rows} = puzzleGrid(Number(pieceCount.value), photo.width / photo.height);
   blueprint = {photo, columns, rows, pieces:newPieces(columns, rows)};
   const scale = 920 / Math.max(photo.width, photo.height);
-  photoPreview.width = Math.round(photo.width * scale);
-  photoPreview.height = Math.round(photo.height * scale);
+  photoPreview.width = Math.max(1, Math.round(photo.width * scale));
+  photoPreview.height = Math.max(1, Math.round(photo.height * scale));
   drawAssembled(photoPreview, blueprint);
  }
 
@@ -342,15 +337,18 @@ export function mountJigsaw({onStart, onComplete, beforeReplay, onExit, onSnap})
   if (!round || play.hidden) return;
   const aspect = round.photo.width / round.photo.height;
   const style = getComputedStyle(bed);
-  const insets = bed.offsetHeight - bed.clientHeight + parseFloat(style.paddingTop) + parseFloat(style.paddingBottom);
+  const frameWidth = parseFloat(style.paddingLeft) + parseFloat(style.paddingRight) +
+   parseFloat(style.borderLeftWidth) + parseFloat(style.borderRightWidth);
+  const frameHeight = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom) +
+   parseFloat(style.borderTopWidth) + parseFloat(style.borderBottomWidth);
   const gap = parseFloat(getComputedStyle(play).rowGap);
   const trayHeight = tray.hidden ? 0 : tray.offsetHeight + gap;
-  const maxHeight = Math.max(88, play.clientHeight - tools.offsetHeight - statusLine.offsetHeight - gap * 2 - trayHeight - insets);
-  // Client width of the board frame stays stable when the inner board scrolls.
-  const width = Math.min(bed.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight), maxHeight * aspect);
+  const maxWidth = Math.max(1, play.clientWidth - frameWidth);
+  const maxHeight = Math.max(88, play.clientHeight - tools.offsetHeight - statusLine.offsetHeight - gap * 2 - trayHeight - frameHeight);
+  const width = Math.min(maxWidth, maxHeight * aspect);
   const height = width / aspect;
-  const visibleHeight = Math.min(maxHeight, height * zoom);
-  bed.style.setProperty('--bed-height', `${visibleHeight + insets}px`);
+  bed.style.setProperty('--bed-width', `${Math.min(maxWidth, width * zoom) + frameWidth}px`);
+  bed.style.setProperty('--bed-height', `${Math.min(maxHeight, height * zoom) + frameHeight}px`);
   wrap.style.setProperty('--base-width', `${width}px`);
   wrap.style.setProperty('--base-height', `${height}px`);
  }

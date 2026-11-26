@@ -49,7 +49,7 @@
 .jigsaw-tools strong{color:var(--gold);font-variant-numeric:tabular-nums}
 .jigsaw-actions [data-zoom-in],.jigsaw-actions [data-zoom-out],.jigsaw-pages button{min-width:44px;font-size:1.2rem}
 .jigsaw-bed{
- position:relative;box-sizing:border-box;height:var(--bed-height,120px);min-width:0;min-height:0;padding:clamp(6px,1.4vw,12px);border:1px solid #c59963;border-radius:12px;
+ position:relative;justify-self:center;box-sizing:border-box;width:var(--bed-width,100%);max-width:100%;height:var(--bed-height,120px);min-width:0;min-height:0;padding:clamp(6px,1.4vw,12px);border:1px solid #c59963;border-radius:12px;
  background:var(--walnut);box-shadow:0 4px 0 #4a2b1a,0 8px 18px #0005,inset 0 1px 2px #ffd7a078
 }
 .jigsaw-scroll{
@@ -111,6 +111,13 @@
  .jigsaw-pieces{grid-template-columns:repeat(4,minmax(0,1fr))}
  .jigsaw-pieces canvas{max-height:clamp(55px,11dvh,92px)}
  .jigsaw-play[data-zoomed] .jigsaw-pieces canvas{max-height:clamp(52px,9.5dvh,84px)}
+}
+@media(min-width:380px) and (max-width:600px){
+ .jigsaw-tray-head{display:grid;grid-template-columns:minmax(0,1fr) auto}
+ .jigsaw-sections{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
+ .jigsaw-sections button{min-width:0;padding:4px 1px;font-size:.75rem;line-height:1.12;white-space:normal}
+ .jigsaw-pages{gap:3px}
+ .jigsaw-pages>span{min-width:5ch;white-space:nowrap}
 }
 @media(max-height:500px) and (min-width:601px){
  .jigsaw[open]{gap:4px}
