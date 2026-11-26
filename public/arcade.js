@@ -1,6 +1,6 @@
 import {mountGhostline} from './ghostline.js?v=10';
 import {mountFlex} from './arcade-flex.js?v=1';
-import {mountJigsaw} from './arcade-jigsaw.js?v=3';
+import {mountJigsaw} from './arcade-jigsaw.js?v=4';
 import {mountGuestGate} from './arcade-guest.js?v=1';
 import {mountFeaturedGames} from './arcade-featured.js?v=5';
 import {mountPinball} from './arcade-pinball.js?v=3';

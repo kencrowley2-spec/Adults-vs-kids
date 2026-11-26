@@ -231,7 +231,7 @@ export function mountJigsaw({onStart, onComplete, beforeReplay, onExit, onSnap})
    <div class="jigsaw-bed">
     <div class="jigsaw-scroll" aria-label="Scrollable puzzle board">
      <div class="jigsaw-board-wrap">
-      <canvas class="jigsaw-board" tabindex="0" aria-label="Puzzle board. Choose a piece, then tap a spot or use the arrow keys and press Enter." aria-describedby="jigsaw-status"></canvas>
+      <canvas class="jigsaw-board" tabindex="0" aria-label="Puzzle board. Pinch to zoom and swipe to pan. Choose a piece, then tap a spot or use the arrow keys and press Enter." aria-describedby="jigsaw-status"></canvas>
       <canvas class="jigsaw-target" width="176" height="176" hidden aria-hidden="true"></canvas>
       <i class="jigsaw-cursor" hidden aria-hidden="true"></i>
       <i class="jigsaw-flash" aria-hidden="true"></i>
@@ -277,9 +277,10 @@ export function mountJigsaw({onStart, onComplete, beforeReplay, onExit, onSnap})
  const motion = matchMedia('(prefers-reduced-motion: reduce)');
  const zoomOut = find('[data-zoom-out]'), zoomIn = find('[data-zoom-in]');
  const zoomLevels = [1, 1.5, 2, 3, 4, 6];
+ const maxZoom = zoomLevels.at(-1), contacts = new Map();
  let source, sample, sourceVersion = 0, blueprint, round, selected, drag, animation = 0, page = 0;
- let section = 'all', preview = false, zoomIndex = 0, row = 0, column = 0, introTimer;
- let hovered;
+ let section = 'all', preview = false, zoom = 1, row = 0, column = 0, introTimer;
+ let hovered, touchOrigin, movedBoard, pinch;
  const status = message => {statusLine.textContent = message;};
 
  async function loadPhoto(file) {
@@ -315,18 +316,27 @@ export function mountJigsaw({onStart, onComplete, beforeReplay, onExit, onSnap})
   drawAssembled(photoPreview, blueprint);
  }
 
- function setZoom(index, centered = true) {
+ function centerOfBoardView() {
+  const frame = scroll.getBoundingClientRect();
+  return {x:frame.left + scroll.clientWidth / 2, y:frame.top + scroll.clientHeight / 2};
+ }
+ function pointOnBoard(anchor) {
+  const rect = board.getBoundingClientRect();
+  return {x:rect.width ? clamp((anchor.x - rect.left) / rect.width, 0, 1) : .5,
+   y:rect.height ? clamp((anchor.y - rect.top) / rect.height, 0, 1) : .5};
+ }
+ function setZoom(value, anchor = pointOnBoard(centerOfBoardView()), destination) {
   showTarget();
-  const old = zoomLevels[zoomIndex];
-  const scale = zoomLevels[index] / old;
-  const x = scroll.scrollLeft + scroll.clientWidth / 2;
-  const y = scroll.scrollTop + scroll.clientHeight / 2;
-  zoomIndex = index;
-  wrap.style.setProperty('--zoom', zoomLevels[index]);
-  scroll.scrollLeft = centered ? x * scale - scroll.clientWidth / 2 : 0;
-  scroll.scrollTop = centered ? y * scale - scroll.clientHeight / 2 : 0;
-  zoomOut.disabled = !index;
-  zoomIn.disabled = index === zoomLevels.length - 1;
+  zoom = clamp(value, 1, maxZoom);
+  wrap.style.setProperty('--zoom', zoom);
+  play.toggleAttribute('data-zoomed', zoom > 1);
+  zoomOut.disabled = zoom <= 1;
+  zoomIn.disabled = zoom >= maxZoom;
+  fitBoard();
+  const after = board.getBoundingClientRect();
+  const focus = destination ?? centerOfBoardView();
+  scroll.scrollLeft += after.left + anchor.x * after.width - focus.x;
+  scroll.scrollTop += after.top + anchor.y * after.height - focus.y;
  }
  function fitBoard() {
   if (!round || play.hidden) return;
@@ -339,7 +349,8 @@ export function mountJigsaw({onStart, onComplete, beforeReplay, onExit, onSnap})
   // Client width of the board frame stays stable when the inner board scrolls.
   const width = Math.min(bed.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight), maxHeight * aspect);
   const height = width / aspect;
-  bed.style.setProperty('--bed-height', `${height + insets}px`);
+  const visibleHeight = Math.min(maxHeight, height * zoom);
+  bed.style.setProperty('--bed-height', `${visibleHeight + insets}px`);
   wrap.style.setProperty('--base-width', `${width}px`);
   wrap.style.setProperty('--base-height', `${height}px`);
  }
@@ -501,7 +512,7 @@ export function mountJigsaw({onStart, onComplete, beforeReplay, onExit, onSnap})
    tray.hidden = true;
    previewButton.disabled = true;
    setPreview(false);
-   setZoom(0, false);
+   setZoom(1);
    board.classList.add('jigsaw-solved');
    status('Puzzle complete! High fives all around.');
    onComplete?.({pieces: round.count});
@@ -523,7 +534,7 @@ export function mountJigsaw({onStart, onComplete, beforeReplay, onExit, onSnap})
   showTarget(drag.piece, positionAt(drag.x, drag.y));
  }
  function grab(event, piece, button) {
-  if (drag || !event.isPrimary || event.button !== 0) return;
+  if (drag || contacts.size || !event.isPrimary || event.button !== 0) return;
   floating.getAnimations().forEach(animation => animation.cancel());
   floating.hidden = true;
   button.setPointerCapture(event.pointerId);
@@ -590,12 +601,61 @@ export function mountJigsaw({onStart, onComplete, beforeReplay, onExit, onSnap})
   if (drag?.lifted) showTarget(drag.piece, positionAt(drag.x, drag.y));
   else showTarget();
  });
- board.addEventListener('click', event => {
-  const position = positionAt(event.clientX, event.clientY);
+ function tapBoard(x, y) {
+  const position = positionAt(x, y);
   if (position) ({column, row} = position);
   place(position);
   updateCursor();
+ }
+ board.addEventListener('click', event => {
+  if (event.pointerType !== 'touch') tapBoard(event.clientX, event.clientY);
  });
+ function pinchGeometry() {
+  if (contacts.size < 2) return;
+  const [first, second] = contacts.values();
+  return {x:(first.x + second.x) / 2, y:(first.y + second.y) / 2,
+   span:Math.hypot(first.x - second.x, first.y - second.y)};
+ }
+ scroll.addEventListener('pointerdown', event => {
+  if (event.pointerType !== 'touch' || drag || dialog.dataset.phase !== 'play' || contacts.size >= 2) return;
+  const point = {x:event.clientX, y:event.clientY};
+  if (!contacts.size) {
+   touchOrigin = point;
+   movedBoard = false;
+  } else {
+   movedBoard = true;
+  }
+  contacts.set(event.pointerId, point);
+  const geometry = pinchGeometry();
+  if (geometry?.span) pinch = {span:geometry.span, zoom, anchor:pointOnBoard(geometry)};
+ });
+ scroll.addEventListener('pointermove', event => {
+  const previous = contacts.get(event.pointerId);
+  if (!previous) return;
+  const point = {x:event.clientX, y:event.clientY};
+  contacts.set(event.pointerId, point);
+  const geometry = pinchGeometry();
+  if (geometry) {
+   if (pinch) setZoom(pinch.zoom * geometry.span / pinch.span, pinch.anchor, geometry);
+   else if (geometry.span) pinch = {span:geometry.span, zoom, anchor:pointOnBoard(geometry)};
+   return;
+  }
+  if (!movedBoard) {
+   if (Math.hypot(point.x - touchOrigin.x, point.y - touchOrigin.y) < 6) return;
+   movedBoard = true;
+  }
+  scroll.scrollLeft += previous.x - point.x;
+  scroll.scrollTop += previous.y - point.y;
+ });
+ function endBoardTouch(event) {
+  if (!contacts.delete(event.pointerId)) return;
+  pinch = undefined;
+  if (event.type === 'pointerup' && !movedBoard &&
+      Math.hypot(event.clientX - touchOrigin.x, event.clientY - touchOrigin.y) < 6) {
+   tapBoard(event.clientX, event.clientY);
+  }
+ }
+ for (const event of ['pointerup','pointercancel','lostpointercapture']) scroll.addEventListener(event, endBoardTouch);
  board.addEventListener('keydown', event => {
   if (!selected) return;
   const shifts = {ArrowUp:[0,-1], ArrowDown:[0,1], ArrowLeft:[-1,0], ArrowRight:[1,0]};
@@ -632,7 +692,7 @@ export function mountJigsaw({onStart, onComplete, beforeReplay, onExit, onSnap})
   skip.hidden = true;
   find('[data-new]').hidden = false;
   previewButton.disabled = false;
-  setZoom(0, false);
+  setZoom(1);
   drawBoard();
   status('Drag a piece into place, or select it and tap its spot.');
   board.focus({preventScroll:true});
@@ -715,7 +775,7 @@ export function mountJigsaw({onStart, onComplete, beforeReplay, onExit, onSnap})
   reference.height = photo.height;
   reference.getContext('2d').drawImage(photo, 0, 0);
   showBoard();
-  setZoom(0, false);
+  setZoom(1);
   zoomOut.disabled = zoomIn.disabled = true;
   updateCursor();
   drawAssembled(board, round);
@@ -759,8 +819,8 @@ export function mountJigsaw({onStart, onComplete, beforeReplay, onExit, onSnap})
  prev.addEventListener('click', () => {page--; updateTray();});
  next.addEventListener('click', () => {page++; updateTray();});
  previewButton.addEventListener('click', () => setPreview(!preview));
- zoomOut.addEventListener('click', () => setZoom(zoomIndex - 1));
- zoomIn.addEventListener('click', () => setZoom(zoomIndex + 1));
+ zoomOut.addEventListener('click', () => setZoom(zoomLevels.findLast(level => level < zoom - .035) ?? 1));
+ zoomIn.addEventListener('click', () => setZoom(zoomLevels.find(level => level > zoom + .035) ?? maxZoom));
  find('[data-exit]').addEventListener('click', () => dialog.close());
  dialog.addEventListener('close', () => {
   sourceVersion++;

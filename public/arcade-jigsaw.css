@@ -13,7 +13,7 @@
 .jigsaw h2,.jigsaw h3,.jigsaw p{margin:0}
 .jigsaw button,.jigsaw select,.jigsaw-button{
  min-height:44px;padding:6px 11px;border:1px solid var(--line);border-radius:9px;
- background:#2d392d;color:var(--paper);font:700 .875rem/1.2 system-ui,sans-serif;
+ background:#2d392d;color:var(--paper);touch-action:manipulation;font:700 .875rem/1.2 system-ui,sans-serif;
 }
 .jigsaw button:disabled{opacity:.42;cursor:default}
 .jigsaw button:not(:disabled):hover,.jigsaw-button:hover{border-color:var(--gold)}
@@ -53,12 +53,12 @@
  background:var(--walnut);box-shadow:0 4px 0 #4a2b1a,0 8px 18px #0005,inset 0 1px 2px #ffd7a078
 }
 .jigsaw-scroll{
- width:100%;height:100%;overflow:auto;display:flex;overscroll-behavior:contain;border-radius:6px;
+ width:100%;height:100%;overflow:auto;display:flex;overscroll-behavior:contain;touch-action:none;border-radius:6px;
  background:repeating-linear-gradient(28deg,#ffffff07 0 1px,transparent 1px 4px),radial-gradient(at 48% 24%,#283c31,#1a2921);
  box-shadow:inset 0 5px 13px #0a120c9f,0 1px 1px #ecc69680
 }
 .jigsaw-board-wrap{position:relative;flex:none;margin:0 auto;width:calc(var(--base-width,1px)*var(--zoom,1));height:calc(var(--base-height,1px)*var(--zoom,1));overflow:hidden}
-.jigsaw-board{display:block;width:100%;height:100%;background:repeating-linear-gradient(117deg,#ffffff09 0 1px,transparent 1px 5px),radial-gradient(at 45% 20%,#455e4d,#2d4537);box-shadow:inset 0 0 0 1px #dce3c95e;touch-action:pan-x pan-y;cursor:crosshair}
+.jigsaw-board{display:block;width:100%;height:100%;background:repeating-linear-gradient(117deg,#ffffff09 0 1px,transparent 1px 5px),radial-gradient(at 45% 20%,#455e4d,#2d4537);box-shadow:inset 0 0 0 1px #dce3c95e;cursor:crosshair}
 .jigsaw-board:focus-visible{outline-offset:-3px}
 .jigsaw-reference{position:absolute;right:12px;top:12px;max-width:min(35%,210px);max-height:42%;width:auto;height:auto;border:2px solid var(--gold);border-radius:8px;box-shadow:0 6px 18px #000a;pointer-events:none}
 .jigsaw-cursor,.jigsaw-flash{
@@ -110,6 +110,7 @@
  .jigsaw-sections button{padding-inline:7px}
  .jigsaw-pieces{grid-template-columns:repeat(4,minmax(0,1fr))}
  .jigsaw-pieces canvas{max-height:clamp(55px,11dvh,92px)}
+ .jigsaw-play[data-zoomed] .jigsaw-pieces canvas{max-height:clamp(52px,9.5dvh,84px)}
 }
 @media(max-height:500px) and (min-width:601px){
  .jigsaw[open]{gap:4px}
