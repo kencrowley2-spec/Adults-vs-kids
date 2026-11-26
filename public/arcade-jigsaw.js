@@ -244,6 +244,7 @@ export function mountJigsaw({onStart, onComplete, beforeStart, onExit, onSnap}) 
       <canvas class="jigsaw-board" tabindex="0" aria-label="Puzzle board. Pinch to zoom and swipe to pan. Choose a piece, then tap a spot or use the arrow keys and press Enter." aria-describedby="jigsaw-status"></canvas>
       <canvas class="jigsaw-hint" width="176" height="176" hidden aria-hidden="true"></canvas>
       <canvas class="jigsaw-target" width="176" height="176" hidden aria-hidden="true"></canvas>
+      <i class="jigsaw-snap-ring" hidden aria-hidden="true"></i>
       <i class="jigsaw-cursor" hidden aria-hidden="true"></i>
       <i class="jigsaw-flash" aria-hidden="true"></i>
      </div>
@@ -276,7 +277,7 @@ export function mountJigsaw({onStart, onComplete, beforeStart, onExit, onSnap}) 
  const play = find('.jigsaw-play'), board = find('.jigsaw-board'), scroll = find('.jigsaw-scroll');
  const bed = find('.jigsaw-bed'), tools = find('.jigsaw-tools'), target = find('.jigsaw-target');
  const statusLine = find('#jigsaw-status');
- const hint = find('.jigsaw-hint'), hintsButton = find('[data-hints]'), autoButton = find('[data-auto]');
+ const snapRing = find('.jigsaw-snap-ring'), hint = find('.jigsaw-hint'), hintsButton = find('[data-hints]'), autoButton = find('[data-auto]');
  const wrap = find('.jigsaw-board-wrap'), tray = find('.jigsaw-tray'), pieceList = find('.jigsaw-pieces');
  const reference = find('.jigsaw-reference'), cursor = find('.jigsaw-cursor'), floating = find('.jigsaw-drag');
  const flash = find('.jigsaw-flash');
@@ -468,19 +469,39 @@ export function mountJigsaw({onStart, onComplete, beforeStart, onExit, onSnap}) 
   status('Piece selected. Tap its spot or use the arrow keys and Enter.');
   board.focus({preventScroll: true});
  }
- function positionAt(x, y) {
+ function positionAt(x, y, piece, pointerType, previewCenter) {
   const frame = scroll.getBoundingClientRect();
-  if (x < frame.left || x >= frame.left + scroll.clientWidth ||
-      y < frame.top || y >= frame.top + scroll.clientHeight) return null;
+  const view = {left:frame.left, top:frame.top, right:frame.left + scroll.clientWidth, bottom:frame.top + scroll.clientHeight};
   const rect = board.getBoundingClientRect();
-  const col = (x - rect.left) / rect.width * round.columns;
-  const line = (y - rect.top) / rect.height * round.rows;
-  return col >= 0 && col < round.columns && line >= 0 && line < round.rows ?
-   {column: Math.floor(col), row: Math.floor(line)} : null;
+  const width = rect.width / round.columns, height = rect.height / round.rows;
+  const withinView = (px, py, inset = 0) => px >= view.left - inset && px < view.right + inset &&
+   py >= view.top - inset && py < view.bottom + inset;
+  const column = Math.floor((x - rect.left) / width), row = Math.floor((y - rect.top) / height);
+  const hover = withinView(x, y) && column >= 0 && column < round.columns && row >= 0 && row < round.rows ? {column, row} : null;
+  if (!piece || piece.placed) return hover;
+  if (hover && column === piece.column && row === piece.row) return hover;
+
+  const left = Math.max(view.left, rect.left + piece.column * width);
+  const top = Math.max(view.top, rect.top + piece.row * height);
+  const right = Math.min(view.right, rect.left + (piece.column + 1) * width);
+  const bottom = Math.min(view.bottom, rect.top + (piece.row + 1) * height);
+  if (right <= left || bottom <= top) return hover;
+  const distanceFromSlot = (px, py) =>
+   Math.hypot(Math.max(left - px, px - right, 0), Math.max(top - py, py - bottom, 0));
+
+  // A forgiving touch radius makes tiny cells playable at the fitted zoom.
+  // Only the held piece's own slot can claim a nearby drop.
+  const touch = pointerType === 'touch' || pointerType === 'pen';
+  const tolerance = touch ? clamp(Math.min(width, height) * .45 + 12, 16, 24) : 5;
+  const nearPointer = withinView(x, y, touch ? 9 : 3) && distanceFromSlot(x, y) <= tolerance;
+  // Touch players can aim with either their finger or the lifted artwork.
+  const nearPreview = touch && previewCenter && withinView(...previewCenter) &&
+   distanceFromSlot(...previewCenter) <= Math.min(10, tolerance * .5);
+  return nearPointer || nearPreview ? {column:piece.column, row:piece.row} : hover;
  }
  function showTarget(piece, position) {
   if (!piece || !position) {
-   if (hovered) target.hidden = true;
+   if (hovered) target.hidden = snapRing.hidden = true;
    hovered = undefined;
    return;
   }
@@ -492,6 +513,11 @@ export function mountJigsaw({onStart, onComplete, beforeStart, onExit, onSnap}) 
   target.style.setProperty('--row', position.row);
   target.dataset.fits = String(fits);
   target.hidden = false;
+  snapRing.hidden = !fits;
+  if (fits) {
+   snapRing.style.setProperty('--column', position.column);
+   snapRing.style.setProperty('--row', position.row);
+  }
   const context = target.getContext('2d');
   context.clearRect(0, 0, target.width, target.height);
   context.save();
@@ -667,7 +693,9 @@ export function mountJigsaw({onStart, onComplete, beforeStart, onExit, onSnap}) 
   if (!drag) return;
   const [x,y] = dragCenter(drag.x, drag.y, drag.size, drag.lift);
   floating.style.transform = `translate3d(${x - drag.size / 2}px, ${y - drag.size / 2}px, 0)`;
-  showTarget(drag.piece, positionAt(drag.x, drag.y));
+  const position = positionAt(drag.x, drag.y, drag.piece, drag.pointerType, [x,y]);
+  floating.toggleAttribute('data-snap-ready', position?.column === drag.piece.column && position?.row === drag.piece.row);
+  showTarget(drag.piece, position);
  }
  function grab(event, piece, button) {
   if (autoSolving || drag || contacts.size || !event.isPrimary || event.button !== 0) return;
@@ -701,21 +729,28 @@ export function mountJigsaw({onStart, onComplete, beforeStart, onExit, onSnap}) 
  }
  function drop(event, cancelled = false) {
   if (drag?.id !== event.pointerId) return;
-  const {piece, lifted, button, size, lift} = drag;
+  const {piece, lifted, button, size, lift, pointerType} = drag;
+  const from = lifted ? dragCenter(event.clientX, event.clientY, size, lift) : null;
+  // Resolve the snap before selecting can reveal a hint or change the viewport.
+  const position = !cancelled && lifted ? positionAt(event.clientX, event.clientY, piece, pointerType, from) : null;
   drag = null;
   delete button.dataset.lifted;
   floating.hidden = true;
+  floating.removeAttribute('data-snap-ready');
   cancelAnimationFrame(animation);
   animation = 0;
   showTarget();
   if (cancelled) {showHint(selected);return;}
-  select(piece);
-  if (!lifted) return;
-  const position = positionAt(event.clientX, event.clientY);
-  place(position);
+  if (position?.column === piece.column && position?.row === piece.row) {
+   selected = piece;
+   place(position);
+  } else {
+   select(piece);
+   if (lifted) status('Move the piece until its slot glows green, then release.');
+   return;
+  }
   if (!piece.placed || round.count === round.pieces.length || motion.matches) return;
   const rect = board.getBoundingClientRect();
-  const from = dragCenter(event.clientX, event.clientY, size, lift);
   const to = [rect.left + (piece.column + .5) * rect.width / round.columns,
    rect.top + (piece.row + .5) * rect.height / round.rows];
   const scale = Math.max(rect.width / round.columns, rect.height / round.rows) * 288 / (162 * size);
@@ -732,22 +767,23 @@ export function mountJigsaw({onStart, onComplete, beforeStart, onExit, onSnap}) 
  pieceList.addEventListener('pointercancel', event => drop(event, true));
  pieceList.addEventListener('lostpointercapture', event => drop(event, true));
  board.addEventListener('pointermove', event => {
-  if (!drag && event.pointerType === 'mouse') showTarget(selected, positionAt(event.clientX, event.clientY));
+  if (!drag && event.pointerType === 'mouse') showTarget(selected, positionAt(event.clientX, event.clientY, selected, 'mouse'));
  });
  board.addEventListener('pointerleave', () => {if (!drag) showTarget();});
  scroll.addEventListener('scroll', () => {
-  if (drag?.lifted) showTarget(drag.piece, positionAt(drag.x, drag.y));
-  else showTarget();
+  if (drag?.lifted) {
+   if (!animation) animation = requestAnimationFrame(moveFloating);
+  } else showTarget();
  });
- function tapBoard(x, y) {
+ function tapBoard(x, y, pointerType) {
   if (autoSolving) return;
-  const position = positionAt(x, y);
+  const position = positionAt(x, y, selected, pointerType);
   if (position) ({column, row} = position);
   place(position);
   updateCursor();
  }
  board.addEventListener('click', event => {
-  if (event.pointerType !== 'touch') tapBoard(event.clientX, event.clientY);
+  if (event.pointerType !== 'touch') tapBoard(event.clientX, event.clientY, event.pointerType);
  });
  function pinchGeometry() {
   if (contacts.size < 2) return;
@@ -791,7 +827,7 @@ export function mountJigsaw({onStart, onComplete, beforeStart, onExit, onSnap}) 
   pinch = undefined;
   if (event.type === 'pointerup' && !movedBoard &&
       Math.hypot(event.clientX - touchOrigin.x, event.clientY - touchOrigin.y) < 6) {
-   tapBoard(event.clientX, event.clientY);
+   tapBoard(event.clientX, event.clientY, event.pointerType);
   }
  }
  for (const event of ['pointerup','pointercancel','lostpointercapture']) scroll.addEventListener(event, endBoardTouch);
@@ -834,7 +870,7 @@ export function mountJigsaw({onStart, onComplete, beforeStart, onExit, onSnap}) 
   hintsButton.disabled = autoButton.disabled = false;
   setZoom(1);
   drawBoard();
-  status('Drag a piece into place, or select it and tap its spot.');
+  status('Drag a piece near its spot and release when it glows green. You can also tap to place.');
   board.focus({preventScroll:true});
  }
 

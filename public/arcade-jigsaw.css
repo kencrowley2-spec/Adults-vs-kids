@@ -76,6 +76,12 @@
  filter:drop-shadow(0 2px 3px #080e0cba)
 }
 .jigsaw-hint{z-index:2;filter:drop-shadow(0 0 2px #fff) drop-shadow(0 0 4px #f6375b)}
+.jigsaw-snap-ring{
+ position:absolute;pointer-events:none;z-index:3;
+ left:calc((var(--column) + .5)/var(--columns)*100%);top:calc((var(--row) + .5)/var(--rows)*100%);
+ width:18px;height:18px;box-sizing:border-box;transform:translate(-50%,-50%);
+ border:2px solid #148441;border-radius:50%;box-shadow:0 0 0 2px #f4fff5,0 0 10px #39bc5c
+}
 .jigsaw-target[data-fits="true"]{filter:drop-shadow(0 0 5px #a9fcb3) drop-shadow(0 0 10px #c3df64a8)}
 .jigsaw-tray{
  padding:6px 8px;border:1px solid #a5c8d9;border-radius:10px;background:#f8fcff;
@@ -100,6 +106,7 @@
 .jigsaw-pieces button[aria-pressed="true"] canvas{scale:1.15}
 .jigsaw-pieces button[data-lifted] canvas{visibility:hidden}
 .jigsaw-drag{position:fixed;inset:0 auto auto 0;pointer-events:none;z-index:3;will-change:transform;filter:drop-shadow(0 9px 8px #100e09b5)}
+.jigsaw-drag[data-snap-ready]{filter:drop-shadow(0 0 4px #efffe7) drop-shadow(0 0 7px #2ab84f)}
 .jigsaw[data-auto-solving] .jigsaw-pieces canvas{animation:none}
 .jigsaw[data-auto-solving] .jigsaw-drag{filter:drop-shadow(0 3px 4px #15364f75)}
 .jigsaw-solved{cursor:default;animation:jigsaw-finish .55s ease-out}
