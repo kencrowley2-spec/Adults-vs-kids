@@ -130,7 +130,7 @@ export function mountJigsaw({onStart, onComplete, beforeReplay, onExit, onSnap})
     <label class="jigsaw-button jigsaw-upload">Choose a photo<input type="file" accept="image/*"></label>
     <button type="button" data-sample hidden>Use sample photo</button>
     <small>Your photo stays in this browser tab.</small>
-    <label class="jigsaw-count">Pieces <select>${COUNTS.map(count => `<option value="${count}">${count.toLocaleString()}</option>`).join('')}</select></label>
+    <div class="jigsaw-count"><label for="jigsaw-count">Pieces</label><select id="jigsaw-count">${COUNTS.map(count => `<option value="${count}">${count.toLocaleString()}</option>`).join('')}</select></div>
     <button class="jigsaw-primary" type="submit" disabled>Start puzzle</button>
     <button type="button" data-resume hidden>Resume puzzle</button>
    </div>
