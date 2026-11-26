@@ -38,10 +38,10 @@ export async function GET(request:Request){
  const client=paymentAdmin();
  const result=await client.from('pdf_orders').select('session_id,user_id,product_ids,amount_total,currency,status,paid_at',{count:'exact'}).order('paid_at',{ascending:false}).order('session_id').range(page*25,page*25+24);
  const orders=checked(result)||[];
- const ids=[...new Set(orders.map(r=>r.user_id))];
+ const ids=[...new Set(orders.map(r=>r.user_id).filter(Boolean))];
  const families=ids.length?checked(await client.from('families').select('user_id,name,email').in('user_id',ids)):[];
  const profiles=new Map((families||[]).map(f=>[f.user_id,f]));
- const rows=orders.map(order=>({...order,name:profiles.get(order.user_id)?.name||'Family profile unavailable',email:profiles.get(order.user_id)?.email||'',items:order.product_ids.map((id:string)=>pdfProducts.find(p=>p.id===id)?.title||id).join('; ')}));
+ const rows=orders.map(order=>({...order,name:order.user_id?(profiles.get(order.user_id)?.name||'Family profile unavailable'):'Guest checkout',email:profiles.get(order.user_id)?.email||'',items:order.product_ids.map((id:string)=>pdfProducts.find(p=>p.id===id)?.title||id).join('; ')}));
  return memberReply({rows,count:result.count||0,page,pageSize:25},200,auth.headers);
  }
  if(section==='overview'){

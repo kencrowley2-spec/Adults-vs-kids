@@ -38,7 +38,7 @@ export async function reconcileOrder(order:Row,stripe=stripeClient()):Promise<Re
  const session=await stripe.checkout.sessions.retrieve(String(order.session_id),{expand:['payment_intent.latest_charge']});
  if(session.status!=='complete'||!session.livemode||session.payment_status!=='paid'||session.currency!=='usd'||session.amount_total!==order.amount_total||session.client_reference_id!==order.user_id)return null;
  let kind:Receipt['kind'];
- if(session.metadata?.avk_type==='pdf-v1'&&session.mode==='payment')kind='pdf';
+ if((session.metadata?.avk_type==='pdf-v1'||(session.metadata?.avk_type==='pdf-guest-v1'&&order.user_id===null))&&session.mode==='payment')kind='pdf';
  else if(session.metadata?.avk_type==='club-subscription-v1'&&session.mode==='subscription'&&['month','year'].includes(session.metadata.avk_plan||''))kind=session.metadata.avk_plan==='month'?'club-month':'club-year';
  else return null;
  const ids=Array.isArray(order.product_ids)?order.product_ids as string[]:[];

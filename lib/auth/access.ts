@@ -1,1 +1,1 @@
-export function isAdministrator(user:{email?:string;email_confirmed_at?:string}|null,designatedEmail?:string){return !!user?.email_confirmed_at&&!!user.email&&!!designatedEmail&&user.email.toLowerCase()===designatedEmail.trim().toLowerCase()}
+export function isAdministrator(user:{email?:string;email_confirmed_at?:string;app_metadata?:Record<string,unknown>}|null,designatedEmail?:string){return !!user?.email_confirmed_at&&user.app_metadata?.avk_family_self_signup!==true&&!!user.email&&!!designatedEmail&&user.email.toLowerCase()===designatedEmail.trim().toLowerCase()}

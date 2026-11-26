@@ -9,9 +9,10 @@ try{
  const page=await fetch(root+'/downloads');assert.equal(page.status,200);assert.match(await page.text(),/Secure checkout with Stripe/);
  const catalog=await(await fetch(root+'/api/pdf/catalog')).json();assert.equal(catalog.products.length,5);assert(catalog.products.every(p=>!p.available));assert.equal(catalog.products[0].cents,299);assert.equal(catalog.products[4].cents,995);
  for(const path of ['/api/pdf/orders','/api/pdf/download?order=cs_test_fake123&book=book-1'])assert.equal((await fetch(root+path)).status,401);
- assert.equal((await fetch(root+'/api/pdf/checkout',{method:'POST',headers:{origin:root,'content-type':'application/json'},body:JSON.stringify({products:['book-1'],cents:1})})).status,401);
+ assert.equal((await fetch(root+'/api/pdf/checkout',{method:'POST',headers:{origin:root,'content-type':'application/json'},body:JSON.stringify({products:['book-1'],cents:1})})).status,503);
  assert.equal((await fetch(root+'/api/stripe/webhook',{method:'POST',body:'{}'})).status,503);
+ assert.equal((await fetch(root+'/downloads/receipt?key=invalid')).status,404);
  const redirect=await fetch(root+'/family/downloads',{redirect:'manual'});assert.equal(redirect.status,303);assert.equal(redirect.headers.get('location'),'/login?purchase=library');
  assert.equal((await fetch(root+'/api/pdf/checkout',{method:'POST',headers:{origin:'https://attacker.example','content-type':'application/json'},body:'{}'})).status,403);
- console.log('PASS: production HTTP PDF store, real catalog shape/prices, closed checkout, sign-in requirements, origin checks, unsigned webhook, and dashboard library redirect.');
+ console.log('PASS: production HTTP PDF store, real catalog shape/prices, closed checkout, private downloads, origin checks, unsigned webhook, and dashboard library redirect.');
 }finally{server.kill('SIGTERM');}

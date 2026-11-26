@@ -7,4 +7,5 @@ assert.equal(isAdministrator({email,email_confirmed_at:'2026-10-30T00:00:00Z'},u
 assert.equal(isAdministrator({email:'family@example.test',email_confirmed_at:'2026-10-30T00:00:00Z'},email),false);
 assert.equal(isAdministrator({email:'OWNER@example.test',email_confirmed_at:'2026-10-30T00:00:00Z'},email),true);
 assert.equal(isAdministrator({email:'family@example.test',email_confirmed_at:'2026-10-30T00:00:00Z',user_metadata:{role:'admin'}},email),false);
+assert.equal(isAdministrator({email,email_confirmed_at:'2026-10-30T00:00:00Z',app_metadata:{avk_family_self_signup:true}},email),false);
 console.log('PASS: anonymous, unverified, unconfigured, normal family, designated administrator, and spoofed metadata role checks.');

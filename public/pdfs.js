@@ -1,16 +1,23 @@
 (()=>{
  'use strict';
  const el=id=>document.getElementById(id),status=el('pdfStatus'),member=document.body.dataset.pdfMember==='true';
+ function removePurchased(products){
+  try {
+   const cart=JSON.parse(localStorage.getItem('avk-cart-v2')||'[]');
+   if(Array.isArray(cart))localStorage.setItem('avk-cart-v2',JSON.stringify(cart.filter(id=>!products.includes(id))));
+  } catch {}
+ }
+ const receipt=document.querySelector('script[data-pdf-guest-receipt]');
+ if(receipt){
+  removePurchased(receipt.dataset.pdfGuestReceipt.split(','));
+  return;
+ }
  const money=cents=>'$'+(cents/100).toFixed(2);
  const node=(tag,text,cls)=>{const n=document.createElement(tag);if(text)n.textContent=text;if(cls)n.className=cls;return n;};
- async function api(path,body){const r=await fetch('/api/pdf/'+path,body?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}:{});const d=await r.json();if(!r.ok){if(r.status===401&&path!=='checkout'){const a=node('a','Sign in →');a.href='/login?purchase='+encodeURIComponent(member?'library':body?.products?.join(',')||'');status.replaceChildren(document.createTextNode(d.error+' '),a);}throw Object.assign(new Error(d.error||'Please try again.'),{status:r.status});}return d;}
+ async function api(path,body){const r=await fetch('/api/pdf/'+path,body?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}:{});const d=await r.json();if(!r.ok){if(r.status===401&&path!=='checkout'){const a=node('a','Sign in →');a.href='/login?purchase='+encodeURIComponent(member?'library':body?.products?.join(',')||'');status.replaceChildren(document.createTextNode(d.error+' '),a);}throw new Error(d.error||'Please try again.');}return d;}
  async function library(){
   const session=new URLSearchParams(location.search).get('session_id');let confirmationError='';
-  if(session){status.textContent='Confirming your payment…';try{const {products}=await api('confirm',{session_id:session});
-   try {
-    const cart=JSON.parse(localStorage.getItem('avk-cart-v2')||'[]');
-    if(Array.isArray(cart))localStorage.setItem('avk-cart-v2',JSON.stringify(cart.filter(id=>!products.includes(id))));
-   } catch {}history.replaceState(null,'','/family/downloads');}catch(e){confirmationError=e.message;}}
+  if(session){status.textContent='Confirming your payment…';try{const {products}=await api('confirm',{session_id:session});removePurchased(products);history.replaceState(null,'','/family/downloads');}catch(e){confirmationError=e.message;}}
   const {orders}=await api('orders');el('pdfOrders').replaceChildren();
   for(const o of orders){const card=node('article',null,'pdf-order');card.append(node('h2',new Date(o.paid_at).toLocaleDateString()+' · '+money(o.amount_total)));if(o.product_ids?.some(id=>id.startsWith('club-'))){card.append(node('p','All-Access Club · '+(o.product_ids.includes('club-year')?'Annual plan':'Monthly plan')+'. For new recurring memberships, use Manage membership to view billing dates, update your card or cancel renewal. Earlier one-time prelaunch purchases keep their original terms. Your included book PDFs are ready below.'));}if(o.status==='paid' && o.product_ids?.some(id=>id.startsWith('club-'))){const weekly=node('a','Play this week’s Club challenge','pdf-download');weekly.href='/family/weekly-challenge';card.append(weekly);}if(o.status!=='paid'){card.append(node('p','Download access removed because this purchase was refunded or disputed.'));}else for(const book of o.books){const a=node('a','Download '+book.title+' ↓','pdf-download');a.href=book.url;card.append(a);}el('pdfOrders').append(card);}
   status.textContent=confirmationError||(orders.length?'Your PDFs are ready. Download and print whenever your family wants to play.':'No PDF purchases yet. Explore the collection to find your first showdown.');
@@ -19,6 +26,7 @@
   const {products}=await api('catalog');
   const cartRows=el('pdfCart'), cartButton=el('pdfCheckout'), cartStatus=el('pdfCheckoutStatus');
   let cart=[], pending=false;
+  const attempts=new Map();
   try {
    cart=JSON.parse(localStorage.getItem('avk-cart-v2')||'[]');
    if(!Array.isArray(cart))cart=[];
@@ -46,7 +54,7 @@
    try{localStorage.setItem('avk-cart-v2',JSON.stringify(cart));}catch{}
   }
 
-  async function checkout(ids,button,message,purchase=ids.join(',')){
+  async function checkout(ids,button,message){
    if(pending||!ids.length)return;
    pending=true;
    button.disabled=cartButton.disabled=true;
@@ -69,16 +77,14 @@
     location.assign(destination);
    };
    try {
-    const {url}=await api('checkout',{products:ids});
+    const selection=[...ids].sort().join(',');
+    if(!attempts.has(selection))attempts.set(selection,crypto.randomUUID());
+    const {url}=await api('checkout',{products:ids,attempt:attempts.get(selection)});
     const destination=new URL(url);
     if(destination.protocol!=='https:'||destination.hostname!=='checkout.stripe.com')throw new Error('Checkout unavailable.');
     leaveFor(destination.href);
    } catch(e) {
-    if(e.status===401){
-     leaveFor('/login?purchase='+encodeURIComponent(purchase));
-     return;
-    }
-    message.textContent=e.status?e.message:'Checkout is temporarily unavailable. Please try again.';
+    message.textContent=e.message||'Checkout is temporarily unavailable. Please try again.';
     reset();
    }
   }
@@ -110,13 +116,13 @@
     feedback.replaceChildren(document.createTextNode('In your cart. '),viewCart);
    };
    card.append(img,node('p',p.id==='bundle'?'BETTER DEAL · ALL FOUR BOOKS':'PRINT & PLAY PDF','eyebrow'),node('h2',p.title),node('strong',money(p.cents)),node('p','Unlimited home prints for your own household.'));
-   if(p.id==='book-1'&&p.available){
-    const buyPdf=node('button','Buy PDF · '+money(p.cents),'primary');
-    buyPdf.id='pdfCheckoutColoring';
+   if(p.available){
+    const buyPdf=node('button',(p.id==='bundle'?'Buy bundle':'Buy PDF')+' · '+money(p.cents),'primary');
+    buyPdf.id=p.id==='book-1'?'pdfCheckoutColoring':'pdfCheckout-'+p.id;
     const checkoutStatus=node('p',null,'pdf-card-status');
     checkoutStatus.setAttribute('role','status');
     checkoutStatus.hidden=true;
-    buyPdf.onclick=()=>checkout([p.id],buyPdf,checkoutStatus,'coloring-checkout');
+    buyPdf.onclick=()=>checkout([p.id],buyPdf,checkoutStatus);
     if(url.searchParams.get('checkout')===p.id){
      buyPdf.textContent='Continue to checkout · '+money(p.cents);
      resumeColoring=buyPdf;

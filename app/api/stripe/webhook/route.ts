@@ -15,7 +15,7 @@ export async function POST(request:Request){
     const {recordHolidayPayment}=await import('../../../../lib/holiday-fulfillment');
     await recordHolidayPayment(session.id);
    }
-   if(['pdf-v1','club-prelaunch-v1','club-subscription-v1'].includes(session.metadata?.avk_type||'')&&session.payment_status==='paid'){await fulfillPdf(session.id);await purchaseAnalytics(session.id);}
+   if(['pdf-v1','pdf-guest-v1','club-prelaunch-v1','club-subscription-v1'].includes(session.metadata?.avk_type||'')&&session.payment_status==='paid'){await fulfillPdf(session.id);await purchaseAnalytics(session.id);}
   }
   if(event.type==='checkout.session.expired'){
    const expired=event.data.object;

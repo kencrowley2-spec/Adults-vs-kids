@@ -13,6 +13,9 @@ const {paidOrder}=moduleAt('lib/payments/policy.ts',{'../../config/pdfs':catalog
 const owner='11111111-1111-4111-8111-111111111111';
 const paid={id:'cs_test_example123',mode:'payment',status:'complete',payment_status:'paid',currency:'usd',amount_total:299,client_reference_id:owner,livemode:false,metadata:{avk_type:'pdf-v1',avk_products:'["book-1"]'}};
 assert.equal(paidOrder(paid,false).user_id,owner);
+const guestMetadata={...paid.metadata,avk_type:'pdf-guest-v1'};
+assert.equal(paidOrder({...paid,client_reference_id:null,metadata:guestMetadata},false).user_id,null);
+assert.throws(()=>paidOrder({...paid,metadata:guestMetadata},false));
 assert.equal(paidOrder({...paid,metadata:{...paid.metadata,avk_products:'["bundle"]'},amount_total:995},false).book_ids.length,4);
 for(const change of [
  {payment_status:'unpaid'},{payment_status:'no_payment_required'},{status:'open'},{status:'expired'},{mode:'subscription'},
@@ -62,17 +65,19 @@ console.log('PASS: PDF price/identity/mode validation, four-book bundle, unpaid/
 // existing PDF prices, account metadata and delivery URLs remain in place.
 const originalBundlePrice=process.env.STRIPE_PDF_BUNDLE_PRICE;
 process.env.STRIPE_PDF_BUNDLE_PRICE='price_fixture_bundle';
-let checkoutParams;
+let checkoutParams, member=true, guestAllowed=true, savedGuest;
+const guestKey='a'.repeat(64), fixtureAttempt='11111111-1111-4111-8111-111111111111';
 const checkoutRoute=moduleAt('app/api/pdf/checkout/route.ts',{
  '../../../../lib/analytics-server':{checkoutAnalytics:async()=>{}},
- '../../../../lib/auth/session':{verifiedMember:async()=>({user:{id:owner,email:'family@example.test'},headers:new Headers()}),memberReply:(data,status)=>Response.json(data,{status})},
+ '../../../../lib/auth/session':{verifiedMember:async()=>({user:member?{id:owner,email:'family@example.test'}:null,headers:new Headers()}),memberReply:(data,status)=>Response.json(data,{status})},
  '../../../../lib/request-origin':{requestOrigin:()=> 'https://adultsvskids.com'},
  '../../../../config/pdfs':catalog,
+ '../../../../lib/payments/guest-pdf':{allowGuestPdfCheckout:async()=>guestAllowed,guestReceiptKey:()=>guestKey,saveGuestPdfCheckout:async(...args)=>{savedGuest=args;}},
  '../../../../lib/payments/server':{
   availablePdfs:async()=>catalog.pdfProducts.map(p=>({...p,available:true})),
   paymentLive:()=>false,paymentOrigin:()=> 'https://adultsvskids.com',
   paymentAdmin:()=>({rpc:()=>({single:async()=>({data:{intent_id:'fixture',expires_at:'2026-11-25T20:00:00Z'}})}),from:()=>({select:()=>({eq:()=>({gte:async()=>({count:0,error:null})})}),insert:async()=>({error:null})})}),
-  stripeClient:()=>({prices:{retrieve:async id=>({id,active:true,type:'one_time',currency:'usd',unit_amount:995,livemode:false})},checkout:{sessions:{create:async params=>{checkoutParams=params;return {url:'https://checkout.stripe.com/c/pay/cs_test_fixture'};}}}}),
+  stripeClient:()=>({prices:{retrieve:async id=>({id,active:true,type:'one_time',currency:'usd',unit_amount:995,livemode:false})},checkout:{sessions:{create:async params=>{checkoutParams=params;return {id:'cs_test_fixture',url:'https://checkout.stripe.com/c/pay/cs_test_fixture'};}}}}),
  },
 });
 const created=await checkoutRoute.POST(new Request('https://adultsvskids.com/api/pdf/checkout',{method:'POST',headers:{origin:'https://adultsvskids.com','content-type':'application/json'},body:JSON.stringify({products:['bundle']})}));
@@ -84,6 +89,18 @@ assert.equal(checkoutParams.excluded_payment_method_types,undefined);
 assert.equal(checkoutParams.client_reference_id,owner);
 assert.deepEqual(Array.from(checkoutParams.line_items,i=>i.price),['price_fixture_bundle']);
 assert.match(checkoutParams.success_url,/\/family\/downloads\?session_id=/);
+member=false;
+const guestRequest=attempt=>new Request('https://adultsvskids.com/api/pdf/checkout',{method:'POST',headers:{origin:'https://adultsvskids.com','content-type':'application/json'},body:JSON.stringify({products:['bundle'],attempt})});
+assert.equal((await checkoutRoute.POST(guestRequest())).status,400);
+guestAllowed=false;
+assert.equal((await checkoutRoute.POST(guestRequest(fixtureAttempt))).status,429);
+guestAllowed=true;
+assert.equal((await checkoutRoute.POST(guestRequest(fixtureAttempt))).status,200);
+assert.equal(checkoutParams.client_reference_id,undefined);
+assert.equal(checkoutParams.customer_email,undefined);
+assert.equal(checkoutParams.metadata.avk_type,'pdf-guest-v1');
+assert.equal(checkoutParams.success_url,'https://adultsvskids.com/downloads/receipt?key='+guestKey);
+assert.deepEqual(savedGuest,[guestKey,'cs_test_fixture']);
 if(originalBundlePrice===undefined)delete process.env.STRIPE_PDF_BUNDLE_PRICE;else process.env.STRIPE_PDF_BUNDLE_PRICE=originalBundlePrice;
 console.log('PASS: PDF Checkout creation hides only Link while retaining dynamic payment methods, bundle price, account ownership and delivery URL.');
 
@@ -109,18 +126,19 @@ async function loadStore(url,reply){
   requests.push(JSON.parse(options.body));
   return reply();
  };
- vm.runInNewContext(storeScript,{document,window,localStorage,location,history,fetch,URL,URLSearchParams});
+ vm.runInNewContext(storeScript,{document,window,localStorage,location,history,fetch,URL,URLSearchParams,crypto});
  await new Promise(resolve=>setImmediate(resolve));
  const button=document.getElementById('pdfCheckoutColoring');
  assert(button);
  return {window,document,button,localStorage,navigations,requests};
 }
 
-const guest=await loadStore(storeUrl,()=>Response.json({error:'Sign in required.'},{status:401}));
+const guest=await loadStore(storeUrl,()=>Response.json({url:stripeUrl}));
 assert.equal(guest.button.textContent,'Buy PDF · $2.99');
 await guest.button.onclick();
-assert.deepEqual(guest.requests,[{products:['book-1']}]);
-assert.deepEqual(guest.navigations,['/login?purchase=coloring-checkout']);
+assert.deepEqual(guest.requests[0].products,['book-1']);
+assert.match(guest.requests[0].attempt,/^[0-9a-f-]{36}$/);
+assert.deepEqual(guest.navigations,[stripeUrl]);
 guest.window.close();
 
 let attempt=0;
@@ -134,7 +152,8 @@ await signedIn.button.onclick();
 assert.match(signedIn.button.nextElementSibling.textContent,/try again/);
 assert.equal(signedIn.button.disabled,false);
 await signedIn.button.onclick();
-assert.deepEqual(signedIn.requests,[{products:['book-1']},{products:['book-1']}]);
+assert.deepEqual(signedIn.requests[0].products,['book-1']);
+assert.deepEqual(signedIn.requests[0],signedIn.requests[1]);
 assert.deepEqual(signedIn.navigations,[stripeUrl]);
 assert.equal(signedIn.localStorage.getItem('avk-cart-v2'),'["book-2"]');
 signedIn.window.dispatchEvent(new signedIn.window.PageTransitionEvent('pageshow',{persisted:true}));
@@ -143,4 +162,25 @@ signedIn.document.querySelector('#book-1 .pdf-secondary-action').click();
 assert.match(signedIn.document.getElementById('pdfCart').textContent,/The Ultimate Coloring Challenge/);
 assert.equal(signedIn.document.querySelector('#book-1 a[href="#pdfCart"]').textContent,'View cart');
 signedIn.window.close();
-console.log('PASS: Coloring PDF direct checkout, guest sign-in and return, existing cart preservation, visible errors, retry, and browser back.');
+console.log('PASS: Coloring PDF direct checkout, guest Stripe navigation, existing cart preservation, visible errors, retry, and browser back.');
+
+let receiptState={state:'pending'}, signedBook;
+const receipt=moduleAt('app/downloads/receipt/route.ts',{
+ '../../../config/pdfs':catalog,
+ '../../../lib/payments/guest-pdf':{guestPdfOrder:async key=>key===guestKey?receiptState:{state:'missing'}},
+ '../../../lib/payments/server':{pdfSignedDownload:async book=>{signedBook=book;return 'https://example.test/private.pdf';}},
+});
+const receiptRequest=(key,book='')=>new Request('https://adultsvskids.com/downloads/receipt?key='+key+(book?'&book='+book:''));
+assert.equal((await receipt.GET(receiptRequest('invalid','book-1'))).status,404);
+assert.match(await (await receipt.GET(receiptRequest(guestKey,'book-1'))).text(),/Waiting for payment confirmation/);
+assert.equal(signedBook,undefined);
+receiptState={state:'paid',order:{book_ids:['book-1'],product_ids:['book-1']}};
+assert.equal((await receipt.GET(receiptRequest(guestKey,'book-2'))).status,404);
+const paidReceipt=await receipt.GET(receiptRequest(guestKey));
+assert.match(await paidReceipt.text(),/Download The Ultimate Coloring Challenge/);
+assert.equal(paidReceipt.headers.get('Referrer-Policy'),'no-referrer');
+const download=await receipt.GET(receiptRequest(guestKey,'book-1'));
+assert.equal(download.status,303);
+assert.equal(signedBook,'book-1');
+assert.equal(download.headers.get('Location'),'https://example.test/private.pdf');
+console.log('PASS: guest receipt needs the private key, blocks unpaid and unrelated downloads, and signs the purchased book.');

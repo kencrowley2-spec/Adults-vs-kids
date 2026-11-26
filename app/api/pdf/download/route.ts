@@ -1,5 +1,5 @@
 import {verifiedMember,memberReply} from '../../../../lib/auth/session';
-import {fulfillPdf,paymentAdmin} from '../../../../lib/payments/server';
+import {fulfillPdf,pdfSignedDownload} from '../../../../lib/payments/server';
 import {pdfProduct} from '../../../../config/pdfs';
 export const dynamic='force-dynamic';
 export async function GET(request:Request){
@@ -12,8 +12,6 @@ export async function GET(request:Request){
   const {data:order,error}=await auth.client.from('pdf_orders').select('book_ids,status').eq('session_id',session).eq('user_id',auth.user.id).maybeSingle();
   if(error||!order||order.status!=='paid'||!order.book_ids.includes(book))return reply({error:'Download not found.'},404);
   await fulfillPdf(session); // Recheck paid amount, ownership, refunds and disputes on every download.
-  const db=paymentAdmin(),asset=await db.from('pdf_assets').select('object_path').eq('book_id',book).eq('ready',true).single();if(asset.error||!asset.data)throw new Error('Asset unavailable');
-  const signed=await db.storage.from('paid-pdfs').createSignedUrl(asset.data.object_path,60,{download:pdfProduct(book)!.title.replace(/[^A-Za-z0-9-]/g,'_')+'.pdf'});if(signed.error||!signed.data?.signedUrl)throw new Error('Download unavailable');
-  auth.headers.set('Location',signed.data.signedUrl);auth.headers.set('Referrer-Policy','no-referrer');return new Response(null,{status:303,headers:auth.headers});
+  auth.headers.set('Location',await pdfSignedDownload(book,pdfProduct(book)!.title));auth.headers.set('Referrer-Policy','no-referrer');return new Response(null,{status:303,headers:auth.headers});
  }catch{return reply({error:'This download is unavailable. If your purchase was refunded or disputed, download access is removed. Otherwise, please try again.'},409)}
 }

@@ -464,11 +464,11 @@ export const guides:Guide[] = [
       },
       {
         "title": "Choose a full activity-book PDF when you want ready-made rounds",
-        "text": "The Ultimate Coloring Challenge centers on coloring. The Ultimate Family Showdown offers competitions; Make-It-and-Play-It combines creating and playing. The Young Adult Challenge is aimed at ages 8–12 and shared discussion. Browse the free sample rounds before choosing a paid edition. Book PDF purchases use the Downloads store and a family account."
+        "text": "The Ultimate Coloring Challenge centers on coloring. The Ultimate Family Showdown offers competitions; Make-It-and-Play-It combines creating and playing. The Young Adult Challenge is aimed at ages 8–12 and shared discussion. Browse the free sample rounds before choosing a paid edition. Buy book PDFs from the Downloads store and download them as soon as payment is confirmed."
       },
       {
         "title": "Print and store only what you need",
-        "text": "Open your purchased PDF from your family downloads. Choose the pages and number of copies your next activity needs, check the print preview and follow the book’s instructions. Household printing is included; paper, ink and supplies are separate. Keep unused pages in a folder for another night. Redistribution and resale are not included."
+        "text": "Open your purchased PDF from your checkout receipt page or your signed-in family downloads. Choose the pages and number of copies your next activity needs, check the print preview and follow the book’s instructions. Household printing is included; paper, ink and supplies are separate. Keep unused pages in a folder for another night. Redistribution and resale are not included."
       }
     ],
     "related": [

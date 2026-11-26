@@ -1,6 +1,7 @@
 import {PASSWORD_MAX_LENGTH, PASSWORD_REQUIREMENTS, meetsPasswordRequirements} from '../../../lib/auth/password-policy';
 import {accountAnalytics} from '../../../lib/analytics-server';
 import {accountDestination,purchaseSelection} from '../../../lib/arcade-links';
+import {paymentAdmin} from '../../../lib/payments/server';
 import {requestOrigin} from '../../../lib/request-origin';
 const env = process.env;
 import { isAdministrator } from '../../../lib/auth/access';
@@ -26,13 +27,30 @@ export async function POST(request:Request){const auth=memberClient(request);con
   if(env.AUTH_REGISTRATION_OPEN!=='true')return fail('New family registration is not open yet.',503);
   if(typeof data.name!=='string'||!data.name.trim()||data.name.trim().length>60||typeof data.displayName!=='string'||!data.displayName.trim()||data.displayName.trim().length>40)return fail('Enter your first name and family team name.');
   if(data.adult!==true)return fail('An adult needs to manage the family account.');
+  // New family accounts may start immediately. Keep the administrator on its existing verified account.
+  if(email===env.ADMIN_EMAIL?.trim().toLowerCase())return fail('An account already uses this email. Please sign in.');
+  const admin=paymentAdmin().auth.admin;
   const settings=await fetch(env.SUPABASE_URL+'/auth/v1/settings',{headers:{apikey:env.SUPABASE_PUBLISHABLE_KEY!}});const config=await settings.json() as {mailer_autoconfirm?:boolean};
   if(!settings.ok||config.mailer_autoconfirm!==false)return fail('Email confirmation must be configured before registration can open.',503);
-  const {data:signup,error}=await auth.client.auth.signUp({email,password,options:{emailRedirectTo:origin+'/auth/confirm?next='+encodeURIComponent(accountDestination(data.game,null))+(purchase?'&purchase='+encodeURIComponent(purchase):''),data:{display_name:data.displayName.trim(),family_name:typeof data.name==='string'?data.name.trim().slice(0,60):''}}});
+  const signupRequest=crypto.randomUUID();
+  const {data:signup,error}=await auth.client.auth.signUp({email,password,options:{emailRedirectTo:origin+'/auth/confirm?welcome=1&next='+encodeURIComponent(accountDestination(data.game,null))+(purchase?'&purchase='+encodeURIComponent(purchase):''),data:{avk_signup_request:signupRequest,display_name:data.displayName.trim(),family_name:typeof data.name==='string'?data.name.trim().slice(0,60):''}}});
   if(error?.code==='weak_password')return fail('Choose a stronger password. Try adding more words or characters.');
-  if(error)return fail(error.code==='over_email_send_rate_limit'?'Please wait before requesting another email.':'We could not complete registration. Email delivery may not be ready; please try again later.',error.status===429?429:400);
-  if(signup.user?.identities?.length)await accountAnalytics(request,auth.headers,signup.user,isAdministrator(signup.user,env.ADMIN_EMAIL),'intent');
-  return memberReply({redirect:'/verify-email'+(purchase?'?purchase='+encodeURIComponent(purchase):''),message:'If this address is eligible for a new account, a verification email will be sent. Check your inbox before signing in.'},200,auth.headers);
+  if(error)return fail(error.code==='user_already_exists'?'An account already uses this email. Please sign in.':error.code==='over_email_send_rate_limit'?'Please wait before requesting another email.':'We could not complete registration. Email delivery may not be ready; please try again later.',error.status===429?429:400);
+  if(!signup.user?.identities?.length||signup.user.email!==email||signup.user.email_confirmed_at||signup.user.user_metadata?.avk_signup_request!==signupRequest)
+   return fail('An account may already use this email. Please sign in or reset your password.');
+  // Supabase has accepted the signup and sent its email. Activate only the returned family identity.
+  const {error:activationError}=await admin.updateUserById(signup.user.id,{
+   email_confirm:true,app_metadata:{avk_family_self_signup:true},
+  });
+  if(activationError)return fail('Your account was created. Please follow the email link or try signing in.',503);
+  const {data:signedIn,error:signInError}=await auth.client.auth.signInWithPassword({email,password});
+  if(signInError||!signedIn.session||signedIn.user?.id!==signup.user.id){
+   if(signedIn.session)await auth.client.auth.signOut({scope:'local'});
+   return fail('Your account is ready. Please sign in to continue.',503);
+  }
+  await accountAnalytics(request,auth.headers,signedIn.user,false,'intent');
+  await accountAnalytics(request,auth.headers,signedIn.user,false,'verified');
+  return memberReply({redirect:accountDestination(data.game,purchase)},200,auth.headers);
  }
  if(action==='login'||action==='admin-login'){
   const {data:session,error}=await auth.client.auth.signInWithPassword({email,password});

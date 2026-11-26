@@ -13,9 +13,10 @@ export async function availablePdfs(){
  try{const {data,error}=await paymentAdmin().from('pdf_assets').select('book_id').eq('ready',true);if(error)throw error;for(const a of data??[])assets.add(a.book_id);}catch{/* Stay closed until private delivery is configured. */}
  return pdfProducts.map(p=>({...p,available:paymentsConfigured()&&!!process.env[p.priceEnv]&&p.books.every(b=>assets.has(b))}));
 }
-export async function fulfillPdf(sessionId:string){
+export async function fulfillPdf(sessionId:string,knownSession?:Stripe.Checkout.Session){
  if(!/^cs_(test_|live_)?[A-Za-z0-9]+$/.test(sessionId))throw new Error('Invalid checkout session');
- const stripe=stripeClient(),session=await stripe.checkout.sessions.retrieve(sessionId,{expand:['payment_intent.latest_charge']});
+ const stripe=stripeClient(),session=knownSession??await stripe.checkout.sessions.retrieve(sessionId,{expand:['payment_intent.latest_charge']});
+ if(session.id!==sessionId)throw new Error('Unexpected checkout session');
  const isClub=['club-prelaunch-v1','club-subscription-v1'].includes(session.metadata?.avk_type||'');
  const order=isClub?paidClubOrder(session,paymentLive()):paidOrder(session,paymentLive());
  const lines=await stripe.checkout.sessions.listLineItems(sessionId,{limit:10});
@@ -52,3 +53,14 @@ export async function fulfillPdf(sessionId:string){
  return order;
 }
 export async function revokeIntent(intent:string){const {error}=await paymentAdmin().from('pdf_orders').update({status:'revoked'}).eq('payment_intent_id',intent);if(error)throw error;}
+
+export async function pdfSignedDownload(bookId:string,title:string){
+ const db=paymentAdmin();
+ const {data,error}=await db.from('pdf_assets').select('object_path').eq('book_id',bookId).eq('ready',true).single();
+ if(error||!data)throw new Error('Asset unavailable');
+ const {data:signed,error:signError}=await db.storage.from('paid-pdfs').createSignedUrl(data.object_path,60,{
+  download:title.replace(/[^A-Za-z0-9-]/g,'_')+'.pdf',
+ });
+ if(signError||!signed?.signedUrl)throw new Error('Download unavailable');
+ return signed.signedUrl;
+}
