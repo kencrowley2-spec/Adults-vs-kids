@@ -232,6 +232,7 @@ export function mountJigsaw({onStart, onComplete, beforeReplay, onExit, onSnap})
     <div class="jigsaw-scroll" aria-label="Scrollable puzzle board">
      <div class="jigsaw-board-wrap">
       <canvas class="jigsaw-board" tabindex="0" aria-label="Puzzle board. Choose a piece, then tap a spot or use the arrow keys and press Enter." aria-describedby="jigsaw-status"></canvas>
+      <canvas class="jigsaw-target" width="176" height="176" hidden aria-hidden="true"></canvas>
       <i class="jigsaw-cursor" hidden aria-hidden="true"></i>
       <i class="jigsaw-flash" aria-hidden="true"></i>
      </div>
@@ -262,10 +263,13 @@ export function mountJigsaw({onStart, onComplete, beforeReplay, onExit, onSnap})
  const find = selector => dialog.querySelector(selector);
  const setup = find('form'), photoInput = find('input'), photoPreview = find('.jigsaw-photo canvas');
  const play = find('.jigsaw-play'), board = find('.jigsaw-board'), scroll = find('.jigsaw-scroll');
+ const bed = find('.jigsaw-bed'), tools = find('.jigsaw-tools'), target = find('.jigsaw-target');
+ const statusLine = find('#jigsaw-status');
  const wrap = find('.jigsaw-board-wrap'), tray = find('.jigsaw-tray'), pieceList = find('.jigsaw-pieces');
  const reference = find('.jigsaw-reference'), cursor = find('.jigsaw-cursor'), floating = find('.jigsaw-drag');
  const flash = find('.jigsaw-flash');
  const start = find('[type=submit]'), sampleButton = find('[data-sample]'), progress = find('[data-progress]');
+ const pager = find('.jigsaw-pages');
  const prev = find('[data-previous]'), next = find('[data-next]'), pageLabel = find('[data-page]');
  const sectionButtons = [...dialog.querySelectorAll('[data-section]')];
  const previewButton = find('[data-reference]'), skip = find('[data-skip]'), scatter = find('.jigsaw-scatter');
@@ -275,7 +279,8 @@ export function mountJigsaw({onStart, onComplete, beforeReplay, onExit, onSnap})
  const zoomLevels = [1, 1.5, 2, 3, 4, 6];
  let source, sample, sourceVersion = 0, blueprint, round, selected, drag, animation = 0, page = 0;
  let section = 'all', preview = false, zoomIndex = 0, row = 0, column = 0, introTimer;
- const status = message => {find('#jigsaw-status').textContent = message;};
+ let hovered;
+ const status = message => {statusLine.textContent = message;};
 
  async function loadPhoto(file) {
   const version = ++sourceVersion;
@@ -311,6 +316,7 @@ export function mountJigsaw({onStart, onComplete, beforeReplay, onExit, onSnap})
  }
 
  function setZoom(index, centered = true) {
+  showTarget();
   const old = zoomLevels[zoomIndex];
   const scale = zoomLevels[index] / old;
   const x = scroll.scrollLeft + scroll.clientWidth / 2;
@@ -325,12 +331,20 @@ export function mountJigsaw({onStart, onComplete, beforeReplay, onExit, onSnap})
  function fitBoard() {
   if (!round || play.hidden) return;
   const aspect = round.photo.width / round.photo.height;
-  const width = Math.min(scroll.clientWidth, scroll.clientHeight * aspect);
+  const style = getComputedStyle(bed);
+  const insets = bed.offsetHeight - bed.clientHeight + parseFloat(style.paddingTop) + parseFloat(style.paddingBottom);
+  const gap = parseFloat(getComputedStyle(play).rowGap);
+  const trayHeight = tray.hidden ? 0 : tray.offsetHeight + gap;
+  const maxHeight = Math.max(88, play.clientHeight - tools.offsetHeight - statusLine.offsetHeight - gap * 2 - trayHeight - insets);
+  // Client width of the board frame stays stable when the inner board scrolls.
+  const width = Math.min(bed.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight), maxHeight * aspect);
+  const height = width / aspect;
+  bed.style.setProperty('--bed-height', `${height + insets}px`);
   wrap.style.setProperty('--base-width', `${width}px`);
-  wrap.style.setProperty('--base-height', `${width / aspect}px`);
+  wrap.style.setProperty('--base-height', `${height}px`);
  }
  const observer = new ResizeObserver(fitBoard);
- observer.observe(scroll);
+ for (const element of [play, tools, tray, statusLine]) observer.observe(element);
 
  function drawBoard() {
   const {columns, rows, pieces, count} = round;
@@ -362,6 +376,7 @@ export function mountJigsaw({onStart, onComplete, beforeReplay, onExit, onSnap})
   prev.disabled = page === 0;
   next.disabled = page === pages - 1;
   pageLabel.textContent = `${page + 1} / ${pages}`;
+  pager.hidden = pages < 2;
   for (const button of sectionButtons) {
    const name = button.dataset.section;
    const count = name === 'all' ? available.length : available.filter(piece => piece.section === name).length;
@@ -386,7 +401,7 @@ export function mountJigsaw({onStart, onComplete, beforeReplay, onExit, onSnap})
    button.append(tile);
    button.addEventListener('pointerdown', event => grab(event, piece, button));
    button.addEventListener('click', event => {
-    if (event.detail === 0) select(piece);
+    if (event.detail === 0) select(piece, true);
    });
    pieceList.append(button);
   }
@@ -397,27 +412,70 @@ export function mountJigsaw({onStart, onComplete, beforeReplay, onExit, onSnap})
   }
   progress.textContent = `${round.count.toLocaleString()} / ${round.pieces.length.toLocaleString()} placed`;
  }
- function updateCursor(reveal = false) {
-  cursor.hidden = !selected;
-  if (!selected) return;
+ function updateCursor(visible = false) {
+  cursor.hidden = !selected || !visible;
+  if (cursor.hidden) return;
   cursor.style.setProperty('--column', column);
   cursor.style.setProperty('--row', row);
-  if (reveal) cursor.scrollIntoView({block:'nearest', inline:'nearest'});
+  // Scroll only the board. The tray and frame stay put during keyboard play.
+  const focus = cursor.getBoundingClientRect();
+  const frame = scroll.getBoundingClientRect();
+  scroll.scrollLeft += Math.max(0, focus.right - frame.left - scroll.clientWidth) + Math.min(0, focus.left - frame.left);
+  scroll.scrollTop += Math.max(0, focus.bottom - frame.top - scroll.clientHeight) + Math.min(0, focus.top - frame.top);
  }
- function select(piece) {
+ function select(piece, keyboard = false) {
   selected = piece;
   pieceList.querySelectorAll('button').forEach(button => button.setAttribute('aria-pressed', String(Number(button.dataset.piece) === piece.id)));
-  updateCursor();
+  showTarget();
+  updateCursor(keyboard);
   status('Piece selected. Tap its spot or use the arrow keys and Enter.');
   board.focus({preventScroll: true});
  }
  function positionAt(x, y) {
+  const frame = scroll.getBoundingClientRect();
+  if (x < frame.left || x >= frame.left + scroll.clientWidth ||
+      y < frame.top || y >= frame.top + scroll.clientHeight) return null;
   const rect = board.getBoundingClientRect();
   const col = (x - rect.left) / rect.width * round.columns;
   const line = (y - rect.top) / rect.height * round.rows;
   return col >= 0 && col < round.columns && line >= 0 && line < round.rows ?
    {column: Math.floor(col), row: Math.floor(line)} : null;
  }
+ function showTarget(piece, position) {
+  if (!piece || !position) {
+   if (hovered) target.hidden = true;
+   hovered = undefined;
+   return;
+  }
+  if (hovered?.piece === piece && hovered.column === position.column && hovered.row === position.row) return;
+  hovered = {piece, ...position};
+  const fits = piece.column === position.column && piece.row === position.row;
+  cursor.hidden = true;
+  target.style.setProperty('--column', position.column);
+  target.style.setProperty('--row', position.row);
+  target.dataset.fits = String(fits);
+  target.hidden = false;
+  const context = target.getContext('2d');
+  context.clearRect(0, 0, target.width, target.height);
+  context.save();
+  context.translate(38, 38);
+  context.scale(100, 100);
+  context.fillStyle = fits ? '#a9f6a98c' : '#101e19ad';
+  context.fill(piece.path);
+  if (fits) {
+   context.save();
+   context.clip(piece.path);
+   const {photo, columns, rows} = round;
+   context.globalAlpha = .56;
+   context.drawImage(photo, -piece.column, -piece.row, columns, rows);
+   context.restore();
+  }
+  context.lineWidth = .027;
+  context.strokeStyle = fits ? '#d4ffb8' : '#e2d5a19c';
+  context.stroke(piece.path);
+  context.restore();
+ }
+
  function place(position) {
   if (!position || !selected) return;
   if (selected.column !== position.column || selected.row !== position.row) {
@@ -425,6 +483,7 @@ export function mountJigsaw({onStart, onComplete, beforeReplay, onExit, onSnap})
    return;
   }
   const piece = selected;
+  showTarget();
   piece.placed = true;
   selected = null;
   round.count++;
@@ -460,7 +519,8 @@ export function mountJigsaw({onStart, onComplete, beforeReplay, onExit, onSnap})
  function moveFloating() {
   animation = 0;
   if (!drag) return;
-  floating.style.transform = `translate3d(${drag.x - drag.size / 2}px, ${drag.y - drag.size / 2}px, 0)`;
+  floating.style.transform = `translate3d(${drag.x - drag.size / 2}px, ${drag.y - drag.size / 2 - drag.lift}px, 0)`;
+  showTarget(drag.piece, positionAt(drag.x, drag.y));
  }
  function grab(event, piece, button) {
   if (drag || !event.isPrimary || event.button !== 0) return;
@@ -476,9 +536,11 @@ export function mountJigsaw({onStart, onComplete, beforeReplay, onExit, onSnap})
   if (!drag.lifted && Math.hypot(drag.x - drag.startX, drag.y - drag.startY) < 6) return;
   if (!drag.lifted) {
    drag.lifted = true;
+   cursor.hidden = true;
    const rect = board.getBoundingClientRect();
    const cellWidth = rect.width / round.columns, cellHeight = rect.height / round.rows;
    drag.size = clamp(Math.max(cellWidth, cellHeight) * 1.8, 40, 240);
+   drag.lift = clamp(drag.size * .19, 13, 34);
    floating.width = floating.height = 288;
    floating.style.width = floating.style.height = `${drag.size}px`;
    const scale = Math.min(288 * 1.13 / drag.size, 162 / Math.max(cellWidth, cellHeight));
@@ -491,12 +553,13 @@ export function mountJigsaw({onStart, onComplete, beforeReplay, onExit, onSnap})
  }
  function drop(event, cancelled = false) {
   if (drag?.id !== event.pointerId) return;
-  const {piece, lifted, button, size} = drag;
+  const {piece, lifted, button, size, lift} = drag;
   drag = null;
   delete button.dataset.lifted;
   floating.hidden = true;
   cancelAnimationFrame(animation);
   animation = 0;
+  showTarget();
   if (cancelled) return;
   select(piece);
   if (!lifted) return;
@@ -504,7 +567,7 @@ export function mountJigsaw({onStart, onComplete, beforeReplay, onExit, onSnap})
   place(position);
   if (!piece.placed || round.count === round.pieces.length || motion.matches) return;
   const rect = board.getBoundingClientRect();
-  const from = [event.clientX, event.clientY];
+  const from = [event.clientX, event.clientY - lift];
   const to = [rect.left + (piece.column + .5) * rect.width / round.columns,
    rect.top + (piece.row + .5) * rect.height / round.rows];
   const transformAt = ([x, y]) => `translate3d(${x - size / 2}px, ${y - size / 2}px, 0)`;
@@ -519,6 +582,14 @@ export function mountJigsaw({onStart, onComplete, beforeReplay, onExit, onSnap})
  pieceList.addEventListener('pointerup', drop);
  pieceList.addEventListener('pointercancel', event => drop(event, true));
  pieceList.addEventListener('lostpointercapture', event => drop(event, true));
+ board.addEventListener('pointermove', event => {
+  if (!drag && event.pointerType === 'mouse') showTarget(selected, positionAt(event.clientX, event.clientY));
+ });
+ board.addEventListener('pointerleave', () => {if (!drag) showTarget();});
+ scroll.addEventListener('scroll', () => {
+  if (drag?.lifted) showTarget(drag.piece, positionAt(drag.x, drag.y));
+  else showTarget();
+ });
  board.addEventListener('click', event => {
   const position = positionAt(event.clientX, event.clientY);
   if (position) ({column, row} = position);
@@ -536,6 +607,7 @@ export function mountJigsaw({onStart, onComplete, beforeReplay, onExit, onSnap})
    const [dx, dy] = shifts[event.key];
    column = clamp(column + dx, 0, round.columns - 1);
    row = clamp(row + dy, 0, round.rows - 1);
+   showTarget();
    updateCursor(true);
   }
  });
@@ -546,6 +618,7 @@ export function mountJigsaw({onStart, onComplete, beforeReplay, onExit, onSnap})
   previewButton.setAttribute('aria-pressed', String(value));
  }
  function showBoard() {
+  play.append(statusLine);
   setup.hidden = true;
   play.hidden = false;
   fitBoard();
@@ -662,6 +735,7 @@ export function mountJigsaw({onStart, onComplete, beforeReplay, onExit, onSnap})
  sampleButton.addEventListener('click', () => {void loadPhoto();});
  find('[data-new]').addEventListener('click', () => {
   play.hidden = true;
+  dialog.insertBefore(statusLine, scatter);
   setup.hidden = false;
   find('[data-resume]').hidden = false;
   start.focus();
@@ -677,6 +751,7 @@ export function mountJigsaw({onStart, onComplete, beforeReplay, onExit, onSnap})
    section = button.dataset.section;
    page = 0;
    selected = null;
+   showTarget();
    updateCursor();
    updateTray();
   });
