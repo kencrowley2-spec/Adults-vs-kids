@@ -285,12 +285,35 @@ document.addEventListener('pointerdown',unlockAudio);
 document.addEventListener('keydown',unlockAudio);
 const chimeNodes=new Set();
 function stopChimes(){for(const node of chimeNodes){try{node.stop();node.disconnect();}catch{}}chimeNodes.clear();}
-function chime(kind){
+let jigsawLockBuffer;
+function playJigsawLock(){
+  if(!jigsawLockBuffer){
+    const rate=audioContext.sampleRate;
+    jigsawLockBuffer=audioContext.createBuffer(1,Math.ceil(rate*.062),rate);
+    const samples=jigsawLockBuffer.getChannelData(0);
+    for(let i=0;i<samples.length;i++){
+      const time=i/rate,latchTime=time-.014;
+      const noise=Math.random()*2-1;
+      const contact=(noise*.12+Math.sin(2*Math.PI*1880*time)*.08)*Math.exp(-time*310);
+      // A softer, lower click follows the first tap as the tabs seat.
+      const latch=latchTime>=0?(noise*.09+Math.sin(2*Math.PI*965*latchTime)*.15)*Math.exp(-latchTime*152):0;
+      samples[i]=contact+latch;
+    }
+  }
+  const source=audioContext.createBufferSource();
+  source.buffer=jigsawLockBuffer;
+  source.connect(audioContext.destination);
+  chimeNodes.add(source);
+  source.onended=()=>{chimeNodes.delete(source);source.disconnect();};
+  source.start();
+}
+function chime(kind,delay=0){
   if(!soundOn)return;
   if(game?.id==='mole'&&moleAudio){moleAudio.cue(kind);return;}unlockAudio();if(!audioContext||audioContext.state!=='running')return;
   try{
+    if(kind==='jigsaw-lock'){playJigsawLock();return;}
     const notes=kind==='buzzer'?[130,100]:kind==='win'?[523,659,784]:kind==='match'?[660,880]:kind==='tap'?[440]:[330,440];
-    notes.forEach((frequency,i)=>{const oscillator=audioContext.createOscillator(),gain=audioContext.createGain(),at=audioContext.currentTime+i*.075;oscillator.type='sine';oscillator.frequency.value=frequency;gain.gain.setValueAtTime(0,at);gain.gain.linearRampToValueAtTime(.045,at+.008);gain.gain.exponentialRampToValueAtTime(.001,at+.12);oscillator.connect(gain);gain.connect(audioContext.destination);chimeNodes.add(oscillator);oscillator.onended=()=>{chimeNodes.delete(oscillator);oscillator.disconnect();gain.disconnect();};oscillator.start(at);oscillator.stop(at+.14);});
+    notes.forEach((frequency,i)=>{const oscillator=audioContext.createOscillator(),gain=audioContext.createGain(),at=audioContext.currentTime+delay+i*.075;oscillator.type='sine';oscillator.frequency.value=frequency;gain.gain.setValueAtTime(0,at);gain.gain.linearRampToValueAtTime(.045,at+.008);gain.gain.exponentialRampToValueAtTime(.001,at+.12);oscillator.connect(gain);gain.connect(audioContext.destination);chimeNodes.add(oscillator);oscillator.onended=()=>{chimeNodes.delete(oscillator);oscillator.disconnect();gain.disconnect();};oscillator.start(at);oscillator.stop(at+.14);});
   }catch{}
 }
 // Original, looping arcade groove: melody, bass, kick and hi-hat at 120 BPM.
@@ -490,7 +513,7 @@ function openJigsaw(){
    matchId=crypto.randomUUID();
    dispatchArcadeAnalytics(new CustomEvent('avk:game-start',{detail:{game:'jigsaw',id:matchId}}));
   },
-  onSnap:complete=>chime(complete?'win':'correct'),
+  onSnap:complete=>{chime('jigsaw-lock');if(complete)chime('win',.07);},
   onComplete:()=>{
    capturePlay(matchId,'jigsaw');
    dispatchArcadeAnalytics(new CustomEvent('avk:game-complete',{detail:{game:'jigsaw',id:matchId}}));
