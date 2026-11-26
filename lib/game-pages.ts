@@ -1,6 +1,7 @@
 import {GAMES} from '../public/arcade-data.js';
 
 const tips:Record<string,string>={
+ jigsaw:'Start with the corners and edges. Take turns finding a piece, then compare colors and shapes before you place it.',
  ghostline:'Before the handoff, ask the first driver which corner cost the most time. Let the second driver test that advice against the ghost.',
  flex:'Choose a comfortable variation together before the timer starts. Take turns being the person who counts a controlled repetition.',
  hexgl:'Take separate runs on the same circuit. Let the waiting pilot call the next turn, then compare how much shield each driver kept.',
@@ -23,7 +24,7 @@ const tips:Record<string,string>={
  pinball:'Trade the controls after a full game. Have the waiting player call out the star while the player at the flippers watches the ball.'
 };
 const pinball={id:'pinball',name:'Arcade Pinball',description:'Open the Arcade cabinet and choose Play Pinball. Launch the ball and use the left and right flippers to keep it in play. Bumpers earn 100 points and the star earns 250.'};
-const artwork:Record<string,string>={ghostline:'/assets/display/ghostline-cover.webp',flex:'/assets/flex-off-cover-480.webp',hexgl:'/assets/display/hexgl-title.webp',pinball:'/assets/avk-pinball-cabinet.webp'};
+const artwork:Record<string,string>={jigsaw:'/assets/guide-family-patio.webp',ghostline:'/assets/display/ghostline-cover.webp',flex:'/assets/flex-off-cover-480.webp',hexgl:'/assets/display/hexgl-title.webp',pinball:'/assets/avk-pinball-cabinet.webp'};
 for(const id of ['memory','claw','lava','faces','mole','draw'])artwork[id]='/assets/featured/'+id+'-480.webp';
 export const gamePages=[...GAMES.filter(g=>g.id!=='neighborhood'),pinball].map(g=>({
  ...g,path:'/games/'+g.name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/-$/,''),

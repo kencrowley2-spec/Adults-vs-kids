@@ -22,6 +22,8 @@ export function createCaseReader({document:doc=globalThis.document,onPlay,player
   if(dialog.open||entry.comingSoon||doc.hidden||!by('arcade-game').hidden)return;
   selection=entry;dialog.dataset.game=entry.id;
   const [one,two]=players();
+  const cooperative=entry.id==='jigsaw';
+  by('book-lineup').querySelector('.match-versus').textContent=cooperative?'&':'vs';
   by('book-game-title').textContent=entry.name;
   by('book-player-one').textContent=one;
   by('book-player-two').textContent=two;

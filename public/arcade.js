@@ -1,9 +1,10 @@
 import {mountGhostline} from './ghostline.js?v=10';
 import {mountFlex} from './arcade-flex.js?v=1';
+import {mountJigsaw} from './arcade-jigsaw.js?v=1';
 import {mountGuestGate} from './arcade-guest.js?v=1';
 import {mountFeaturedGames} from './arcade-featured.js?v=5';
 import {mountPinball} from './arcade-pinball.js?v=3';
-import {createCaseReader} from './arcade-cases.js?v=4';
+import {createCaseReader} from './arcade-cases.js?v=5';
 import {mountFaces} from './arcade-faces.js?v=10';
 import {allowArcadeVoice} from './arcade-voice.js?v=1';
 import {mountDraw} from './arcade-draw.js?v=5';
@@ -14,8 +15,8 @@ import {mountFrog,frogCourses,frogRoundWinner} from './arcade-frog.js?v=3';
 import {mountTreasure,treasurePlan} from './arcade-treasure.js?v=1';
 import {mountBlocks} from './arcade-blocks.js?v=1';
 import {mountBasketball} from './arcade-basketball.js?v=1';
-import {coverMarkup,recentGames,BROWSE_SHELVES} from './arcade-library.js?v=30';
-import {GAMES, ANIMALS, TRIVIA, PICTURES, CHALLENGES} from './arcade-data.js?v=40';
+import {coverMarkup,recentGames,BROWSE_SHELVES} from './arcade-library.js?v=31';
+import {GAMES, ANIMALS, TRIVIA, PICTURES, CHALLENGES} from './arcade-data.js?v=41';
 import {shuffle, roundWinner, awardRound, lineWinner} from './arcade-core.js';
 
 import {MAZE_BOARDS, MAZE_DIRECTIONS, mazeBoard, mazeWalls} from './arcade-maze.js?v=1';
@@ -479,11 +480,29 @@ async function clubReveal(title){
 
  await window.avkChallengeIntro({players,game:title});
 }
+function openJigsaw(){
+ clearTimers();
+ rememberGame('jigsaw');
+ let matchId;
+ mountJigsaw({
+  beforeReplay:()=>guestGate.allow('jigsaw'),
+  onStart:()=>{
+   matchId=crypto.randomUUID();
+   dispatchArcadeAnalytics(new CustomEvent('avk:game-start',{detail:{game:'jigsaw',id:matchId}}));
+  },
+  onSnap:complete=>chime(complete?'win':'correct'),
+  onComplete:()=>{
+   capturePlay(matchId,'jigsaw');
+   dispatchArcadeAnalytics(new CustomEvent('avk:game-complete',{detail:{game:'jigsaw',id:matchId}}));
+  },
+  onExit:()=>{(document.querySelector('[data-game="jigsaw"]')||$('arcade-rotation-next'))?.focus();}
+ });
+}
 async function openGame(id){
   if(clubIntroPending)return;
   const chosen=GAMES.find(g=>g.id===id);if(!chosen||chosen.comingSoon)return;
   if(id!=='hexgl'&&!guestGate.allow(id))return;
-  if(clubEntry){clubIntroPending=true;try{await clubReveal(chosen.name)}finally{clubIntroPending=false}}
+  if(clubEntry&&id!=='jigsaw'){clubIntroPending=true;try{await clubReveal(chosen.name)}finally{clubIntroPending=false}}
 
   if(id==='neighborhood'){window.location.assign('/defend-your-neighborhood');return;}
   if(id==='ghostline')return openGhostline();
@@ -491,6 +510,7 @@ async function openGame(id){
   if(id==='flex')return openFlex();
   if(id==='faces')return openFaces();
   if(id==='draw')return openDraw();
+  if(id==='jigsaw')return openJigsaw();
   if(id==='lava')return openLava();
   if(GAMES.find(g=>g.id===id)?.comingSoon)return;
 
@@ -506,7 +526,7 @@ async function startSeries(){
   if(!arcadeAccountId){guestGate.prompt('series');return;}
 
   clearTimers();
-  series={games:shuffle(GAMES.filter(g=>!g.comingSoon&&!g.premium&&g.id!=='lava'&&g.id!=='draw'&&g.id!=='faces'&&g.id!=='ghostline'&&g.id!=='hexgl'&&g.id!=='flex')).slice(0,3),index:0,winners:[],first:0};
+  series={games:shuffle(GAMES.filter(g=>!g.comingSoon&&!g.premium&&g.id!=='lava'&&g.id!=='draw'&&g.id!=='faces'&&g.id!=='ghostline'&&g.id!=='hexgl'&&g.id!=='flex'&&g.id!=='jigsaw')).slice(0,3),index:0,winners:[],first:0};
   startRecording('series',series.games.map(g=>g.id));
   wins=[0,0]; round=1; attempt=0; starter=0; turn=0; champion=-1; results=[]; used={};
   game=series.games[0]; lobby.hidden=true; arena.hidden=false;
