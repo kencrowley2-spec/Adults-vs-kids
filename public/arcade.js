@@ -1,6 +1,6 @@
 import {mountGhostline} from './ghostline.js?v=10';
 import {mountFlex} from './arcade-flex.js?v=1';
-import {mountJigsaw} from './arcade-jigsaw.js?v=1';
+import {mountJigsaw} from './arcade-jigsaw.js?v=2';
 import {mountGuestGate} from './arcade-guest.js?v=1';
 import {mountFeaturedGames} from './arcade-featured.js?v=5';
 import {mountPinball} from './arcade-pinball.js?v=3';
@@ -16,7 +16,7 @@ import {mountTreasure,treasurePlan} from './arcade-treasure.js?v=1';
 import {mountBlocks} from './arcade-blocks.js?v=1';
 import {mountBasketball} from './arcade-basketball.js?v=1';
 import {coverMarkup,recentGames,BROWSE_SHELVES} from './arcade-library.js?v=31';
-import {GAMES, ANIMALS, TRIVIA, PICTURES, CHALLENGES} from './arcade-data.js?v=41';
+import {GAMES, ANIMALS, TRIVIA, PICTURES, CHALLENGES} from './arcade-data.js?v=42';
 import {shuffle, roundWinner, awardRound, lineWinner} from './arcade-core.js';
 
 import {MAZE_BOARDS, MAZE_DIRECTIONS, mazeBoard, mazeWalls} from './arcade-maze.js?v=1';
