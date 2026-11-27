@@ -286,12 +286,12 @@ document.addEventListener('pointerdown',unlockAudio);
 document.addEventListener('keydown',unlockAudio);
 const chimeNodes=new Set();
 function stopChimes(){for(const node of chimeNodes){try{node.stop();node.disconnect();}catch{}}chimeNodes.clear();}
-let jigsawLockBuffer;
-function playJigsawLock(){
-  if(!jigsawLockBuffer){
+let latchBuffer;
+function playLatchClick(playbackRate=1){
+  if(!latchBuffer){
     const rate=audioContext.sampleRate;
-    jigsawLockBuffer=audioContext.createBuffer(1,Math.ceil(rate*.062),rate);
-    const samples=jigsawLockBuffer.getChannelData(0);
+    latchBuffer=audioContext.createBuffer(1,Math.ceil(rate*.062),rate);
+    const samples=latchBuffer.getChannelData(0);
     for(let i=0;i<samples.length;i++){
       const time=i/rate,latchTime=time-.014;
       const noise=Math.random()*2-1;
@@ -302,7 +302,8 @@ function playJigsawLock(){
     }
   }
   const source=audioContext.createBufferSource();
-  source.buffer=jigsawLockBuffer;
+  source.buffer=latchBuffer;
+  source.playbackRate.value=playbackRate;
   source.connect(audioContext.destination);
   chimeNodes.add(source);
   source.onended=()=>{chimeNodes.delete(source);source.disconnect();};
@@ -312,7 +313,7 @@ function chime(kind,delay=0){
   if(!soundOn)return;
   if(game?.id==='mole'&&moleAudio){moleAudio.cue(kind);return;}unlockAudio();if(!audioContext||audioContext.state!=='running')return;
   try{
-    if(kind==='jigsaw-lock'){playJigsawLock();return;}
+    if(kind==='jigsaw-lock'){playLatchClick();return;}
     const notes=kind==='buzzer'?[130,100]:kind==='win'?[523,659,784]:kind==='match'?[660,880]:kind==='tap'?[440]:[330,440];
     notes.forEach((frequency,i)=>{const oscillator=audioContext.createOscillator(),gain=audioContext.createGain(),at=audioContext.currentTime+delay+i*.075;oscillator.type='sine';oscillator.frequency.value=frequency;gain.gain.setValueAtTime(0,at);gain.gain.linearRampToValueAtTime(.045,at+.008);gain.gain.exponentialRampToValueAtTime(.001,at+.12);oscillator.connect(gain);gain.connect(audioContext.destination);chimeNodes.add(oscillator);oscillator.onended=()=>{chimeNodes.delete(oscillator);oscillator.disconnect();gain.disconnect();};oscillator.start(at);oscillator.stop(at+.14);});
   }catch{}
@@ -1245,8 +1246,15 @@ function rememberGame(id){
  try{const ids=recentGames(localStorage,recentKey,GAMES);localStorage.setItem(recentKey,JSON.stringify([id,...ids.filter(x=>x!==id)].slice(0,8)));}catch{}
 
 }
-import('./arcade-rolodex.js?v=2').then(({mountRolodex}) => {
-  mountRolodex({lobby, games:GAMES, coverMarkup, openMatchup:entry => caseReader.open(entry)});
+import('./arcade-rolodex.js?v=3').then(({mountRolodex}) => {
+  const fxButton = $('cabinet-fx');
+  mountRolodex({
+    lobby, games:GAMES, coverMarkup, openMatchup:entry => caseReader.open(entry),
+    onStep() {
+      if (!soundOn || fxButton.getAttribute('aria-pressed') !== 'true' || document.hidden || lobby.hidden) return;
+      if (audioContext?.state === 'running') playLatchClick(1.55);
+    }
+  });
 }).catch(error => {
   console.error('Unable to open the Arcade Rolodex', error);
   $('avk-rolodex')?.remove();

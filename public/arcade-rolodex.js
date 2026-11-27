@@ -2,7 +2,7 @@ const spotlightIds = ['ghostline', 'claw', 'lava', 'faces', 'mole', 'memory', 'd
 const names = ['Spotlight', 'More games'];
 const wrap = (value, size) => ((value % size) + size) % size;
 
-export function mountRolodex({lobby, games, coverMarkup, openMatchup}) {
+export function mountRolodex({lobby, games, coverMarkup, openMatchup, onStep}) {
   const shelves = [
     spotlightIds.map(id => games.find(game => game.id === id)).filter(Boolean),
     games.filter(game => !spotlightIds.includes(game.id))
@@ -19,8 +19,8 @@ export function mountRolodex({lobby, games, coverMarkup, openMatchup}) {
         </defs>
         <g class="rd-rails" fill="none" stroke="url(#rd-wire)">
           <ellipse cx="480" cy="121" rx="362" ry="33"/><ellipse cx="480" cy="125" rx="362" ry="33"/>
-          <ellipse cx="480" cy="288" rx="441" ry="63"/><ellipse cx="480" cy="293" rx="441" ry="64"/>
-          <ellipse cx="480" cy="310" rx="365" ry="51" stroke-dasharray="15 7 3 7"/>
+          <ellipse cx="480" cy="326" rx="455" ry="43"/><ellipse cx="480" cy="331" rx="455" ry="44"/>
+          <ellipse cx="480" cy="336" rx="384" ry="43" stroke-dasharray="15 7 3 7"/>
         </g>
         <g class="rd-electric" fill="none" stroke="url(#rd-wire)" stroke-linejoin="round"></g>
       </svg>
@@ -43,6 +43,7 @@ export function mountRolodex({lobby, games, coverMarkup, openMatchup}) {
   const stage = get('.rd-stage');
   const layer = get('.rd-cases');
   const openButton = get('.rd-open');
+  let reflectedCover;
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
   const positions = shelves.map(() => 0);
   let active = 0, target = 0, frame = 0, lastTime = 0, gesture = null, blockClick = false;
@@ -65,12 +66,20 @@ export function mountRolodex({lobby, games, coverMarkup, openMatchup}) {
     image.classList.add('rd-art');
     for (const img of image.querySelectorAll('img')) {
       img.draggable = false;
-      if (img.srcset) img.sizes = '(max-width: 650px) 57vw, 370px';
+      if (game.id === 'ghostline') img.srcset = '/assets/display/ghostline-cover.webp 600w, /assets/ghostline-gt.webp 1000w';
+      if (game.id === 'flex') img.srcset = '/assets/display/flex-cover.webp 480w, /assets/flex-off-cover-960.webp 960w, /assets/flex-off-cover.webp 1448w';
+      if (img.srcset) img.sizes = '(max-width: 680px) 80vw, (max-width: 1000px) 60vw, 560px';
     }
     const label = document.createElement('span');
     label.className = 'rd-case-title';
     label.textContent = game.name;
-    button.append(image, label);
+    const face = document.createElement('span');
+    face.className = 'rd-face';
+    face.append(image, label);
+    const base = document.createElement('span');
+    base.className = 'rd-case-base';
+    base.setAttribute('aria-hidden', 'true');
+    button.append(face, base);
     button.setAttribute('aria-label', game.name);
     button.addEventListener('click', event => {
       if (blockClick && event.detail !== 0) return;
@@ -87,7 +96,7 @@ export function mountRolodex({lobby, games, coverMarkup, openMatchup}) {
   const traces = [
     '12,121 69,119 88,105 99,111 120,86 115,111 148,99 130,119 173,117',
     '44,269 90,258 112,238 120,248 147,209 133,246 160,237 129,273 153,263 140,282',
-    '96,320 149,309 165,296 157,312 190,302 181,318 218,315',
+    '6,342 45,338 74,343 89,332 80,348 111,341 130,354 156,357 183,350 176,363 210,361',
     '72,164 98,155 96,143 112,138 119,118',
     '131,249 107,267 101,268 84,288'
   ];
@@ -118,35 +127,54 @@ export function mountRolodex({lobby, games, coverMarkup, openMatchup}) {
   }
   function draw() {
     const width = stage.clientWidth, height = stage.clientHeight;
+    const centered = shelfCards[active][indexOf(active)];
+    if (centered !== reflectedCover) {
+      reflectedCover = centered;
+      const image = centered.querySelector('img');
+      if (image) stage.style.setProperty('--rd-reflected-art', `url("${image.currentSrc || image.src}")`);
+      else stage.style.removeProperty('--rd-reflected-art');
+    }
     shelfCards.forEach((cards, deck) => {
       const main = deck === active;
-      const radius = Math.min(width * (main ? .49 : .35), main ? 420 : 315);
+      const radius = Math.min(width * (main ? .77 : .57), main ? 555 : 378);
+      const depthRadius = Math.min(width * .44, 260);
       cards.forEach((card, index) => {
-        const theta = (index - positions[deck]) * Math.PI * 2 / cards.length;
-        const depth = (Math.cos(theta) + 1) / 2;
-        const x = Math.sin(theta) * radius;
-        const y = height * (main ? .39 + .23 * depth : .10 + .11 * depth);
-        const scale = main ? .35 + .65 * depth ** 1.8 : .21 + .19 * depth;
+        const angle = (index - positions[deck]) * Math.PI * 2 / cards.length;
+        const side = Math.sin(angle);
+        const depth = (Math.cos(angle) + 1) / 2;
         const front = main && indexOf(deck) === index;
-        card.style.transform = 'translate(-50%, -50%) translate(' + x.toFixed(2) + 'px,' + y.toFixed(2) + 'px) perspective(850px) rotateY(' + (-Math.sin(theta) * 48).toFixed(2) + 'deg) scale(' + scale.toFixed(4) + ')';
+        const x = side * radius;
+        const y = height * (main ? -.12 + .24 * depth ** 3 : -.45 + .16 * depth);
+        const z = main ? (depth - 1) * 2 * depthRadius : -depthRadius * (1.15 - .55 * depth);
+        const scale = main ? .60 + .40 * depth : .30 + .20 * depth;
+        const yaw = -side * (main ? 63 : 52);
+        const pitch = main ? 2 + 7 * depth : 6;
+        card.style.transform = `translate(-50%, -50%) translate3d(${x.toFixed(2)}px, ${y.toFixed(2)}px, ${z.toFixed(2)}px) rotateY(${yaw.toFixed(2)}deg) rotateX(${pitch.toFixed(2)}deg) scale(${scale.toFixed(4)})`;
         card.style.zIndex = String((main ? 130 : 2) + Math.round(depth * 100));
-        card.style.setProperty('--rd-shade', String((1-depth) * .60 + (main ? 0 : .22)));
+        card.style.setProperty('--rd-shade', String((1-depth) * .56 + (main ? 0 : .16)));
+        card.style.setProperty('--rd-light', (48 - side * 51).toFixed(1) + '%');
         card.classList.toggle('rd-front', front);
         card.tabIndex = front ? 0 : -1;
       });
     });
+  }
+  function setPosition(next) {
+    const previous = Math.round(positions[active]);
+    positions[active] = next;
+    if (Math.round(next) !== previous) onStep();
+    draw();
   }
   function animate(now) {
     const distance = target - positions[active];
     const elapsed = Math.min(50, now - lastTime || 16);
     lastTime = now;
     if (Math.abs(distance) < .002 || reduced.matches) {
-      positions[active] = target;
-      draw(); updateSelection(); frame = 0;
+      setPosition(target);
+      updateSelection(); frame = 0;
       return;
     }
-    positions[active] += distance * (1 - Math.exp(-elapsed / 68));
-    draw(); frame = requestAnimationFrame(animate);
+    setPosition(positions[active] + distance * (1 - Math.exp(-elapsed / 68)));
+    frame = requestAnimationFrame(animate);
   }
   function move(to) {
     target = to;
@@ -186,8 +214,7 @@ export function mountRolodex({lobby, games, coverMarkup, openMatchup}) {
       gesture.moved = true;
       stage.setPointerCapture(event.pointerId);
     }
-    positions[active] = gesture.start - dx / Math.min(155, stage.clientWidth * .26);
-    draw();
+    setPosition(gesture.start - dx / Math.min(155, stage.clientWidth * .26));
   });
   function finish(event) {
     if (!gesture || gesture.id !== event.pointerId) return;
