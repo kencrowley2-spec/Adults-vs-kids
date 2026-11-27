@@ -1246,7 +1246,7 @@ function rememberGame(id){
  try{const ids=recentGames(localStorage,recentKey,GAMES);localStorage.setItem(recentKey,JSON.stringify([id,...ids.filter(x=>x!==id)].slice(0,8)));}catch{}
 
 }
-import('./arcade-rolodex.js?v=4').then(({mountRolodex}) => {
+import('./arcade-rolodex.js?v=5').then(({mountRolodex}) => {
   const fxButton = $('cabinet-fx');
   mountRolodex({
     lobby, games:GAMES, coverMarkup, openMatchup:entry => caseReader.open(entry),

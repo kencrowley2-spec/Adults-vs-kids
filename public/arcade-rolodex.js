@@ -30,8 +30,11 @@ export function mountRolodex({lobby, games, coverMarkup, openMatchup, onStep}) {
   const openButton = get('.rd-open'), status = get('.rd-counter');
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
   const savedPositions = decks.map(() => 0);
-  let active = 0, position = 0, selected = -1, width = 1, height = 1;
-  let animation = null, frame = 0, gesture = null, ignoreClick = false;
+  let active = 0, position = 0, selected = -1, width = 1, height = 1, cardWidth = 0;
+  let destination = null, frame = 0, frameTime = 0, velocity = 0;
+  let lastPainted = 0, lastClick = 0, gesture = null, ignoreClick = false;
+  // Speeds are measured in cartridges per millisecond, independent of refresh rate.
+  const maxSpeed = .0048, settleTime = 78;
   const entries = () => decks[active].entries;
   const indexAt = value => wrap(Math.round(value), entries().length);
 
@@ -51,7 +54,7 @@ export function mountRolodex({lobby, games, coverMarkup, openMatchup, onStep}) {
     card.tabIndex = -1;
     card.hidden = true;
     card.setAttribute('aria-label',game.name);
-    card.innerHTML = '<span class="rd-spine" aria-hidden="true"></span><span class="rd-back" aria-hidden="true"></span><span class="rd-face"><span class="rd-label"><span class="rd-case-title"></span></span><span class="rd-contacts" aria-hidden="true"></span></span>';
+    card.innerHTML = '<span class="rd-spine" aria-hidden="true"></span><span class="rd-back" aria-hidden="true"></span><span class="rd-face"><span class="rd-label"><span class="rd-case-title"></span></span><span class="rd-contacts" aria-hidden="true"></span><span class="rd-shade" aria-hidden="true"></span></span>';
     const source = document.createElement('template');
     source.innerHTML = coverMarkup(game);
     const art = source.content.querySelector('.cover-art');
@@ -73,9 +76,21 @@ export function mountRolodex({lobby, games, coverMarkup, openMatchup, onStep}) {
     return card;
   }));
 
+  const shades = cards.map(deck => deck.map(card => card.querySelector('.rd-shade')));
+
+  // Measure once so a long name can fit a narrow phone without resizing the moving stage.
+  const ruler = document.createElement('canvas').getContext('2d');
+  const titleWidths = new Map();
+  if (ruler) {
+    ruler.font = '800 100px Arial,sans-serif';
+    for (const game of decks.flatMap(deck => deck.entries)) {
+      titleWidths.set(game.id, (ruler.measureText(game.name).width / 100 - .05*(game.name.length-1) + .15).toFixed(2));
+    }
+  }
   function updateCaption(index) {
     const game = entries()[index];
     title.textContent = game.name;
+    title.style.setProperty('--title-ems',titleWidths.get(game.id) ?? '1');
     tag.textContent = game.tag;
     openButton.disabled = !!game.comingSoon;
     openButton.textContent = game.comingSoon ? 'Coming soon' : 'Open matchup';
@@ -88,6 +103,21 @@ export function mountRolodex({lobby, games, coverMarkup, openMatchup, onStep}) {
     }
     status.textContent = (index + 1) + ' / ' + entries().length + ' · ' + entries()[index].name;
   }
+  function tickAtCenter() {
+    if (position === lastPainted) return;
+    const nearest = Math.round(position);
+    const nearCenter = Math.abs(nearest-position) <= .045;
+    const passed = position > lastPainted ? Math.floor(position) : Math.ceil(position);
+    const detent = nearCenter ? nearest : passed;
+    if (lastClick !== null && Math.abs(position-lastClick) > .35) lastClick = null;
+    // Allow a frame to pass a center. Never queue missed clicks or click twice while hovering.
+    if (lastClick !== detent && (nearCenter || (detent-lastPainted)*(detent-position) < 0)) {
+      lastClick = detent;
+      onStep();
+    }
+    lastPainted = position;
+  }
+
   function paint() {
     const count = entries().length, centered = indexAt(position);
     // Five prominent cases follow the same shallow, overlapping orbit as the tee rack.
@@ -95,6 +125,8 @@ export function mountRolodex({lobby, games, coverMarkup, openMatchup, onStep}) {
     const slots = Math.min(8, count);
     const radius = width * .335;
     const lift = Math.min(width * .24, height * .29, 155);
+    const middleX = radius * Math.sin(Math.PI/slots) ** 1.38;
+    const clearance = Math.max(0, cardWidth*.39-middleX);
     cards[active].forEach((card, index) => {
       const offset = wrap(index - position + count/2, count) - count/2;
       if (Math.abs(offset) >= slots/2) {
@@ -109,49 +141,86 @@ export function mountRolodex({lobby, games, coverMarkup, openMatchup, onStep}) {
       const angle = offset * 2 * Math.PI / slots;
       const side = Math.sin(angle), depth = (Math.cos(angle) + 1) / 2;
       const scale = .46 + .54 * depth * depth;
-      const x = Math.sign(side) * Math.abs(side) ** 1.38 * radius, y = (depth - 1) * lift;
-      const yaw = -side * 42 - 5 * depth;
-      card.style.transform = `translate(-50%,-50%) translate3d(${x.toFixed(2)}px,${y.toFixed(2)}px,0) scale(${scale.toFixed(4)}) perspective(800px) rotateY(${yaw.toFixed(2)}deg) rotateX(-2deg)`;
-      card.style.zIndex = String(Math.round(depth * 1000));
+      // Turn the two passing cases edgeward, then tuck them back into their resting fan.
+      const passing = Math.abs(offset)<1 ? Math.sign(offset)*Math.sin(Math.PI*offset)**2 : 0;
+      const x = Math.sign(side)*Math.abs(side)**1.38*radius + passing*clearance;
+      const y = (depth - 1)*lift;
+      const yaw = -side*42 - 5*depth - passing*18;
+      const z = depth * radius * 2;
+      card.style.transform = `translate(-50%,-50%) translate3d(${x.toFixed(2)}px,${y.toFixed(2)}px,${z.toFixed(2)}px) scale(${scale.toFixed(4)}) perspective(800px) rotateY(${yaw.toFixed(2)}deg) rotateX(-2deg)`;
       card.style.opacity = String(clamp((slots/2-Math.abs(offset)) * 2,0,1));
-      card.style.setProperty('--shade', String(.64 * (1-depth)));
-      card.tabIndex = index === centered ? 0 : -1;
-      card.classList.toggle('rd-front', index === centered);
+      shades[active][index].style.opacity = (.64 * (1-depth)).toFixed(3);
     });
     if (centered !== selected) {
-      if (selected !== -1) onStep();
+      if (selected !== -1) {
+        cards[active][selected].tabIndex = -1;
+        cards[active][selected].classList.remove('rd-front');
+      }
+      cards[active][centered].tabIndex = 0;
+      cards[active][centered].classList.add('rd-front');
       selected = centered;
       updateCaption(centered);
     }
+    tickAtCenter();
   }
   function render(now) {
     frame = 0;
-    if (animation) {
-      const t = clamp((now-animation.start)/animation.duration,0,1);
-      position = animation.from + (animation.to-animation.from) * (1-(1-t)**3);
-      if (t === 1) { position = animation.to; animation = null; }
+    // Discard long gaps after a stalled or backgrounded frame instead of jumping ahead.
+    const dt = clamp(now-frameTime,1,34);
+    frameTime = now;
+    if (gesture?.dragged) {
+      const remaining = gesture.target-position;
+      const change = clamp(remaining * -Math.expm1(-dt/24),-maxSpeed*dt,maxSpeed*dt);
+      velocity = change/dt;
+      position = Math.abs(remaining) < .001 ? gesture.target : position+change;
+    } else if (destination !== null) {
+      // Exact critically damped spring. A release inherits the displayed velocity
+      // and decelerates to the detent without bouncing through it.
+      const offset = position-destination;
+      const slope = velocity+offset/settleTime;
+      const decay = Math.exp(-dt/settleTime);
+      const next = destination+(offset+slope*dt)*decay;
+      const change = clamp(next-position,-maxSpeed*dt,maxSpeed*dt);
+      velocity = clamp((velocity-slope*dt/settleTime)*decay,-maxSpeed,maxSpeed);
+      position += change;
+      if (Math.abs(position-destination) < .003 && Math.abs(velocity) < .00006) {
+        position = destination;
+        destination = null;
+        velocity = 0;
+      }
     }
     paint();
-    if (animation) queuePaint();
-    else if (!gesture) announce();
+    if (destination !== null || (gesture?.dragged && position !== gesture.target)) queuePaint();
+    else {
+      frameTime = 0;
+      if (!gesture) announce();
+    }
   }
   function queuePaint() {
-    if (!frame) frame = requestAnimationFrame(render);
+    if (!frame) {
+      if (!frameTime) frameTime = performance.now();
+      frame = requestAnimationFrame(render);
+    }
   }
   function stop() {
     cancelAnimationFrame(frame);
     frame = 0;
-    animation = null;
+    frameTime = 0;
+    destination = null;
   }
-  function settle(to, duration = 260) {
+  function settle(to) {
     stop();
     to = Math.round(to);
     if (reduced.matches || Math.abs(to-position) < .001) {
       position = to;
+      velocity = 0;
       paint(); announce();
       return;
     }
-    animation = {from:position, to, start:performance.now(), duration};
+    const distance = to-position;
+    const direction = Math.sign(distance);
+    velocity = direction*clamp(velocity*direction,0,Math.abs(distance)/settleTime);
+    destination = to;
     queuePaint();
   }
   function openSelected() {
@@ -176,12 +245,13 @@ export function mountRolodex({lobby, games, coverMarkup, openMatchup, onStep}) {
     }
     savedPositions[active] = Math.round(position);
     active = deck;
-    position = savedPositions[deck];
+    position = lastPainted = lastClick = savedPositions[deck];
+    velocity = 0;
     selected = -1;
     tabs.forEach((tab,i) => tab.setAttribute('aria-pressed',String(i===active)));
     paint(); announce();
   }
-  function step(direction) { settle(Math.round(animation?.to ?? position)+direction); }
+  function step(direction) { settle(Math.round(destination ?? position)+direction); }
   get('.rd-prev').addEventListener('click', () => step(-1));
   get('.rd-next').addEventListener('click', () => step(1));
   openButton.addEventListener('click',openSelected);
@@ -193,12 +263,13 @@ export function mountRolodex({lobby, games, coverMarkup, openMatchup, onStep}) {
 
   stage.addEventListener('pointerdown',event => {
     if (!event.isPrimary || event.button !== 0) return;
-    const catching = !!animation && Math.abs(animation.to-position) > .25;
+    const catching = destination !== null && Math.abs(destination-position) > .04;
     stop();
     ignoreClick = false;
-    gesture = {id:event.pointerId,x:event.clientX,y:event.clientY,from:position,
+    velocity = 0;
+    gesture = {id:event.pointerId,x:event.clientX,y:event.clientY,from:position,target:position,
       lastX:event.clientX,lastTime:event.timeStamp,speed:0,dragged:false,catching,
-      card:event.target.closest('.rd-case'),pitch:clamp(width*.14,38,78)};
+      card:event.target.closest('.rd-case'),pitch:clamp(width*.29,88,165)};
     stage.setPointerCapture(event.pointerId);
   });
   function track(event) {
@@ -214,7 +285,8 @@ export function mountRolodex({lobby, games, coverMarkup, openMatchup, onStep}) {
       gesture.lastTime = event.timeStamp;
       gesture.lastX = event.clientX;
     }
-    position = gesture.from - dx/gesture.pitch;
+    gesture.target = gesture.from - dx/gesture.pitch;
+    if (reduced.matches) position = gesture.target;
     queuePaint();
   }
   stage.addEventListener('pointermove',event => { if (gesture?.id === event.pointerId) track(event); });
@@ -234,10 +306,11 @@ export function mountRolodex({lobby, games, coverMarkup, openMatchup, onStep}) {
     const age = Math.max(0,event.timeStamp-drag.lastTime);
     // A finger lifts between display frames. Treat the first frame interval as part of the flick.
     const speed = drag.speed * Math.exp(-Math.max(0,age-32)/38);
-    const glide = cancelled || reduced.matches || Math.abs(speed)<.003 ? 0 : clamp(speed*195,-5,5);
-    const destination = Math.round(position+glide);
-    const duration = glide ? clamp(3*Math.abs(destination-position)/Math.abs(speed),190,500) : 260;
-    settle(destination,duration);
+    const glide = cancelled || reduced.matches ? 0 : clamp(speed*64,-.65,.65);
+    // A short flick may carry one more cartridge. Re-grabbing stops the glide immediately.
+    const nearest = Math.round(position);
+    const target = cancelled || !drag.dragged ? nearest : Math.round(drag.target+glide);
+    settle(clamp(target,nearest-1,nearest+1));
   }
   stage.addEventListener('pointerup',release);
   stage.addEventListener('pointercancel',release);
@@ -248,8 +321,10 @@ export function mountRolodex({lobby, games, coverMarkup, openMatchup, onStep}) {
     if (control) options.append(control);
   }
   const fit = () => {
-    width = stage.clientWidth || 1;
-    height = stage.clientHeight || 1;
+    if (!stage.clientWidth || !stage.clientHeight) return;
+    width = stage.clientWidth;
+    height = stage.clientHeight;
+    cardWidth = cards[active][indexAt(position)].offsetWidth;
     queuePaint();
   };
   width = stage.clientWidth || 1;

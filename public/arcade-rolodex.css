@@ -38,7 +38,7 @@ body:has(#arcade-lobby:not([hidden]) #avk-rolodex)>.arcade-tabs {position:sticky
   width:min(100%,800px); min-width:0; margin:0 auto; touch-action:pan-y; user-select:none; -webkit-user-select:none; cursor:grab;
 }
 #avk-rolodex .rd-stage:active,#avk-rolodex .rd-stage:active .rd-case {cursor:grabbing}
-#avk-rolodex .rd-cases {position:absolute;inset:0;z-index:1}
+#avk-rolodex .rd-cases {position:absolute;inset:0;z-index:1;transform-style:preserve-3d}
 #avk-rolodex .rd-cases::before {
   content:''; position:absolute; left:50%; top:calc(52% + min(35cqw,45cqh,214px));
   width:min(86cqw,106cqh,580px); height:max(14px,7cqh); pointer-events:none;
@@ -91,13 +91,17 @@ body:has(#arcade-lobby:not([hidden]) #avk-rolodex)>.arcade-tabs {position:sticky
 }
 #avk-rolodex .rd-face::after {
   content:''; position:absolute; inset:0; pointer-events:none;
-  background:linear-gradient(126deg,#fff2 0%,transparent 27% 72%,#ded7bc0a 91%),rgba(12,13,11,var(--shade,0));
+  background:linear-gradient(126deg,#fff2 0%,transparent 27% 72%,#ded7bc0a 91%);
+}
+#avk-rolodex .rd-shade {
+  position:absolute; inset:0; pointer-events:none; background:#0c0d0b; opacity:0; will-change:opacity;
 }
 #avk-rolodex .rd-controls {display:flex;flex-direction:column;align-items:center;gap:clamp(3px,1dvh,10px);padding:0 12px}
 #avk-rolodex .rd-turn {display:flex;align-items:center;justify-content:center;gap:9px;color:#dcddd5;font-size:clamp(16px,4.6vw,21px)}
 #avk-rolodex .rd-turn button {min-width:48px;height:44px;padding:0;border:0;background:transparent;color:var(--gold);font:800 34px/.9 Arial,sans-serif}
+#avk-rolodex .rd-caption {width:100%;container-type:inline-size;--title-size:clamp(27px,7.6vw,45px)}
 #avk-rolodex .rd-caption p {margin:0 0 3px;color:#e2cc82;font:700 clamp(10px,2.7vw,13px)/1.25 Arial,sans-serif;letter-spacing:.13em}
-#avk-rolodex .rd-caption h2 {margin:0;color:#f8f7f2;font:800 clamp(27px,7.6vw,45px)/1.03 Arial,sans-serif;letter-spacing:-.05em;text-wrap:balance}
+#avk-rolodex .rd-caption h2 {margin:0;color:#f8f7f2;font:800 min(var(--title-size),max(20px,100cqw / var(--title-ems,1)))/1.03 Arial,sans-serif;min-height:calc(var(--title-size) * 1.03);align-content:center;letter-spacing:-.05em;text-wrap:balance}
 #avk-rolodex .rd-open {
   min-height:46px; padding:9px 26px; border:0; border-radius:6px; background:var(--gold); color:#1a180c;
   font-weight:800; font-size:clamp(15px,3.9vw,18px);
@@ -117,7 +121,7 @@ body:has(#arcade-lobby:not([hidden])) #arcade-more .arcade-roster-lineup {displa
   #avk-rolodex .rd-cases::before {top:calc(52% + min(42cqw,46cqh))}
   #avk-rolodex .rd-turn {font-size:21px}
   #avk-rolodex .rd-open {min-height:52px;padding:10px 30px;font-size:18px}
-  #avk-rolodex .rd-caption h2 {font-size:clamp(32px,8vw,40px)}
+  #avk-rolodex .rd-caption {--title-size:clamp(32px,8vw,40px)}
 }
 @media (max-height:655px) and (orientation:portrait) {
   #avk-rolodex {padding:4px 0 0}
@@ -134,7 +138,7 @@ body:has(#arcade-lobby:not([hidden])) #arcade-more .arcade-roster-lineup {displa
   #avk-rolodex .rd-heading h1 {font-size:23px}
   #avk-rolodex .rd-tabs,#avk-rolodex .rd-controls {margin:0;gap:2px}
   #avk-rolodex .rd-tabs {gap:15px}
-  #avk-rolodex .rd-caption h2 {font-size:24px}
+  #avk-rolodex .rd-caption {--title-size:24px}
   #avk-rolodex .rd-open {min-height:44px;padding:6px 16px}
   #avk-rolodex .rd-options button {padding:4px 5px;font-size:12px}
 }
