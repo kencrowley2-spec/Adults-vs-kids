@@ -1246,6 +1246,15 @@ function rememberGame(id){
 
 }
 mountFeaturedGames({games:GAMES,gameTile});
+if (new URLSearchParams(location.search).get('view') === 'rolodex') {
+  const stylesheet = document.createElement('link');
+  stylesheet.rel = 'stylesheet';
+  stylesheet.href = '/arcade-rolodex.css';
+  document.head.append(stylesheet);
+  import('./arcade-rolodex.js').then(({mountRolodex}) => {
+    mountRolodex({lobby, games:GAMES, coverMarkup, openMatchup:entry => caseReader.open(entry)});
+  }).catch(error => console.error('Unable to open the arcade Rolodex', error));
+}
 $('arcade-random').addEventListener('click',startSeries);
 $('arcade-return').addEventListener('click',()=>{clearTimers();series=null;arena.hidden=true;lobby.hidden=false;game=null;$('arcade-favorites').querySelector('button')?.focus();});
 $('arcade-reset').addEventListener('click',()=>{
