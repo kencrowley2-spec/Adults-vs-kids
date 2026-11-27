@@ -80,3 +80,5 @@
 }
 
 #arcade-game #game-stage .memory-round-score small{position:static;grid-row:3;grid-column:1;margin:1px 0 0;font-size:7px;line-height:1.1}.source-memory-game .memory-round-score strong{grid-row:1/4}
+#memory-cast{display:none;width:36px;height:32px;padding:4px;--connected-color:#ffcf35;--disconnected-color:currentColor}
+#arcade-game[data-game-id="memory"] #memory-cast[data-available="true"]{display:inline-block}

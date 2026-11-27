@@ -1,3 +1,4 @@
+import {memoryFace, memorySymbols} from './cast/memory-faces.js';
 import {mountGhostline} from './ghostline.js?v=10';
 import {mountFlex} from './arcade-flex.js?v=1';
 import {mountJigsaw} from './arcade-jigsaw.js?v=7';
@@ -381,7 +382,7 @@ $('arcade-game').setAttribute('data-effects',String(effectsOn));
 $('arcade-effects').setAttribute('aria-pressed',String(effectsOn));
 $('arcade-effects').textContent=`Lights: ${effectsOn?'on':'off'}`;
 $('arcade-effects').addEventListener('click',()=>{effectsOn=!effectsOn;$('arcade-game').setAttribute('data-effects',String(effectsOn));$('arcade-effects').textContent=`Lights: ${effectsOn?'on':'off'}`;$('arcade-effects').setAttribute('aria-pressed',String(effectsOn));$('arcade-feedback').setAttribute('data-kind','');});
-function clearTimers(){ memoryLayoutObserver?.disconnect();memoryLayoutObserver=null;memoryClock?.stop();memoryClock=null;moleIntroDone=null;moleAudio?.stop();moleAudio=null;stopChimes(); stopClaw?.();stopClaw=null; stopMole?.();stopMole=null; stopFrog?.();stopFrog=null; stopMazeMusic(); stopTriviaVoice(); generation++; timers.forEach(clearTimeout); timers=[]; timed=false; }
+function clearTimers(){ window.avkMemoryCast?.reset(); memoryLayoutObserver?.disconnect();memoryLayoutObserver=null;memoryClock?.stop();memoryClock=null;moleIntroDone=null;moleAudio?.stop();moleAudio=null;stopChimes(); stopClaw?.();stopClaw=null; stopMole?.();stopMole=null; stopFrog?.();stopFrog=null; stopMazeMusic(); stopTriviaVoice(); generation++; timers.forEach(clearTimeout); timers=[]; timed=false; }
 function later(fn,delay){ const token=generation; const timer=setTimeout(()=>{if(token===generation)fn();},delay); timers.push(timer); }
 function screen(html){ clearTimers();arena.setAttribute('data-game-id',game?.id||'');arena.setAttribute('data-memory-board',String(game?.id==='memory'&&html.includes('id="memory-game"')));competitionPhase=html.includes('class="handoff"')?'handoff':html.includes('class="result')?'result':'play'; $('arcade-feedback').setAttribute('data-kind','');$('feedback-caption').textContent='';stage.innerHTML=(champion>=0&&game?.id!=='mole'?competitionResult():'')+html;competitionUpdate();if(champion>=0&&game?.id!=='mole')readArcade(`${contender(champion)} takes the crown! ${contender(1-champion)}, your victory dance is still loading! Rematch?`,1); scheduleGameFit(); }
 function button(label,action,parent=stage,className='primary'){
@@ -755,28 +756,17 @@ function startClock(seconds,onEnd,onTick){
   const deadline=performance.now()+seconds*1000; timed=true;
   const tick=()=>{const left=Math.max(0,deadline-performance.now()); if(onTick?.(left)===false)return; const el=$('game-clock'); if(el)el.textContent=`${Math.ceil(left/1000)}s`; if(left<=0){onEnd();}else later(tick,100);}; tick(); return deadline;
 }
+function memoryColumns(size){return size===6?3:window.matchMedia?.('(orientation: landscape) and (max-height:650px)')?.matches?6:4;}
 function fitMemoryBoard(){
  const area=$('memory-play-area'),board=$('memory-cards');if(!area?.clientWidth||!area?.clientHeight||!board?.style)return;
- const width=area.clientWidth,height=Math.max(80,area.clientHeight-30),columns=board.children.length===6?3:window.matchMedia?.('(orientation: landscape) and (max-height:650px)')?.matches?6:4,rows=(board.children.length||24)/columns,gap=Math.max(5,Math.min(12,Math.round(width/90)));
+ const width=area.clientWidth,height=Math.max(80,area.clientHeight-30),columns=memoryColumns(board.children.length),rows=(board.children.length||24)/columns,gap=Math.max(5,Math.min(12,Math.round(width/90)));
  const cardHeight=Math.max(24,Math.floor((height-gap*(rows-1))/rows)),cardWidth=Math.max(24,Math.floor(Math.min((width-gap*(columns-1))/columns,cardHeight*1.15)));
+ window.avkMemoryCast?.resize(columns);
  board.style.width=(cardWidth*columns+gap*(columns-1))+'px';board.style.height=(cardHeight*rows+gap*(rows-1))+'px';
  board.style.gridTemplateColumns=`repeat(${columns},minmax(0,1fr))`;board.style.gridTemplateRows=`repeat(${rows},minmax(0,1fr))`;board.style.gap=gap+'px';
 }
-const memoryCharacters={
- KOALA:'🐨', TIGER:'🐯', PENGUIN:'🐧', DOLPHIN:'🐬', OCTOPUS:'🐙', WHALE:'🐳',
- UNICORN:'🦄', DRAGON:'🐉', ROBOT:'🤖', ALIEN:'👽', DINO:'🦖', BUTTERFLY:'🦋',
- BEE:'🐝', SNAIL:'🐌', CRAB:'🦀', FLAMINGO:'🦩', HEDGEHOG:'🦔', SLOTH:'🦥',
- OTTER:'🦦', GIRAFFE:'🦒', PARROT:'🦜', LADYBUG:'🐞', ELEPHANT:'🐘', ZEBRA:'🦓'
-};
-function memoryFace(symbol){
- if(memoryCharacters[symbol])return `<span class="memory-shape"><svg viewBox="0 0 100 100" aria-hidden="true"><text x="50" y="78" font-size="72" text-anchor="middle">${memoryCharacters[symbol]}</text></svg></span>`;
- const animals=['FOX','OWL','RABBIT','BEAR','FROG','TURTLE','PANDA','LION'],index=animals.indexOf(symbol);
- if(index>=0)return `<span class="memory-art" style="background-position:${index%3*50}% ${Math.floor(index/3)*50}%"></span>`;
- const shape={STAR:'<path d="m50 9 12 27 30 3-23 20 7 31-26-16-26 16 7-31L8 39l30-3Z" fill="#ffe36b"/>',HEART:'<path d="M50 85 15 52C-7 28 23 4 50 28 77 4 107 28 85 52Z" fill="#ff778c"/>',DIAMOND:'<path d="m50 10 40 40-40 40L10 50Z" fill="#66d5f1"/><path d="m50 10 0 80M10 50h80" opacity=".3"/>',TRIANGLE:'<path d="M50 12 94 87H6Z" fill="#9bdf83"/>'}[symbol];
- return `<span class="memory-shape shape-${symbol.toLowerCase()}"><svg viewBox="0 0 100 100" aria-hidden="true"><g stroke="#213356" stroke-width="3" stroke-linejoin="round">${shape}</g><g fill="#213356"><ellipse cx="38" cy="53" rx="3" ry="4"></ellipse><ellipse cx="62" cy="53" rx="3" ry="4"></ellipse></g><path d="M43 63q7 9 14 0" fill="none" stroke="#213356" stroke-width="3" stroke-linecap="round"/></svg></span>`;
-}
 function memory(playoff=false){
-  const fullSet=['FOX','OWL','RABBIT','BEAR','FROG','TURTLE','PANDA','LION','STAR','HEART','DIAMOND','TRIANGLE',...Object.keys(memoryCharacters)];
+  const fullSet=memorySymbols;
   const SYMBOLS=shuffle(fullSet).slice(0,playoff?3:12);
   const deck=shuffle([...SYMBOLS,...SYMBOLS]);let revealed=[],matched=new Set(),points=[0,0],locked=true,preview=true,moves=0,best=null,elapsed=0,runningSince=null,clockStopped=false,complete=false;
   const bestKey=`avk:memory:best:24:${arcadeAccountId}`;
@@ -795,6 +785,12 @@ function memory(playoff=false){
     $('memory-pairs').textContent=`${matched.size/2}/${SYMBOLS.length}`;
     $('memory-adult-points').textContent=String(points[0]);$('memory-kid-points').textContent=String(points[1]);
     [0,1].forEach(team=>{$('memory-team-'+team).setAttribute('data-current',String(team===turn));$('memory-team-'+team).setAttribute('aria-current',String(team===turn));$('memory-team-'+team+'-turn').textContent=team===turn?'YOUR TURN':'WAITING';});
+    window.avkMemoryCast?.update({
+      phase:preview?'Study the cards':playoff?'Quick playoff':'Find a pair',
+      players:[contender(0),contender(1)], points:[...points], turn,
+      columns:memoryColumns(deck.length),
+      cards:deck.map((symbol,i)=>({face:preview||matched.has(i)||revealed.includes(i)?symbol:null,matched:matched.has(i)}))
+    });
     liveProgress=points.map(score=>({score}));competitionUpdate();
     const holder=$('memory-cards');
     if(!holder.children.length)deck.forEach((symbol,i)=>{
@@ -821,9 +817,11 @@ function memory(playoff=false){
     const winner=points[0]>points[1]?0:1;
     const detail=playoff?`Tied 6–6. ${contender(winner)} took the playoff ${points[winner]}–${points[1-winner]}!`:`Cleared in ${moves} moves (${clockText()}).`;
     later(()=>{
-      if(series){finishRound(winner,detail);return;}
+      const finalBoard=window.avkMemoryCast?.snapshot();
+      if(series){finishRound(winner,detail);if(finalBoard)window.avkMemoryCast.update({...finalBoard,phase:contender(winner)+' wins!'});return;}
       champion=winner;wins[winner]=1;recording.roundWinners.push(winner);saveCompleted();scoreboard();
       screen(`<div class="result"><p>${escapePlayer(detail)}</p><h3>Play a rematch?</h3></div>`);
+      if(finalBoard)window.avkMemoryCast.update({...finalBoard,phase:contender(winner)+' wins!'});
       button('Play a rematch',()=>openGame('memory'));
       button('Back to Arcade',()=>$('arcade-return').click(),stage,'text-button');
       react('win','✦ MEMORY MATCH CHAMPION ✦');status(`${contender(winner)} wins Memory Match!`);focusFirst();

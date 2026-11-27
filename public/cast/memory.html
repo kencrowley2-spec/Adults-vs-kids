@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex"><title>Memory Match · ADULTS vs. KIDS™</title>
+<link rel="stylesheet" href="/arcade-memory.css?v=2">
+<style>
+*{box-sizing:border-box}body{margin:0;background:#14233b;color:#fff0d5;font:700 2.5vh system-ui,sans-serif}
+main{height:100vh;padding:5vh 5vw;display:grid;grid-template-rows:auto minmax(0,1fr);gap:3vh}
+header{display:flex;align-items:center;justify-content:space-between;gap:2vw}h1,p{margin:0}h1{color:#ffe35c;font-size:5vh}#scores{text-align:right;max-width:55%;overflow-wrap:anywhere}
+#cards{display:grid;gap:1vh;max-width:100%;margin:0 auto;width:100%;min-height:0}
+.card{position:relative;background:#122e59 url('/assets/memory-storybook-atlas.webp') 100% 100%/300% 300%;border-radius:1vh;border:2px solid #eed399;overflow:hidden}
+.card.matched{border:0.6vh solid #80ce8a}.card.matched:after{content:'✓';position:absolute;right:4%;top:4%;background:#254e37;border-radius:50%;padding:0 .3em}
+.card .memory-label{font-size:1.9vh}main.idle{display:grid;place-content:center;text-align:center}main.idle header{display:block}
+</style>
+<script defer src="https://www.gstatic.com/cast/sdk/libs/caf_receiver/v3/cast_receiver_framework.js"></script>
+<script type="module" src="/cast/memory-receiver.js"></script>
+</head><body><main class="idle"><header><div>ADULTS vs. KIDS™<h1>Memory Match</h1><p id="phase">Open Memory Match on your controller.</p></div><p id="scores"></p></header><div id="cards"></div></main></body></html>

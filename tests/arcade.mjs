@@ -68,6 +68,7 @@ function fixture(firstTeam=0,withSpeech=false,withAudio=false,players=null,holdM
   vm.runInContext(basketballSource,context);
   if(club)vm.runInContext('window.avkChallengeIntro=options=>{this.introOptions=options;return new Promise(resolve=>{this.finishIntro=resolve})}',context);
   doc.querySelector=()=>null;
+  vm.runInContext(readFileSync(new URL('../public/cast/memory-faces.js',import.meta.url),'utf8').replace(/export /g,''),context);
   const source=readFileSync(new URL('../public/arcade.js',import.meta.url),'utf8').replace(/^import .*;\n/gm,'');
   vm.runInContext(source+'\nthis.state=()=>({wins:[...wins],round,champion,turn,starter,attempt,plans:game?{maze:game.maze,codes:game.codes,safePoints:game.safePoints,course:game.course,frog:game.frogCourses}:null,series:series?{games:series.games.map(g=>g.id),index:series.index,winners:[...series.winners]}:null});this.resolveGame=finishRound;this.seriesWith=id=>{startSeries();clearTimers();series.games=[GAMES.find(g=>g.id===id),...GAMES.filter(g=>g.id!==id).slice(0,2)];startSeriesGame();};',context);
   const get=id=>doc.getElementById(id);
