@@ -8,8 +8,28 @@
   const tees=catalog.filter(p=>['Tees','Team Tees'].includes(p.kind));
   const style=find('tee-style');
   tees.forEach(p=>style.add(new Option(p.name+' · '+p.color,p.id)));
+  const preview=modal.querySelector('.shirt-preview');
+  const original=modal.querySelector('.original-art');
+  const teeBlanks={
+    stadium:'stadium',sideline:'sideline',warmup:'warmup',mesh:'mesh',
+    'team-adults':'sideline','team-kids':'stadium','matchday-duo':'stadium',
+  };
+  function drawShirt(front){
+    const blank=teeBlanks[item.id];
+    const visible=Boolean(front && blank);
+    preview.hidden=!visible;
+    original.hidden=visible;
+    if(!visible)return;
+    const image=preview.querySelector('img');
+    const src='/assets/merch/print-'+blank+'.webp';
+    if(image.getAttribute('src')!==src)image.src=src;
+    image.alt=item.name+' front print mockup in '+item.color;
+    preview.querySelector('.shirt-slogan').textContent=front;
+    preview.classList.toggle('dark-shirt',blank==='sideline'||blank==='warmup');
+  }
   function draw(){
     const back=field('back').value.trim(), front=field('front').value;
+    drawShirt(front);
     find('front-proof').textContent=front?'Front · '+front:'';
     find('back-proof').textContent=back?'Back · '+back:'';
     form.querySelector('.proof').hidden=!back&&!front;
@@ -18,14 +38,14 @@
   function select(id,slogan='',chooseStyle=false){
     item=catalog.find(p=>p.id===id);
     if(!item)return;
-    form.reset();
+    if(!modal.open)form.reset();
     intent=crypto.randomUUID();
     find('line').textContent=item.collection+' / '+item.kind;
     find('product-title').textContent=item.name;
     find('detail-color').textContent=item.color;
     find('includes').hidden=item.kind!=='Bundles';
     const productCard=document.querySelector('[data-item="'+id+'"] .photo');
-    modal.querySelector('.detail-art').replaceChildren(...Array.from(productCard.childNodes,n=>n.cloneNode(true)));
+    original.replaceChildren(...Array.from(productCard.childNodes,n=>n.cloneNode(true)));
     const printable=['Team Tees','Tees','Hoodies','Bundles'].includes(item.kind);
     find('print-options').hidden=!printable;
     find('size-wrap').hidden=['Accessories','Headwear'].includes(item.kind);
