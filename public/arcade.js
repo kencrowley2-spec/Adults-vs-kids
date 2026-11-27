@@ -283,6 +283,46 @@ function unlockAudio(){
 }
 document.addEventListener('pointerdown',unlockAudio);
 document.addEventListener('keydown',unlockAudio);
+let memoryMatchBuffer, memoryMatchSource, memoryMatchCue=0;
+function loadMemoryMatchSound(){
+  const context=audioContext;
+  if(!context||!soundOn)return;
+  memoryMatchBuffer??=fetch('/assets/memory-match-correct.m4a')
+    .then(response=>{
+      if(!response.ok)throw new Error('Memory Match audio unavailable');
+      return response.arrayBuffer();
+    })
+    .then(bytes=>context.decodeAudioData(bytes))
+    .catch(()=>{memoryMatchBuffer=null;return null;});
+  return memoryMatchBuffer;
+}
+function stopMemoryMatchSound(){
+  memoryMatchCue++;
+  if(!memoryMatchSource)return;
+  memoryMatchSource.stop();
+  memoryMatchSource=null;
+}
+async function playMemoryMatchSound(){
+  stopMemoryMatchSound();
+  const cue=memoryMatchCue;
+  const buffer=await loadMemoryMatchSound();
+  if(!buffer||cue!==memoryMatchCue||!soundOn||document.hidden||audioContext.state!=='running')return;
+  const source=audioContext.createBufferSource();
+  const gain=audioContext.createGain();
+  source.buffer=buffer;
+  gain.gain.value=.65;
+  source.connect(gain);
+  gain.connect(audioContext.destination);
+  source.onended=()=>{
+    source.disconnect();
+    gain.disconnect();
+    if(memoryMatchSource===source)memoryMatchSource=null;
+  };
+  memoryMatchSource=source;
+  source.start();
+}
+window.addEventListener('pagehide',stopMemoryMatchSound);
+
 const chimeNodes=new Set();
 function stopChimes(){for(const node of chimeNodes){try{node.stop();node.disconnect();}catch{}}chimeNodes.clear();}
 let jigsawLockBuffer;
@@ -376,14 +416,14 @@ function react(kind,label){
   $('arcade-feedback').setAttribute('data-kind',effectsOn?kind:'quiet');
   later(()=>{if(sequence!==feedbackSequence)return;$('arcade-feedback').setAttribute('data-kind','');$('feedback-caption').textContent='';},650);
 }
-$('arcade-sound').addEventListener('click',()=>{soundOn=!soundOn;$('arcade-sound').textContent=`Sound: ${soundOn?'on':'off'}`;$('arcade-sound').setAttribute('aria-pressed',String(soundOn));stopTriviaVoice();if(!soundOn)moleIntroDone?.();if(soundOn){chime('match');if($('maze-soundbar'))startMazeMusic();}else {moleAudio?.silence();stopChimes();stopMazeMusic();}});
+$('arcade-sound').addEventListener('click',()=>{soundOn=!soundOn;$('arcade-sound').textContent=`Sound: ${soundOn?'on':'off'}`;$('arcade-sound').setAttribute('aria-pressed',String(soundOn));stopTriviaVoice();if(!soundOn)moleIntroDone?.();if(soundOn){chime('match');if($('maze-soundbar'))startMazeMusic();}else {moleAudio?.silence();stopChimes();stopMazeMusic();stopMemoryMatchSound();}});
 $('arcade-game').setAttribute('data-effects',String(effectsOn));
 $('arcade-effects').setAttribute('aria-pressed',String(effectsOn));
 $('arcade-effects').textContent=`Lights: ${effectsOn?'on':'off'}`;
 $('arcade-effects').addEventListener('click',()=>{effectsOn=!effectsOn;$('arcade-game').setAttribute('data-effects',String(effectsOn));$('arcade-effects').textContent=`Lights: ${effectsOn?'on':'off'}`;$('arcade-effects').setAttribute('aria-pressed',String(effectsOn));$('arcade-feedback').setAttribute('data-kind','');});
-function clearTimers(){ memoryLayoutObserver?.disconnect();memoryLayoutObserver=null;memoryClock?.stop();memoryClock=null;moleIntroDone=null;moleAudio?.stop();moleAudio=null;stopChimes(); stopClaw?.();stopClaw=null; stopMole?.();stopMole=null; stopFrog?.();stopFrog=null; stopMazeMusic(); stopTriviaVoice(); generation++; timers.forEach(clearTimeout); timers=[]; timed=false; }
+function clearTimers(keepMemoryMatchSound=false){ if(!keepMemoryMatchSound)stopMemoryMatchSound();memoryLayoutObserver?.disconnect();memoryLayoutObserver=null;memoryClock?.stop();memoryClock=null;moleIntroDone=null;moleAudio?.stop();moleAudio=null;stopChimes(); stopClaw?.();stopClaw=null; stopMole?.();stopMole=null; stopFrog?.();stopFrog=null; stopMazeMusic(); stopTriviaVoice(); generation++; timers.forEach(clearTimeout); timers=[]; timed=false; }
 function later(fn,delay){ const token=generation; const timer=setTimeout(()=>{if(token===generation)fn();},delay); timers.push(timer); }
-function screen(html){ clearTimers();arena.setAttribute('data-game-id',game?.id||'');arena.setAttribute('data-memory-board',String(game?.id==='memory'&&html.includes('id="memory-game"')));competitionPhase=html.includes('class="handoff"')?'handoff':html.includes('class="result')?'result':'play'; $('arcade-feedback').setAttribute('data-kind','');$('feedback-caption').textContent='';stage.innerHTML=(champion>=0&&game?.id!=='mole'?competitionResult():'')+html;competitionUpdate();if(champion>=0&&game?.id!=='mole')readArcade(`${contender(champion)} takes the crown! ${contender(1-champion)}, your victory dance is still loading! Rematch?`,1); scheduleGameFit(); }
+function screen(html,keepMemoryMatchSound=false){ clearTimers(keepMemoryMatchSound);arena.setAttribute('data-game-id',game?.id||'');arena.setAttribute('data-memory-board',String(game?.id==='memory'&&html.includes('id="memory-game"')));competitionPhase=html.includes('class="handoff"')?'handoff':html.includes('class="result')?'result':'play'; $('arcade-feedback').setAttribute('data-kind','');$('feedback-caption').textContent='';stage.innerHTML=(champion>=0&&game?.id!=='mole'?competitionResult():'')+html;competitionUpdate();if(champion>=0&&game?.id!=='mole')readArcade(`${contender(champion)} takes the crown! ${contender(1-champion)}, your victory dance is still loading! Rematch?`,1); scheduleGameFit(); }
 function button(label,action,parent=stage,className='primary'){
   const b=document.createElement('button'); b.type='button'; b.className=className; b.textContent=champion>=0&&/^(Rematch|New random)/.test(label)?'👑 Defend your crown · Rematch →':label; b.addEventListener('click',action); parent.appendChild(b); return b;
 }
@@ -569,7 +609,7 @@ function finishSeriesGame(winner,detail){
   const complete=series.winners.length===3;
   champion=complete?(wins[0]>wins[1]?0:1):-1; scoreboard();
   if(complete)saveCompleted();
-  screen(`<div class="result"><span class="giant-icon">${winner===null?'🤝':complete?'🏆':'🎉'}</span><p class="eyebrow">${complete?'SERIES COMPLETE':winner===null?'TIE · SAME GAME':'GAME COMPLETE'}</p><h3>${complete?`${teamLabel(champion)} win the series!`:winner===null?'It’s a tie!':`${teamLabel(winner)} win game ${series.index+1}!`}</h3><p>${escapePlayer(detail)}</p><div class="final-score">${wins[0]} <span>–</span> ${wins[1]}</div><p>${complete?'Three games. One great time together. High fives all around.':winner===null?'No point awarded. Replay this game to settle it.':`Up next: ${series.games[series.index+1].icon} ${series.games[series.index+1].name}. Starting in <strong id="next-game-countdown">2</strong> seconds…`}</p></div>`);
+  screen(`<div class="result"><span class="giant-icon">${winner===null?'🤝':complete?'🏆':'🎉'}</span><p class="eyebrow">${complete?'SERIES COMPLETE':winner===null?'TIE · SAME GAME':'GAME COMPLETE'}</p><h3>${complete?`${teamLabel(champion)} win the series!`:winner===null?'It’s a tie!':`${teamLabel(winner)} win game ${series.index+1}!`}</h3><p>${escapePlayer(detail)}</p><div class="final-score">${wins[0]} <span>–</span> ${wins[1]}</div><p>${complete?'Three games. One great time together. High fives all around.':winner===null?'No point awarded. Replay this game to settle it.':`Up next: ${series.games[series.index+1].icon} ${series.games[series.index+1].name}. Starting in <strong id="next-game-countdown">2</strong> seconds…`}</p></div>`,game.id==='memory');
   if(complete){button('New random challenge →',startSeries);button('Return to Arcade',()=>{$('arcade-return').click();},stage,'text-button');}
   else if(winner===null){later(()=>{attempt++;starter=1-starter;beginRound();},2200);}
   else {
@@ -781,7 +821,8 @@ function memory(playoff=false){
   const deck=shuffle([...SYMBOLS,...SYMBOLS]);let revealed=[],matched=new Set(),points=[0,0],locked=true,preview=true,moves=0,best=null,elapsed=0,runningSince=null,clockStopped=false,complete=false;
   const bestKey=`avk:memory:best:24:${arcadeAccountId}`;
   try{const raw=localStorage.getItem(bestKey),value=Number(raw);if(raw!==null&&Number.isInteger(value)&&value>=SYMBOLS.length)best=value;}catch{}
-  screen(`<section id="memory-game" class="source-memory-game" aria-label="Memory Match"><div class="memory-heading"><span>ADULTS vs. KIDS™</span><h3>${playoff?'6–6! QUICK PLAYOFF':'MEMORY MATCH'}</h3><p>${playoff?'First to two pairs wins!':'One board. Most pairs wins!'}</p></div><div class="source-memory-hud"><span class="memory-pairs-pill">★ Pairs found <b id="memory-pairs">0/${SYMBOLS.length}</b></span><span>◷ Time <b id="memory-time">0:00</b></span><span>Moves <b id="memory-moves">0</b></span></div><div class="memory-round-score"><div role="status" aria-live="polite" aria-atomic="true"><span id="memory-team-0">${contenderLabel(0)} <strong id="memory-adult-points">0</strong><em id="memory-team-0-turn"></em><small>PAIRS</small></span><span id="memory-team-1">${contenderLabel(1)} <strong id="memory-kid-points">0</strong><em id="memory-team-1-turn"></em><small>PAIRS</small></span></div></div><div class="memory-play-area" id="memory-play-area"><div class="turn-strip memory-turn-strip" id="turn-strip"></div><div id="memory-cards" class="source-memory-board" role="group" aria-label="${deck.length} cards, ${SYMBOLS.length} matching pairs."></div><div id="memory-praise" class="memory-praise" role="status" aria-live="polite"></div></div><div class="memory-footer"><div><p id="memory-rules" class="memory-quick-rules">Match = 1 point + go again. Miss = switch teams. ${playoff?'First to two pairs wins.':'Tie? Play six cards for the win.'}</p><span class="memory-best-label" ${playoff?'hidden':''}>Best: <b id="memory-best">${best===null?'--':best+' moves'}</b></span></div><button type="button" class="source-memory-restart" id="memory-restart">↻ Restart match</button></div><div id="memory-action"></div></section>`);
+  screen(`<section id="memory-game" class="source-memory-game" aria-label="Memory Match"><div class="memory-heading"><span>ADULTS vs. KIDS™</span><h3>${playoff?'6–6! QUICK PLAYOFF':'MEMORY MATCH'}</h3><p>${playoff?'First to two pairs wins!':'One board. Most pairs wins!'}</p></div><div class="source-memory-hud"><span class="memory-pairs-pill">★ Pairs found <b id="memory-pairs">0/${SYMBOLS.length}</b></span><span>◷ Time <b id="memory-time">0:00</b></span><span>Moves <b id="memory-moves">0</b></span></div><div class="memory-round-score"><div role="status" aria-live="polite" aria-atomic="true"><span id="memory-team-0">${contenderLabel(0)} <strong id="memory-adult-points">0</strong><em id="memory-team-0-turn"></em><small>PAIRS</small></span><span id="memory-team-1">${contenderLabel(1)} <strong id="memory-kid-points">0</strong><em id="memory-team-1-turn"></em><small>PAIRS</small></span></div></div><div class="memory-play-area" id="memory-play-area"><div class="turn-strip memory-turn-strip" id="turn-strip"></div><div id="memory-cards" class="source-memory-board" role="group" aria-label="${deck.length} cards, ${SYMBOLS.length} matching pairs."></div><div id="memory-praise" class="memory-praise" role="status" aria-live="polite"></div></div><div class="memory-footer"><div><p id="memory-rules" class="memory-quick-rules">Match = 1 point + go again. Miss = switch teams. ${playoff?'First to two pairs wins.':'Tie? Play six cards for the win.'}</p><span class="memory-best-label" ${playoff?'hidden':''}>Best: <b id="memory-best">${best===null?'--':best+' moves'}</b></span></div><button type="button" class="source-memory-restart" id="memory-restart">↻ Restart match</button></div><div id="memory-action"></div></section>`,playoff);
+  loadMemoryMatchSound();
   function clockText(){
     const seconds=Math.floor((elapsed+(runningSince===null?0:performance.now()-runningSince))/1000);
     return `${Math.floor(seconds/60)}:${String(seconds%60).padStart(2,'0')}`;
@@ -823,7 +864,7 @@ function memory(playoff=false){
     later(()=>{
       if(series){finishRound(winner,detail);return;}
       champion=winner;wins[winner]=1;recording.roundWinners.push(winner);saveCompleted();scoreboard();
-      screen(`<div class="result"><p>${escapePlayer(detail)}</p><h3>Play a rematch?</h3></div>`);
+      screen(`<div class="result"><p>${escapePlayer(detail)}</p><h3>Play a rematch?</h3></div>`,true);
       button('Play a rematch',()=>openGame('memory'));
       button('Back to Arcade',()=>$('arcade-return').click(),stage,'text-button');
       react('win','✦ MEMORY MATCH CHAMPION ✦');status(`${contender(winner)} wins Memory Match!`);focusFirst();
@@ -831,14 +872,16 @@ function memory(playoff=false){
   }
   function flip(i){
     if(locked||document.hidden||complete||revealed.includes(i)||matched.has(i))return;
-    revealed.push(i);chime('tap');
+    revealed.push(i);chime('tap');loadMemoryMatchSound();
     if(revealed.length<2){draw();return;}
     locked=true;moves++;$('memory-moves').textContent=String(moves);draw();
     // Preserve the supplied game's 650ms reveal and extra 450ms miss delay.
     later(function resolvePair(){
       if(document.hidden){later(resolvePair,250);return;}
       const match=deck[revealed[0]]===deck[revealed[1]];
-      if(match){revealed.forEach(id=>matched.add(id));points[turn]++;competitionUpdate({score:points[turn]});$('memory-praise').innerHTML=`<span class="memory-match-burst">✦ PAIR FOUND! ✦<small>${contenderLabel(turn)} +1 · Go again!</small></span>`;const found=matched.size;later(()=>{if(matched.size===found)$('memory-praise').replaceChildren();},900);}
+      if(match){
+        playMemoryMatchSound();
+        revealed.forEach(id=>matched.add(id));points[turn]++;competitionUpdate({score:points[turn]});$('memory-praise').innerHTML=`<span class="memory-match-burst">✦ PAIR FOUND! ✦<small>${contenderLabel(turn)} +1 · Go again!</small></span>`;const found=matched.size;later(()=>{if(matched.size===found)$('memory-praise').replaceChildren();},900);}
       draw();if(matched.size===deck.length||(playoff&&points[turn]===2)){finishBoard();return;}
       status(match?`${teamName(turn)} earn 1 point and go again!`:'No match. Remember those cards — next team coming up…');
       react(match?'match':'turn',match?`${teamName(turn)} +1 POINT!`:'Next team…');
@@ -1256,7 +1299,7 @@ $('arcade-reset').addEventListener('click',()=>{
 });
 document.addEventListener('visibilitychange',()=>{
   memoryClock?.setPaused(document.hidden);
-  if(document.hidden){stopTriviaVoice();moleAudio?.stop();}
+  if(document.hidden){stopTriviaVoice();moleAudio?.stop();stopMemoryMatchSound();}
   if(document.hidden&&timed&&game){clearTimers();screen('<div class="result"><h3>Let’s give both teams a fair turn.</h3><p>The timed game was interrupted. Replay this round with no round win awarded.</p></div>');button('Replay this round →',()=>beginRound(game.id==='maze'));status('Round interrupted. Match score is unchanged.');}
 });
 
