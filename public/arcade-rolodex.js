@@ -7,14 +7,8 @@ export function mountRolodex({lobby, games, coverMarkup, openMatchup}) {
     spotlightIds.map(id => games.find(game => game.id === id)).filter(Boolean),
     games.filter(game => !spotlightIds.includes(game.id))
   ].filter(list => list.length);
-  const host = document.createElement('section');
-  host.id = 'avk-rolodex';
-  host.setAttribute('aria-label', 'Arcade Game Rolodex');
-  host.innerHTML = `
-    <div class="rd-heading">
-      <img src="/assets/brand-logo-320.webp" alt="Adults vs. Kids" width="88" height="58">
-      <h1>Game Rolodex</h1><span class="rd-preview">Preview</span>
-    </div>
+  const host = lobby.querySelector('#avk-rolodex');
+  host.querySelector('.rd-content').innerHTML = `
     <div class="rd-tabs" role="group" aria-label="Choose a game deck"></div>
     <div class="rd-stage" role="group" aria-roledescription="carousel" aria-label="Rotating game covers">
       <div class="rd-room" aria-hidden="true"></div>
@@ -43,7 +37,8 @@ export function mountRolodex({lobby, games, coverMarkup, openMatchup}) {
       </div>
       <button type="button" class="rd-open">Open matchup</button>
     </div>
-    <div class="rd-hint">Swipe to spin · Tap the front cover to open</div>`;
+    <div class="rd-hint">Swipe to spin · Tap the front cover to open</div>
+    <div class="rd-options" role="group" aria-label="Game options"></div>`;
   const get = selector => host.querySelector(selector);
   const stage = get('.rd-stage');
   const layer = get('.rd-cases');
@@ -77,8 +72,8 @@ export function mountRolodex({lobby, games, coverMarkup, openMatchup}) {
     label.textContent = game.name;
     button.append(image, label);
     button.setAttribute('aria-label', game.name);
-    button.addEventListener('click', () => {
-      if (blockClick) return;
+    button.addEventListener('click', event => {
+      if (blockClick && event.detail !== 0) return;
       if (deck !== active) selectDeck(deck, index);
       else if (wrap(Math.round(positions[active]), list.length) === index) openSelected();
       else spinToIndex(index);
@@ -117,6 +112,7 @@ export function mountRolodex({lobby, games, coverMarkup, openMatchup}) {
     tabs.forEach((tab, d) => tab.setAttribute('aria-pressed', String(d === active)));
   }
   function openSelected() {
+    if (frame) selectDeck(active, wrap(Math.round(target), shelves[active].length));
     const selected = shelves[active][indexOf(active)];
     if (!selected.comingSoon) openMatchup(selected);
   }
@@ -199,14 +195,28 @@ export function mountRolodex({lobby, games, coverMarkup, openMatchup}) {
       blockClick = true;
       if (stage.hasPointerCapture(event.pointerId)) stage.releasePointerCapture(event.pointerId);
       move(Math.round(positions[active]));
-      setTimeout(() => { blockClick = false; }, 0);
-    } else move(Math.round(positions[active]));
+    } else {
+      move(Math.round(positions[active]));
+      if (event.type === 'pointerup' && event.pointerType === 'touch') {
+        // Some mobile browsers omit the compatibility click immediately after a swipe.
+        const cover = event.target.closest('.rd-case');
+        if (cover) {
+          blockClick = true;
+          cover.click();
+        }
+      }
+    }
     gesture = null;
   }
   stage.addEventListener('pointerup', finish);
   stage.addEventListener('pointercancel', finish);
   stage.addEventListener('pointerleave', event => { if (gesture && !gesture.moved) finish(event); });
-  lobby.prepend(host);
+  const options = get('.rd-options');
+  for (const id of ['cabinet-pinball', 'choose-arcade-players', 'cabinet-fx']) {
+    const control = document.getElementById(id);
+    if (control) options.append(control);
+  }
+  if (location.hash === '#cabinet-pinball') document.getElementById('cabinet-pinball')?.focus();
   new ResizeObserver(draw).observe(stage);
   draw(); updateSelection();
   return host;

@@ -204,8 +204,8 @@ export function mountJigsaw({onStart, onComplete, beforeStart, onExit, onSnap}) 
  dialog.setAttribute('aria-labelledby', 'jigsaw-title');
  dialog.innerHTML = `
   <header class="jigsaw-head">
-   <div><p>ADULTS vs. KIDS™ ARCADE</p><h2 id="jigsaw-title">Family Jigsaw 3D</h2></div>
-   <div class="jigsaw-head-actions"><button type="button" data-gallery>Gallery</button><button type="button" data-exit>Back to Arcade</button></div>
+   <div><p>ADULTS vs. KIDS™ ARCADE ROLODEX</p><h2 id="jigsaw-title">Family Jigsaw 3D</h2></div>
+   <div class="jigsaw-head-actions"><button type="button" data-gallery>Gallery</button><button type="button" data-exit>Back to Arcade Rolodex</button></div>
   </header>
   <form class="jigsaw-setup">
    <figure class="jigsaw-photo">

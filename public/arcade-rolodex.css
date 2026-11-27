@@ -1,4 +1,4 @@
-/* The preview takes over the lobby only while the Rolodex is mounted and visible. */
+/* Keep the selector layout scoped to the lobby so games can use their full-screen layouts. */
 body:has(#arcade-lobby:not([hidden]) #avk-rolodex){height:auto;min-height:100svh;overflow:auto;background:#060b11;padding:0 0 calc(66px + env(safe-area-inset-bottom,0px));color:#f4f8fd}
 body:has(#arcade-lobby:not([hidden]) #avk-rolodex)>header.cabinet-nav{display:none}
 body:has(#arcade-lobby:not([hidden]) #avk-rolodex)>main{display:block;padding:0;margin:0;max-width:none;height:auto}
@@ -11,7 +11,6 @@ body:has(#arcade-lobby:not([hidden]) #avk-rolodex)>main{display:block;padding:0;
 #avk-rolodex .rd-heading{display:flex;align-items:center;justify-content:center;gap:clamp(10px,2vw,23px);padding:0 12px}
 #avk-rolodex .rd-heading img{width:clamp(66px,10vw,96px);height:clamp(44px,6vw,66px);object-fit:contain}
 #avk-rolodex .rd-heading h1{color:#f9f9f5;margin:0;font:italic 900 clamp(28px,5vw,57px)/1 Arial,Helvetica,sans-serif;letter-spacing:-.07em;text-shadow:0 3px 0 #182a36}
-#avk-rolodex .rd-preview{font:700 11px/1 monospace;color:#a1b3bd;border:1px solid #46535f;border-radius:3px;padding:5px 6px}
 #avk-rolodex .rd-tabs{display:flex;justify-content:center;gap:5px;margin:clamp(8px,2svh,22px) auto 0;position:relative;z-index:1}
 #avk-rolodex .rd-tabs button{min-height:44px;color:#bdcbd6;font-weight:750;font-size:14px;background:#101b23;border:1px solid #35444c;padding:7px 17px;border-radius:24px}
 #avk-rolodex .rd-tabs [aria-pressed=true]{background:#ffdb58;color:#1e1705;border-color:#ffe7a0}
@@ -50,3 +49,8 @@ body:has(#arcade-lobby:not([hidden]) #avk-rolodex)>main{display:block;padding:0;
 }
 @media(max-height:560px) and (min-width:681px){#avk-rolodex .rd-stage{height:230px}#avk-rolodex .rd-heading img{height:42px}#avk-rolodex .rd-heading h1{font-size:32px}#avk-rolodex .rd-tabs{margin:2px auto 0}}
 @media(prefers-reduced-motion:reduce){#avk-rolodex .rd-electric{animation:none}}
+
+#avk-rolodex .rd-options{display:flex;justify-content:center;align-items:center;flex-wrap:wrap;gap:8px;padding:0 12px}
+#avk-rolodex .rd-options button{position:static;inset:auto;transform:none;min-height:44px;width:auto;height:auto;margin:0;padding:6px 10px;border:0;border-radius:3px;background:transparent;box-shadow:none;color:#d6e0e5;font:700 13px/1.2 Arial,sans-serif;letter-spacing:normal;text-shadow:none}
+#avk-rolodex .rd-options button:hover{color:#ffdb58}
+body:has(#arcade-lobby:not([hidden])) #arcade-more .arcade-roster-lineup{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 16px;color:inherit}

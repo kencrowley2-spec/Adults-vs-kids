@@ -210,7 +210,7 @@ function announcerVoice(){
 function announcerSettings(){
  const controls=document.querySelector('.arcade-controls');if(!controls)return;
  const open=document.createElement('button');open.type='button';open.textContent='🎙 Voice';controls.appendChild(open);
- const dialog=document.createElement('dialog');dialog.className='arcade-more';dialog.setAttribute('aria-label','Arcade announcer');
+ const dialog=document.createElement('dialog');dialog.className='arcade-more';dialog.setAttribute('aria-label','Arcade Rolodex announcer');
  dialog.innerHTML='<div class="arcade-dialog-head"><h2>Your upbeat American announcer</h2><form method="dialog"><button aria-label="Close voice settings">×</button></form></div><div style="padding:18px;display:grid;gap:14px"><label for="arcade-announcer">Announcer voice</label><select id="arcade-announcer" style="width:100%;min-height:44px;font:inherit"></select><button type="button" id="arcade-announcer-preview" style="min-height:44px;font:inherit">🔊 Hear a sample</button><p style="margin:0;font-size:13px">American male voices available on this device. Your choice is saved here.</p><p id="arcade-announcer-status" role="status" style="margin:0"></p></div>';
  document.body.appendChild(dialog);
  const select=dialog.querySelector('select'),status=dialog.querySelector('#arcade-announcer-status');
@@ -571,7 +571,7 @@ function finishSeriesGame(winner,detail){
   champion=complete?(wins[0]>wins[1]?0:1):-1; scoreboard();
   if(complete)saveCompleted();
   screen(`<div class="result"><span class="giant-icon">${winner===null?'🤝':complete?'🏆':'🎉'}</span><p class="eyebrow">${complete?'SERIES COMPLETE':winner===null?'TIE · SAME GAME':'GAME COMPLETE'}</p><h3>${complete?`${teamLabel(champion)} win the series!`:winner===null?'It’s a tie!':`${teamLabel(winner)} win game ${series.index+1}!`}</h3><p>${escapePlayer(detail)}</p><div class="final-score">${wins[0]} <span>–</span> ${wins[1]}</div><p>${complete?'Three games. One great time together. High fives all around.':winner===null?'No point awarded. Replay this game to settle it.':`Up next: ${series.games[series.index+1].icon} ${series.games[series.index+1].name}. Starting in <strong id="next-game-countdown">2</strong> seconds…`}</p></div>`);
-  if(complete){button('New random challenge →',startSeries);button('Return to Arcade',()=>{$('arcade-return').click();},stage,'text-button');}
+  if(complete){button('New random challenge →',startSeries);button('Return to Arcade Rolodex',()=>{$('arcade-return').click();},stage,'text-button');}
   else if(winner===null){later(()=>{attempt++;starter=1-starter;beginRound();},2200);}
   else {
     // Both countdown and button use one guarded transition; screen changes cancel timers.
@@ -726,7 +726,7 @@ function finishBasketballMatch(winner,detail){
  scoreboard();
  screen(`<div class="result"><span class="giant-icon">${winner===null?'🤝':'🏆'}</span><p class="eyebrow">BASKETBALL SHOWDOWN</p><h3>${winner===null?'It’s a tie!':`${teamLabel(winner)} win!`}</h3><p>${escapePlayer(detail)}</p><div class="final-score">${results[0].score} <span>–</span> ${results[1].score}</div><p>30 seconds each. Every basket counts for two.</p></div>`);
  button(winner===null?'Play again →':'Rematch →',()=>openGame('basketball'));
- button('Return to Arcade',()=>$('arcade-return').click(),stage,'text-button');
+ button('Return to Arcade Rolodex',()=>$('arcade-return').click(),stage,'text-button');
  react(winner===null?'turn':'win',winner===null?'Even score!':`${teamName(winner)} win!`);
  status(winner===null?'Tie game. Share a high five and play again!':`${teamName(winner)} win the basketball showdown!`);focusFirst();
 }
@@ -734,7 +734,7 @@ function finishBlockMatch(winner,detail){
  if(winner!==null){wins[winner]=1;champion=winner;if(recording)recording.roundWinners.push(winner);}saveCompleted();
  scoreboard();
  screen(`<div class="result"><span class="giant-icon">${winner===null?'🤝':'🏆'}</span><p class="eyebrow">BLOCK SHOWDOWN · MATCH COMPLETE</p><h3>${winner===null?'It’s a tie!':`${teamLabel(winner)} win!`}</h3><p>${escapePlayer(detail)}</p><div class="final-score">${results[0].score} <span>–</span> ${results[1].score}</div><p>One round. 60 seconds each. Every placed piece earns one point.</p></div>`);
- button('Rematch →',()=>openGame('blocks'));button('Return to Arcade',()=>$('arcade-return').click(),stage,'text-button');
+ button('Rematch →',()=>openGame('blocks'));button('Return to Arcade Rolodex',()=>$('arcade-return').click(),stage,'text-button');
  react(winner===null?'turn':'win',winner===null?'Even score!':`${teamName(winner)} win!`);
  status(winner===null?'Tie game! Share a high five.':`${teamName(winner)} win Block Showdown!`);focusFirst();
 }
@@ -823,7 +823,7 @@ function memory(playoff=false){
       screen(`<div class="result"><p>${escapePlayer(detail)}</p><h3>Play a rematch?</h3></div>`);
       if(finalBoard)window.avkMemoryCast.update({...finalBoard,phase:contender(winner)+' wins!'});
       button('Play a rematch',()=>openGame('memory'));
-      button('Back to Arcade',()=>$('arcade-return').click(),stage,'text-button');
+      button('Back to Arcade Rolodex',()=>$('arcade-return').click(),stage,'text-button');
       react('win','✦ MEMORY MATCH CHAMPION ✦');status(`${contender(winner)} wins Memory Match!`);focusFirst();
     },800);
   }
@@ -960,7 +960,7 @@ function finishTreasureMatch(winner,detail){
  if(winner!==null){wins[winner]=1;champion=winner;if(recording)recording.roundWinners.push(winner);}saveCompleted();
  scoreboard();
  screen(`<div class="result"><span class="giant-icon">${winner===null?'🤝':'🏆'}</span><p class="eyebrow">TREASURE SHUFFLE · SHOWDOWN COMPLETE</p><h3>${winner===null?'It’s a draw!':`${teamLabel(winner)} win the Showdown!`}</h3><p>${escapePlayer(detail)}</p><div class="final-score">${results[0].score} <span>–</span> ${results[1].score}</div><p>Five guesses each. One point per treasure. High fives all around!</p></div>`);
- button('Rematch →',()=>openGame('treasure'));button('Return to Arcade',()=>$('arcade-return').click(),stage,'text-button');
+ button('Rematch →',()=>openGame('treasure'));button('Return to Arcade Rolodex',()=>$('arcade-return').click(),stage,'text-button');
  react(winner===null?'turn':'win',winner===null?'Equal treasure!':`${teamName(winner)} win!`);
  status(winner===null?'Draw! Equal treasures found.':`${teamName(winner)} win Treasure Shuffle!`);focusFirst();
 }
@@ -1245,21 +1245,18 @@ function rememberGame(id){
  try{const ids=recentGames(localStorage,recentKey,GAMES);localStorage.setItem(recentKey,JSON.stringify([id,...ids.filter(x=>x!==id)].slice(0,8)));}catch{}
 
 }
-mountFeaturedGames({games:GAMES,gameTile});
-if (new URLSearchParams(location.search).get('view') === 'rolodex') {
-  const stylesheet = document.createElement('link');
-  stylesheet.rel = 'stylesheet';
-  stylesheet.href = '/arcade-rolodex.css';
-  document.head.append(stylesheet);
-  import('./arcade-rolodex.js').then(({mountRolodex}) => {
-    mountRolodex({lobby, games:GAMES, coverMarkup, openMatchup:entry => caseReader.open(entry)});
-  }).catch(error => console.error('Unable to open the arcade Rolodex', error));
-}
+import('./arcade-rolodex.js?v=2').then(({mountRolodex}) => {
+  mountRolodex({lobby, games:GAMES, coverMarkup, openMatchup:entry => caseReader.open(entry)});
+}).catch(error => {
+  console.error('Unable to open the Arcade Rolodex', error);
+  $('avk-rolodex')?.remove();
+  mountFeaturedGames({games:GAMES,gameTile});
+});
 $('arcade-random').addEventListener('click',startSeries);
-$('arcade-return').addEventListener('click',()=>{clearTimers();series=null;arena.hidden=true;lobby.hidden=false;game=null;$('arcade-favorites').querySelector('button')?.focus();});
+$('arcade-return').addEventListener('click',()=>{clearTimers();series=null;arena.hidden=true;lobby.hidden=false;game=null;(lobby.querySelector('.rd-front') || $('arcade-favorites').querySelector('button'))?.focus();});
 $('arcade-reset').addEventListener('click',()=>{
   if(!game)return;const saved=game.id;const wasSeries=!!series;screen('<div class="result"><h3>Start over?</h3><p>The current game and all points in this match or series will reset.</p></div>');
-  button(wasSeries?'Restart series':'Restart match',()=>wasSeries?startSeries():openGame(saved));button('Return to Arcade',()=>{$('arcade-return').click();},stage,'text-button');status('Match paused. Choose restart or return to the Arcade.');
+  button(wasSeries?'Restart series':'Restart match',()=>wasSeries?startSeries():openGame(saved));button('Return to Arcade Rolodex',()=>{$('arcade-return').click();},stage,'text-button');status('Match paused. Choose restart or return to the Arcade Rolodex.');
 });
 document.addEventListener('visibilitychange',()=>{
   memoryClock?.setPaused(document.hidden);
@@ -1280,7 +1277,7 @@ function finishMoleMatch(winner,detail){
  if(winner!==null){wins[winner]=1;champion=winner;if(recording)recording.roundWinners.push(winner);}saveCompleted();
  scoreboard();
  screen(`<div class="result mole-victory"><span class="mole-fireworks" aria-hidden="true"></span><div class="mole-confetti" aria-hidden="true">✦ · ★ · ✧ · ★ · ✦</div><span class="giant-icon mole-trophy">${winner===null?'🤝':'🏆'}</span><p class="eyebrow">WHACK-A-MOLE · SHOWDOWN COMPLETE</p><h3>${winner===null?'It’s a tie!':`${teamLabel(winner)} win!`}</h3><p>${winner===null?'HIGH FIVES ALL ROUND':`${contenderLabel(winner)} HAS THE CROWN!`}</p><p>${escapePlayer(detail)}</p><div class="final-score">${results[0].score} <span>–</span> ${results[1].score}</div><p>One hit = one point · 20 seconds each.</p><p>${winner===null?'Two teams. Two legends. The mole kingdom belongs to everyone!':kidsOnly?`${contenderLabel(winner)} rules the mole kingdom! ${contenderLabel(1-winner)}, your comeback awaits!`:winner===1?'BREAKING NEWS! The Kids have taken over the mole kingdom! Adults, your comeback awaits!':'UNBELIEVABLE! Adults rule the mole kingdom! Kids, demand a rematch!'}</p><span class="mole-dancer" aria-hidden="true">${winner===null?'🐹 🐹':'🐹'}</span></div>`);
- button('REMATCH!',()=>openGame('mole'));if(winner===null)button('Optional tiebreaker · 20 seconds each',()=>openGame('mole'),stage,'text-button');button('Return to Arcade',()=>$('arcade-return').click(),stage,'text-button');
+ button('REMATCH!',()=>openGame('mole'));if(winner===null)button('Optional tiebreaker · 20 seconds each',()=>openGame('mole'),stage,'text-button');button('Return to Arcade Rolodex',()=>$('arcade-return').click(),stage,'text-button');
  react(winner===null?'turn':'win',winner===null?'Even score!':`${teamName(winner)} win!`);
  moleAudio=createMoleAudio({enabled:()=>soundOn,getContext:()=>{unlockAudio();return audioContext;},volume:()=>moleVolume,speak:(line,volume)=>readArcade(line,volume,{host:true,rate:1.09,pitch:1.06}),later});moleAudio.cue('buzzer');later(()=>moleAudio?.cue('victory'),380);moleAudio.announce(winner===null?'Two teams! Two champions!':`${contender(winner)}! The new Whack-a-Mole champions! Ready for a rematch?`,true);
  status(winner===null?'Tie game! Share a high five.':`${teamName(winner)} win Whack-a-Mole!`);focusFirst();
@@ -1297,7 +1294,7 @@ function finishClawMatch(winner,detail){
  scoreboard();
  screen(`<div class="result claw-result"><canvas id="claw-fireworks" aria-hidden="true"></canvas><span class="giant-icon">${winner===null?'🤝':'🏆'}</span><p class="eyebrow">CLAW MACHINE · SHOWDOWN COMPLETE</p><h3>${winner===null?'A tie! Congratulations to both players!':`Congratulations, ${teamLabel(winner)}!`}</h3><p>${winner===null?'Matching prize hauls!':'You win the Showdown!'}</p><p>${escapePlayer(detail)}</p><div class="final-score">${results[0].score} <span>–</span> ${results[1].score}</div><p>30 seconds each. Every toy retrieved earns 1 point.</p></div>`);
  clawFireworks($('claw-fireworks'),later,effectsOn);
- button('Rematch →',()=>openGame('claw'));button('Return to Arcade',()=>$('arcade-return').click(),stage,'text-button');
+ button('Rematch →',()=>openGame('claw'));button('Return to Arcade Rolodex',()=>$('arcade-return').click(),stage,'text-button');
  react(winner===null?'turn':'win',winner===null?'Congratulations to both players!':`Congratulations, ${teamName(winner)}!`);
  status(winner===null?'Tie game! Congratulations to both players!':`Congratulations, ${teamName(winner)}! You win THE CLAW!`);focusFirst();
 }

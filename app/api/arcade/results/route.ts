@@ -26,7 +26,7 @@ export async function POST(request:Request){
   const data=JSON.parse(raw);
   if(data?.accountId!==auth.user.id)return memberReply({error:'This result belongs to a different signed-in account.'},403,auth.headers);
   result=completedResult(data);
- }catch{return memberReply({error:'Only completed Arcade matches and three-game series can be recorded.'},400,auth.headers);}
+ }catch{return memberReply({error:'Only completed Arcade Rolodex matches and three-game series can be recorded.'},400,auth.headers);}
  try{
   if(result.mode==='play'){
    const play=await auth.client.from('arcade_plays').upsert({id:result.id,user_id:auth.user.id,game:result.gameIds[0]},{onConflict:'user_id,id',ignoreDuplicates:true});

@@ -67,7 +67,7 @@ export function mountClaw({canvas,left,right,grab,team,prizes:layout,later,onSco
  canvas.addEventListener('pointermove',e=>{if(!ended&&e.pointerId===drag&&phase==='aim')aim(e);});
  for(const type of ['pointerup','pointercancel','lostpointercapture'])canvas.addEventListener(type,()=>{drag=null;});
  canvas.addEventListener('keydown',e=>{if(ended||!['ArrowLeft','ArrowRight',' ','Enter'].includes(e.key)||phase!=='aim')return;e.preventDefault();if(e.key==='ArrowLeft')x=clamp(x-4);else if(e.key==='ArrowRight')x=clamp(x+4);else if(!e.repeat)drop();});
- if(visual.ready){controls(true);onStatus('Loading THE CLAW…');visual.ready.then(()=>{if(ended)return;started=performance.now();deadline=started+30000;last=started;ready=true;controls(false);onStatus(`${team}, 30 seconds! Aim for the center. Gold marks a secure grip. An off-center toy can slip.`);}).catch(error=>{if(!ended){ended=true;visual.dispose();onStatus('The artwork could not load. Return to Arcade and try again.');console.error(error);}});}
+ if(visual.ready){controls(true);onStatus('Loading THE CLAW…');visual.ready.then(()=>{if(ended)return;started=performance.now();deadline=started+30000;last=started;ready=true;controls(false);onStatus(`${team}, 30 seconds! Aim for the center. Gold marks a secure grip. An off-center toy can slip.`);}).catch(error=>{if(!ended){ended=true;visual.dispose();onStatus('The artwork could not load. Return to Arcade Rolodex and try again.');console.error(error);}});}
  if(!visual.ready)onStatus(`${team}, you have 30 seconds! Drag or use arrows to aim, then press GRAB when the gold ring appears. Each toy delivered earns 1 point.`);frame();
  return ()=>{if(!ended)visual.dispose();ended=true;direction=0;drag=null;};
 }

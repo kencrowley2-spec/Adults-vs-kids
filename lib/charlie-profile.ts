@@ -5,7 +5,7 @@ ${portrait}<div class="charlie-card-copy"><span class="charlie-tag">Coming Janua
 <div class="charlie-card-actions"><button type="button" data-open-charlie aria-haspopup="dialog" aria-controls="charlieProfile">See full details</button><a class="charlie-red" href="/all-access-club#membership">Join the All-Access Club</a></div></section>`;
 const features = [
 ['🎤','He Hosts the Show!','Charlie introduces contestants, explains the rules, announces rounds, delivers dramatic countdowns, celebrates victories, and keeps the excitement going from beginning to end.'],
-['🎮','He Brings Games to Life!','Challenge Charlie to create a completely original family competition or ask him to host one of your favorite ADULTS vs. KIDS™ Arcade games.'],
+['🎮','He Brings Games to Life!','Challenge Charlie to create a completely original family competition or ask him to host one of your favorite ADULTS vs. KIDS™ Arcade Rolodex games.'],
 ['🏆','He Keeps Score!','Charlie manages the rounds, timers, scoreboards, and winner announcements so parents can spend less time organizing and more time playing.'],
 ['😂','He’s Got Personality!','Expect hilarious commentary, playful trash talk, dramatic introductions, and over-the-top celebrations. Charlie loves a good rivalry, especially when the kids take down the adults!'],
 ['🧠','He Creates Games Just for Your Family!','Tell Charlie who’s playing, how much time you have, and where you are. He’ll help create a challenge using your family’s ages, interests, and available materials.'],

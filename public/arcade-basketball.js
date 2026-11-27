@@ -48,7 +48,7 @@ export function mountBasketball({canvas,team,later,onScore,onEnd,sound,onStatus}
   ctx.drawImage(texture,0,0);
   // Spare basketballs in the return tray.
   ellipse(200,697,142,16,'#0006');ball(104,699,31,-.4);ball(296,699,31,.4);
-  ctx.fillStyle='#151a18';ctx.fillRect(0,731,400,29);text('ADULTS vs. KIDS™  •  ARCADE',200,750,11,'#ffe16d');
+  ctx.fillStyle='#151a18';ctx.fillRect(0,731,400,29);text('ADULTS vs. KIDS™  •  ARCADE ROLODEX',200,750,11,'#ffe16d');
  }
  function hoop(front=false,sway=0){
   if(!front){ellipse(200,278,54,12,'#1c2824','#535b44',6);return;}

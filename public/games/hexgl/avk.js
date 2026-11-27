@@ -82,7 +82,7 @@
     var finished = this.gameplay.result === this.gameplay.results.FINISH;
     var result = document.getElementById('time');
     if (!finished) result.textContent = 'Ship destroyed — try again!';
-    document.querySelector('#step-5 #ctrl-help').textContent = 'Tap to race again, or return to the Arcade.';
+    document.querySelector('#step-5 #ctrl-help').textContent = 'Tap to race again, or return to the Arcade Rolodex.';
     bkcore.Audio.stop('bg'); bkcore.Audio.stop('wind');
   };
   var ready = false;

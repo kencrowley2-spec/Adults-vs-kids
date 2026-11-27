@@ -14,7 +14,7 @@
    if(document.querySelector('.platform-preview')){status.textContent='This is a design preview. Sign in to your family dashboard to submit your game idea.';return}
    sending=true;button.disabled=true;status.textContent='Submitting your idea…';
    try{
-    const response=await fetch('/api/message',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({kind:'challenge',body:'ARCADE GAME IDEA\n\n'+idea,permission:true})});
+    const response=await fetch('/api/message',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({kind:'challenge',body:'ARCADE ROLODEX GAME IDEA\n\n'+idea,permission:true})});
     const result=await response.json();
     if(!response.ok||result.saved!==true)throw Error(result.error||'We could not submit your idea. Please try again.');
     draft='';input.value='';input.disabled=true;button.hidden=true;status.textContent='Thank you! Your game idea has been submitted for review. If it’s picked, you’ll be credited in the arcade.';

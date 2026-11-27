@@ -33,7 +33,7 @@ if(panel){
    for(const row of data.recent){
     const item=document.createElement('li'),label=document.createElement('strong'),detail=document.createElement('span');
     label.textContent=`${row.winner===0?'Adults':'Kids'} won ${row.adult_wins}–${row.kid_wins}`;
-    detail.textContent=`${row.mode==='series'?'3-game series':gameNames[row.game_ids[0]]||'Arcade match'} · ${new Date(row.completed_at).toLocaleDateString()}`;
+    detail.textContent=`${row.mode==='series'?'3-game series':gameNames[row.game_ids[0]]||'Arcade Rolodex match'} · ${new Date(row.completed_at).toLocaleDateString()}`;
     item.appendChild(label);item.appendChild(detail);$('lifetime-recent').appendChild(item);
    }
    if(!data.recent.length){const item=document.createElement('li');item.textContent='Your completed results will appear here.';$('lifetime-recent').appendChild(item);}

@@ -101,7 +101,7 @@ export const guides:Guide[] = [
       },
       {
         "title": "24. Rock Paper Scissors series",
-        "text": "Suggested ages 4–12 · About 5 minutes · Supplies: No supplies or one shared device. Teach the three moves with an open practice round: rock beats scissors, scissors beats paper and paper beats rock. Play until one side wins three rounds; tied moves replay. For digital turns and scoring, use the free Arcade described in the Family Games guide."
+        "text": "Suggested ages 4–12 · About 5 minutes · Supplies: No supplies or one shared device. Teach the three moves with an open practice round: rock beats scissors, scissors beats paper and paper beats rock. Play until one side wins three rounds; tied moves replay. For digital turns and scoring, use the free Arcade Rolodex described in the Family Games guide."
       },
       {
         "title": "25. Family memory rematch",
@@ -117,7 +117,7 @@ export const guides:Guide[] = [
   {
     "slug": "free-online-games-for-parents-and-kids",
     "title": "Free Online Games for Parents and Kids",
-    "description": "Find shared-device family games, compare memory, strategy, and timing challenges, and learn how to play the free Adults vs. Kids Arcade together.",
+    "description": "Find shared-device family games, compare memory, strategy, and timing challenges, and learn how to play the free Adults vs. Kids Arcade Rolodex together.",
     "intro": "A family online game works best when everyone has a role. Instead of opening separate games on separate screens, sit together, choose two teams, and pass one phone, tablet, or computer between turns. Decide how long you want to play before starting.",
     "sections": [
       {
@@ -133,8 +133,8 @@ export const guides:Guide[] = [
         "text": "Give each side the same opportunities. Practice once before keeping score, and agree that coaching happens between turns. If one child is learning the controls, team up with them rather than changing a game’s score after the result. Cheer a clever move from either side. Stop at your agreed endpoint and let the losing team choose the next game."
       },
       {
-        "title": "Play the ADULTS vs. KIDS free Arcade",
-        "text": "The Arcade contains short games built around passing a device, Adults vs. Kids teams, and scoreboards. Browse the public Family Games page to read instructions without signing in. Try two games as a guest, then create a free adult-managed family account or log in to keep playing. Printable books are a separate purchase, and the planned AI host is in development. Finish with a paper drawing challenge if your family wants to move away from the screen."
+        "title": "Play the ADULTS vs. KIDS free Arcade Rolodex",
+        "text": "The Arcade Rolodex contains short games built around passing a device, Adults vs. Kids teams, and scoreboards. Browse the public Family Games page to read instructions without signing in. Try two games as a guest, then create a free adult-managed family account or log in to keep playing. Printable books are a separate purchase, and the planned AI host is in development. Finish with a paper drawing challenge if your family wants to move away from the screen."
       }
     ],
     "related": [
@@ -154,15 +154,15 @@ export const guides:Guide[] = [
       },
       {
         "title": "Mix different kinds of challenges",
-        "text": "Start with a drawing duel: everyone draws the same silly animal and adds three unusual details. Next, try Memory Match or Tic-Tac-Toe in the free Arcade. End with a storytelling relay where each person adds one sentence. Mixing creativity, observation, and chance gives different players a chance to enjoy their strengths. A challenge book can supply prompts when nobody wants to invent the rules."
+        "text": "Start with a drawing duel: everyone draws the same silly animal and adds three unusual details. Next, try Memory Match or Tic-Tac-Toe in the free Arcade Rolodex. End with a storytelling relay where each person adds one sentence. Mixing creativity, observation, and chance gives different players a chance to enjoy their strengths. A challenge book can supply prompts when nobody wants to invent the rules."
       },
       {
         "title": "Decide points before you start",
-        "text": "For homemade challenges, award one point for completing the agreed task. Use a group vote only when everyone is comfortable with subjective judging, and rotate the judge. For Arcade games, follow the built-in scoring. With mixed ages, choose balanced teams or give younger children a head start in a physical activity. Agree on it together before the round begins."
+        "text": "For homemade challenges, award one point for completing the agreed task. Use a group vote only when everyone is comfortable with subjective judging, and rotate the judge. For Arcade Rolodex games, follow the built-in scoring. With mixed ages, choose balanced teams or give younger children a head start in a physical activity. Agree on it together before the round begins."
       },
       {
         "title": "Make the ending part of the fun",
-        "text": "Announce the final score, share one funny moment, and thank the other team for playing. A paper crown or the right to choose the next prompt is enough of a prize. Avoid adding more rounds just to change who won. ADULTS vs. KIDS brings together free Arcade games, printable books, and timer tools so you can choose a small repeatable routine that fits your household."
+        "text": "Announce the final score, share one funny moment, and thank the other team for playing. A paper crown or the right to choose the next prompt is enough of a prize. Avoid adding more rounds just to change who won. ADULTS vs. KIDS brings together free Arcade Rolodex games, printable books, and timer tools so you can choose a small repeatable routine that fits your household."
       },
       {
         "title": "Choose the format for your youngest player",
@@ -195,7 +195,7 @@ export const guides:Guide[] = [
       },
       {
         "title": "Choose a shared activity, then join in",
-        "text": "The ADULTS vs. KIDS public game guide suggests starting ages for each Arcade game. Memory Match and Treasure Shuffle are visual starting points, while trivia and number games may need reading support. Try two guest games, then create a free adult-managed family account to keep playing. Printable coloring and family challenges offer another way to play together at a table, with no device needed for the activity itself."
+        "text": "The ADULTS vs. KIDS public game guide suggests starting ages for each Arcade Rolodex game. Memory Match and Treasure Shuffle are visual starting points, while trivia and number games may need reading support. Try two guest games, then create a free adult-managed family account to keep playing. Printable coloring and family challenges offer another way to play together at a table, with no device needed for the activity itself."
       }
     ],
     "related": [
@@ -267,7 +267,7 @@ export const guides:Guide[] = [
       },
       {
         "title": "15. Three-game family championship",
-        "text": "Suggested ages 4–12 · Supplies: Paper, crayons and one shared device if desired. Choose one creative, one memory and one chance-based round from this list. Award one series point per game won. Agree to share tied points before starting. Use free Arcade rules for a digital round, and end after three games even if the adults request another chance."
+        "text": "Suggested ages 4–12 · Supplies: Paper, crayons and one shared device if desired. Choose one creative, one memory and one chance-based round from this list. Award one series point per game won. Agree to share tied points before starting. Use free Arcade Rolodex rules for a digital round, and end after three games even if the adults request another chance."
       }
     ],
     "related": [
@@ -296,7 +296,7 @@ export const guides:Guide[] = [
       },
       {
         "title": "Keep screens and scoring with passengers",
-        "text": "These spoken activities do not require an app or account. A passenger can keep a simple score if the children request a competition; cooperative play works just as well. Save the ADULTS vs. KIDS Arcade and printable books for a stop or when you arrive. The planned Charlie AI game host and Car Mode are in development, so these ideas are games your family can lead yourselves today."
+        "text": "These spoken activities do not require an app or account. A passenger can keep a simple score if the children request a competition; cooperative play works just as well. Save the ADULTS vs. KIDS Arcade Rolodex and printable books for a stop or when you arrive. The planned Charlie AI game host and Car Mode are in development, so these ideas are games your family can lead yourselves today."
       }
     ],
     "related": [
@@ -324,7 +324,7 @@ export const guides:Guide[] = [
       },
       {
         "title": "Keep a few easy options ready",
-        "text": "A basket of paper and crayons, a list of spoken car games, and a familiar shared-device game can reduce the effort of getting started. ADULTS vs. KIDS is built around joining children in play through family challenges, printable books, and a free Arcade. Use whichever fits the moment. The goal behind “Less Supervising. More Playing.” is giving parents a part in the fun."
+        "text": "A basket of paper and crayons, a list of spoken car games, and a familiar shared-device game can reduce the effort of getting started. ADULTS vs. KIDS is built around joining children in play through family challenges, printable books, and a free Arcade Rolodex. Use whichever fits the moment. The goal behind “Less Supervising. More Playing.” is giving parents a part in the fun."
       }
     ],
     "related": [
@@ -353,7 +353,7 @@ export const guides:Guide[] = [
       },
       {
         "title": "Use technology with a shared purpose",
-        "text": "ADULTS vs. KIDS offers free shared-device Arcade games alongside printable challenge books. Try two Arcade games as a guest, then create a free adult-managed family account to keep playing; the public guide can be read without logging in. Our digital philosophy focuses on turning the screen time families already have into opportunities for connection. The AI game host is a future feature in development, not a requirement for playing the current games."
+        "text": "ADULTS vs. KIDS offers free shared-device Arcade Rolodex games alongside printable challenge books. Try two Arcade Rolodex games as a guest, then create a free adult-managed family account to keep playing; the public guide can be read without logging in. Our digital philosophy focuses on turning the screen time families already have into opportunities for connection. The AI game host is a future feature in development, not a requirement for playing the current games."
       }
     ],
     "related": [

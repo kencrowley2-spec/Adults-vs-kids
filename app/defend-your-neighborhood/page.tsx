@@ -23,8 +23,8 @@ export default function NeighborhoodGame(){
  const bbox=[lon-delta*1.4,lat-delta*.9,lon+delta*1.4,lat+delta*.9].join(",");
  return <main style={{minHeight:"100vh",background:"linear-gradient(160deg,#111827,#050507)",color:"white",padding:"24px 16px",fontFamily:"Arial,sans-serif"}}>
  <div style={{maxWidth:920,margin:"auto"}}>
- <Link href="/family/arcade" style={{color:"#ffd43b"}}>← Back to Arcade</Link>
- <p style={{color:"#facc15",fontWeight:800,letterSpacing:3,marginTop:30}}>👑 PREMIUM ARCADE</p>
+ <Link href="/family/arcade" style={{color:"#ffd43b"}}>← Back to Arcade Rolodex</Link>
+ <p style={{color:"#facc15",fontWeight:800,letterSpacing:3,marginTop:30}}>👑 PREMIUM ARCADE ROLODEX</p>
  <h1 style={{fontSize:"clamp(30px,6vw,56px)",margin:"8px 0"}}>DEFEND YOUR NEIGHBORHOOD™</h1>
  <p style={{fontSize:18,color:"#e5e7eb"}}>Claim your spot. Play games together. Earn points and defend your family's crown!</p>
  <IndianaMap name={territory?.name||name} lat={territory?.lat??lat} lon={territory?.lon??lon} claimed={!!territory}/>
@@ -45,9 +45,9 @@ export default function NeighborhoodGame(){
  <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(200px,1fr))",gap:12,marginTop:16}}>
  <Stat label="YOUR TERRITORY" value={territory?.name||"Not claimed"}/><Stat label="CURRENT RADIUS" value={territory?active.toFixed(1)+" mi":"—"}/><Stat label="TERRITORY POINTS" value={String(territory?.points||0)}/></div>
  <div style={{background:"#18181b",border:"1px solid #b98b27",borderRadius:20,padding:20,marginTop:16}}>
- <h2>2. Play and defend</h2><p>Qualifying Arcade games and family challenges will earn territory points. Stay active to protect your radius. After three inactive days, your territory begins shrinking by 10% per day, down to a minimum of 0.1 mile.</p>
- <Link href="/family/arcade" style={{display:"inline-block",...btn,textDecoration:"none"}}>🎮 Play Arcade Games</Link>
- <p style={{color:"#fbbf24",fontSize:13,marginTop:16}}>Preview mode: territory saves only on this device. Cross-family challenges, verified game-point syncing, live territory ownership and premium subscription enforcement are not active yet. Playing Arcade games does not currently change this preview score.</p>
+ <h2>2. Play and defend</h2><p>Qualifying Arcade Rolodex games and family challenges will earn territory points. Stay active to protect your radius. After three inactive days, your territory begins shrinking by 10% per day, down to a minimum of 0.1 mile.</p>
+ <Link href="/family/arcade" style={{display:"inline-block",...btn,textDecoration:"none"}}>🎮 Play Arcade Rolodex Games</Link>
+ <p style={{color:"#fbbf24",fontSize:13,marginTop:16}}>Preview mode: territory saves only on this device. Cross-family challenges, verified game-point syncing, live territory ownership and premium subscription enforcement are not active yet. Playing Arcade Rolodex games does not currently change this preview score.</p>
  </div></div></main>;
 }
 const btn={background:"#facc15",color:"#171717",border:0,borderRadius:10,padding:"12px 18px",fontWeight:800,cursor:"pointer"} as const;
