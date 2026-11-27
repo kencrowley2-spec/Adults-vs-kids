@@ -13,8 +13,10 @@
 .hero-actions>.action{text-align:center;line-height:1.15}
 .shirt-rack{min-width:0;width:min(100%,285px);justify-self:center;text-align:center;color:white}
 .rack-heading{display:block;font-size:.78rem;line-height:1.3;font-weight:800;letter-spacing:.085em;text-transform:uppercase;color:#ffce32}
-.rack-stage{position:relative;display:block;width:100%;aspect-ratio:1.65;border:0;background:radial-gradient(ellipse 45% 6% at 50% 94%,#aa94534d,transparent);padding:0;cursor:grab;user-select:none;touch-action:pan-y;overflow:hidden;isolation:isolate;-webkit-tap-highlight-color:transparent}
+.rack-stage{position:relative;display:block;width:100%;aspect-ratio:1.65;border:0;background:transparent;appearance:none;-webkit-appearance:none;outline:0;box-shadow:none;padding:0;cursor:grab;user-select:none;touch-action:pan-y;overflow:hidden;isolation:isolate;-webkit-tap-highlight-color:transparent}
+.shirt-rack,.rack-tee{background:transparent;border:0;box-shadow:none}
 .rack-stage:active{cursor:grabbing}
+.shirt-rack:has(.rack-stage:focus-visible) .rack-heading{text-decoration:underline;text-underline-offset:.28em}
 .rack-tee{pointer-events:none;position:absolute;left:50%;top:54%;width:62%;aspect-ratio:1;container-type:inline-size;transform:translate(-50%,-50%);display:grid;color:#141414}
 .rack-tee:not(:first-child){visibility:hidden}
 .rack-ready .rack-tee{visibility:visible}
