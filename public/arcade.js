@@ -99,7 +99,7 @@ if(lineup)setLineup(JSON.parse(lineup.getAttribute('data-adults')),JSON.parse(li
 function teamName(team){return names[team];}
 if(kidsOnly)$('arcade-save-status').textContent='Kids vs. Kids · completed games count toward family plays.';
 function teamLabel(team,uppercase=false){return escapePlayer(uppercase?teamName(team).toUpperCase():teamName(team));}
-$('choose-arcade-players')?.addEventListener('click',async()=>{
+document.querySelector('button#choose-arcade-players')?.addEventListener('click',async()=>{
  const {chooseArcadePlayers}=await import('./arcade-players.js?v=1');
  chooseArcadePlayers(roster=>{
   const adults=roster.playingAdults.map(i=>roster.adults[i]),kids=roster.playingKids.map(i=>roster.kids[i]);
