@@ -1,0 +1,266 @@
+[
+  {
+    "id": "stadium",
+    "name": "Stadium Stripe Tee",
+    "kind": "Tees",
+    "color": "White / Gold",
+    "price": 38.4,
+    "collection": "Streetwear"
+  },
+  {
+    "id": "sideline",
+    "name": "Sideline Panel Tee",
+    "kind": "Tees",
+    "color": "Black / Gold",
+    "price": 38.4,
+    "collection": "Streetwear"
+  },
+  {
+    "id": "chalk",
+    "name": "Baseline Hoodie",
+    "kind": "Hoodies",
+    "color": "Chalk / Gold",
+    "price": 76.8,
+    "collection": "Streetwear"
+  },
+  {
+    "id": "tunnel",
+    "name": "Tunnel Hoodie",
+    "kind": "Hoodies",
+    "color": "Black / Gold lining",
+    "price": 81.6,
+    "collection": "Streetwear"
+  },
+  {
+    "id": "varsity",
+    "name": "Letterman Jacket",
+    "kind": "Outerwear",
+    "color": "Black / White",
+    "price": 138.0,
+    "collection": "Streetwear"
+  },
+  {
+    "id": "night-jogger",
+    "name": "Club Jogger",
+    "kind": "Bottoms",
+    "color": "Black",
+    "price": 62.4,
+    "collection": "Streetwear"
+  },
+  {
+    "id": "grey-jogger",
+    "name": "Club Jogger",
+    "kind": "Bottoms",
+    "color": "Heather grey",
+    "price": 62.4,
+    "collection": "Streetwear"
+  },
+  {
+    "id": "classic-cap",
+    "name": "Classic Mesh Cap",
+    "kind": "Headwear",
+    "color": "White / Gold",
+    "price": 43.2,
+    "collection": "Streetwear"
+  },
+  {
+    "id": "gold-edge",
+    "name": "Gold Edge Trucker",
+    "kind": "Headwear",
+    "color": "Black / Gold",
+    "price": 43.2,
+    "collection": "Streetwear"
+  },
+  {
+    "id": "burst-rope",
+    "name": "Sunburst Rope Cap",
+    "kind": "Headwear",
+    "color": "White / Gold",
+    "price": 45.6,
+    "collection": "Streetwear"
+  },
+  {
+    "id": "flatbill",
+    "name": "Championship Flatbill",
+    "kind": "Headwear",
+    "color": "Black / Gold brim",
+    "price": 45.6,
+    "collection": "Streetwear"
+  },
+  {
+    "id": "beanie",
+    "name": "Cuffed Logo Beanie",
+    "kind": "Headwear",
+    "color": "Black",
+    "price": 33.6,
+    "collection": "Streetwear"
+  },
+  {
+    "id": "duffel",
+    "name": "Weekend Duffel",
+    "kind": "Accessories",
+    "color": "Black / Gold",
+    "price": 88.8,
+    "collection": "Streetwear"
+  },
+  {
+    "id": "shaker",
+    "name": "Training Shaker",
+    "kind": "Accessories",
+    "color": "Black",
+    "price": 26.4,
+    "collection": "Streetwear"
+  },
+  {
+    "id": "warmup",
+    "name": "Warm-Up Tee",
+    "kind": "Tees",
+    "color": "Black / Gold piping",
+    "price": 43.2,
+    "collection": "Athletic"
+  },
+  {
+    "id": "mesh",
+    "name": "Competition Tee",
+    "kind": "Tees",
+    "color": "White / Shoulder stripes",
+    "price": 43.2,
+    "collection": "Athletic"
+  },
+  {
+    "id": "training-black",
+    "name": "Training Hoodie",
+    "kind": "Hoodies",
+    "color": "Black / Gold cords",
+    "price": 81.6,
+    "collection": "Athletic"
+  },
+  {
+    "id": "training-white",
+    "name": "Training Hoodie",
+    "kind": "Hoodies",
+    "color": "White / Black cords",
+    "price": 81.6,
+    "collection": "Athletic"
+  },
+  {
+    "id": "track",
+    "name": "Full-Zip Track Jacket",
+    "kind": "Outerwear",
+    "color": "Black / Gold",
+    "price": 93.6,
+    "collection": "Athletic"
+  },
+  {
+    "id": "short-black",
+    "name": "Court Shorts",
+    "kind": "Bottoms",
+    "color": "Black / Gold",
+    "price": 45.6,
+    "collection": "Athletic"
+  },
+  {
+    "id": "short-white",
+    "name": "Court Shorts",
+    "kind": "Bottoms",
+    "color": "White / Gold",
+    "price": 45.6,
+    "collection": "Athletic"
+  },
+  {
+    "id": "track-black",
+    "name": "Track Pants",
+    "kind": "Bottoms",
+    "color": "Black / Gold",
+    "price": 64.8,
+    "collection": "Athletic"
+  },
+  {
+    "id": "track-white",
+    "name": "Track Pants",
+    "kind": "Bottoms",
+    "color": "White / Gold",
+    "price": 64.8,
+    "collection": "Athletic"
+  },
+  {
+    "id": "perforated",
+    "name": "Court Performance Cap",
+    "kind": "Headwear",
+    "color": "White / Black brim stitch",
+    "price": 45.6,
+    "collection": "Athletic"
+  },
+  {
+    "id": "track-cap",
+    "name": "Track Mesh Cap",
+    "kind": "Headwear",
+    "color": "Black / Gold piping",
+    "price": 45.6,
+    "collection": "Athletic"
+  },
+  {
+    "id": "patch-rope",
+    "name": "Gold Patch Rope Cap",
+    "kind": "Headwear",
+    "color": "White",
+    "price": 50.4,
+    "collection": "Signature"
+  },
+  {
+    "id": "grey-mesh",
+    "name": "Gold Patch Trucker",
+    "kind": "Headwear",
+    "color": "Silver grey",
+    "price": 50.4,
+    "collection": "Signature"
+  },
+  {
+    "id": "patch-court",
+    "name": "Gold Patch Court Cap",
+    "kind": "Headwear",
+    "color": "White",
+    "price": 50.4,
+    "collection": "Signature"
+  },
+  {
+    "id": "two-tone",
+    "name": "Two-Tone Patch Trucker",
+    "kind": "Headwear",
+    "color": "White / Grey mesh",
+    "price": 50.4,
+    "collection": "Signature"
+  },
+  {
+    "id": "mono-rope",
+    "name": "Monochrome Rope Cap",
+    "kind": "Headwear",
+    "color": "White / Black",
+    "price": 50.4,
+    "collection": "Signature"
+  },
+  {
+    "id": "mono-tour",
+    "name": "Monochrome Tour Cap",
+    "kind": "Headwear",
+    "color": "White / Black",
+    "price": 50.4,
+    "collection": "Signature"
+  },
+  {
+    "id": "team-adults",
+    "name": "Team Adults Tee",
+    "kind": "Team Tees",
+    "color": "Black / Gold",
+    "price": 38.4,
+    "collection": "Team Series"
+  },
+  {
+    "id": "team-kids",
+    "name": "Team Kids Tee",
+    "kind": "Team Tees",
+    "color": "White / Gold",
+    "price": 38.4,
+    "collection": "Team Series"
+  }
+]

@@ -8,6 +8,7 @@ export const escapeHtml=(s:string)=>s.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&
 export const jsonLd=(value:unknown)=>JSON.stringify(value).replace(/</g,'\\u003c');
 export const publicPages:Record<string,{title:string;description:string}>={
  '/family-championship-scorecard':{title:'Free Printable Family Championship Scorecard | Adults vs. Kids',description:'Print a free three-round family championship scorecard, fair scoring rules and a four-team bracket for your next parent-versus-kids game night.'},
+ '/merch':{title:'The Official Pro Shop | Adults vs. Kids',description:'Shop Adults vs. Kids streetwear, athletic gear, signature hats and personalized family team apparel.'},
  '/holiday-gift-basket':{title:'$99 Holiday Championship Gift Basket | Adults vs. Kids',description:'Give a family game night: all four paperback activity books, champion trophy, certificate, reusable scoreboard, stickers and printable holiday pack. $99 plus estimated shipping. Limited holiday edition.'},
  '/':{title:'Adults vs. Kids | Family Games, Challenges & Entertainment',description:'Discover fun games and family challenges for parents and kids. Play free Arcade games, explore printable activities, and spend more quality time together.'},
  '/family-games':{title:'Free Family Games for Parents and Kids to Play Together',description:'Explore the free Adults vs. Kids Arcade: game instructions, suggested ages, and ideas for playing together on one device. Try two guest games, then create a free family account.'},
