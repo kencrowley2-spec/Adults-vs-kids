@@ -2,7 +2,7 @@ const spotlightIds = ['ghostline', 'claw', 'lava', 'faces', 'mole', 'memory', 'd
 const wrap = (value, size) => ((value % size) + size) % size;
 const clamp = (value, low, high) => Math.min(high, Math.max(low, value));
 
-export function mountRolodex({lobby, games, coverMarkup, openMatchup, onStep}) {
+export function mountRolodex({lobby, games, coverMarkup, openMatchup}) {
   const decks = [
     {name:'Spotlight', entries:spotlightIds.map(id => games.find(game => game.id === id)).filter(Boolean)},
     {name:'More games', entries:games.filter(game => !spotlightIds.includes(game.id))}
@@ -32,7 +32,7 @@ export function mountRolodex({lobby, games, coverMarkup, openMatchup, onStep}) {
   const savedPositions = decks.map(() => 0);
   let active = 0, position = 0, selected = -1, width = 1, height = 1, cardWidth = 0;
   let destination = null, frame = 0, frameTime = 0, velocity = 0;
-  let lastPainted = 0, lastClick = 0, gesture = null, ignoreClick = false;
+  let gesture = null, ignoreClick = false;
   // Speeds are measured in cartridges per millisecond, independent of refresh rate.
   const maxSpeed = .0048, settleTime = 78;
   const entries = () => decks[active].entries;
@@ -103,21 +103,6 @@ export function mountRolodex({lobby, games, coverMarkup, openMatchup, onStep}) {
     }
     status.textContent = (index + 1) + ' / ' + entries().length + ' · ' + entries()[index].name;
   }
-  function tickAtCenter() {
-    if (position === lastPainted) return;
-    const nearest = Math.round(position);
-    const nearCenter = Math.abs(nearest-position) <= .045;
-    const passed = position > lastPainted ? Math.floor(position) : Math.ceil(position);
-    const detent = nearCenter ? nearest : passed;
-    if (lastClick !== null && Math.abs(position-lastClick) > .35) lastClick = null;
-    // Allow a frame to pass a center. Never queue missed clicks or click twice while hovering.
-    if (lastClick !== detent && (nearCenter || (detent-lastPainted)*(detent-position) < 0)) {
-      lastClick = detent;
-      onStep();
-    }
-    lastPainted = position;
-  }
-
   function paint() {
     const count = entries().length, centered = indexAt(position);
     // Five prominent cases follow the same shallow, overlapping orbit as the tee rack.
@@ -161,7 +146,6 @@ export function mountRolodex({lobby, games, coverMarkup, openMatchup, onStep}) {
       selected = centered;
       updateCaption(centered);
     }
-    tickAtCenter();
   }
   function render(now) {
     frame = 0;
@@ -174,8 +158,7 @@ export function mountRolodex({lobby, games, coverMarkup, openMatchup, onStep}) {
       velocity = change/dt;
       position = Math.abs(remaining) < .001 ? gesture.target : position+change;
     } else if (destination !== null) {
-      // Exact critically damped spring. A release inherits the displayed velocity
-      // and decelerates to the detent without bouncing through it.
+      // Ease out from the displayed velocity without overshooting the destination.
       const offset = position-destination;
       const slope = velocity+offset/settleTime;
       const decay = Math.exp(-dt/settleTime);
@@ -210,7 +193,6 @@ export function mountRolodex({lobby, games, coverMarkup, openMatchup, onStep}) {
   }
   function settle(to) {
     stop();
-    to = Math.round(to);
     if (reduced.matches || Math.abs(to-position) < .001) {
       position = to;
       velocity = 0;
@@ -225,7 +207,7 @@ export function mountRolodex({lobby, games, coverMarkup, openMatchup, onStep}) {
   }
   function openSelected() {
     stop();
-    position = Math.round(position);
+    velocity = 0;
     paint(); announce();
     const game = entries()[indexAt(position)];
     if (!game.comingSoon) openMatchup(game);
@@ -243,9 +225,9 @@ export function mountRolodex({lobby, games, coverMarkup, openMatchup, onStep}) {
       card.classList.remove('rd-front');
       card.tabIndex = -1;
     }
-    savedPositions[active] = Math.round(position);
+    savedPositions[active] = position;
     active = deck;
-    position = lastPainted = lastClick = savedPositions[deck];
+    position = savedPositions[deck];
     velocity = 0;
     selected = -1;
     tabs.forEach((tab,i) => tab.setAttribute('aria-pressed',String(i===active)));
@@ -303,14 +285,17 @@ export function mountRolodex({lobby, games, coverMarkup, openMatchup, onStep}) {
       activateCard(cards[active].indexOf(drag.card));
       return;
     }
+    if (cancelled || !drag.dragged) {
+      stop();
+      velocity = 0;
+      paint(); announce();
+      return;
+    }
+    // A swipe can rest between covers. Only an explicit arrow or side-card tap centers a game.
     const age = Math.max(0,event.timeStamp-drag.lastTime);
-    // A finger lifts between display frames. Treat the first frame interval as part of the flick.
     const speed = drag.speed * Math.exp(-Math.max(0,age-32)/38);
-    const glide = cancelled || reduced.matches ? 0 : clamp(speed*64,-.65,.65);
-    // A short flick may carry one more cartridge. Re-grabbing stops the glide immediately.
-    const nearest = Math.round(position);
-    const target = cancelled || !drag.dragged ? nearest : Math.round(drag.target+glide);
-    settle(clamp(target,nearest-1,nearest+1));
+    const glide = reduced.matches ? 0 : clamp(speed*60,-.35,.35);
+    settle(position + clamp(drag.target-position+glide,-.75,.75));
   }
   stage.addEventListener('pointerup',release);
   stage.addEventListener('pointercancel',release);

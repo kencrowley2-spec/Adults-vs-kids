@@ -287,7 +287,7 @@ document.addEventListener('keydown',unlockAudio);
 const chimeNodes=new Set();
 function stopChimes(){for(const node of chimeNodes){try{node.stop();node.disconnect();}catch{}}chimeNodes.clear();}
 let latchBuffer;
-function playLatchClick(playbackRate=1){
+function playLatchClick(){
   if(!latchBuffer){
     const rate=audioContext.sampleRate;
     latchBuffer=audioContext.createBuffer(1,Math.ceil(rate*.062),rate);
@@ -303,7 +303,6 @@ function playLatchClick(playbackRate=1){
   }
   const source=audioContext.createBufferSource();
   source.buffer=latchBuffer;
-  source.playbackRate.value=playbackRate;
   source.connect(audioContext.destination);
   chimeNodes.add(source);
   source.onended=()=>{chimeNodes.delete(source);source.disconnect();};
@@ -1246,15 +1245,8 @@ function rememberGame(id){
  try{const ids=recentGames(localStorage,recentKey,GAMES);localStorage.setItem(recentKey,JSON.stringify([id,...ids.filter(x=>x!==id)].slice(0,8)));}catch{}
 
 }
-import('./arcade-rolodex.js?v=5').then(({mountRolodex}) => {
-  const fxButton = $('cabinet-fx');
-  mountRolodex({
-    lobby, games:GAMES, coverMarkup, openMatchup:entry => caseReader.open(entry),
-    onStep() {
-      if (!soundOn || fxButton.getAttribute('aria-pressed') !== 'true' || document.hidden || lobby.hidden) return;
-      if (audioContext?.state === 'running') playLatchClick(1.55);
-    }
-  });
+import('./arcade-rolodex.js?v=6').then(({mountRolodex}) => {
+  mountRolodex({lobby, games:GAMES, coverMarkup, openMatchup:entry => caseReader.open(entry)});
 }).catch(error => {
   console.error('Unable to open the Arcade Rolodex', error);
   $('avk-rolodex')?.remove();

@@ -41,6 +41,6 @@ export async function GET(request:Request){
 <a href="/club-checkout?plan=year">Yearly · ${membership.annual}</a>
 </div>
 <form method="dialog"><button type="submit" data-voice-return autofocus>Return to Game</button></form>
-</dialog>${castAvailable?`<script src="/cast/memory-sender.js" data-receiver="${castId}"></script>`:''}<script src="/arcade.js?v=131" type="module"></script></body></html>`;
+</dialog>${castAvailable?`<script src="/cast/memory-sender.js" data-receiver="${castId}"></script>`:''}<script src="/arcade.js?v=132" type="module"></script></body></html>`;
  return memberReply(html,200,auth.headers);
 }
