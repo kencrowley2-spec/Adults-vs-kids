@@ -1,51 +1,102 @@
-import {FlexMatch} from './arcade-flex-core.js';
-import {flexPose} from './arcade-flex-poses.js';
-const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-export function mountFlex({players=['Adults','Kids'],onExit=()=>{},onComplete=()=>{},beforeRematch=()=>true,initialSound=true,clock=()=>performance.now(),schedule=setInterval,cancel=clearInterval}={}){
- const host=document.createElement('section');host.className='flex-game';host.setAttribute('aria-label',"FLEX OFF! Harper’s Gymnastics Challenge");document.body.append(host);
- const previousOverflow=document.body.style.overflow;document.body.style.overflow='hidden';
- let match,phase='setup',names=[...players],sound=initialSound,audio,interval=null,closed=false,team=1,alternative=false,elapsed=0,deadline=0,stamp=0,lastBeep=-1,roundResult=null,note='';
- const activeNodes=new Set();const btn=(label,action,cls='')=>`<button type="button" data-flex="${action}" class="flex-btn ${cls}">${label}</button>`;
- const name=i=>esc(names[i]);
- function silence(){for(const n of activeNodes){try{n.stop();}catch{}}activeNodes.clear();}
- function cue(kind){if(!sound)return;try{audio??=new(window.AudioContext||window.webkitAudioContext)();audio.resume().catch(()=>{});const now=audio.currentTime;
- const notes=kind==='fail'?[130,95]:kind==='win'?[523,659,784,1047]:[kind==='go'?880:440];
- notes.forEach((f,i)=>{const o=audio.createOscillator(),g=audio.createGain(),at=now+i*.1;o.type=kind==='fail'?'sawtooth':'sine';o.frequency.value=f;o.connect(g);g.connect(audio.destination);g.gain.setValueAtTime(.035,at);g.gain.exponentialRampToValueAtTime(.001,at+.22);o.start(at);o.stop(at+.24);activeNodes.add(o);o.onended=()=>activeNodes.delete(o);});
- if(kind==='win'){const b=audio.createBuffer(1,audio.sampleRate*.7,audio.sampleRate),d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*(.5+.5*Math.sin(i/1500));const n=audio.createBufferSource(),filter=audio.createBiquadFilter(),g=audio.createGain();filter.type='bandpass';filter.frequency.value=900;n.buffer=b;n.connect(filter);filter.connect(g);g.connect(audio.destination);g.gain.setValueAtTime(.08,now);g.gain.exponentialRampToValueAtTime(.001,now+.7);n.start();activeNodes.add(n);n.onended=()=>activeNodes.delete(n);}
- }catch{}}
- function stop(){cancel(interval);interval=null;}
- function score(){return `<div class="flex-scores">${[1,0].map(i=>`<div class="flex-score ${i===1?'kids':'adults'}"><small>TEAM ${i?'KIDS':'ADULTS'}</small><b>${name(i)}</b><strong>${match?.scores[i]??0}</strong><span class="flex-progress" aria-label="${match?.scores[i]??0} of 4 round wins">${[0,1,2,3].map(n=>`<i class="${n<(match?.scores[i]??0)?'lit':''}"></i>`).join('')}</span></div>`).join('')}</div>`;}
- function frame(content){host.innerHTML=`<div class="flex-shell"><header class="flex-top">${btn('← Arcade Rolodex','exit','small')}<div><small>ADULTS vs. KIDS™</small><b>FLEX <em>OFF!</em></b></div>${btn(sound?'♫ ON':'♫ OFF','sound','small')}</header><main class="flex-main">${content}</main><footer class="flex-credit">Created by ADULTS vs. KIDS™ · Original Game Idea by <b>Harper Crowley ⭐</b></footer></div>`;}
- function safety(){return 'Play on a clear, nonslip surface. Move comfortably, breathe, and skip any move that causes pain. Kids: play with an adult.';}
- function setup(){phase='setup';frame(`<div class="flex-setup"><div class="flex-hero"><img src="/assets/flex-off-cover.webp" alt="A child balances confidently while Dad tries to copy her"><div><p class="flex-kicker">HARPER’S GYMNASTICS CHALLENGE</p><h1>Bend It.<br>Balance It.<br><em>Prove It.</em></h1><p>9 mystery cards. First to 4 wins.</p></div></div><form class="flex-form"><div><label for="flex-kids">TEAM KIDS · names</label><input id="flex-kids" name="kids" maxlength="60" value="${name(1)}" required autocomplete="off"></div><div><label for="flex-adults">TEAM ADULTS · names</label><input id="flex-adults" name="adults" maxlength="60" value="${name(0)}" required autocomplete="off"></div><p>Solo or teams: enter one or more names. Rotate your team’s competitor each round.</p><p class="flex-safety">${safety()}</p><button class="flex-btn" type="submit">LET’S FLEX! →</button><small>7 regular rounds · Unused cards break ties · All 9 tied? Joint champions!</small></form></div>`);host.querySelector('form').addEventListener('submit',e=>{e.preventDefault();const a=host.querySelector('#flex-adults').value.trim(),k=host.querySelector('#flex-kids').value.trim();if(!a||!k)return;names=[a,k];match=new FlexMatch();board();});}
- function board(){stop();phase='pick';frame(`${score()}<div class="flex-heading"><p class="flex-kicker">${match.round>7?'SUDDEN DEATH · CARD '+match.round:'ROUND '+match.round+' / 7'} · FIRST TO 4</p><h1>${name(match.selector)}, pick a card!</h1><p>Both teams try it. Take turns. No peeking!</p></div><div class="flex-grid">${match.deck.map((c,i)=>`<button type="button" data-card="${c.id}" class="flex-card ${match.used.has(c.id)?'used':''}" ${match.used.has(c.id)?'disabled':''} aria-label="${match.used.has(c.id)?c.name+', already played':'Mystery card '+(i+1)}"><span class="flex-card-inner"><span class="flex-card-back"><small>FLEX</small><b>${match.used.has(c.id)?'✓':'?'}</b><small>${match.used.has(c.id)?esc(c.name):'OFF!'}</small></span></span></button>`).join('')}</div><p class="flex-board-note">Kids choose first. Then alternate. One point per round win.</p>`);}
- function attempt(){stop();phase='ready';elapsed=0;const c=match.active;frame(`${score()}<div class="flex-attempt"><p class="flex-kicker">${match.round>7?'SUDDEN DEATH':'ROUND '+match.round} · ${name(team)}’S TURN</p><h1>${c.name}</h1><div class="flex-demo">${flexPose(c.id,alternative)}<div><p>${alternative?c.alternative:c.instructions}</p><small>${c.seconds?'Hold for '+c.seconds+' seconds. Longer comfortable holds break ties; stop at any time. Maximum 60 seconds.':c.reps?'Count controlled repetitions. More completed reps break ties.':'Both succeed? This round ties. Range of motion is never scored.'}</small></div></div><div class="flex-clock" role="timer" aria-label="Challenge timer">${c.seconds?c.seconds+'s':'READY'}</div><p class="flex-status" role="status">${note||'Ready? Take your time getting into position.'}</p><div class="flex-actions">${btn('START · 3, 2, 1!','start')}${btn(match.results.length?'Skip attempt · FAILED':'Skip this card · no points','skip','secondary')}</div>${match.results.length===0?btn(alternative?'Standard move':'Use accessible alternative','alternative','secondary'):''}<p class="flex-micro">${alternative?'Accessible alternative for both teams.': 'Standard move · Both teams may use knee push-ups.'} ${safety()}</p></div>`);note='';}
- function updateClock(){const c=match.active;const now=clock();if(phase==='countdown'){const left=Math.ceil((deadline-now)/1000);if(left>0){host.querySelector('.flex-clock').textContent=left;if(left!==lastBeep){lastBeep=left;cue('tick');}return;}phase='running';stamp=now;cue('go');host.querySelector('.flex-status').textContent=c.seconds?'GO! Hold comfortably. Stop if anything hurts.':'GO! Complete the move with control.';host.querySelector('.flex-actions').innerHTML=c.seconds?btn('STOP & RECORD','stop'):recordButtons();}
- if(phase==='running'){elapsed=Math.min(60,Math.max(0,(now-stamp)/1000));host.querySelector('.flex-clock').textContent=c.seconds?(elapsed<c.seconds?Math.ceil(c.seconds-elapsed)+'s':Math.floor(elapsed)+'s ✓'):'GO!';if(c.seconds&&elapsed>=c.seconds)host.querySelector('.flex-status').textContent='Target reached! Stop now or hold longer only if comfortable.';if(!c.seconds)stop();else if(elapsed>=60)record();}}
- function recordButtons(){const c=match.active;return `${c.reps?`<label class="flex-reps" for="flex-reps">Controlled ${c.id==='crab'?'steps':'repetitions'}<input id="flex-reps" type="number" min="${c.reps}" max="100" step="1" value="${c.reps}" inputmode="numeric"></label>`:''}${btn('✓ SUCCESS','success','success')}${btn('✕ FAILED','failed','failure')}`;}
- function record(){stop();phase='record';const c=match.active;host.querySelector('.flex-clock').textContent=c.seconds?Math.floor(elapsed)+'s':'RECORD';host.querySelector('.flex-status').textContent=c.seconds&&elapsed<c.seconds?'Short of the target. Record FAILED, or retry this attempt.':'Did you complete the challenge comfortably?';host.querySelector('.flex-actions').innerHTML=(c.seconds&&elapsed<c.seconds?'':recordButtons())+(c.seconds&&elapsed<c.seconds?btn('✕ FAILED','failed','failure'):'')+btn('Retry attempt','retry','secondary');}
- function submit(success){const c=match.active;let value=c.seconds?Math.floor(elapsed):c.reps?Number(host.querySelector('#flex-reps')?.value):0;if(success&&c.reps&&(!Number.isInteger(value)||value<c.reps||value>100)){host.querySelector('.flex-status').textContent=`Enter a whole number from ${c.reps} to 100, or record FAILED.`;return;}
- cue(success?'win':'fail');const r=match.submit(team,success,success?value:0);if(!r){team=1-team;attempt();return;}roundResult=r;roundEnd();}
- function confetti(){return `<div class="flex-confetti" aria-hidden="true">${Array.from({length:26},(_,i)=>`<i style="--x:${(i*37)%100}%;--d:${(i%7)*.14}s;--r:${i*23}deg"></i>`).join('')}</div>`;}
- function roundEnd(){stop();phase='round';const r=roundResult;const lead=r.winner===1&&match.scores[1]>match.scores[0];frame(`${score()}<div class="flex-celebrate ${r.winner!==null?'victory':''}">${r.winner!==null?confetti():''}<div class="flex-trophy">${r.winner===null?'🤝':'🏅'}</div><p class="flex-kicker">ROUND ${match.round-1} COMPLETE</p><h1>${r.winner===null?'A tied round!':name(r.winner)+' wins the round!'}</h1><p>${r.winner===null?'No points. Keep the rivalry going!':'+1 championship point'}</p><div class="flex-results">${match.history.at(-1).results.map(r=>`<p>${name(r.team)}: ${r.success?'✓ SUCCESS':'✕ FAILED'}${r.success&&r.value?' · '+r.value+(match.deck.find(c=>c.id===match.history.at(-1).card).seconds?'s':' reps'):''}</p>`).join('')}</div>${lead?'<p class="flex-trouble">⚡ ADULTS IN TROUBLE! ⚡</p>':''}${btn(r.done?'REVEAL THE CHAMPIONS! 🏆':'NEXT ROUND →','next')}</div>`);}
- function finish(){phase='final';cue('win');const w=match.winner;frame(`${confetti()}<div class="flex-celebrate flex-final"><div class="flex-trophy">🏆</div><p class="flex-kicker">FLEX OFF! CHAMPIONSHIP</p><h1>${w===null?'JOINT CHAMPIONS!':w===1?'THE KIDS DID IT! THE ADULTS JUST GOT OUT-FLEXED!':'THE ADULTS STILL GOT IT! AGE IS JUST A NUMBER!'}</h1><h2>${w===null?name(1)+' & '+name(0):name(w)}</h2><div class="flex-final-score">${match.scores[1]} <span>–</span> ${match.scores[0]}</div><p>TEAM KIDS · TEAM ADULTS</p>${w===null?'<p>Nine cards, still tied. Share the trophy!</p>':''}${btn('PLAY AGAIN ↻','again')}${btn('RETURN TO ARCADE ROLODEX','leave','secondary')}</div>`);onComplete({winner:w,scores:[...match.scores],rounds:match.history.length});}
- function dispose(){if(closed)return;closed=true;stop();silence();audio?.close().catch(()=>{});document.removeEventListener('visibilitychange',visibility);host.remove();document.body.style.overflow=previousOverflow;}
- function visibility(){if(document.hidden&&['countdown','running'].includes(phase)){stop();note='Paused while away. Restart this attempt when ready.';attempt();}}
- document.addEventListener('visibilitychange',visibility);
- host.addEventListener('click',e=>{const card=e.target.closest('[data-card]');if(card&&phase==='pick'){match.select(card.dataset.card);team=match.selector;alternative=false;attempt();return;}
- const action=e.target.closest('[data-flex]')?.dataset.flex;if(!action)return;
- if(action==='sound'){sound=!sound;if(!sound)silence();e.target.closest('button').textContent=sound?'♫ ON':'♫ OFF';return;}
- if(action==='leave'){dispose();onExit();return;}
- if(action==='exit'){if(phase==='exit')return;if(['setup','final'].includes(phase)){dispose();onExit();}else{stop();const old=phase;phase='exit';const d=document.createElement('div');d.className='flex-confirm';d.innerHTML=`<div><h2>Leave this match?</h2><p>Your current score will reset.</p>${btn('LEAVE GAME','leave')}${btn('KEEP PLAYING','stay','secondary')}</div>`;host.append(d);host.dataset.resume=old;d.querySelector('button').focus();}return;}
- if(action==='stay'&&phase==='exit'){host.querySelector('.flex-confirm').remove();phase=host.dataset.resume;if(['running','countdown'].includes(phase)){note='Restart this attempt when ready.';attempt();}return;}
- if(action==='alternative'&&phase==='ready'){alternative=!alternative;attempt();}
- if(action==='skip'&&phase==='ready'){if(match.results.length){submit(false);}else{match.submit(team,false);match.submit(1-team,false);roundResult={winner:null,done:match.done};roundEnd();}}
- if(action==='start'&&phase==='ready'){phase='countdown';deadline=clock()+3000;lastBeep=-1;host.querySelector('.flex-actions').innerHTML=btn('STOP / NOT COMFORTABLE','stop','secondary');host.querySelector('.flex-status').textContent='Get ready…';updateClock();interval=schedule(updateClock,80);}
- if(action==='stop'&&['countdown','running'].includes(phase)){if(phase==='running')elapsed=Math.min(60,Math.max(0,(clock()-stamp)/1000));else elapsed=0;record();}
- if(action==='success'&&['running','record'].includes(phase)&&(!match.active.seconds||elapsed>=match.active.seconds)){stop();submit(true);}
- if(action==='failed'&&['running','record'].includes(phase)){stop();submit(false);}
- if(action==='retry'&&phase==='record')attempt();
- if(action==='next'&&phase==='round'){if(match.done)finish();else board();}
- if(action==='again'&&phase==='final'&&beforeRematch()){match=new FlexMatch();roundResult=null;board();}
- });setup();return dispose;
+import {FlexMatch} from './arcade-flex-core.js?v=2';
+import {flexAudio} from './arcade-flex-audio.js?v=2';
+
+const esc = value => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const button = (action, label, style = '') => `<button type="button" class="fx-btn ${style}" data-flex="${action}">${label}</button>`;
+
+export function mountFlex({players = ['Adults','Kids'], onExit = () => {}, onComplete = () => {}, beforeRematch = () => true, initialSound = true} = {}) {
+  const host = document.createElement('section');
+  host.className = 'flex-game';
+  host.setAttribute('aria-label', 'Flex Off! Harper’s Gymnastics Challenge');
+  const oldOverflow = document.body.style.overflow;
+  document.body.style.overflow = 'hidden';
+  document.body.append(host);
+  let match, closed = false, sound = initialSound, notice = '';
+  const names = [...players];
+  const audio = flexAudio(sound);
+  document.addEventListener('visibilitychange', audio.visibility);
+  host.innerHTML = `<div class="fx-shell"><header class="fx-head">${button('exit','‹ Arcade','quiet')}<div><small>ADULTS vs. KIDS™</small><strong>FLEX <i>OFF!</i></strong></div>${button('sound', sound ? 'Sound on' : 'Sound off','quiet')}</header><div class="fx-main"></div><footer>Original game idea by <b>Harper Crowley</b></footer></div>`;
+  const main = host.querySelector('.fx-main');
+  function focusTitle() { main.querySelector('h1')?.focus({preventScroll:true}); }
+  function dialog(contents, label) {
+    const el = document.createElement('dialog');
+    el.className = 'fx-dialog';
+    el.setAttribute('aria-label', label);
+    el.innerHTML = contents;
+    host.append(el);
+    el.showModal();
+    return el;
+  }
+  function scoreboard() {
+    return `<div class="fx-scores">${[1,0].map(i => `<div><span>${esc(names[i])}</span><b>${match.scores[i]}</b></div>`).join('')}</div>`;
+  }
+  function board() {
+    const team = match.selector, used = match.used[team];
+    main.innerHTML = `${scoreboard()}<div class="fx-title"><small>CARD ${used.size+1} OF 9 · TEAM ${team ? 'KIDS' : 'ADULTS'}</small><h1 tabindex="-1">${esc(names[team])}, flip a card!</h1><p aria-live="polite">${notice || 'Give the move a try to earn a point.'}</p></div><div class="fx-grid">${match.decks[team].map((c,i) => {
+      const played = used.has(c.id);
+      return `<button class="fx-card tint-${i}" data-card="${c.id}" ${played || (match.active && match.active !== c) ? 'disabled' : ''} aria-label="${played ? esc(c.name)+', already played' : 'Flip card '+(i+1)}"><span class="fx-pip">${String(i+1).padStart(2,'0')}</span><b>${played ? '✓' : '?'}</b><span>${played ? esc(c.name) : 'FLEX OFF!'}</span></button>`;
+    }).join('')}</div>`;
+    focusTitle();
+  }
+  function reveal(c) {
+    const modal = dialog(`<div class="fx-demo tint-${c.art-1}"><img src="/assets/flex/${c.art}.webp" alt="${esc(c.name)} demonstration"></div><div class="fx-copy"><small>${esc(names[match.selector])}’S CHALLENGE</small><h2>${c.name}</h2><p>${c.instructions}</p>${button('replay','↻ Hear the challenge','listen')}<div class="fx-choices">${button('tried','I tried it <b>+1</b>')}${button('pass','Pass <b>−1</b>','pass')}</div></div>`, c.name);
+    modal.addEventListener('cancel', () => { audio.stopVoice(); modal.remove(); board(); }, {once:true});
+    audio.say(c);
+  }
+  function finish() {
+    audio.stop();
+    const winner = match.winner;
+    main.innerHTML = `<div class="fx-finish"><span aria-hidden="true">🏆</span><small>NINE CHALLENGES COMPLETE</small><h1 tabindex="-1">${winner === null ? 'Shared victory!' : esc(names[winner])+' wins!'}</h1>${scoreboard()}${button('again','Play again')}${button('leave','Back to arcade','quiet')}</div>`;
+    focusTitle();
+    onComplete({winner, scores:[...match.scores], rounds:9});
+  }
+  function start() { match = new FlexMatch(); notice = ''; board(); audio.start(); }
+  function dispose() {
+    if (closed) return;
+    closed = true;
+    document.removeEventListener('visibilitychange', audio.visibility);
+    audio.dispose();
+    host.remove();
+    document.body.style.overflow = oldOverflow;
+  }
+  main.innerHTML = `<div class="fx-setup"><img src="/assets/flex-off-cover.webp" alt="Harper’s Gymnastics Challenge"><form><small>HARPER’S GYMNASTICS CHALLENGE</small><h1>Ready to flex?</h1><p>Take turns flipping cards. Both players get all nine moves. Trying earns a point. Passing costs a point.</p>${[1,0].map(i => `<label>Team ${i ? 'Kids' : 'Adults'}<input name="team${i}" maxlength="60" required value="${esc(names[i])}"></label>`).join('')}<p class="fx-tip">Make some room. Use support if you need it. A partial attempt counts.</p><button class="fx-btn" type="submit">Let’s flex!</button></form></div>`;
+  main.querySelector('form').addEventListener('submit', e => {
+    e.preventDefault();
+    for (const i of [0,1]) names[i] = e.target.elements['team'+i].value.trim() || (i ? 'Kids' : 'Adults');
+    start();
+  });
+  host.addEventListener('click', e => {
+    const target = e.target.closest('button');
+    if (!target || target.disabled) return;
+    if (target.dataset.card) {
+      const c = match.active || match.select(target.dataset.card);
+      reveal(c);
+      return;
+    }
+    const action = target.dataset.flex;
+    if (action === 'tried' || action === 'pass') {
+      if (!match?.active) return;
+      const tried = action === 'tried';
+      notice = esc(names[match.selector]) + (tried ? ' tried it! +1 point.' : ' passed. −1 point.');
+      audio.stopVoice();
+      target.closest('dialog').remove();
+      match.record(tried);
+      if (match.done) finish(); else board();
+    } else if (action === 'replay') {
+      sound = true;
+      host.querySelector('[data-flex="sound"]').textContent = 'Sound on';
+      audio.mute(false);
+      audio.say(match.active);
+    } else if (action === 'sound') {
+      sound = !sound;
+      target.textContent = sound ? 'Sound on' : 'Sound off';
+      audio.mute(!sound);
+    } else if (action === 'again' && beforeRematch()) start();
+    else if (action === 'leave' || (action === 'exit' && (!match || match.done))) { dispose(); onExit(); }
+    else if (action === 'exit') {
+      const modal = dialog(`<div class="fx-copy"><h2>Leave this match?</h2><p>Your current score will reset.</p><div class="fx-choices">${button('stay','Keep playing')}${button('leave','Leave game','pass')}</div></div>`, 'Leave this match?');
+      modal.addEventListener('close', () => modal.remove(), {once:true});
+    } else if (action === 'stay') target.closest('dialog').close();
+  });
+  return dispose;
 }

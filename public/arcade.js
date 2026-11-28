@@ -1,6 +1,6 @@
 import {memoryFace, memorySymbols} from './cast/memory-faces.js';
 import {mountGhostline} from './ghostline.js?v=10';
-import {mountFlex} from './arcade-flex.js?v=1';
+import {mountFlex} from './arcade-flex.js?v=2';
 import {mountJigsaw} from './arcade-jigsaw.js?v=7';
 import {mountGuestGate} from './arcade-guest.js?v=1';
 import {mountFeaturedGames} from './arcade-featured.js?v=5';
@@ -17,7 +17,7 @@ import {mountTreasure,treasurePlan} from './arcade-treasure.js?v=1';
 import {mountBlocks} from './arcade-blocks.js?v=1';
 import {mountBasketball} from './arcade-basketball.js?v=1';
 import {coverMarkup,recentGames,BROWSE_SHELVES} from './arcade-library.js?v=31';
-import {GAMES, ANIMALS, TRIVIA, PICTURES, CHALLENGES} from './arcade-data.js?v=42';
+import {GAMES, ANIMALS, TRIVIA, PICTURES, CHALLENGES} from './arcade-data.js?v=43';
 import {shuffle, roundWinner, awardRound, lineWinner} from './arcade-core.js';
 
 import {MAZE_BOARDS, MAZE_DIRECTIONS, mazeBoard, mazeWalls} from './arcade-maze.js?v=1';

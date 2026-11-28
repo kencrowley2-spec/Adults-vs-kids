@@ -3,7 +3,7 @@ import {GAMES} from '../public/arcade-data.js';
 const tips:Record<string,string>={
  jigsaw:'Start with the corners and edges. Take turns finding a piece, then compare colors and shapes before you place it.',
  ghostline:'Before the handoff, ask the first driver which corner cost the most time. Let the second driver test that advice against the ghost.',
- flex:'Choose a comfortable variation together before the timer starts. Take turns being the person who counts a controlled repetition.',
+ flex:'Take turns flipping a card and listening to the challenge. Give it a try for one point, or pass for minus one. A partial attempt counts.',
  hexgl:'Take separate runs on the same circuit. Let the waiting pilot call the next turn, then compare how much shield each driver kept.',
  faces:'Ask a question that could eliminate several faces. After the reveal, compare which clue helped each player narrow the board.',
  draw:'After revealing the answer, point to the detail that gave the drawing away. Switch artists so everyone gets to draw and interpret.',

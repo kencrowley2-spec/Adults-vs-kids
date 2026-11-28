@@ -1,25 +1,51 @@
 export const FLEX_CARDS = [
- {id:'flamingo',name:'Flamingo Stand',seconds:10,instructions:'Stand tall. Lift one foot and balance for 10 seconds. Keep a support nearby.',alternative:'Hold a sturdy chair while balancing, or sit and lift one foot.'},
- {id:'plank',name:'Plank Battle',seconds:15,instructions:'Forearms under shoulders. Keep your body in a comfortable straight line for 15 seconds. Breathe.',alternative:'Keep knees down, or press your hands into a wall while standing.'},
- {id:'butterfly',name:'Butterfly Stretch',seconds:0,instructions:'Sit tall, soles of feet together. Let knees relax outward. Never push your knees down.',alternative:'Sit on a chair with feet comfortably apart; gently open your knees.'},
- {id:'pushup',name:'Push-Up Power',reps:5,seconds:0,instructions:'Do five slow push-ups. Keep your body aligned; lower and press up with control. Knees down is welcome!',alternative:'Do five controlled wall push-ups or five seated palm presses.'},
- {id:'crab',name:'Crab Walk',reps:6,seconds:0,instructions:'Sit with feet flat and hands behind you. Lift hips comfortably and take six small steps.',alternative:'Stay seated in a sturdy chair and take six alternating foot steps.'},
- {id:'toe',name:'Toe Touch',seconds:0,instructions:'With straight but unlocked knees, reach toward your toes only as far as comfortable. No bouncing or forcing.',alternative:'Sit in a chair, extend one leg and gently reach toward your shin.'},
- {id:'wall',name:'Wall Sit',seconds:15,instructions:'Back against a wall, feet forward. Slide down only as far as comfortable and hold 15 seconds. Breathe.',alternative:'Use a shallow wall sit, or sit tall in a sturdy chair for 15 seconds.'},
- {id:'star',name:'Star Balance',seconds:10,instructions:'Balance on one leg with arms out like a star for 10 seconds. Lift the other foot just a little.',alternative:'Hold a sturdy chair with one hand, or sit with arms extended.'},
- {id:'cross',name:'Cross-Leg Challenge',seconds:0,instructions:'Sit cross-legged. Try standing slowly without your hands. A nearby adult can spot you; never force it.',alternative:'Rise from a sturdy chair using hands or a helper as needed; or do one seated knee lift.'}
-];
-export function shuffleFlex(random=Math.random){const deck=[...FLEX_CARDS];for(let i=deck.length-1;i>0;i--){const j=Math.floor(random()*(i+1));[deck[i],deck[j]]=[deck[j],deck[i]];}return deck;}
-// Team indices match the existing Arcade: adults=0, kids=1.
+  ['flamingo', 'Flamingo Freeze', 'Lift one foot off the floor. Spread your arms and balance for ten seconds. Use a wall for support if you like.'],
+  ['wall', 'Wall Sit', 'Stand with your back against a wall and your feet a step forward. Slide down to a comfortable height. Hold for ten seconds, then stand up.'],
+  ['cross', 'Hands-Free Rise', 'Sit cross-legged on the floor. Fold your arms across your chest and try to stand up without pushing off with your hands. Use support whenever you need it.'],
+  ['line', 'Tightrope Walk', 'Stretch your arms out to the sides. Take six slow steps in a straight line, placing each heel just in front of your other toes.'],
+  ['taps', 'Cross-Body Taps', 'Stand tall. Lift one knee and tap it with your opposite hand. Switch sides and keep alternating for six taps.'],
+  ['tiptoe', 'Tiptoe Tower', 'Stand with your feet hip-width apart. Slowly lift both heels. Balance on your toes for five seconds, then gently lower your heels.'],
+  ['plane', 'Airplane Balance', 'Stretch your arms out like wings. Lean forward a little and lift one foot behind you. Hold for five seconds, then land softly.'],
+  ['squat', 'Slow-Motion Squat', 'Stand with your feet comfortably apart. Reach forward and bend your knees as if sitting in a chair. Stand tall again. Try three slow squats.'],
+  ['pushup', 'Wall Push-Up', 'Place both palms on a wall at shoulder height and step back a little. Bend your elbows to lean in, then press away. Try five slow wall push-ups.']
+].map(([id, name, instructions], i) => ({id, name, instructions, art: i + 1}));
+
+export function shuffleFlex(random = Math.random) {
+  const deck = [...FLEX_CARDS];
+  for (let i = deck.length - 1; i > 0; i--) {
+    const j = Math.floor(random() * (i + 1));
+    [deck[i], deck[j]] = [deck[j], deck[i]];
+  }
+  return deck;
+}
+
+// The arcade uses index zero for adults and one for kids.
 export class FlexMatch {
- constructor(random=Math.random){this.deck=shuffleFlex(random);this.used=new Set();this.scores=[0,0];this.round=1;this.active=null;this.results=[];this.done=false;this.winner=null;this.history=[];}
- get selector(){return this.round%2?1:0;}
- select(id){if(this.done||this.active||this.used.has(id))throw Error('Card unavailable');const card=this.deck.find(c=>c.id===id);if(!card)throw Error('Unknown card');this.used.add(id);this.active=card;this.results=[];return card;}
- submit(team,success,value=0){if(!this.active||this.done||team!==([this.selector,1-this.selector][this.results.length]))throw Error('Attempt unavailable');if(typeof success!=='boolean'||!Number.isFinite(value)||value<0||value>100)throw Error('Invalid result');if(success&&this.active.reps&&value<this.active.reps)throw Error('Not enough repetitions');if(success&&this.active.seconds&&value<this.active.seconds)throw Error('Hold too short');this.results.push({team,success,value});if(this.results.length<2)return null;
- const a=this.results.find(r=>r.team===0),k=this.results.find(r=>r.team===1);let winner=null;
- if(a.success!==k.success)winner=a.success?0:1;else if(a.success&&(this.active.seconds||this.active.reps)&&a.value!==k.value)winner=a.value>k.value?0:1;
- if(winner!==null)this.scores[winner]++;this.history.push({card:this.active.id,winner,results:[...this.results]});
- if(this.scores.some(s=>s>=4)||(this.round>=7&&this.scores[0]!==this.scores[1])||this.round===9){this.done=true;this.winner=this.scores[0]===this.scores[1]?null:this.scores[0]>this.scores[1]?0:1;}
- const result={winner,done:this.done};this.active=null;this.round++;return result;
- }
+  constructor(random = Math.random) {
+    this.decks = [shuffleFlex(random), shuffleFlex(random)];
+    this.used = [new Set(), new Set()];
+    this.scores = [0, 0];
+    this.turn = 0;
+    this.active = null;
+  }
+  get selector() { return (this.turn + 1) % 2; }
+  get done() { return this.turn === FLEX_CARDS.length * 2; }
+  get winner() {
+    if (!this.done || this.scores[0] === this.scores[1]) return null;
+    return this.scores[0] > this.scores[1] ? 0 : 1;
+  }
+  select(id) {
+    const team = this.selector;
+    const card = this.decks[team].find(card => card.id === id);
+    if (!card || this.done || this.active || this.used[team].has(id)) throw Error('Card unavailable');
+    this.active = card;
+    return card;
+  }
+  record(tried) {
+    if (!this.active || typeof tried !== 'boolean') throw Error('No attempt to score');
+    this.used[this.selector].add(this.active.id);
+    this.scores[this.selector] += tried ? 1 : -1;
+    this.turn++;
+    this.active = null;
+  }
 }

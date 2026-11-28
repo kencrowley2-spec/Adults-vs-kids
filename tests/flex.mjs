@@ -1,29 +1,67 @@
 import assert from 'node:assert/strict';
+import {existsSync} from 'node:fs';
 import {JSDOM} from 'jsdom';
-import {FlexMatch,FLEX_CARDS,shuffleFlex} from '../public/arcade-flex-core.js';
+import {FlexMatch, FLEX_CARDS} from '../public/arcade-flex-core.js';
 import {mountFlex} from '../public/arcade-flex.js';
-import {flexPose} from '../public/arcade-flex-poses.js';
-assert.equal(new Set(FLEX_CARDS.map(c=>c.id)).size,9);
-assert.notDeepEqual(shuffleFlex(()=>0),FLEX_CARDS);
-for(const c of FLEX_CARDS){assert.match(flexPose(c.id),/^<svg/);assert.match(flexPose(c.id,true),/alternative/);}
-function play(m,winner=null,values=[30,30]){const card=m.deck.find(c=>!m.used.has(c.id));m.select(card.id);const first=m.selector;const success=i=>winner===null||winner===i;m.submit(first,success(first),success(first)?values[first]:0);return m.submit(1-first,success(1-first),success(1-first)?values[1-first]:0);}
-let m=new FlexMatch();assert.equal(m.selector,1);m.select('plank');assert.throws(()=>m.select('plank'));assert.throws(()=>m.submit(0,true,15));assert.throws(()=>m.submit(1,true,14));m.submit(1,true,16);assert.throws(()=>m.submit(1,true,17));m.submit(0,true,17);assert.deepEqual(m.scores,[1,0]);assert.equal(m.selector,0);assert.throws(()=>m.select('plank'));
-for(const w of [0,1]){m=new FlexMatch();for(let i=0;i<4;i++)play(m,w);assert.equal(m.done,true);assert.equal(m.winner,w);assert.deepEqual(m.scores,w?[0,4]:[4,0]);assert.throws(()=>play(m,w));}
-m=new FlexMatch();for(const w of [1,0,1,0,1,0,null])play(m,w);assert.equal(m.done,false);assert.equal(m.round,8);assert.equal(play(m,1).done,true);assert.equal(m.winner,1);
-m=new FlexMatch();for(const w of [1,0,null,null,null,null,null,null,null])play(m,w);assert.equal(m.done,true);assert.equal(m.winner,null);assert.equal(m.used.size,9);
-m=new FlexMatch();for(const w of [1,0,1,0,1,null,null])play(m,w);assert.equal(m.winner,1);assert.equal(m.history.length,7);assert.equal(m.done,true);
-m=new FlexMatch();m.select('pushup');assert.throws(()=>m.submit(1,true,4));m.submit(1,true,6);m.submit(0,true,5);assert.deepEqual(m.scores,[0,1]);
-m=new FlexMatch();m.select('butterfly');m.submit(1,true);m.submit(0,true);assert.deepEqual(m.scores,[0,0]);m.select('toe');m.submit(0,false);m.submit(1,false);assert.deepEqual(m.scores,[0,0]);
-const dom=new JSDOM('<!doctype html><body></body>',{url:'https://adultsvskids.com'});globalThis.window=dom.window;globalThis.document=dom.window.document;
-let now=0,id=0,timers=new Map();const schedule=fn=>{timers.set(++id,fn);return id;};const cancel=id=>timers.delete(id);const advance=ms=>{now+=ms;for(const fn of [...timers.values()])fn();};
-let completed=[],exits=0,allowRematch=true;const dispose=mountFlex({players:['<Dad>','Harper'],initialSound:false,clock:()=>now,schedule,cancel,onComplete:r=>completed.push(r),onExit:()=>exits++,beforeRematch:()=>allowRematch});
-const host=()=>document.querySelector('.flex-game');const click=a=>{const el=host()?.querySelector(`[data-flex="${a}"]`);assert.ok(el,`Missing ${a}`);el.click();};const choose=id=>{const el=host().querySelector(`[data-card="${id}"]`);assert.ok(el&&!el.disabled);el.click();};
-host().querySelector('form').dispatchEvent(new dom.window.Event('submit',{bubbles:true,cancelable:true}));assert.equal(host().querySelectorAll('[data-card]').length,9);assert.equal(host().querySelector('dad'),null);
-choose('flamingo');click('start');assert.equal(host().querySelector('.flex-clock').textContent,'3');advance(1000);assert.equal(host().querySelector('.flex-clock').textContent,'2');advance(2000);assert.match(host().textContent,/GO!/);advance(10000);click('stop');click('success');assert.match(host().textContent,/<Dad>’S TURN/);click('start');advance(3000);advance(12000);click('stop');click('success');assert.match(host().textContent,/<Dad> wins the round/);click('next');assert.ok(host().querySelector('[data-card="flamingo"]').disabled);
-choose('pushup');click('start');advance(3000);host().querySelector('#flex-reps').value='4';click('success');assert.match(host().textContent,/whole number/);host().querySelector('#flex-reps').value='5';click('success');click('skip');assert.match(host().textContent,/<Dad> wins the round/);click('next');
-choose('butterfly');click('alternative');assert.match(host().textContent,/Accessible alternative for both/);click('start');advance(3000);click('success');click('start');advance(3000);click('success');assert.match(host().textContent,/A tied round/);click('next');
-choose('plank');click('start');advance(3000);advance(5000);click('stop');assert.equal(host().querySelector('[data-flex="success"]'),null);click('retry');click('start');Object.defineProperty(document,'hidden',{configurable:true,value:true});document.dispatchEvent(new dom.window.Event('visibilitychange'));assert.equal(timers.size,0);assert.match(host().textContent,/Paused while away/);Object.defineProperty(document,'hidden',{configurable:true,value:false});click('exit');click('stay');click('skip');click('next');
-// Two more adult victories complete the match, with ties consuming regular rounds.
-for(const card of ['toe','cross']){choose(card);const first=host().textContent.includes('<Dad>’S TURN')?0:1;click('start');advance(3000);click(first===0?'success':'failed');click('start');advance(3000);click(first===0?'failed':'success');click('next');}
-assert.equal(completed.length,1);assert.equal(completed[0].winner,0);assert.match(host().textContent,/AGE IS JUST A NUMBER/);allowRematch=false;click('again');assert.equal(host().querySelectorAll('[data-card]').length,0);allowRematch=true;click('again');assert.equal(host().querySelectorAll('[data-card]:disabled').length,0);assert.equal(host().querySelectorAll('[data-card]').length,9);assert.match(host().textContent,/Harper, pick a card/);click('exit');click('leave');assert.equal(exits,1);assert.equal(host(),null);assert.equal(document.body.style.overflow,'');assert.equal(timers.size,0);dispose();dom.window.close();
-console.log('FLEX OFF: scoring, four-win finish, seven-round leader, sudden death, exhausted ties, measurable results, shuffle, duplicate protection, timers, handoffs, alternatives, skip, pause, rematch gate, reset and exit passed.');
+
+assert.equal(new Set(FLEX_CARDS.map(c => c.id)).size, 9);
+for (const c of FLEX_CARDS) {
+  for (const asset of [c.art+'.webp','voice/'+c.id+'.mp3'])
+    assert.ok(existsSync(new URL('../public/assets/flex/'+asset, import.meta.url)));
+}
+for (const attempted of [() => true, () => false, team => team === 0]) {
+  const match = new FlexMatch();
+  for (let round = 0; round < 9; round++) {
+    for (const team of [1,0]) {
+      assert.equal(match.selector, team);
+      const id = match.decks[team][round].id;
+      match.select(id);
+      assert.throws(() => match.select(id));
+      match.record(attempted(team));
+      assert.throws(() => match.record(true));
+    }
+  }
+  assert.equal(match.done, true);
+  for (const team of [1,0]) assert.equal(match.scores[team], attempted(team) ? 9 : -9);
+  assert.equal(match.winner, attempted(0) === attempted(1) ? null : 0);
+}
+const dom = new JSDOM('<body></body>', {pretendToBeVisual:true});
+globalThis.window = dom.window;
+globalThis.document = dom.window.document;
+const clips = [];
+window.Audio = class {
+  constructor(src) { this.src = src; clips.push(this); }
+  play() { this.paused = false; return Promise.resolve(); }
+  pause() { this.paused = true; }
+};
+window.HTMLDialogElement.prototype.showModal = function() {this.open = true;};
+let results = [], exits = 0, allowed = false;
+const dispose = mountFlex({players:['<Dad>','Harper'], onComplete: result => results.push(result), beforeRematch:() => allowed, onExit:() => exits++});
+const click = selector => document.querySelector(selector).click();
+click('button[type=submit]');
+assert.equal(document.querySelectorAll('[data-card]').length,9);
+assert.equal(clips[0].loop, true);
+for (let turn = 0; turn < 18; turn++) {
+  click('[data-card]:enabled');
+  assert.equal(document.querySelectorAll('dialog .fx-choices button').length, 2);
+  assert.match(clips.at(-1).src,/voice\//);
+  assert.ok(clips[0].volume < .1);
+  click(turn % 2 ? '[data-flex=pass]' : '[data-flex=tried]');
+  assert.ok(clips.at(-1).paused);
+  assert.ok(clips[0].volume > .1);
+}
+assert.deepEqual(results,[{winner:1,scores:[-9,9],rounds:9}]);
+assert.ok(clips[0].paused);
+click('[data-flex=again]');
+assert.equal(document.querySelector('[data-card]'),null);
+allowed = true;
+click('[data-flex=again]');
+assert.equal(document.querySelectorAll('[data-card]:enabled').length,9);
+click('[data-flex=sound]');
+assert.ok(clips[0].paused);
+click('[data-flex=exit]');
+click('[data-flex=leave]');
+assert.equal(exits,1);
+assert.equal(document.body.style.overflow,'');
+dispose();
+console.log('Flex Off passed nine-card play, attempts, passes, negative scores, ties, duplicate protection, narration, music ducking, mute, rematch and exit.');
