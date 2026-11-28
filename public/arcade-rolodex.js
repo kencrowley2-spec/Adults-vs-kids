@@ -24,7 +24,7 @@ export function mountRolodex({lobby, games, coverMarkup, openMatchup}) {
       <button type="button" class="rd-open">Open matchup</button>
       <span class="rd-counter" role="status" aria-live="polite" aria-atomic="true"></span>
     </div>
-    <div class="rd-options" role="group" aria-label="Game options"></div>`;
+    <div class="rd-options" role="group" aria-label="Game options"><button class="rd-music" type="button">Play music</button></div>`;
   const get = selector => host.querySelector(selector);
   const stage = get('.rd-stage'), layer = get('.rd-cases');
   const title = get('.rd-caption h2'), tag = get('.rd-caption p');
@@ -373,7 +373,39 @@ export function mountRolodex({lobby, games, coverMarkup, openMatchup}) {
   width = stage.clientWidth || 1;
   height = stage.clientHeight || 1;
   selectDeck(0);
+  const music = get('#rolodex-music');
+  const musicButton = get('.rd-music');
+  let musicEnabled = true;
+  music.volume = 1;
+  music.muted = false;
+  function syncMusic() {
+    if (!musicEnabled || document.hidden || lobby.hidden || document.querySelector('dialog[open]')) {
+      music.pause();
+    } else if (music.paused) {
+      music.play().catch(() => {});
+    }
+  }
+  function showMusicState() {
+    musicButton.textContent = music.paused ? 'Play music' : 'Pause music';
+  }
+  music.addEventListener('play', showMusicState);
+  music.addEventListener('pause', showMusicState);
+  musicButton.addEventListener('click', () => {
+    musicEnabled = music.paused;
+    syncMusic();
+  });
+  function unlockMusic(event) {
+    if (event.target !== musicButton) syncMusic();
+  }
+  for (const event of ['pointerup', 'keydown', 'click']) {
+    document.addEventListener(event, unlockMusic, true);
+  }
+  window.addEventListener('pagehide', () => music.pause());
+  window.addEventListener('pageshow', syncMusic);
+  showMusicState();
+  syncMusic();
   function roomChanged() {
+    syncMusic();
     if (document.hidden || lobby.hidden || document.querySelector('dialog[open]')) {
       heldPointer = gesture = null;
       stop();

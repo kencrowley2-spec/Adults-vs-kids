@@ -1245,7 +1245,7 @@ function rememberGame(id){
  try{const ids=recentGames(localStorage,recentKey,GAMES);localStorage.setItem(recentKey,JSON.stringify([id,...ids.filter(x=>x!==id)].slice(0,8)));}catch{}
 
 }
-import('./arcade-rolodex.js?v=7').then(({mountRolodex}) => {
+import('./arcade-rolodex.js?v=8').then(({mountRolodex}) => {
   mountRolodex({lobby, games:GAMES, coverMarkup, openMatchup:entry => caseReader.open(entry)});
 }).catch(error => {
   console.error('Unable to open the Arcade Rolodex', error);
