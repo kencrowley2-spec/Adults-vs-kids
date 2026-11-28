@@ -7,18 +7,16 @@ const root=new URL('../public/',import.meta.url);
 const output=new URL('assets/display/',root);
 await mkdir(output,{recursive:true});
 
-async function copy(source,name,width,area){
-  let image=sharp(new URL(source,root).pathname);
-  if(area)image=image.extract(area);
-  await image.resize({width,withoutEnlargement:true}).webp({quality:78,effort:5})
+async function copy(source,name,width){
+  await sharp(new URL(source,root).pathname).resize({width,withoutEnlargement:true}).webp({quality:78,effort:5})
     .toFile(path.join(output.pathname,name+'.webp'));
 }
 
-// These rectangles are the portions of the original layout artwork visible inside the hero.
-for(const width of [480,820,1072]){
-  await copy('assets/home-mobile-reference.webp','hero-mobile-'+width,width,{left:72,top:537,width:1072,height:638});
+for(const width of [480,820]){
+  await sharp(new URL('assets/home-stadium-hero.webp',root).pathname)
+    .resize({width}).webp({lossless:true})
+    .toFile(path.join(output.pathname,'home-stadium-hero-'+width+'.webp'));
 }
-await copy('assets/home-desktop-reference-optimized.webp','hero-desktop',1220,{left:0,top:50,width:1220,height:310});
 const images=[
  ['assets/original-team.png','original-team',1220],
  ['assets/family-reality-quiz.png','family-quiz',1100],
