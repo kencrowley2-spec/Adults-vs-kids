@@ -154,6 +154,7 @@
     select(shirts[index].dataset.rackTee,slogans[index],true);
   });
   find('rack-prev').addEventListener('click',()=>settle(target-1));
+  find('rack-spin').addEventListener('click',()=>settle(target+1));
   find('rack-next').addEventListener('click',()=>settle(target+1));
   stage.addEventListener('keydown',event=>{
     if(event.key!=='ArrowLeft'&&event.key!=='ArrowRight')return;
