@@ -132,6 +132,9 @@ body:has(#arcade-lobby:not([hidden]) #avk-rolodex) .arcade-tabs svg {width:21px;
 }
 #avk-rolodex .rd-turn {display:flex;align-items:center;justify-content:center;gap:1px;color:#fff9eb;font-size:clamp(14px,3.65vw,17px)}
 #avk-rolodex .rd-turn button {min-width:44px;height:38px;padding:0;border:0;background:transparent;color:var(--gold);font:800 26px/1 Arial,sans-serif}
+#avk-rolodex .rd-auto {display:grid;place-items:center}
+#avk-rolodex .rd-auto span {width:0;height:0;border-block:6px solid transparent;border-left:9px solid currentColor}
+#avk-rolodex .rd-auto[aria-pressed=true] span {width:10px;height:12px;border:0;border-inline:3px solid currentColor}
 #avk-rolodex .rd-caption {width:100%;container-type:inline-size;--title-size:clamp(25px,6.2vw,34px)}
 #avk-rolodex .rd-caption p {margin:0 0 2px;color:#f4d888;font:700 clamp(10px,2.45vw,12px)/1.2 Arial,sans-serif;letter-spacing:.13em}
 #avk-rolodex .rd-caption h2 {margin:0;color:#fffdf8;font:800 min(var(--title-size),max(20px,100cqw / var(--title-ems,1)))/1.05 Arial,sans-serif;min-height:calc(var(--title-size) * 1.05);align-content:center;letter-spacing:-.05em;text-wrap:balance}

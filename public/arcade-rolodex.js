@@ -18,6 +18,7 @@ export function mountRolodex({lobby, games, coverMarkup, openMatchup}) {
         <button type="button" class="rd-prev" aria-label="Previous game">‹</button>
         <span>Swipe to spin</span>
         <button type="button" class="rd-next" aria-label="Next game">›</button>
+        <button type="button" class="rd-auto" aria-label="Automatic rotation"><span aria-hidden="true"></span></button>
       </div>
       <div class="rd-caption"><p></p><h2></h2></div>
       <button type="button" class="rd-open">Open matchup</button>
@@ -29,6 +30,10 @@ export function mountRolodex({lobby, games, coverMarkup, openMatchup}) {
   const title = get('.rd-caption h2'), tag = get('.rd-caption p');
   const openButton = get('.rd-open'), status = get('.rd-counter');
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
+  const autoButton = get('.rd-auto');
+  const resumeDelay = 2800, cardTravelTime = 4200;
+  let autoChoice = null, autoMoving = false, autoVelocity = 0, resumeTimer = 0;
+  let heldPointer = null, keyboardBrowsing = false;
   const savedPositions = decks.map(() => 0);
   let active = 0, position = 0, selected = -1, width = 1, height = 1, cardWidth = 0;
   let destination = null, frame = 0, frameTime = 0, velocity = 0;
@@ -147,6 +152,22 @@ export function mountRolodex({lobby, games, coverMarkup, openMatchup}) {
       updateCaption(centered);
     }
   }
+  function updateRotation(delay = 0) {
+    clearTimeout(resumeTimer);
+    autoMoving = false;
+    autoVelocity = 0;
+    const enabled = autoChoice ?? !reduced.matches;
+    autoButton.setAttribute('aria-pressed',String(enabled));
+    autoButton.title = enabled ? 'Pause automatic rotation' : 'Start automatic rotation';
+    if (!enabled || heldPointer !== null || keyboardBrowsing || document.hidden ||
+        lobby.hidden || document.querySelector('dialog[open]') || entries().length < 2) return;
+    if (delay) {
+      resumeTimer = setTimeout(updateRotation,delay);
+    } else {
+      autoMoving = true;
+      queuePaint();
+    }
+  }
   function render(now) {
     frame = 0;
     // Discard long gaps after a stalled or backgrounded frame instead of jumping ahead.
@@ -171,9 +192,12 @@ export function mountRolodex({lobby, games, coverMarkup, openMatchup}) {
         destination = null;
         velocity = 0;
       }
+    } else if (autoMoving && !gesture) {
+      autoVelocity += (1/cardTravelTime-autoVelocity) * -Math.expm1(-dt/360);
+      position = wrap(position + autoVelocity*dt,entries().length);
     }
     paint();
-    if (destination !== null || (gesture?.dragged && position !== gesture.target)) queuePaint();
+    if (autoMoving || destination !== null || (gesture?.dragged && position !== gesture.target)) queuePaint();
     else {
       frameTime = 0;
       if (!gesture) announce();
@@ -237,12 +261,46 @@ export function mountRolodex({lobby, games, coverMarkup, openMatchup}) {
   get('.rd-prev').addEventListener('click', () => step(-1));
   get('.rd-next').addEventListener('click', () => step(1));
   openButton.addEventListener('click',openSelected);
+  autoButton.addEventListener('click',() => {
+    autoChoice = !(autoChoice ?? !reduced.matches);
+    keyboardBrowsing = false;
+    updateRotation();
+  });
+  host.addEventListener('focusin',event => {
+    if (heldPointer === null && event.target.matches(':focus-visible')) {
+      keyboardBrowsing = true;
+      updateRotation();
+    }
+  });
+  host.addEventListener('focusout',event => {
+    if (!host.contains(event.relatedTarget)) {
+      keyboardBrowsing = false;
+      updateRotation(resumeDelay);
+    }
+  });
   host.addEventListener('keydown',event => {
     if (!['ArrowLeft','ArrowRight'].includes(event.key)) return;
+    keyboardBrowsing = true;
+    updateRotation();
     event.preventDefault();
     step(event.key==='ArrowRight' ? 1 : -1);
   });
 
+  // Freeze the displayed game on contact, including while the matchup button is held.
+  host.addEventListener('pointerdown',event => {
+    if (!event.isPrimary || event.button !== 0) return;
+    heldPointer = event.pointerId;
+    keyboardBrowsing = false;
+    updateRotation();
+  },true);
+  function endHold(event) {
+    if (heldPointer !== event.pointerId) return;
+    heldPointer = null;
+    updateRotation(resumeDelay);
+  }
+  document.addEventListener('pointerup',endHold,true);
+  document.addEventListener('pointercancel',endHold,true);
+  stage.addEventListener('lostpointercapture',endHold);
   stage.addEventListener('pointerdown',event => {
     if (!event.isPrimary || event.button !== 0) return;
     const catching = destination !== null && Math.abs(destination-position) > .04;
@@ -315,6 +373,23 @@ export function mountRolodex({lobby, games, coverMarkup, openMatchup}) {
   width = stage.clientWidth || 1;
   height = stage.clientHeight || 1;
   selectDeck(0);
+  function roomChanged() {
+    if (document.hidden || lobby.hidden || document.querySelector('dialog[open]')) {
+      heldPointer = gesture = null;
+      stop();
+      velocity = 0;
+    }
+    updateRotation(resumeDelay);
+  }
+  const visibility = new MutationObserver(roomChanged);
+  visibility.observe(lobby,{attributes:true,attributeFilter:['hidden']});
+  visibility.observe(document.body,{subtree:true,attributes:true,attributeFilter:['open']});
+  document.addEventListener('visibilitychange',roomChanged);
+  reduced.addEventListener('change',() => {
+    if (reduced.matches && autoChoice === true) autoChoice = null;
+    updateRotation();
+  });
+  updateRotation();
   new ResizeObserver(fit).observe(stage);
   if (location.hash === '#cabinet-pinball') document.getElementById('cabinet-pinball')?.focus();
   return host;
