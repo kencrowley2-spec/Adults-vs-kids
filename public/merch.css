@@ -9,9 +9,7 @@
 .shirt-preview small{display:inline-block;margin-top:1.4cqw;border-top:.6cqw solid #eeb518;padding-top:.9cqw;font-size:1.85cqw;letter-spacing:.09em}
 .dark-shirt figcaption{color:#fff}
 
-.hero-actions{display:grid;grid-template-columns:auto minmax(0,1fr);gap:clamp(8px,1vw,18px);align-items:center}
-.hero-actions>.action{text-align:center;line-height:1.15}
-.shirt-rack{min-width:0;width:min(100%,285px);justify-self:center;text-align:center;color:white}
+.shirt-rack{min-width:0;width:min(100%,285px);margin-inline:auto;text-align:center;color:white}
 .rack-heading{display:block;font-size:.78rem;line-height:1.3;font-weight:800;letter-spacing:.085em;text-transform:uppercase;color:#ffce32}
 .rack-stage{position:relative;display:block;width:100%;aspect-ratio:1.65;border:0;background:transparent;appearance:none;-webkit-appearance:none;outline:0;box-shadow:none;padding:0;cursor:grab;user-select:none;touch-action:pan-y;overflow:hidden;isolation:isolate;-webkit-tap-highlight-color:transparent}
 .shirt-rack,.rack-tee{background:transparent;border:0;box-shadow:none}
@@ -26,31 +24,4 @@
 .rack-controls{display:flex;align-items:center;justify-content:center;gap:3px;font-size:.76rem;color:#ddd}
 .rack-controls button{border:0;background:transparent;color:#ffce32;font:700 1.5rem/1 Arial;padding:3px 7px;min-width:30px;min-height:32px;cursor:pointer}
 .rack-status{position:absolute;clip-path:inset(50%);height:1px;width:1px;overflow:hidden}
-@media(max-width:700px){.hero-actions{grid-template-columns:minmax(0,1.04fr) minmax(0,1fr)}.hero-actions>.action{justify-self:start;padding:14px clamp(9px,3vw,20px)}}
 .shirt-rack .rack-status{display:block;position:static;clip-path:none;width:auto;height:auto;min-height:2.5em;font-size:.82rem;line-height:1.25;font-weight:700;color:#f7f7f4;text-wrap:balance}
-
-.rack-spin {
-  position: relative;
-  isolation: isolate;
-  justify-self: start;
-  max-width: 100%;
-  min-height: 48px;
-  padding: 10px 26px 10px 12px;
-  border: 0;
-  background: transparent;
-  color: #101010;
-  font: inherit;
-  line-height: 1.15;
-  cursor: pointer;
-}
-.rack-spin::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  background: #ffcd30;
-  clip-path: polygon(0 10%, calc(100% - 18px) 10%, calc(100% - 18px) 0, 100% 50%, calc(100% - 18px) 100%, calc(100% - 18px) 90%, 0 90%);
-}
-.rack-spin:hover::before { background: #ffdb68; }
-.rack-spin:focus-visible { outline: 2px solid white; outline-offset: 3px; }
-.rack-spin span { display: block; margin-top: 2px; font-size: .8em; }
