@@ -1,6 +1,6 @@
 import {memoryFace, memorySymbols} from './cast/memory-faces.js';
 import {mountGhostline} from './ghostline.js?v=10';
-import {mountFlex} from './arcade-flex.js?v=2';
+import {mountFlex} from './arcade-flex.js?v=3';
 import {mountJigsaw} from './arcade-jigsaw.js?v=7';
 import {mountGuestGate} from './arcade-guest.js?v=1';
 import {mountFeaturedGames} from './arcade-featured.js?v=5';

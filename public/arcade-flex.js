@@ -33,14 +33,14 @@ export function mountFlex({players = ['Adults','Kids'], onExit = () => {}, onCom
   function board() {
     const team = match.selector, used = match.used[team];
     main.innerHTML = `${scoreboard()}<div class="fx-title"><small>CARD ${used.size+1} OF 9 · TEAM ${team ? 'KIDS' : 'ADULTS'}</small><h1 tabindex="-1">${esc(names[team])}, flip a card!</h1><p aria-live="polite">${notice || 'Give the move a try to earn a point.'}</p></div><div class="fx-grid">${match.decks[team].map((c,i) => {
-      const played = used.has(c.id);
-      return `<button class="fx-card tint-${i}" data-card="${c.id}" ${played || (match.active && match.active !== c) ? 'disabled' : ''} aria-label="${played ? esc(c.name)+', already played' : 'Flip card '+(i+1)}"><span class="fx-pip">${String(i+1).padStart(2,'0')}</span><b>${played ? '✓' : '?'}</b><span>${played ? esc(c.name) : 'FLEX OFF!'}</span></button>`;
+      if (used.has(c.id)) return '<span class="fx-card" style="visibility:hidden" aria-hidden="true"></span>';
+      return `<button class="fx-card tint-${i}" data-card="${c.id}" ${match.active && match.active !== c ? 'disabled' : ''} aria-label="Flip card ${i+1}"><span class="fx-pip">${String(i+1).padStart(2,'0')}</span><b>?</b><span>FLEX OFF!</span></button>`;
     }).join('')}</div>`;
     focusTitle();
   }
   function reveal(c) {
     const modal = dialog(`<div class="fx-demo tint-${c.art-1}"><img src="/assets/flex/${c.art}.webp" alt="${esc(c.name)} demonstration"></div><div class="fx-copy"><small>${esc(names[match.selector])}’S CHALLENGE</small><h2>${c.name}</h2><p>${c.instructions}</p>${button('replay','↻ Hear the challenge','listen')}<div class="fx-choices">${button('tried','I tried it <b>+1</b>')}${button('pass','Pass <b>−1</b>','pass')}</div></div>`, c.name);
-    modal.addEventListener('cancel', () => { audio.stopVoice(); modal.remove(); board(); }, {once:true});
+    modal.addEventListener('cancel', e => { if (!match.active) { e.preventDefault(); return; } audio.stopVoice(); modal.remove(); board(); }, {once:true});
     audio.say(c);
   }
   function finish() {
@@ -65,7 +65,7 @@ export function mountFlex({players = ['Adults','Kids'], onExit = () => {}, onCom
     for (const i of [0,1]) names[i] = e.target.elements['team'+i].value.trim() || (i ? 'Kids' : 'Adults');
     start();
   });
-  host.addEventListener('click', e => {
+  host.addEventListener('click', async e => {
     const target = e.target.closest('button');
     if (!target || target.disabled) return;
     if (target.dataset.card) {
@@ -79,8 +79,18 @@ export function mountFlex({players = ['Adults','Kids'], onExit = () => {}, onCom
       const tried = action === 'tried';
       notice = esc(names[match.selector]) + (tried ? ' tried it! +1 point.' : ' passed. −1 point.');
       audio.stopVoice();
-      target.closest('dialog').remove();
+      const modal = target.closest('dialog');
       match.record(tried);
+      modal.inert = true;
+      if (modal.animate && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        const flip = modal.animate([
+          {transform:'perspective(900px) rotateY(0deg)', opacity:1},
+          {transform:'perspective(900px) rotateY(90deg)', opacity:0}
+        ], {duration:220, easing:'ease-in', fill:'forwards'});
+        await flip.finished.catch(() => {});
+      }
+      if (closed) return;
+      modal.remove();
       if (match.done) finish(); else board();
     } else if (action === 'replay') {
       sound = true;

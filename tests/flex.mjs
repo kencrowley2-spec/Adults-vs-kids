@@ -41,7 +41,13 @@ const click = selector => document.querySelector(selector).click();
 click('button[type=submit]');
 assert.equal(document.querySelectorAll('[data-card]').length,9);
 assert.equal(clips[0].loop, true);
+const spent = [new Set(), new Set()];
 for (let turn = 0; turn < 18; turn++) {
+  const player = turn % 2;
+  const remaining = [...document.querySelectorAll('[data-card]')];
+  assert.equal(remaining.length, 9 - spent[player].size);
+  assert.ok(remaining.every(button => !spent[player].has(button.dataset.card)));
+  spent[player].add(remaining[0].dataset.card);
   click('[data-card]:enabled');
   assert.equal(document.querySelectorAll('dialog .fx-choices button').length, 2);
   assert.match(clips.at(-1).src,/voice\//);
